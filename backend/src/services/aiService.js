@@ -190,7 +190,7 @@ async function generateWithRetry(fn, attempts = 4) {
 }
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
-const GEMINI_API_URL_FALLBACK = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GEMINI_API_URL_FALLBACK = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 async function callGemini(prompt, maxTokens = 3000, fallback = false) {
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
