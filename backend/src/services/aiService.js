@@ -276,6 +276,10 @@ ${styleNote}
 
 Extraia os fatos do conteúdo abaixo. Não invente dados. Não resuma. Construa narrativa com o que está lá.
 OBRIGATÓRIO: use pelo menos 2 informações concretas do conteúdo — nomes reais, números, porcentagens, datas, comparações específicas. Roteiro sem dados concretos é inválido.
+O roteiro deve usar entre 150 e ${platformSpec.maxWords} palavras. Termine sempre com uma tensão aberta ou pergunta que o espectador não consegue responder sozinho.
+
+Os campos screen_captions são frases curtas (máximo 6 palavras cada) para aparecer sobrepostas no vídeo nos primeiros segundos — devem provocar curiosidade imediata.
+Os campos image_prompts são descrições visuais detalhadas em inglês para geração de imagem por IA — cenário, estilo, iluminação, composição. Uma imagem a cada 4 segundos para shorts, a cada 6 segundos para vídeos longos. Fundo cinematográfico, sem texto na imagem.
 
 Proibido em qualquer estilo:
 - Frases mecânicas de retenção ("Mas espera", "Pensa bem", "E não para por aí")
@@ -296,7 +300,19 @@ Responda APENAS com JSON válido, sem texto fora:
   "titles": ["Título 1", "Título 2", "Título 3"],
   "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"],
   "captions": ["legenda curta", "legenda com contexto", "pergunta que gera comentários"],
-  "thumbnail_prompt": "descrição visual para thumbnail"
+  "thumbnail_prompt": "descrição visual para thumbnail",
+  "screen_captions": [
+    "frase curta impactante para aparecer nos primeiros 5s",
+    "segunda frase para chamar atenção",
+    "terceira frase de gancho visual"
+  ],
+  "image_prompts": [
+    "prompt detalhado para imagem 1 — aparece em 0s",
+    "prompt detalhado para imagem 2 — aparece em 4s",
+    "prompt detalhado para imagem 3 — aparece em 8s",
+    "prompt detalhado para imagem 4 — aparece em 12s",
+    "prompt detalhado para imagem 5 — aparece em 16s"
+  ]
 }`;
 }
 // END_BUILD_PROMPT
