@@ -259,13 +259,15 @@ export function ScriptModal({
   const titles          = safeArray(rawScript, 'titles');
   const hashtags        = safeArray(rawScript, 'hashtags');
   const captions        = safeArray(rawScript, 'captions');
-  const thumbnailPrompt = rawScript?.thumbnail_prompt || '';
+  const thumbnailPrompt  = rawScript?.thumbnail_prompt || '';
+  const screenCaptions   = safeArray(rawScript, 'screen_captions');
+  const imagePrompts     = safeArray(rawScript, 'image_prompts');
 
   const scriptText = script && typeof script === 'object' ? (script.script || '') : (script || '');
   const wordCount = scriptText ? scriptText.split(/\s+/).filter(Boolean).length : 0;
   const readTime  = Math.ceil(wordCount / 150);
 
-  const hasExtras = titles.length > 0 || hashtags.length > 0 || captions.length > 0 || thumbnailPrompt;
+  const hasExtras = titles.length > 0 || hashtags.length > 0 || captions.length > 0 || thumbnailPrompt || screenCaptions.length > 0 || imagePrompts.length > 0;
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -605,7 +607,47 @@ return (<div style={{margin:"4px 0 16px",padding:"9px 13px",borderRadius:8,backg
                       </Section>
                     )}
 
-                    {/* ── HASHTAGS ── */}
+                    {/* ── LEGENDAS DE TELA ── */}
+                    {screenCaptions.length > 0 && (
+                      <Section title="LEGENDAS DE TELA" icon="💬" accent={accentColor} glow={glowColor}>
+                        <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 10px' }}>Frases curtas para aparecer sobrepostas no vídeo nos primeiros segundos</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                          {screenCaptions.map((c, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                              <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 11, color: `rgba(${glowColor},0.7)`, flexShrink: 0 }}>{i+1}</span>
+                              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.9)', margin: 0, flex: 1 }}>{c}</p>
+                              <CopyButton text={c} accent={accentColor} glow={glowColor} />
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ marginTop: 8 }}>
+                          <CopyButton text={screenCaptions.join('\n')} label="Copiar todas" accent={accentColor} glow={glowColor} />
+                        </div>
+                      </Section>
+                    )}
+
+                    {/* ── PROMPTS DE IMAGEM ── */}
+                    {imagePrompts.length > 0 && (
+                      <Section title="PROMPTS DE IMAGEM — IA" icon="🎨" accent={accentColor} glow={glowColor}>
+                        <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 10px' }}>Use no Midjourney, DALL-E ou Stable Diffusion. Uma imagem a cada 4s no vídeo.</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                          {imagePrompts.map((p, i) => (
+                            <div key={i} style={{ padding: '10px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                                <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 10, color: `rgba(${glowColor},0.6)` }}>IMG {i+1} · {i*4}s · {platform === 'youtube_long' ? '16:9' : '9:16'}</span>
+                                <CopyButton text={p} accent={accentColor} glow={glowColor} />
+                              </div>
+                              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 300, color: 'rgba(255,255,255,0.75)', margin: 0, lineHeight: 1.55, fontStyle: 'italic' }}>{p}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ marginTop: 8 }}>
+                          <CopyButton text={imagePrompts.join('\n\n')} label="Copiar todos" accent={accentColor} glow={glowColor} />
+                        </div>
+                      </Section>
+                    )}
+
+                    {/* ── HASHTAGS ── */}}
                     {hashtags.length > 0 && (
                       <Section title="HASHTAGS" icon="#️⃣" accent={accentColor} glow={glowColor}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 10 }}>

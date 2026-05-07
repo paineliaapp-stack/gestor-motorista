@@ -40,12 +40,12 @@ const PLATFORMS = {
   youtube_shorts: {
     name: 'YouTube Shorts',
     format: '60-90 segundos, video vertical',
-    maxWords: 180,
+    maxWords: 200,
   },
   tiktok: {
     name: 'TikTok / Instagram Reels',
-    format: '15-60 segundos, video vertical',
-    maxWords: 130,
+    format: '60-90 segundos, video vertical',
+    maxWords: 200,
   },
   youtube_long: {
     name: 'YouTube formato longo',
@@ -190,7 +190,7 @@ async function generateWithRetry(fn, attempts = 4) {
 }
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
-const GEMINI_API_URL_FALLBACK = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GEMINI_API_URL_FALLBACK = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
 
 async function callGemini(prompt, maxTokens = 3000, fallback = false) {
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -276,10 +276,10 @@ ${styleNote}
 
 Extraia os fatos do conteúdo abaixo. Não invente dados. Não resuma. Construa narrativa com o que está lá.
 OBRIGATÓRIO: use pelo menos 2 informações concretas do conteúdo — nomes reais, números, porcentagens, datas, comparações específicas. Roteiro sem dados concretos é inválido.
-O roteiro deve usar entre 150 e ${platformSpec.maxWords} palavras. Termine sempre com uma tensão aberta ou pergunta que o espectador não consegue responder sozinho.
+O roteiro deve usar entre 180 e ${platformSpec.maxWords} palavras. Termine sempre com uma tensão aberta ou pergunta que o espectador não consegue responder sozinho.
 
 Os campos screen_captions são frases curtas (máximo 6 palavras cada) para aparecer sobrepostas no vídeo nos primeiros segundos — devem provocar curiosidade imediata.
-Os campos image_prompts são descrições visuais detalhadas em inglês para geração de imagem por IA — cenário, estilo, iluminação, composição. Uma imagem a cada 4 segundos para shorts, a cada 6 segundos para vídeos longos. Fundo cinematográfico, sem texto na imagem.
+Os campos image_prompts são descrições visuais detalhadas em inglês para geração de imagem por IA — cenário, estilo, iluminação, composição. Uma imagem a cada 4 segundos para shorts/TikTok, a cada 6 segundos para vídeos longos. Para TikTok e Shorts: formato vertical 9:16, composição centrada, sujeito no centro. Para YouTube Longo: formato horizontal 16:9, composição cinematográfica. Fundo cinematográfico, sem texto na imagem.
 
 Proibido em qualquer estilo:
 - Frases mecânicas de retenção ("Mas espera", "Pensa bem", "E não para por aí")
