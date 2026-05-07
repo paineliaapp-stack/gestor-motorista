@@ -160,11 +160,12 @@ async function generateWithRetry(fn, attempts = 4) {
 }
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const GEMINI_API_URL_FALLBACK = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
-async function callGemini(prompt, maxTokens = 3000) {
+async function callGemini(prompt, maxTokens = 3000, fallback = false) {
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
   const response = await axios.post(
-    `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
+    `${fallback ? GEMINI_API_URL_FALLBACK : GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
     {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: { maxOutputTokens: maxTokens, temperature: 0.85 },
@@ -275,7 +276,9 @@ export async function generateScript({ article, platform, style, version = 1, la
     let parsed = null;
     for (let attempt = 0; attempt < 4; attempt++) {
       try {
-        raw = await withTimeout(callGemini(prompt, 6000), 45000);
+        const useFallback = attempt >= 2;
+        if (useFallback) console.warn(`[FALLBACK] gemini-1.5-flash tentativa ${attempt + 1}`);
+        raw = await withTimeout(callGemini(prompt, 6000, useFallback), 45000);
         parsed = safeJSONParse(raw);
         if (parsed) break;
         console.warn(`[JSON_RETRY] JSON invalido na tentativa ${attempt + 1}`);
