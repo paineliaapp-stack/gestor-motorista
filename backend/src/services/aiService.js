@@ -29,7 +29,7 @@ async function fetchArticleText(url) {
       .replace(/\s{2,}/g, ' ')
       .trim();
     // Retorna até 3000 caracteres do corpo
-    return clean.slice(0, 3000);
+    return clean.slice(0, 5000);
   } catch {
     return '';
   }
@@ -275,6 +275,7 @@ Português coloquial. Máximo ${platformSpec.maxWords} palavras. Plataforma: ${p
 ${styleNote}
 
 Extraia os fatos do conteúdo abaixo. Não invente dados. Não resuma. Construa narrativa com o que está lá.
+OBRIGATÓRIO: use pelo menos 2 informações concretas do conteúdo — nomes reais, números, porcentagens, datas, comparações específicas. Roteiro sem dados concretos é inválido.
 
 Proibido em qualquer estilo:
 - Frases mecânicas de retenção ("Mas espera", "Pensa bem", "E não para por aí")
@@ -312,6 +313,7 @@ export async function generateScript({ article, platform, style, version = 1, la
   if (isTruncated && article.url) {
     console.log('[fetchArticleText] buscando conteúdo completo:', article.url);
     fullContent = await fetchArticleText(article.url) || fullContent;
+    console.log('[fetchArticleText] chars obtidos:', fullContent.length, '| preview:', fullContent.slice(0, 300));
   }
   const articleText = `${article.title}\n\n${article.description || ''}\n\n${fullContent}`.trim();
 
@@ -373,6 +375,7 @@ export async function regenerateHooks({ article, platform, style, existingHooks 
   if (isTruncated && article.url) {
     console.log('[fetchArticleText] buscando conteúdo completo:', article.url);
     fullContent = await fetchArticleText(article.url) || fullContent;
+    console.log('[fetchArticleText] chars obtidos:', fullContent.length, '| preview:', fullContent.slice(0, 300));
   }
   const articleText = `${article.title}\n\n${article.description || ''}\n\n${fullContent}`.trim();
 
