@@ -27,39 +27,33 @@ const PLATFORMS = {
 const STYLES = {
   storytelling: {
     name: 'Storytelling',
-    desc: 'Narrativa com personagem, tensao e resolucao',
-    structure: `1. Cena de abertura — coloca o espectador DENTRO do momento
-2. Conflito — algo da errado ou surpreende
-3. Escalada — tensao cresce a partir de consequencias reais
-4. Virada ou resolucao inesperada
-5. CTA emocional especifico`,
+    desc: 'Uma historia real que o espectador sente na pele',
+    instruction: `Conte uma historia de uma pessoa real (sem nome inventado — use "ele", "ela", "uma pessoa") vivendo o tema na pele.
+A historia deve comecar no momento mais dificil, nao na introducao. O espectador precisa se ver na situacao antes de entender o que esta acontecendo.
+Nao resolva o problema no final — mostre o inicio de uma mudanca. Termine com uma frase que fica na cabeca.
+O roteiro nao pode parecer um conselho. Deve parecer uma historia que o espectador ja viveu.`,
   },
   dark_channel: {
     name: 'Dark Channel',
     desc: 'Tom sombrio, revelacoes perturbadoras, clima de investigacao',
-    structure: `1. Abertura perturbadora — dado ou cena que incomoda
-2. Contexto sombrio — o que esta por tras
-3. Revelacao progressiva — cada camada e pior
-4. Pico de tensao — o momento mais perturbador
-5. CTA que gera reflexao ou desconforto produtivo`,
+    instruction: `Comece com algo perturbador e especifico sobre o tema. Construa tensao progressiva revelando camadas mais sombrias.
+Nunca resolva o clima — termine no pico do desconforto produtivo. Fale como quem sabe de algo que os outros nao sabem.`,
   },
   controversial: {
     name: 'Controversial',
     desc: 'Angulo oposto ao esperado, quebra de narrativa dominante',
-    structure: `1. Afirmacao que contradiz o senso comum
-2. Por que a maioria acredita no contrario
-3. Evidencias que sustentam o angulo alternativo
-4. Implicacoes — o que muda se isso for verdade
-5. CTA que divide opinioes`,
+    instruction: `Comece contradizendo diretamente o que a maioria acredita sobre o tema.
+Construa o caso contrario com argumentos especificos. Nao seja neutro — tome uma posicao clara e defenda.
+Termine com uma pergunta que divide opinioes nos comentarios.`,
   },
   educational: {
     name: 'Educational',
-    desc: 'Explica um conceito de forma clara, direta e pratica — professor direto ao ponto',
-    structure: `1. AFIRMACAO CONTRAINTUITIVA — comece com algo que vai contra o senso comum sobre o tema
-2. POR QUE A MAIORIA ERRA — explique o erro mais comum de forma especifica, com exemplo concreto
-3. O CONCEITO CORRETO — explique a ideia central em 1-2 frases simples, sem jargao
-4. COMO FUNCIONA NA PRATICA — mostre com exemplo real e especifico (nome, numero, situacao)
-5. O QUE FAZER HOJE — uma acao concreta e minuscula que o espectador pode fazer agora`,
+    desc: 'Ensina algo que o espectador nao sabia que precisava saber',
+    instruction: `Comece com uma afirmacao que contradiz o senso comum sobre o tema — algo que faca o espectador parar.
+Explique por que a maioria pensa errado sobre isso. Apresente o conceito correto de forma simples, sem jargao.
+Use um exemplo especifico com peso emocional real — algo que a pessoa no estado do tema acharia dificil, nao algo banal.
+Termine com algo concreto que muda como o espectador pensa, nao uma tarefa generica.
+Nao invente personagens com nome. Se precisar de exemplo, use "uma pessoa que..." ou situacoes reconheciveis.`,
   },
 };
 
@@ -192,96 +186,70 @@ async function callGemini(prompt, maxTokens = 3000) {
 
 // START_BUILD_PROMPT
 function buildPrompt(platformSpec, styleSpec, articleText, version, lang, viralScore, bias) {
-  const isPortuguese = lang === 'pt';
+  const { type: contentType } = detectContentType({ title: articleText, description: '' });
 
-  const versionNote = version === 1
-    ? '\nABORDAGEM: direta e impactante — va direto ao ponto mais forte.'
-    : version === 2
-    ? '\nABORDAGEM: narrativa e emocional — construa conexao antes do impacto.'
-    : '\nABORDAGEM: misteriosa e indireta — revele o minimo possivel, construa suspense maximo.';
-
-  // Temas sensíveis — instrução extra de cuidado
-  const sensiveTopics = ['depressão', 'depressao', 'ansiedade', 'suicídio', 'suicidio', 'automutilação', 'autolesão', 'transtorno', 'saúde mental', 'saude mental', 'bipolar', 'esquizofrenia', 'burnout', 'trauma', 'abuso', 'violência', 'violencia'];
+  const sensiveTopics = ['depressão','depressao','ansiedade','suicídio','suicidio','automutilação','transtorno','saúde mental','saude mental','bipolar','burnout','trauma','abuso'];
   const isSensitive = sensiveTopics.some(t => articleText.toLowerCase().includes(t));
-  const sensitiveNote = isSensitive ? `
-TEMA SENSÍVEL — REGRAS OBRIGATÓRIAS:
-- Nunca apresente abordagens terapêuticas válidas como prejudiciais
-- Sempre inclua ao final: "Se você está passando por isso, buscar apoio profissional faz diferença."
-- Tom: acolhedor e esperançoso, nunca prescritivo ou alarmista
-- Não romantize sofrimento nem prometa curas simples` : '';
+  const sensitiveNote = isSensitive ? `\nIMPORTANTE: tema sensível. Tom acolhedor, nunca prescritivo. Não romantize sofrimento. Inclua ao final: "Se você está passando por isso, buscar apoio profissional faz diferença."` : '';
 
-  const scoreNote = viralScore >= 8
-    ? '\nADAPTACAO: score ALTO — mais ousadia, frases mais curtas, impacto maximo.'
-    : (viralScore >= 5
-    ? '\nADAPTACAO: score MEDIO — equilibrio entre clareza e curiosidade.'
-    : '\nADAPTACAO: score BAIXO — foco em identificacao humana e angulo pessoal.');
+  const biasMap = {
+    facts: 'Apresente só os fatos, sem julgamento.',
+    opportunity: 'Destaque oportunidades e potencial positivo.',
+    risk: 'Destaque riscos e o que pode dar errado.',
+    debate: 'Apresente os dois lados com igual profundidade.',
+  };
+  const biasNote = bias && bias !== 'neutral' ? `\nÂNGULO: ${biasMap[bias] || ''}` : '';
 
-  const biasNote = (bias && bias !== 'neutral' && BIAS_MODIFIERS && BIAS_MODIFIERS[bias])
-    ? `\nANGULO EDITORIAL: ${BIAS_MODIFIERS[bias]}`
-    : '';
+  const versionSeeds = ['direto e impactante', 'narrativo e emocional', 'misterioso e indireto', 'provocativo e questionador'];
+  const versionNote = `\nABORDAGEM desta versão: ${versionSeeds[(version - 1) % versionSeeds.length]}. Seja completamente diferente de versões anteriores.`;
 
-  return `Voce e um roteirista viral brasileiro de elite criando para ${platformSpec.name}.
+  const styleInstructions = {
+    storytelling: 'Conte como uma história vivida por alguém real. Comece no momento mais difícil, não na introdução. O espectador deve se ver na situação antes de entender o que está acontecendo.',
+    educational: 'Ensine algo que o espectador não sabia que precisava saber. Comece contradizendo o senso comum. Use exemplos com peso emocional real, não ações banais.',
+    dark_channel: 'Tom investigativo e perturbador. Revele camadas progressivamente. Termine no pico do desconforto, nunca na resolução.',
+    controversial: 'Tome uma posição que contradiz o esperado. Defenda com argumentos específicos. Termine dividindo opiniões.',
+  };
+  const styleNote = styleInstructions[styleSpec?.name?.toLowerCase()] || styleInstructions.storytelling;
 
-IDIOMA: Portugues brasileiro coloquial — pessoa real falando, nunca apresentador ou locutor.
-PLATAFORMA: ${platformSpec.name} | ${platformSpec.format} | MAXIMO ${platformSpec.maxWords} palavras no script
-ESTILO OBRIGATORIO: ${styleSpec.name}
-${biasNote}${versionNote}${scoreNote}${sensitiveNote}
+  return `Você é um roteirista de vídeos virais curtos — um dos melhores do Brasil.
 
-ESTRUTURA DO ESTILO ${styleSpec.name.toUpperCase()} — SIGA EXATAMENTE:
-${styleSpec.structure}
+Seu objetivo não é parecer copywriter. É parecer uma pessoa real compartilhando algo impossível de ignorar.
 
-REGRAS DE QUALIDADE:
-- Frases curtas: 5-12 palavras. Paragrafos de 1-2 linhas.
-- Hook: entre no meio da acao com o dado mais especifico. NUNCA apresente o tema.
-  BOM: "Ela perdeu 12kg. Depois recuperou 18. O estudo explica por que."
-  RUIM: "Hoje vou falar sobre dietas."
-- CTA final: especifico para este tema, nunca generico ("deixa o like", "se inscreve")
-- Tom natural: pausas reais, cortes abruptos, imperfeicao gramatical ocasional
+PLATAFORMA: ${platformSpec.name} — máximo ${platformSpec.maxWords} palavras. Português coloquial.
+ESTILO: ${styleSpec.name} — ${styleNote}${biasNote}${versionNote}${sensitiveNote}
 
-PROIBIDO usar: "voce sabia que" / "hoje vou te contar" / "neste video" / "o que ninguem te conta" /
-"chocante" / "incrivel" / "surpreendente" / "vamos falar sobre" / "isso muda tudo" /
-"E nao para por ai" / "Pensa bem" / "Mas espera" / "Sabe o que e mais bizarro"
+O roteiro deve:
+- Gerar curiosidade que cresce frase a frase
+- Soar humano — imperfeito, com ritmo natural
+- Criar tensão emocional sem anunciá-la
+- Parecer espontâneo, nunca engenheirado
 
-PROIBIDO repetir estrutura entre regeneracoes — cada versao deve ter angulo diferente.
-"e importante entender" / "preparado" / "fica ate o final"
+Evite:
+- Apresentar o tema ("hoje vou falar sobre...")
+- Personagens inventados com nome sem contexto
+- Exemplos banais (beber água, arrumar a cama, mover um dedo)
+- Frases mecânicas de retenção ("Mas espera", "Pensa bem", "E não para por aí")
+- Estrutura perceptível — se der pra sentir o "gancho", refaça
 
-PROIBIDO: marcadores [PAUSE] [BEAT] [HARD STOP] no texto
-PROIBIDO: inventar dados — se nao estiver no conteudo fonte, reformule genericalmente
+O espectador deve sentir: curiosidade, reconhecimento, tensão psicológica — não perceber que está sendo retido.
 
-AUTO-CRITICA (ANTES DE RESPONDER):
-Avalie 0-10 em retencao, curiosidade e naturalidade.
-Se qualquer criterio < 8, reescreva antes de entregar.
+Use o conteúdo abaixo apenas como matéria-prima. Não resuma. Transforme em narrativa.
 
-PRIORIDADE em conflito: 1.Retencao  2.Naturalidade  3.Clareza  4.Regras
-
-CONTEUDO FONTE:
+CONTEÚDO:
 ${articleText}
 
-Gere 3 hooks com estruturas cognitivas DIFERENTES:
-1. DADO NUMERICO — numero especifico, concreto, verificavel
-2. CENARIO PESSOAL — coloca o espectador dentro da historia
-3. CONTRADICAO — quebra uma crenca comum
-Se ficarem parecidos, reescreva ate ficarem cognitivamente distintos.
-
-IMPORTANTE — JSON valido:
-- Aspas duplas em tudo / Sem trailing commas / Sem texto fora do JSON
-
-Responda APENAS com JSON puro:
+Responda APENAS com JSON válido, sem texto fora:
 {
   "hooks": [
-    { "id": "dado_numerico", "label": "Dado que choca", "text": "hook aqui", "why_it_works": "por que prende" },
-    { "id": "cenario_pessoal", "label": "Como te afeta", "text": "hook aqui", "why_it_works": "por que prende" },
-    { "id": "contradicao", "label": "Contradicao", "text": "hook aqui", "why_it_works": "por que prende" }
+    { "id": "h1", "label": "Hook principal", "text": "..." },
+    { "id": "h2", "label": "Hook alternativo", "text": "..." },
+    { "id": "h3", "label": "Hook experimental", "text": "..." }
   ],
-  "script": "Roteiro completo. Paragrafos curtos. Sem marcadores entre colchetes.",
-  "titles": ["Titulo 1", "Titulo 2", "Titulo 3"],
-  "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5", "#tag6", "#tag7"],
-  "captions": [
-    "Legenda curta menos de 100 caracteres",
-    "Legenda com contexto menos de 150 caracteres",
-    "Pergunta que convida comentarios sobre este tema"
-  ],
-  "thumbnail_prompt": "Elemento visual principal + clima emocional. Sem pessoas reais."
+  "script": "roteiro completo aqui",
+  "titles": ["Título 1", "Título 2", "Título 3"],
+  "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"],
+  "captions": ["legenda curta", "legenda com contexto", "pergunta que gera comentários"],
+  "thumbnail_prompt": "descrição visual para thumbnail"
 }`;
 }
 // END_BUILD_PROMPT
@@ -306,10 +274,20 @@ export async function generateScript({ article, platform, style, version = 1, la
   try {
     let parsed = null;
     for (let attempt = 0; attempt < 4; attempt++) {
-      raw = await withTimeout(callGemini(prompt, 6000), 45000);
-      parsed = safeJSONParse(raw);
-      if (parsed) break;
-      console.warn(`[JSON_RETRY] tentativa ${attempt + 1} falhou, tentando novamente...`);
+      try {
+        raw = await withTimeout(callGemini(prompt, 6000), 45000);
+        parsed = safeJSONParse(raw);
+        if (parsed) break;
+        console.warn(`[JSON_RETRY] JSON invalido na tentativa ${attempt + 1}`);
+      } catch (err) {
+        const is503 = err?.response?.status === 503 || err?.message?.includes('503');
+        const is429 = err?.response?.status === 429 || err?.message?.includes('429');
+        console.warn(`[API_RETRY] tentativa ${attempt + 1} — ${err.message}`);
+        if (attempt === 3) throw err;
+        const wait = is503 || is429 ? 6000 : 1500 * (attempt + 1);
+        await new Promise(r => setTimeout(r, wait));
+        continue;
+      }
       await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
     }
     if (!parsed) throw new Error('JSON invalido retornado pelo modelo');
