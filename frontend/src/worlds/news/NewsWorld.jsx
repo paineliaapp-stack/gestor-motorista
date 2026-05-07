@@ -153,18 +153,18 @@ function NewsCard({ article, index, onSelect }) {
         <h3 style={{
           fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500,
           color: hovered ? '#fff' : 'rgba(255,255,255,0.88)',
-          margin: 0, lineHeight: 1.5,
-          display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          margin: '0 0 4px', lineHeight: 1.4,
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
           transition: 'color 0.2s',
         }}>{article.title}</h3>
 
         {article.description && (
           <p style={{
             fontFamily: 'DM Sans, sans-serif', fontSize: 11, fontWeight: 300,
-            color: 'rgba(255,255,255,0.65)', margin: 0, lineHeight: 1.55,
+            color: 'rgba(255,255,255,0.55)', margin: '0 0 4px', lineHeight: 1.5,
             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
           }}>
-            {article.description?.slice(0, 120)}{article.description?.length > 120 ? '...' : ''}
+            {article.description?.slice(0, 100)}{article.description?.length > 100 ? '...' : ''}
           </p>
         )}
 
