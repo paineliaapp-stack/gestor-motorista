@@ -325,9 +325,13 @@ export async function fetchTrendingNews({ category = 'general', query, source = 
   });
 
   unique.sort((a, b) => {
-    const scoreDiff = b.viral_score - a.viral_score;
-    if (Math.abs(scoreDiff) > 1) return scoreDiff;
-    return Math.random() - 0.5;
+    const dateA = new Date(a.publishedAt).getTime() || 0;
+    const dateB = new Date(b.publishedAt).getTime() || 0;
+    const dateDiff = dateB - dateA;
+    // Se diferença for maior que 1 hora, ordena por data
+    if (Math.abs(dateDiff) > 3600000) return dateDiff;
+    // Dentro da mesma hora, ordena por viral_score
+    return b.viral_score - a.viral_score;
   });
 
   let enriched = await enrichWithOgImages(unique);
