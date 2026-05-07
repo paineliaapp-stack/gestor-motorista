@@ -5,6 +5,36 @@
 
 import axios from 'axios';
 
+async function fetchArticleText(url) {
+  if (!url) return '';
+  try {
+    const res = await axios.get(url, {
+      timeout: 8000,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' },
+      maxRedirects: 3,
+    });
+    const html = res.data || '';
+    // Remove scripts, styles, nav, footer
+    const clean = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+    // Retorna até 3000 caracteres do corpo
+    return clean.slice(0, 3000);
+  } catch {
+    return '';
+  }
+}
+
 
 const PLATFORMS = {
   youtube_shorts: {
@@ -268,7 +298,14 @@ export async function generateScript({ article, platform, style, version = 1, la
 
   if (!platformSpec || !styleSpec) throw new Error('Plataforma ou estilo invalido');
 
-  const articleText = `${article.title}\n\n${article.description || ''}\n\n${article.content || ''}`.trim();
+  // Se content está truncado (NewsAPI corta em ~200 chars), busca o texto completo
+  let fullContent = article.content || '';
+  const isTruncated = fullContent.includes('[+') || fullContent.length < 300;
+  if (isTruncated && article.url) {
+    console.log('[fetchArticleText] buscando conteúdo completo:', article.url);
+    fullContent = await fetchArticleText(article.url) || fullContent;
+  }
+  const articleText = `${article.title}\n\n${article.description || ''}\n\n${fullContent}`.trim();
 
   const cacheKey = getCacheKey(articleText, styleSpec.name, version);
   // cache desabilitado para diversidade
@@ -322,7 +359,14 @@ export async function regenerateHooks({ article, platform, style, existingHooks 
 
   if (!platformSpec || !styleSpec) throw new Error('Plataforma ou estilo invalido');
 
-  const articleText = `${article.title}\n\n${article.description || ''}\n\n${article.content || ''}`.trim();
+  // Se content está truncado (NewsAPI corta em ~200 chars), busca o texto completo
+  let fullContent = article.content || '';
+  const isTruncated = fullContent.includes('[+') || fullContent.length < 300;
+  if (isTruncated && article.url) {
+    console.log('[fetchArticleText] buscando conteúdo completo:', article.url);
+    fullContent = await fetchArticleText(article.url) || fullContent;
+  }
+  const articleText = `${article.title}\n\n${article.description || ''}\n\n${fullContent}`.trim();
 
   const existing = existingHooks
     ? `\nHOOKS ANTERIORES (gere alternativas DIFERENTES destes):\n${existingHooks.map(h => `- ${h.text}`).join('\n')}`
