@@ -259,7 +259,15 @@ Proibido: personagens com nomes genéricos, exemplos banais, começar com "Imagi
 3. Final: uma ação ou decisão diferente que o espectador vai considerar a partir de hoje.
 Proibido: começar pelo contexto, terminar com sensação genérica, usar "o mundo mudou", "nada será como antes".`,
   };
-  const styleNote = styleInstructions[styleSpec?.name?.toLowerCase()] || styleInstructions.revelacao;
+  const styleNameMap = {
+    storytelling: 'historia',
+    educational: 'revelacao',
+    dark_channel: 'impacto',
+    controversial: 'conflito',
+  };
+  const styleName = styleSpec?.name?.toLowerCase();
+  const mappedStyle = styleNameMap[styleName] || styleName;
+  const styleNote = styleInstructions[mappedStyle] || styleInstructions.revelacao;
 
   return `Você é um roteirista de vídeos virais curtos — um dos melhores do Brasil.
 Português coloquial. Máximo ${platformSpec.maxWords} palavras. Plataforma: ${platformSpec.name}.${biasNote}${versionNote}${sensitiveNote}
