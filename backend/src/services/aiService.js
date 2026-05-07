@@ -205,36 +205,43 @@ function buildPrompt(platformSpec, styleSpec, articleText, version, lang, viralS
   const versionNote = `\nABORDAGEM desta versão: ${versionSeeds[(version - 1) % versionSeeds.length]}. Seja completamente diferente de versões anteriores.`;
 
   const styleInstructions = {
-    storytelling: 'Conte como uma história vivida por alguém real. Comece no momento mais difícil, não na introdução. O espectador deve se ver na situação antes de entender o que está acontecendo.',
-    educational: 'Ensine algo que o espectador não sabia que precisava saber. Comece contradizendo o senso comum. Use exemplos com peso emocional real, não ações banais.',
-    dark_channel: 'Tom investigativo e perturbador. Revele camadas progressivamente. Termine no pico do desconforto, nunca na resolução.',
-    controversial: 'Tome uma posição que contradiz o esperado. Defenda com argumentos específicos. Termine dividindo opiniões.',
+    revelacao: `ESTRUTURA OBRIGATÓRIA — REVELAÇÃO:
+1. Primeira frase: defina o objeto central contradizendo o que o espectador assume. Sem pergunta retórica, sem "você sabia".
+2. Meio: use exatamente 2 dados numéricos ou comparações concretas extraídos do conteúdo. Zero dado inventado.
+3. Final: uma pergunta ou afirmação que aponta consequência real e específica — algo que o espectador vai pensar depois que fechar o vídeo.
+Proibido: abrir com pergunta retórica, terminar com metáfora vaga, usar "o jogo é maior", "as ondas vão chegar", "nem imagina o que vem por aí".`,
+
+    conflito: `ESTRUTURA OBRIGATÓRIA — CONFLITO:
+1. Primeira frase: apresente a tensão central sem revelar qual lado você defende.
+2. Meio: argumento concreto do lado A com dado real, depois argumento concreto do lado B com dado real. Igual peso para os dois.
+3. Final: uma pergunta direta que divide — sem resposta certa. O espectador deve sair sem saber quem está certo.
+Proibido: tomar partido, linguagem emocional só para um lado, terminar com conclusão.`,
+
+    historia: `ESTRUTURA OBRIGATÓRIA — HISTÓRIA:
+1. Primeira frase: coloque o espectador num momento específico e concreto extraído da notícia. Sem nome inventado, sem Bia, sem Paula.
+2. Meio: desenvolva usando fatos reais do conteúdo como detalhes da cena. O espectador deve se ver na situação.
+3. Final: revele a consequência real — o que aquele momento significou de verdade.
+Proibido: personagens com nomes genéricos, exemplos banais, começar com "Imagina você", terminar com moral explícita.`,
+
+    impacto: `ESTRUTURA OBRIGATÓRIA — IMPACTO:
+1. Primeira frase: comece pela consequência concreta na vida de quem assiste — não pela causa.
+2. Meio: explique por que isso acontece usando 2 fatos específicos do conteúdo.
+3. Final: uma ação ou decisão diferente que o espectador vai considerar a partir de hoje.
+Proibido: começar pelo contexto, terminar com sensação genérica, usar "o mundo mudou", "nada será como antes".`,
   };
-  const styleNote = styleInstructions[styleSpec?.name?.toLowerCase()] || styleInstructions.storytelling;
+  const styleNote = styleInstructions[styleSpec?.name?.toLowerCase()] || styleInstructions.revelacao;
 
   return `Você é um roteirista de vídeos virais curtos — um dos melhores do Brasil.
+Português coloquial. Máximo ${platformSpec.maxWords} palavras. Plataforma: ${platformSpec.name}.${biasNote}${versionNote}${sensitiveNote}
 
-Seu objetivo não é parecer copywriter. É parecer uma pessoa real compartilhando algo impossível de ignorar.
+${styleNote}
 
-PLATAFORMA: ${platformSpec.name} — máximo ${platformSpec.maxWords} palavras. Português coloquial.
-ESTILO: ${styleSpec.name} — ${styleNote}${biasNote}${versionNote}${sensitiveNote}
+Extraia os fatos do conteúdo abaixo. Não invente dados. Não resuma. Construa narrativa com o que está lá.
 
-O roteiro deve:
-- Gerar curiosidade que cresce frase a frase
-- Soar humano — imperfeito, com ritmo natural
-- Criar tensão emocional sem anunciá-la
-- Parecer espontâneo, nunca engenheirado
-
-Evite:
-- Apresentar o tema ("hoje vou falar sobre...")
-- Personagens inventados com nome sem contexto
-- Exemplos banais (beber água, arrumar a cama, mover um dedo)
+Proibido em qualquer estilo:
 - Frases mecânicas de retenção ("Mas espera", "Pensa bem", "E não para por aí")
-- Estrutura perceptível — se der pra sentir o "gancho", refaça
-
-O espectador deve sentir: curiosidade, reconhecimento, tensão psicológica — não perceber que está sendo retido.
-
-Use o conteúdo abaixo apenas como matéria-prima. Não resuma. Transforme em narrativa.
+- Apresentar o tema no início ("hoje vou falar sobre...")
+- Terminar com metáfora vaga ou sensação genérica
 
 CONTEÚDO:
 ${articleText}
