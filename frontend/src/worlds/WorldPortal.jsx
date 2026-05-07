@@ -162,7 +162,7 @@ function WorldCard({ world, index, isMobile }) {
 
       <div style={{position:'relative',zIndex:2,padding: isMobile ? '16px 16px 14px' : '28px 26px 24px',display:'flex',flexDirection:'column',flex:1}}>
         {/* Top row */}
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom: isMobile ? 16 : 24}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom: isMobile ? 8 : 24}}>
           <div style={{display:'flex',alignItems:'center',gap:7}}>
             <div style={{width:6,height:6,borderRadius:'50%',background:world.accent,boxShadow:`0 0 12px rgba(${world.glow},1)`,animation:'vpPulse 2.2s ease infinite'}}/>
             <span style={{fontFamily:'Space Mono,monospace',fontSize:8,letterSpacing:'0.22em',color:`rgba(${world.glow},1)`,fontWeight:700}}>{world.tag}</span>
@@ -173,10 +173,10 @@ function WorldCard({ world, index, isMobile }) {
         {/* Título */}
         <h2 style={{
           fontFamily:'Syne,sans-serif',
-          fontSize: isMobile ? 'clamp(26px,6vw,36px)' : 'clamp(28px,2.8vw,44px)',
+          fontSize: isMobile ? 'clamp(20px,5vw,26px)' : 'clamp(28px,2.8vw,44px)',
           fontWeight:800,
           color: hovered ? world.accent : '#fff',
-          margin:'0 0 12px',lineHeight:0.92,letterSpacing:'-2px',
+          margin: isMobile ? '0 0 4px' : '0 0 12px', lineHeight:0.92, letterSpacing:'-2px',
           transition:'color 0.26s ease',
         }}>{world.label}</h2>
 
@@ -187,8 +187,8 @@ function WorldCard({ world, index, isMobile }) {
         }}>{world.description}</p>
 
         {/* Divider + Stats */}
-        <div style={{marginTop: isMobile ? 20 : 24, paddingTop: isMobile ? 16 : 18, borderTop:`1px solid rgba(${world.glow},0.1)`}}>
-          <div style={{display:'flex',gap:20,marginBottom: isMobile ? 14 : 16}}>
+        <div style={{marginTop: isMobile ? 8 : 24, paddingTop: isMobile ? 8 : 18, borderTop:`1px solid rgba(${world.glow},0.1)`}}>
+          <div style={{display:'flex',gap:20,marginBottom: isMobile ? 8 : 16}}>
             {[{v:world.stat1,l:world.stat1l},{v:world.stat2,l:world.stat2l}].map((s,i)=>(
               <div key={i}>
                 <p style={{fontFamily:'Syne,sans-serif',fontSize: isMobile ? 20 : 22,fontWeight:700,color:world.accent,margin:0,lineHeight:1}}>{s.v}</p>
