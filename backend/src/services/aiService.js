@@ -148,7 +148,7 @@ function withTimeout(promise, ms = 20000) {
 }
 
 // ── RETRY COM BACKOFF ─────────────────────────────────────────────────────────
-async function generateWithRetry(fn, attempts = 2) {
+async function generateWithRetry(fn, attempts = 4) {
   const traceId = Date.now().toString(36);
   try {
     return await fn();
@@ -167,13 +167,19 @@ async function generateWithRetry(fn, attempts = 2) {
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
-async function callGemini(prompt, maxTokens = 8000) {
+async function callGemini(prompt, maxTokens = 3000) {
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
   const response = await axios.post(
     `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
     {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: { maxOutputTokens: maxTokens, temperature: 0.85 },
+      safetySettings: [
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+      ],
     },
     { timeout: 90000 }
   );
@@ -310,13 +316,7 @@ Responda APENAS com JSON puro:
     "Legenda com contexto menos de 150 caracteres",
     "Pergunta que convida comentarios sobre este tema"
   ],
-  "thumbnail_prompt": "Crie a imagem: elemento principal + contraste visual claro + ponto de luz dominante + composicao regra dos tercos + clima emocional. Sem pessoas reais.",
-  "retention_points": [
-    "Momento onde o espectador ficaria mais curioso",
-    "Momento de maior tensao",
-    "Momento de virada"
-  ],
-  "ab_test_note": "Em 1 frase: qual hook provavelmente performa melhor e por que"
+  "thumbnail_prompt": "Elemento visual principal + clima emocional. Sem pessoas reais."
 }`;
 }
 // END_BUILD_PROMPT
@@ -339,8 +339,15 @@ export async function generateScript({ article, platform, style, version = 1, la
 
   let raw = '';
   try {
-    raw = await generateWithRetry(() => withTimeout(callGemini(prompt, 5000), 45000));
-    const parsed = safeJSONParse(raw);
+    let parsed = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      raw = await withTimeout(callGemini(prompt, 6000), 45000);
+      parsed = safeJSONParse(raw);
+      if (parsed) break;
+      console.warn(`[JSON_RETRY] tentativa ${attempt + 1} falhou, tentando novamente...`);
+      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+    }
+    if (!parsed) throw new Error('JSON invalido retornado pelo modelo');
     parsed.content_type = contentType;
     parsed.content_risk = contentRisk;
     // setCache(cacheKey, parsed);
