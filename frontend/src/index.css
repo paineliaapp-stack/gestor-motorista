@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand: #ff3838;
+    --brand-dim: rgba(255, 56, 56, 0.15);
+    --border: rgba(255, 255, 255, 0.07);
+    --glass: rgba(255, 255, 255, 0.03);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-dark-900 text-white font-body antialiased;
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(255, 56, 56, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(255, 56, 56, 0.05) 0%, transparent 50%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  ::selection {
+    @apply bg-brand-500 text-white;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-800;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-dark-500 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-dark-400;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-dark-800 border border-white/5 rounded-2xl;
+    backdrop-filter: blur(12px);
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-300;
+    &:hover {
+      @apply border-white/10 -translate-y-1;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  .btn-primary {
+    @apply bg-brand-500 hover:bg-brand-600 text-white font-display font-semibold
+           px-5 py-2.5 rounded-xl transition-all duration-200 
+           active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed
+           flex items-center gap-2;
+  }
+
+  .btn-secondary {
+    @apply bg-dark-700 hover:bg-dark-600 text-white/80 hover:text-white font-body
+           px-5 py-2.5 rounded-xl border border-white/5 hover:border-white/10
+           transition-all duration-200 active:scale-95
+           flex items-center gap-2;
+  }
+
+  .btn-ghost {
+    @apply text-white/50 hover:text-white/80 hover:bg-white/5
+           px-3 py-1.5 rounded-lg transition-all duration-200
+           flex items-center gap-1.5 text-sm;
+  }
+
+  .input-field {
+    @apply bg-dark-700 border border-white/10 rounded-xl px-4 py-2.5
+           text-white placeholder-white/30 outline-none
+           focus:border-brand-500/50 focus:ring-2 focus:ring-brand-500/20
+           transition-all duration-200 w-full font-body text-sm;
+  }
+
+  .score-badge {
+    @apply font-mono text-xs font-semibold px-2 py-0.5 rounded-md;
+  }
+
+  .tag {
+    @apply text-xs font-body px-2.5 py-1 rounded-lg bg-white/5 text-white/60
+           border border-white/5;
+  }
+
+  .section-label {
+    @apply text-xs font-mono text-brand-400 uppercase tracking-widest mb-3;
+  }
+
+  .shimmer-bg {
+    background: linear-gradient(
+      90deg,
+      rgba(255,255,255,0.03) 25%,
+      rgba(255,255,255,0.07) 50%,
+      rgba(255,255,255,0.03) 75%
+    );
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+
+  .copy-btn {
+    @apply btn-ghost opacity-0 group-hover:opacity-100 transition-opacity duration-200;
+  }
+}
+
+/* Viral score glow effect */
+.score-ultra {
+  color: #ff3838;
+  text-shadow: 0 0 20px rgba(255, 56, 56, 0.6);
+}
+
+.score-high {
+  color: #ff8c00;
+  text-shadow: 0 0 15px rgba(255, 140, 0, 0.5);
+}
+
+.score-moderate {
+  color: #ffd700;
+}
+
+/* Modal animations */
+.modal-overlay {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  animation: slideUp 0.3s cubic-bezier(0.34, 1.1, 0.64, 1);
+}
