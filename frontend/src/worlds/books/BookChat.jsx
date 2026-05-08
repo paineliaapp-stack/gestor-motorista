@@ -39,6 +39,7 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
   const [recommended, setRecommended] = useState([]);
   const [justificativa, setJustificativa] = useState('');
   const [msgCount, setMsgCount] = useState(0);
+  const [status, setStatus] = useState('');
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -69,12 +70,14 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
     setMessages(newMessages);
     setInput('');
     setLoading(true);
+    setStatus('digitando...');
     const newCount = msgCount + 1;
     setMsgCount(newCount);
 
     try {
       // Após 3 mensagens do usuário, pede recomendação
       if (newCount >= 3) {
+        setStatus('selecionando os melhores livros para você...');
         const [chatRes, recRes] = await Promise.all([
           fetch('/api/books/chat', {
             method: 'POST',
@@ -91,6 +94,7 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
         const chatData = await chatRes.json();
         const recData = await recRes.json();
 
+        setStatus('');
         setMessages(prev => [...prev, { role: 'assistant', content: chatData.message }]);
 
         if (recData.indices?.length) {
@@ -99,18 +103,22 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
           onHighlight(recData.indices);
         }
       } else {
+        setStatus('digitando...');
         const res = await fetch('/api/books/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ persona: activePersona, messages: newMessages }),
         });
         const data = await res.json();
+        setStatus('');
         setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
       }
     } catch {
+      setStatus('');
       setMessages(prev => [...prev, { role: 'assistant', content: 'Erro de conexão. Tenta de novo!' }]);
     } finally {
       setLoading(false);
+      setStatus('');
     }
   }
 
@@ -270,6 +278,14 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
                 <button onClick={reset} style={{ width: '100%', marginTop: 4, padding: '6px', background: 'none', border: `1px solid rgba(255,255,255,0.06)`, borderRadius: 8, color: 'rgba(255,255,255,0.25)', fontFamily: 'DM Sans, sans-serif', fontSize: 11, cursor: 'pointer' }}>
                   Recomeçar conversa
                 </button>
+              </div>
+            )}
+            {status && (
+              <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 8 }}>
+                <div style={{ padding: '8px 14px', borderRadius: '14px 14px 14px 4px', background: 'rgba(255,255,255,0.03)', border: `1px solid ${persona.color}22`, fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: `${persona.color}cc`, fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: persona.color, animation: 'bwPulse 1s ease infinite' }} />
+                  {status}
+                </div>
               </div>
             )}
             <div ref={bottomRef} />
