@@ -105,6 +105,7 @@ router.post('/webhook', async (req, res) => {
           }
         }
 
+        console.log('planData:', JSON.stringify(planData), '| payerEmail:', payerEmail);
         if (planData && payerEmail) {
           const now = new Date().toISOString();
           const { data: existing } = await supabase
