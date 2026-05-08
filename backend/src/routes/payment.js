@@ -1,11 +1,24 @@
 import express from 'express';
 import { supabase } from '../config/supabase.js';
-import { Resend } from 'resend';
-const resend = new Resend(process.env.RESEND_API_KEY);
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { config } from '../config/index.js';
 
 const router = express.Router();
+
+async function sendEmail(to, subject, html) {
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ from: 'Autor.ai <acesso@autorai.com.br>', to, subject, html }),
+    });
+  } catch (err) {
+    console.error('Email error:', err.message);
+  }
+}
 const client = new MercadoPagoConfig({ accessToken: config.mpAccessToken });
 
 router.get('/config', (_req, res) => {
@@ -72,7 +85,7 @@ router.post('/webhook', async (req, res) => {
               })
               .eq('email', payerEmail);
             console.log(`Plano ${planData.plan} ativado para ${payerEmail}`);
-            await resend.emails.send({
+            await sendEmail(
               from: 'Autor.ai <acesso@autorai.com.br>',
               to: payerEmail,
               subject: 'Seu acesso ao Autor.ai está liberado! 🎉',
@@ -94,7 +107,7 @@ router.post('/webhook', async (req, res) => {
               scripts_limit: planData.limit,
             });
             console.log(`Plano ${planData.plan} salvo como pendente para ${payerEmail}`);
-            await resend.emails.send({
+            await sendEmail(
               from: 'Autor.ai <acesso@autorai.com.br>',
               to: payerEmail,
               subject: 'Seu acesso ao Autor.ai está liberado! 🎉',
