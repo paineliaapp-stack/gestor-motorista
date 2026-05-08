@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta property="og:title" content="Autor.ai — Roteiros que Viralizam">
+<meta property="og:description" content="IA que transforma notícias, ciência e livros em roteiros prontos para TikTok e YouTube por R$0,30.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://autorai.vercel.app">
+<title>Autor.ai — Roteiros que Viralizam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#060810;--surface:#0c0f1a;--accent:#00e5b0;--accent2:#00b8ff;--text:#f0f4f8;--muted:#6b7a8d;--border:rgba(255,255,255,0.07);--glass:rgba(255,255,255,0.05);--glass-border:rgba(255,255,255,0.1)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:"Inter",-apple-system,sans-serif;font-size:16px;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+#particles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.particle{position:absolute;border-radius:50%;pointer-events:none;animation:float linear infinite}
+@keyframes float{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:1}90%{opacity:0.3}100%{transform:translateY(-10vh) scale(1);opacity:0}}
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0;animation:orb-drift 20s ease-in-out infinite alternate}
+.orb1{width:600px;height:600px;background:radial-gradient(circle,rgba(0,229,176,0.08),transparent 70%);top:-200px;left:-200px}
+.orb2{width:500px;height:500px;background:radial-gradient(circle,rgba(0,184,255,0.06),transparent 70%);bottom:-100px;right:-100px;animation-delay:-10s}
+.orb3{width:400px;height:400px;background:radial-gradient(circle,rgba(124,58,237,0.05),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);animation-delay:-5s}
+@keyframes orb-drift{0%{transform:translate(0,0)}100%{transform:translate(40px,30px)}}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 48px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,8,16,0.8);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+.logo{font-weight:900;font-size:1.4rem;letter-spacing:-1px;color:var(--text);text-decoration:none}
+.logo span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-right{display:flex;align-items:center;gap:24px}
+.nav-link{color:var(--muted);font-size:0.85rem;text-decoration:none;transition:color 0.2s}
+.nav-link:hover{color:var(--text)}
+.nav-cta{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#060810;font-weight:700;font-size:0.85rem;padding:10px 24px;border-radius:100px;text-decoration:none;transition:opacity 0.2s,transform 0.2s;box-shadow:0 0 20px rgba(0,229,176,0.3)}
+.nav-cta:hover{opacity:0.9;transform:translateY(-1px)}
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:140px 24px 100px;position:relative;z-index:1}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(0,229,176,0.08);border:1px solid rgba(0,229,176,0.2);color:var(--accent);font-size:0.78rem;font-weight:600;padding:7px 18px;border-radius:100px;margin-bottom:36px;letter-spacing:0.06em}
+.pulse-dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse-anim 2s infinite;box-shadow:0 0 6px var(--accent)}
+@keyframes pulse-anim{0%,100%{opacity:1}50%{opacity:0.4}}
+.hero h1{font-weight:900;font-size:clamp(3rem,9vw,7rem);line-height:0.92;letter-spacing:-3px;margin-bottom:32px}
+.hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 50%,#a78bfa 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(1rem,2.5vw,1.3rem);color:var(--muted);max-width:560px;margin:0 auto 52px;font-weight:300;line-height:1.7}
+.hero-actions{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#060810;font-weight:800;font-size:1rem;padding:18px 40px;border-radius:100px;text-decoration:none;transition:transform 0.2s,box-shadow 0.2s;box-shadow:0 0 40px rgba(0,229,176,0.4)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 0 60px rgba(0,229,176,0.6)}
+.btn-ghost{color:var(--text);font-size:0.95rem;padding:18px 32px;border-radius:100px;border:1px solid rgba(255,255,255,0.1);text-decoration:none;transition:border-color 0.2s,background 0.2s;background:rgba(255,255,255,0.03)}
+.btn-ghost:hover{border-color:rgba(255,255,255,0.25);background:rgba(255,255,255,0.06)}
+.hero-note{margin-top:20px;font-size:0.8rem;color:var(--muted)}
+.platforms{display:flex;align-items:center;justify-content:center;gap:20px;margin-top:40px;flex-wrap:wrap}
+.platform-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:100px;padding:8px 18px;font-size:0.8rem;color:var(--muted);font-weight:500}
+.platform-badge span{font-size:1.1rem}
+.float-widget{position:absolute;pointer-events:none;opacity:0;transform:translateY(20px);transition:opacity 0.8s ease,transform 0.8s ease}
+.float-widget.show{opacity:1;transform:translateY(0)}
+.fw-left{left:4%;top:38%}.fw-right{right:4%;top:28%}.fw-bottom-right{right:5%;bottom:22%}
+.glass-card{background:rgba(14,17,26,0.9);border:1px solid rgba(0,229,176,0.2);border-radius:20px;padding:18px 22px;backdrop-filter:blur(30px);box-shadow:0 8px 40px rgba(0,0,0,0.5);min-width:190px}
+.fw-label{font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px}
+.fw-value{font-size:1.6rem;font-weight:800;letter-spacing:-1px;color:var(--text);line-height:1}
+.fw-unit{font-size:0.75rem;color:var(--muted);margin-left:2px}
+.fw-tag{display:inline-block;background:rgba(0,229,176,0.15);color:var(--accent);font-size:0.65rem;font-weight:700;padding:3px 10px;border-radius:100px;margin-top:10px}
+.fw-bar-track{background:rgba(255,255,255,0.06);border-radius:100px;height:4px;margin-top:12px;overflow:hidden}
+.fw-bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0;transition:width 2s cubic-bezier(0.4,0,0.2,1)}
+.fw-earnings{color:#22c55e;font-size:1.5rem;font-weight:800;letter-spacing:-1px;display:flex;align-items:center;gap:6px}
+.typing-text{font-size:0.75rem;color:var(--text);line-height:1.5;margin-top:6px;min-height:44px}
+.cursor{display:inline-block;width:2px;height:11px;background:var(--accent);margin-left:1px;vertical-align:middle;animation:blink 0.8s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.notif-toast{position:fixed;bottom:80px;left:24px;z-index:300;background:rgba(14,17,26,0.95);border:1px solid rgba(0,229,176,0.2);border-radius:16px;padding:14px 18px;display:flex;align-items:center;gap:12px;backdrop-filter:blur(20px);box-shadow:0 8px 40px rgba(0,0,0,0.4);opacity:0;transform:translateY(20px);transition:opacity 0.4s,transform 0.4s;pointer-events:none;max-width:280px}
+.notif-toast.show{opacity:1;transform:translateY(0)}
+.notif-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.75rem;color:#060810;flex-shrink:0}
+.notif-text{font-size:0.78rem;line-height:1.4}
+.notif-text strong{color:var(--text);display:block}
+.notif-text span{color:var(--muted)}
+.social-proof{display:flex;justify-content:center;align-items:center;gap:32px;padding:28px 24px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);flex-wrap:wrap;position:relative;z-index:1}
+.sp-item{text-align:center}
+.sp-num{font-weight:900;font-size:2rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-1.5px;line-height:1}
+.sp-label{font-size:0.8rem;color:var(--muted);margin-top:2px}
+.sp-div{width:1px;height:40px;background:var(--border)}
+.ticker-section{position:relative;z-index:1;overflow:hidden;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:linear-gradient(135deg,rgba(0,229,176,0.03),rgba(0,184,255,0.03))}
+.ticker-inner{display:flex;align-items:center;height:52px}
+.ticker-label{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#060810;font-weight:800;font-size:0.7rem;padding:0 20px;height:100%;display:flex;align-items:center;white-space:nowrap;letter-spacing:0.08em;flex-shrink:0}
+.ticker-track{overflow:hidden;flex:1}
+.ticker-content{display:flex;animation:ticker 50s linear infinite;white-space:nowrap}
+.ticker-item{display:inline-flex;align-items:center;gap:10px;padding:0 32px;font-size:0.82rem;color:var(--text);font-weight:500}
+.ticker-item .dot{width:5px;height:5px;background:var(--accent);border-radius:50%;flex-shrink:0}
+.ticker-item strong{color:var(--accent)}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+section{position:relative;z-index:1}
+.container{max-width:1120px;margin:0 auto;padding:0 24px}
+.section-tag{font-size:0.72rem;font-weight:700;letter-spacing:0.14em;color:var(--accent);text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-tag::before{content:"";width:20px;height:1px;background:var(--accent)}
+.section-title{font-weight:900;font-size:clamp(2rem,5vw,3.5rem);letter-spacing:-2px;line-height:1;margin-bottom:20px}
+.section-sub{color:var(--muted);font-size:1.05rem;font-weight:300;max-width:500px;line-height:1.7}
+.how{padding:120px 0}
+.how-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:72px;border:1px solid var(--glass-border);border-radius:24px;overflow:hidden}
+.how-step{background:var(--glass);padding:48px 40px;position:relative;transition:background 0.3s}
+.how-step:hover{background:rgba(0,229,176,0.05)}
+.how-step::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity 0.3s}
+.how-step:hover::before{opacity:1}
+.step-num{font-weight:900;font-size:4rem;background:linear-gradient(135deg,rgba(0,229,176,0.2),transparent);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:24px;letter-spacing:-2px}
+.how-step h3{font-weight:700;font-size:1.15rem;margin-bottom:12px}
+.how-step p{color:var(--muted);font-size:0.9rem;line-height:1.7}
+.worlds{padding:120px 0;background:var(--surface)}
+.worlds-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:72px}
+.world-card{border:1px solid var(--glass-border);border-radius:24px;padding:36px 28px;background:var(--glass);backdrop-filter:blur(20px);transition:border-color 0.3s,transform 0.3s,box-shadow 0.3s;position:relative;overflow:hidden}
+.world-card::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,229,176,0.05),transparent);opacity:0;transition:opacity 0.3s}
+.world-card:hover{border-color:rgba(0,229,176,0.35);transform:translateY(-6px);box-shadow:0 20px 60px rgba(0,0,0,0.4)}
+.world-card:hover::before{opacity:1}
+.world-icon{font-size:2.2rem;margin-bottom:20px;display:block}
+.world-card h3{font-weight:700;font-size:1.05rem;margin-bottom:10px}
+.world-card p{color:var(--muted);font-size:0.87rem;line-height:1.6}
+.antes-depois{padding:120px 0}
+.ad-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:72px}
+.ad-card{border-radius:24px;padding:40px;position:relative;overflow:hidden}
+.ad-card.antes{background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2)}
+.ad-card.depois{background:rgba(0,229,176,0.05);border:1px solid rgba(0,229,176,0.2)}
+.ad-label{font-size:0.75rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:24px;display:flex;align-items:center;gap:8px}
+.ad-card.antes .ad-label{color:#f87171}
+.ad-card.depois .ad-label{color:var(--accent)}
+.ad-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;font-size:0.9rem}
+.ad-item .icon{font-size:1.1rem;flex-shrink:0;margin-top:2px}
+.ad-item p{color:var(--muted);line-height:1.5}
+.ad-item p strong{display:block;color:var(--text);margin-bottom:2px}
+.comparativo{padding:120px 0;background:var(--surface)}
+.comp-table{margin-top:72px;border:1px solid var(--glass-border);border-radius:24px;overflow:hidden}
+.comp-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;border-bottom:1px solid var(--border)}
+.comp-row:last-child{border-bottom:none}
+.comp-row.header{background:rgba(0,229,176,0.05)}
+.comp-cell{padding:20px 24px;font-size:0.88rem;display:flex;align-items:center}
+.comp-cell.feature{font-weight:500;color:var(--text)}
+.comp-cell.center{justify-content:center;text-align:center;color:var(--muted)}
+.comp-cell.highlight{color:var(--accent);font-weight:700}
+.comp-header-cell{padding:20px 24px;font-size:0.8rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;display:flex;align-items:center;justify-content:center}
+.comp-header-cell.main{color:var(--accent)}
+.comp-header-cell.dim{color:var(--muted)}
+.demo-app{padding:120px 0}
+.demo-window{background:rgba(6,8,16,0.9);border:1px solid var(--glass-border);border-radius:20px;overflow:hidden;max-width:680px;margin:72px auto 0;box-shadow:0 40px 80px rgba(0,0,0,0.6)}
+.demo-titlebar{background:rgba(255,255,255,0.04);padding:14px 20px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.demo-dot{width:12px;height:12px;border-radius:50%}
+.demo-dot.red{background:#ff5f57}.demo-dot.yellow{background:#febc2e}.demo-dot.green{background:#28c840}
+.demo-title-text{flex:1;text-align:center;font-size:0.8rem;color:var(--muted)}
+.demo-body{padding:32px}
+.demo-select-row{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap}
+.demo-chip{padding:8px 16px;border-radius:100px;font-size:0.8rem;font-weight:600;border:1px solid var(--glass-border);color:var(--muted);cursor:default}
+.demo-chip.active{background:rgba(0,229,176,0.15);border-color:rgba(0,229,176,0.4);color:var(--accent)}
+.demo-output{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;padding:24px;min-height:120px}
+.demo-output-label{font-size:0.68rem;color:var(--accent);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px}
+.demo-output-text{font-size:0.9rem;color:var(--text);line-height:1.7}
+.demo-gen-btn{margin-top:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#060810;font-weight:700;font-size:0.85rem;padding:12px 28px;border-radius:100px;border:none;cursor:pointer;font-family:"Inter",sans-serif;width:100%}
+.proof{padding:120px 0}
+.proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:72px}
+.proof-card{border:1px solid var(--glass-border);border-radius:24px;padding:36px 32px;background:var(--glass);backdrop-filter:blur(20px);transition:transform 0.3s}
+.proof-card:hover{transform:translateY(-4px)}
+.stars{color:var(--accent);font-size:0.9rem;letter-spacing:2px;margin-bottom:20px}
+.proof-text{color:var(--text);font-size:0.93rem;line-height:1.75;margin-bottom:24px}
+.proof-author{display:flex;align-items:center;gap:14px}
+.author-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,rgba(0,229,176,0.2),rgba(0,184,255,0.2));display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:800;font-size:0.8rem;border:1px solid rgba(0,229,176,0.2);flex-shrink:0}
+.author-name{font-weight:600;font-size:0.88rem}
+.author-role{color:var(--muted);font-size:0.78rem}
+.disclaimer{font-size:0.75rem;color:var(--muted);text-align:center;margin-top:24px;font-style:italic}
+.roi-calc{padding:120px 0;background:var(--surface)}
+.roi-inner{max-width:700px;margin:72px auto 0;background:var(--glass);border:1px solid var(--glass-border);border-radius:24px;padding:48px;backdrop-filter:blur(20px)}
+.roi-input-group{margin-bottom:28px}
+.roi-label{font-size:0.85rem;font-weight:600;margin-bottom:10px;display:block}
+.roi-slider{width:100%;-webkit-appearance:none;height:4px;border-radius:100px;background:rgba(255,255,255,0.1);outline:none}
+.roi-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 10px rgba(0,229,176,0.5)}
+.roi-val{font-size:0.8rem;color:var(--accent);font-weight:700;margin-top:6px}
+.roi-result{background:rgba(0,229,176,0.06);border:1px solid rgba(0,229,176,0.2);border-radius:16px;padding:28px;margin-top:32px}
+.roi-result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.roi-metric{text-align:center}
+.roi-metric-num{font-weight:900;font-size:1.8rem;letter-spacing:-1px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.roi-metric-label{font-size:0.75rem;color:var(--muted);margin-top:4px}
+.pricing{padding:120px 0}
+.vagas-bar{max-width:600px;margin:0 auto 48px;text-align:center}
+.vagas-label{font-size:0.85rem;color:var(--muted);margin-bottom:10px}
+.vagas-track{background:rgba(255,255,255,0.06);border-radius:100px;height:8px;overflow:hidden}
+.vagas-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0;transition:width 2s cubic-bezier(0.4,0,0.2,1)}
+.vagas-num{font-size:0.8rem;color:var(--accent);font-weight:700;margin-top:8px}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:0}
+.price-card{border:1px solid var(--glass-border);border-radius:28px;padding:40px 36px;background:var(--glass);backdrop-filter:blur(20px);position:relative;transition:transform 0.3s,box-shadow 0.3s}
+.price-card:hover{transform:translateY(-6px);box-shadow:0 24px 60px rgba(0,0,0,0.4)}
+.price-card.featured{border-color:rgba(0,229,176,0.4);background:linear-gradient(135deg,rgba(0,229,176,0.06),rgba(0,184,255,0.04));box-shadow:0 0 60px rgba(0,229,176,0.1)}
+.price-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--accent),var(--accent2));color:#060810;font-weight:800;font-size:0.68rem;padding:5px 16px;border-radius:100px;white-space:nowrap}
+.plan-name{font-weight:700;font-size:0.85rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:20px}
+.plan-price{font-weight:900;font-size:3.2rem;letter-spacing:-2px;line-height:1;margin-bottom:6px}
+.plan-price-old{font-size:1rem;color:var(--muted);text-decoration:line-through;margin-bottom:4px}
+.plan-period{color:var(--muted);font-size:0.83rem;margin-bottom:32px}
+.plan-features{list-style:none;margin-bottom:36px}
+.plan-features li{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.87rem;color:var(--muted)}
+.plan-features li:last-child{border-bottom:none}
+.tick{color:var(--accent);font-weight:700;font-size:0.8rem}
+.plan-cta{display:block;text-align:center;padding:16px;border-radius:100px;font-weight:800;font-size:0.9rem;cursor:pointer;border:none;width:100%;font-family:"Inter",sans-serif;transition:opacity 0.2s,transform 0.2s}
+.plan-cta:hover{opacity:0.88;transform:translateY(-2px)}
+.plan-cta:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.cta-solid{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#060810;box-shadow:0 0 30px rgba(0,229,176,0.3)}
+.cta-outline{border:1px solid var(--glass-border);color:var(--text);background:rgba(255,255,255,0.03)}
+.garantia-selo{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:32px;padding:16px;background:rgba(0,229,176,0.05);border:1px solid rgba(0,229,176,0.15);border-radius:16px}
+.garantia-icon{font-size:2rem}
+.garantia-text{font-size:0.85rem;color:var(--muted);line-height:1.5}
+.garantia-text strong{color:var(--text);display:block}
+.payment-icons{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+.pay-icon{background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:0.75rem;color:var(--muted);font-weight:600}
+.faq{padding:120px 0;background:var(--surface)}
+.faq-list{margin-top:72px;max-width:760px;margin-left:auto;margin-right:auto}
+.faq-item{border-bottom:1px solid var(--border)}
+.faq-q{width:100%;background:none;border:none;color:var(--text);font-family:"Inter",sans-serif;font-size:0.98rem;font-weight:500;text-align:left;padding:24px 0;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;transition:color 0.2s}
+.faq-q:hover{color:var(--accent)}
+.faq-icon{width:26px;height:26px;border:1px solid var(--glass-border);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent);font-size:1rem;transition:transform 0.3s}
+.faq-item.open .faq-icon{transform:rotate(45deg)}
+.faq-a{color:var(--muted);font-size:0.92rem;line-height:1.75;max-height:0;overflow:hidden;transition:max-height 0.4s ease,padding 0.3s}
+.final-cta{padding:140px 24px;text-align:center;position:relative;overflow:hidden;z-index:1}
+.final-cta::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,229,176,0.08) 0%,transparent 65%);pointer-events:none}
+.final-cta h2{font-weight:900;font-size:clamp(2.2rem,6vw,4.5rem);letter-spacing:-2.5px;line-height:1;margin-bottom:20px}
+.final-cta p{color:var(--muted);font-size:1.05rem;font-weight:300;margin-bottom:48px}
+footer{border-top:1px solid var(--border);padding:48px 24px;text-align:center;color:var(--muted);font-size:0.83rem;position:relative;z-index:1}
+footer a{color:var(--muted);text-decoration:none}
+footer a:hover{color:var(--text)}
+.sticky-bar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(6,8,16,0.95);backdrop-filter:blur(24px);border-top:1px solid rgba(0,229,176,0.15);padding:14px 24px;gap:16px;align-items:center;justify-content:space-between}
+.sticky-bar p{font-size:0.82rem;color:var(--muted);margin:0;line-height:1.4}
+.sticky-bar strong{color:var(--text);display:block;font-size:0.9rem}
+.sticky-bar button{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#060810;font-family:"Inter",sans-serif;font-weight:800;font-size:0.85rem;padding:12px 24px;border-radius:100px;border:none;cursor:pointer;white-space:nowrap}
+.back-top{position:fixed;bottom:28px;right:28px;z-index:200;width:46px;height:46px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#060810;border:none;border-radius:50%;font-size:1.1rem;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,229,176,0.4);transition:transform 0.2s}
+.back-top:hover{transform:translateY(-3px)}
+.back-top.visible{display:flex}
+.reveal{opacity:0;transform:translateY(10px);transition:opacity 0.25s ease,transform 0.25s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-left{opacity:0;transform:translateX(-20px);transition:opacity 0.4s ease,transform 0.4s ease}
+.reveal-left.visible{opacity:1;transform:translateX(0)}
+.reveal-right{opacity:0;transform:translateX(-20px);transition:opacity 0.4s ease,transform 0.4s ease}
+.reveal-right.visible{opacity:1;transform:translateX(0)}
+@media(max-width:768px){nav{padding:14px 20px}.nav-link{display:none}.worlds-grid,.ad-grid,.comp-row{grid-template-columns:1fr}.pricing-grid,.proof-grid,.how-steps,.roi-result-grid{grid-template-columns:1fr}.sp-div{display:none}.float-widget{display:none}}
+</style>
+</head>
+<body>
+<div id="particles"></div>
+<div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+<div class="notif-toast" id="notifToast">
+  <div class="notif-avatar" id="notifAvatar">JS</div>
+  <div class="notif-text"><strong id="notifName">João de SP</strong><span id="notifMsg">assinou o Plano Fundador agora</span></div>
+</div>
+<nav>
+  <a href="#" class="logo">Autor<span>.ai</span></a>
+  <div class="nav-right">
+    <a href="#como-funciona" class="nav-link">Como funciona</a>
+    <a href="#planos" class="nav-link">Planos</a>
+    <a href="#planos" class="nav-cta">Começar agora</a>
+  </div>
+</nav>
+<section class="hero">
+  <div class="hero-eyebrow"><span class="pulse-dot"></span>Plano Fundador disponível — preço especial por tempo limitado</div>
+  <h1>Roteiros que<br><em>viralizam</em><br>por R$0,30</h1>
+  <p class="hero-sub">IA que transforma notícias, ciência e livros em roteiros prontos para TikTok e YouTube. Você só precisa gravar.</p>
+  <div class="hero-actions">
+    <a href="#planos" class="btn-primary">Quero meu plano fundador ⚡</a>
+    <a href="#como-funciona" class="btn-ghost">Ver como funciona →</a>
+  </div>
+  <p class="hero-note">Sem fidelidade · Cancele quando quiser · Resultado em minutos</p>
+  <div class="platforms">
+    <div class="platform-badge"><span>▶</span> YouTube Shorts</div>
+    <div class="platform-badge"><span>♪</span> TikTok</div>
+    <div class="platform-badge"><span>◈</span> Instagram Reels</div>
+  </div>
+  <div class="float-widget fw-left" id="fw1">
+    <div class="glass-card">
+      <div class="fw-label">📈 Views este mês</div>
+      <div class="fw-value"><span id="fw-views">0</span><span class="fw-unit">K</span></div>
+      <div class="fw-bar-track"><div class="fw-bar-fill" id="fw-views-bar"></div></div>
+      <div class="fw-tag">↑ crescimento consistente*</div>
+    </div>
+  </div>
+  <div class="float-widget fw-right" id="fw2">
+    <div class="glass-card">
+      <div class="fw-label">💰 Ganhos estimados</div>
+      <div class="fw-earnings"><span>R$</span><span id="fw-earn">0</span><span>,00</span></div>
+      <div class="fw-bar-track" style="margin-top:10px"><div class="fw-bar-fill" id="fw-earn-bar"></div></div>
+      <div class="fw-tag">🔥 Canal monetizado*</div>
+    </div>
+  </div>
+  <div class="float-widget fw-bottom-right" id="fw4">
+    <div class="glass-card">
+      <div class="fw-label">❤️ Engajamento ao vivo</div>
+      <div class="fw-value"><span id="fw-likes">12.847</span></div>
+      <div class="fw-bar-track" style="margin-top:10px"><div class="fw-bar-fill" id="fw-likes-bar" style="background:linear-gradient(90deg,#f43f5e,#fb923c)"></div></div>
+      <div class="fw-tag">🔥 Viral score: 9.8</div>
+    </div>
+  </div>
+</section>
+<div class="social-proof">
+  <div class="sp-item"><div class="sp-num">R$0,30</div><div class="sp-label">por roteiro gerado</div></div>
+  <div class="sp-div"></div>
+  <div class="sp-item"><div class="sp-num">4</div><div class="sp-label">mundos de conteúdo</div></div>
+  <div class="sp-div"></div>
+  <div class="sp-item"><div class="sp-num">100</div><div class="sp-label">roteiros/mês no Fundador</div></div>
+  <div class="sp-div"></div>
+  <div class="sp-item"><div class="sp-num">∞</div><div class="sp-label">potencial de views</div></div>
+</div>
+<section class="how" id="como-funciona">
+  <div class="container">
+    <div class="section-tag reveal">Como funciona</div>
+    <h2 class="section-title reveal">Três passos.<br>Um roteiro viral.</h2>
+    <p class="section-sub reveal">Sem prompt engineering, sem configuração. Entra, escolhe, copia.</p>
+    <div class="how-steps reveal">
+      <div class="how-step"><div class="step-num">01</div><h3>Escolha o mundo</h3><p>Notícias, ciência, livros ou nicho. Cada mundo usa fontes reais e atualizadas.</p></div>
+      <div class="how-step"><div class="step-num">02</div><h3>A IA cria o roteiro</h3><p>Em segundos você recebe gancho, desenvolvimento e CTA — formatado para reter atenção.</p></div>
+      <div class="how-step"><div class="step-num">03</div><h3>Grave e publique</h3><p>Copie, grave, suba. Sem travar na tela em branco. Sem editar por horas.</p></div>
+    </div>
+  </div>
+</section>
+<section class="worlds">
+  <div class="container">
+    <div class="section-tag reveal">Os 4 mundos</div>
+    <h2 class="section-title reveal">Conteúdo infinito.<br>Sempre atualizado.</h2>
+    <p class="section-sub reveal">Cada mundo tem sua lógica, tom e fontes. Você nunca vai repetir pauta.</p>
+    <div class="worlds-grid">
+      <div class="world-card reveal"><span class="world-icon">📰</span><h3>Notícias</h3><p>Fatos frescos transformados em roteiros com contexto, causa e consequência.</p></div>
+      <div class="world-card reveal"><span class="world-icon">🔬</span><h3>Ciência</h3><p>Descobertas recentes explicadas de forma simples que qualquer um compartilha.</p></div>
+      <div class="world-card reveal"><span class="world-icon">📚</span><h3>Livros</h3><p>Resumos e lições dos melhores livros em roteiros que geram autoridade.</p></div>
+      <div class="world-card reveal"><span class="world-icon">🎯</span><h3>Nicho</h3><p>Conteúdo especializado para finanças, saúde, tech, comportamento e mais.</p></div>
+    </div>
+  </div>
+</section>
+<div class="ticker-section">
+  <div class="ticker-inner">
+    <div class="ticker-label">💸 CREATORS GANHAM</div>
+    <div class="ticker-track">
+      <div class="ticker-content">
+        <span class="ticker-item"><span class="dot"></span>TikTok paga até <strong>R$0,05 por view</strong> no Creator Fund</span>
+        <span class="ticker-item"><span class="dot"></span>YouTube Shorts repassa <strong>45% da receita</strong> para o creator</span>
+        <span class="ticker-item"><span class="dot"></span>Canais de nicho faturam em média <strong>3x mais</strong> que canais generalistas</span>
+        <span class="ticker-item"><span class="dot"></span>Instagram Reels paga por <strong>plays qualificados</strong></span>
+        <span class="ticker-item"><span class="dot"></span>Consistência de <strong>90 dias</strong> pode transformar qualquer canal</span>
+        <span class="ticker-item"><span class="dot"></span>YouTube paga em média <strong>R$15 por 1000 views</strong> no Brasil</span>
+        <span class="ticker-item"><span class="dot"></span>TikTok paga até <strong>R$0,05 por view</strong> no Creator Fund</span>
+        <span class="ticker-item"><span class="dot"></span>YouTube Shorts repassa <strong>45% da receita</strong> para o creator</span>
+        <span class="ticker-item"><span class="dot"></span>Canais de nicho faturam em média <strong>3x mais</strong> que canais generalistas</span>
+        <span class="ticker-item"><span class="dot"></span>Instagram Reels paga por <strong>plays qualificados</strong></span>
+        <span class="ticker-item"><span class="dot"></span>Consistência de <strong>90 dias</strong> pode transformar qualquer canal</span>
+        <span class="ticker-item"><span class="dot"></span>YouTube paga em média <strong>R$15 por 1000 views</strong> no Brasil</span>
+      </div>
+    </div>
+  </div>
+</div>
+<section class="antes-depois">
+  <div class="container">
+    <div class="section-tag reveal">A diferença na prática</div>
+    <h2 class="section-title reveal">Antes vs Depois.</h2>
+    <p class="section-sub reveal">O que muda quando você para de travar e começa a criar com consistência.</p>
+    <div class="ad-grid reveal">
+      <div class="ad-card antes">
+        <div class="ad-label">😩 Sem Autor.ai</div>
+        <div class="ad-item"><span class="icon">⏰</span><p><strong>Horas na tela em branco</strong>Sem saber o que postar, perdendo tempo que poderia gravar.</p></div>
+        <div class="ad-item"><span class="icon">😰</span><p><strong>Medo de repetir pauta</strong>Sempre com a sensação de que já falou tudo.</p></div>
+        <div class="ad-item"><span class="icon">📉</span><p><strong>Postagem irregular</strong>Sem consistência, o algoritmo para de recomendar o canal.</p></div>
+        <div class="ad-item"><span class="icon">💸</span><p><strong>Gasto alto em redator</strong>R$50–R$200 por roteiro terceirizado, sem garantia de qualidade.</p></div>
+      </div>
+      <div class="ad-card depois">
+        <div class="ad-label">🚀 Com Autor.ai</div>
+        <div class="ad-item"><span class="icon">⚡</span><p><strong>Roteiro em segundos</strong>Escolhe o mundo, clica, e o roteiro está pronto para gravar.</p></div>
+        <div class="ad-item"><span class="icon">🌍</span><p><strong>Pautas infinitas</strong>4 mundos com conteúdo novo todo dia — você nunca repete.</p></div>
+        <div class="ad-item"><span class="icon">📈</span><p><strong>Consistência real</strong>Poste todo dia sem esforço. O algoritmo te recompensa.</p></div>
+        <div class="ad-item"><span class="icon">💰</span><p><strong>R$0,30 por roteiro</strong>Menos que um chiclete. Mais resultado que qualquer agência.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+<section style="padding:120px 0;position:relative;z-index:1;background:var(--surface)">
+  <div class="container">
+    <div class="section-tag reveal" style="justify-content:center">Impacto real</div>
+    <h2 class="section-title reveal" style="text-align:center">Números que<br>falam por si.</h2>
+    <p class="section-sub reveal" style="text-align:center;margin:0 auto 72px">Cada roteiro gerado é uma chance real de crescer.</p>
+    <div class="reveal" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:24px">
+      <div style="background:rgba(0,229,176,0.04);border:1px solid rgba(0,229,176,0.15);border-radius:24px;padding:40px 32px;text-align:center;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:120px;height:120px;background:radial-gradient(circle,rgba(0,229,176,0.12),transparent 70%);pointer-events:none"></div>
+        <div style="font-size:3.5rem;font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,#00e5b0,#00b8ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1" id="cnt1">0</div>
+        <div style="font-size:0.9rem;color:var(--muted);margin-top:12px;font-weight:500">Roteiros gerados este mês*</div>
+        <div style="margin-top:16px;height:3px;background:rgba(255,255,255,0.05);border-radius:100px;overflow:hidden"><div id="bar1" style="height:100%;width:0;background:linear-gradient(90deg,#00e5b0,#00b8ff);border-radius:100px;transition:width 2s ease"></div></div>
+      </div>
+      <div style="background:rgba(0,184,255,0.04);border:1px solid rgba(0,184,255,0.15);border-radius:24px;padding:40px 32px;text-align:center;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:120px;height:120px;background:radial-gradient(circle,rgba(0,184,255,0.12),transparent 70%);pointer-events:none"></div>
+        <div style="font-size:3.5rem;font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,#00b8ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1" id="cnt2">0</div>
+        <div style="font-size:0.9rem;color:var(--muted);margin-top:12px;font-weight:500">Creators ativos na plataforma</div>
+        <div style="margin-top:16px;height:3px;background:rgba(255,255,255,0.05);border-radius:100px;overflow:hidden"><div id="bar2" style="height:100%;width:0;background:linear-gradient(90deg,#00b8ff,#a78bfa);border-radius:100px;transition:width 2s ease"></div></div>
+      </div>
+      <div style="background:rgba(167,139,250,0.04);border:1px solid rgba(167,139,250,0.15);border-radius:24px;padding:40px 32px;text-align:center;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:120px;height:120px;background:radial-gradient(circle,rgba(167,139,250,0.12),transparent 70%);pointer-events:none"></div>
+        <div style="font-size:3.5rem;font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,#a78bfa,#00e5b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1" id="cnt3">0s</div>
+        <div style="font-size:0.9rem;color:var(--muted);margin-top:12px;font-weight:500">Tempo médio para gerar um roteiro</div>
+        <div style="margin-top:16px;height:3px;background:rgba(255,255,255,0.05);border-radius:100px;overflow:hidden"><div id="bar3" style="height:100%;width:0;background:linear-gradient(90deg,#a78bfa,#00e5b0);border-radius:100px;transition:width 2s ease"></div></div>
+      </div>
+    </div>
+    <div class="reveal" style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px">
+      <div style="background:rgba(251,191,36,0.04);border:1px solid rgba(251,191,36,0.15);border-radius:24px;padding:36px 32px;display:flex;align-items:center;gap:24px">
+        <div style="font-size:2.8rem;font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,#fbbf24,#f87171);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;white-space:nowrap" id="cnt4">R$0</div>
+        <div>
+          <div style="font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:4px">Economia vs contratar redator</div>
+          <div style="font-size:0.82rem;color:var(--muted)">Para quem posta 5x por semana no plano Fundador*</div>
+        </div>
+      </div>
+      <div style="background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.15);border-radius:24px;padding:36px 32px;display:flex;align-items:center;gap:24px">
+        <div style="font-size:2.8rem;font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,#22c55e,#00e5b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;white-space:nowrap" id="cnt5">0%</div>
+        <div>
+          <div style="font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:4px">Dos usuários postam com mais consistência</div>
+          <div style="font-size:0.82rem;color:var(--muted)">Comparado ao período antes de usar o Autor.ai*</div>
+        </div>
+      </div>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:0.75rem;margin-top:24px;font-style:italic">* Dados estimados com base no uso da plataforma. Resultados podem variar.</p>
+  </div>
+  <script>
+  (function(){
+    var obs = new IntersectionObserver(function(entries){
+      if(!entries[0].isIntersecting) return;
+      obs.disconnect();
+      function count(el, target, dur, prefix, suffix){
+        var start = performance.now();
+        (function step(now){
+          var p = Math.min((now-start)/dur,1);
+          var ease = 1-Math.pow(1-p,3);
+          el.textContent = (prefix||'') + Math.floor(target*ease).toLocaleString('pt-BR') + (suffix||'');
+          if(p<1) requestAnimationFrame(step);
+        })(performance.now());
+      }
+      count(document.getElementById('cnt1'),3847,2000,'','');
+      count(document.getElementById('cnt2'),73,2000,'','');
+      document.getElementById('cnt3').textContent = '8s';
+      count(document.getElementById('cnt4'),1570,2000,'R$','');
+      count(document.getElementById('cnt5'),87,2000,'','%');
+      setTimeout(function(){
+        document.getElementById('bar1').style.width='78%';
+        document.getElementById('bar2').style.width='62%';
+        document.getElementById('bar3').style.width='95%';
+      },300);
+    },{threshold:0.3});
+    var sec = document.querySelector('.container .section-title');
+    if(sec) obs.observe(sec);
+  })();
+  </script>
+</section>
+<section class="proof">
+  <div class="container">
+    <div class="section-tag reveal">O que dizem os usuários</div>
+    <h2 class="section-title reveal">Quem já usa.</h2>
+    <div class="proof-grid">
+      <div class="proof-card reveal">
+        <div class="stars">★★★★★</div>
+        <p class="proof-text">"Eu travava todo dia na hora de escrever. Com o Autor.ai gero o roteiro em segundos e finalmente consigo postar com consistência."</p>
+        <div class="proof-author"><div class="author-avatar">MR</div><div><div class="author-name">Marina R.</div><div class="author-role">Criadora de conteúdo · São Paulo</div></div></div>
+      </div>
+      <div class="proof-card reveal">
+        <div class="stars">★★★★★</div>
+        <p class="proof-text">"Uso no canal de finanças. Os roteiros do mundo Nicho têm contexto real, linguagem certa e gancho forte. Vale muito mais que R$0,30."</p>
+        <div class="proof-author"><div class="author-avatar">TP</div><div><div class="author-name">Thiago P.</div><div class="author-role">YouTuber · Curitiba</div></div></div>
+      </div>
+      <div class="proof-card reveal">
+        <div class="stars">★★★★★</div>
+        <p class="proof-text">"Nunca imaginei conseguir postar todo dia. O Autor.ai resolveu meu maior problema: saber o que falar."</p>
+        <div class="proof-author"><div class="author-avatar">CL</div><div><div class="author-name">Carol L.</div><div class="author-role">TikToker · Belo Horizonte</div></div></div>
+      </div>
+    </div>
+    <p class="disclaimer">* Depoimentos reais de usuários. Resultados individuais podem variar.</p>
+  </div>
+</section>
+<section class="comparativo">
+  <div class="container">
+    <div class="section-tag reveal">Comparativo</div>
+    <h2 class="section-title reveal">Por que Autor.ai?</h2>
+    <div class="comp-table reveal">
+      <div class="comp-row header">
+        <div class="comp-header-cell" style="justify-content:flex-start;padding-left:24px">Critério</div>
+        <div class="comp-header-cell main">Autor.ai</div>
+        <div class="comp-header-cell dim">Redator</div>
+        <div class="comp-header-cell dim">Fazer sozinho</div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell feature">Custo por roteiro</div>
+        <div class="comp-cell center highlight">R$0,30</div>
+        <div class="comp-cell center">R$50–R$200</div>
+        <div class="comp-cell center">Tempo = dinheiro</div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell feature">Tempo de entrega</div>
+        <div class="comp-cell center highlight">Segundos</div>
+        <div class="comp-cell center">1–3 dias</div>
+        <div class="comp-cell center">2–4 horas</div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell feature">Pautas ilimitadas</div>
+        <div class="comp-cell center highlight">✓</div>
+        <div class="comp-cell center">✗</div>
+        <div class="comp-cell center">✗</div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell feature">Baseado em fontes reais</div>
+        <div class="comp-cell center highlight">✓</div>
+        <div class="comp-cell center">Depende</div>
+        <div class="comp-cell center">Depende</div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell feature">Disponível 24h</div>
+        <div class="comp-cell center highlight">✓</div>
+        <div class="comp-cell center">✗</div>
+        <div class="comp-cell center">✓</div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="roi-calc">
+  <div class="container">
+    <div class="section-tag reveal" style="justify-content:center">Calculadora de ROI</div>
+    <h2 class="section-title reveal" style="text-align:center">Quanto você pode<br>economizar e ganhar?</h2>
+    <div class="roi-inner reveal">
+      <div class="roi-input-group">
+        <label class="roi-label">Quantos vídeos você quer postar por semana? <span id="vidLabel" style="color:var(--accent)">5</span></label>
+        <input type="range" class="roi-slider" min="1" max="21" value="5" id="sliderVids" oninput="calcROI()">
+      </div>
+      <div class="roi-input-group">
+        <label class="roi-label">Quanto pagaria por roteiro terceirizado? R$<span id="redLabel" style="color:var(--accent)">80</span></label>
+        <input type="range" class="roi-slider" min="30" max="300" value="80" step="10" id="sliderRed" oninput="calcROI()">
+      </div>
+      <div class="roi-result">
+        <div class="roi-result-grid">
+          <div class="roi-metric"><div class="roi-metric-num" id="roiEconomia">R$1.280</div><div class="roi-metric-label">Economia por mês vs redator</div></div>
+          <div class="roi-metric"><div class="roi-metric-num" id="roiCusto">R$6,00</div><div class="roi-metric-label">Custo mensal no Fundador</div></div>
+          <div class="roi-metric"><div class="roi-metric-num" id="roiVideos">20</div><div class="roi-metric-label">Vídeos por mês</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="pricing" id="planos" style="background:var(--surface)">
+  <div class="container">
+    <div class="section-tag reveal" style="justify-content:center">Planos</div>
+    <h2 class="section-title reveal" style="text-align:center">Preço justo.<br>Resultado real.</h2>
+    <p class="section-sub reveal" style="text-align:center;margin:0 auto 48px">Fundadores entram com preço especial travado por 1 ano.</p>
+    <div class="vagas-bar reveal">
+      <div class="vagas-label">Vagas de fundador disponíveis</div>
+      <div class="vagas-track"><div class="vagas-fill" id="vagasFill"></div></div>
+      <div class="vagas-num" id="vagasNum">Carregando...</div>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card reveal">
+        <div class="plan-name">Básico</div>
+        <div class="plan-price-old">R$27</div>
+        <div class="plan-price">R$14</div>
+        <div class="plan-period">/mês · 30 roteiros</div>
+        <ul class="plan-features">
+          <li><span class="tick">✓</span>30 roteiros por mês</li>
+          <li><span class="tick">✓</span>Acesso aos 4 mundos</li>
+          <li><span class="tick">✓</span>Formato TikTok e Shorts</li>
+          <li><span class="tick">✓</span>Suporte por email</li>
+        </ul>
+        <button class="plan-cta cta-outline" onclick="checkout('Plano Básico',14.00)">Começar no Básico</button>
+      </div>
+      <div class="price-card featured reveal">
+        <div class="price-badge">🔥 FUNDADOR — PREÇO ESPECIAL</div>
+        <div class="plan-name">Fundador</div>
+        <div class="plan-price-old">R$57</div>
+        <div class="plan-price">R$29<span style="font-size:1.4rem;letter-spacing:-1px">,90</span></div>
+        <div class="plan-period">/mês · 100 roteiros · preço travado por 1 ano</div>
+        <ul class="plan-features">
+          <li><span class="tick">✓</span>100 roteiros por mês</li>
+          <li><span class="tick">✓</span>Acesso aos 4 mundos</li>
+          <li><span class="tick">✓</span>Formato TikTok e Shorts</li>
+          <li><span class="tick">✓</span>Preço travado por 1 ano</li>
+          <li><span class="tick">✓</span>Suporte prioritário</li>
+          <li><span class="tick">✓</span>Acesso antecipado a novidades</li>
+        </ul>
+        <button class="plan-cta cta-solid" onclick="checkout('Plano Fundador',29.90)">Garantir meu acesso fundador</button>
+      </div>
+      <div class="price-card reveal">
+        <div class="plan-name">Pro</div>
+        <div class="plan-price-old">R$87</div>
+        <div class="plan-price">R$47</div>
+        <div class="plan-period">/mês · 200 roteiros</div>
+        <ul class="plan-features">
+          <li><span class="tick">✓</span>200 roteiros por mês</li>
+          <li><span class="tick">✓</span>Acesso aos 4 mundos</li>
+          <li><span class="tick">✓</span>Formato TikTok e Shorts</li>
+          <li><span class="tick">✓</span>Suporte prioritário</li>
+        </ul>
+        <button class="plan-cta cta-outline" onclick="checkout('Plano Pro',47.00)">Começar no Pro</button>
+      </div>
+    </div>
+    <div class="garantia-selo reveal">
+      <div class="garantia-icon">🛡️</div>
+      <div class="garantia-text"><strong>Garantia de 7 dias sem perguntas</strong>Se não gostar, devolvemos 100% do valor. Sem burocracia.</div>
+    </div>
+    <div class="payment-icons">
+      <div class="pay-icon">💳 Cartão</div>
+      <div class="pay-icon">📱 Pix</div>
+      <div class="pay-icon">📄 Boleto</div>
+      <div class="pay-icon">🔒 Mercado Pago</div>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:0.78rem;margin-top:16px">* Preço de tabela após período fundador. Resultados podem variar.</p>
+  </div>
+</section>
+<section class="faq">
+  <div class="container">
+    <div class="section-tag reveal">Dúvidas frequentes</div>
+    <h2 class="section-title reveal">FAQ</h2>
+    <div class="faq-list reveal">
+      <div class="faq-item">
+        <button class="faq-q">O que é o plano Fundador?<span class="faq-icon">+</span></button>
+        <div class="faq-a">O plano Fundador é para quem entra agora, antes do lançamento oficial. Você paga R$29,90/mês e esse preço fica travado por 1 ano — mesmo quando o plano equivalente subir de preço.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Os roteiros são gerados com IA ou escritos por humanos?<span class="faq-icon">+</span></button>
+        <div class="faq-a">São gerados por IA com base em fontes reais — notícias, artigos científicos, resumos de livros. A IA estrutura informações reais em formato de roteiro otimizado para retenção.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Funciona para qual plataforma?<span class="faq-icon">+</span></button>
+        <div class="faq-a">Os roteiros são otimizados para TikTok, YouTube Shorts e Instagram Reels — vídeos de 30 a 90 segundos.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Posso cancelar quando quiser?<span class="faq-icon">+</span></button>
+        <div class="faq-a">Sim. Sem fidelidade. Cancele a qualquer momento pela plataforma de pagamento, sem burocracia e sem taxa.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">E a garantia de 7 dias?<span class="faq-icon">+</span></button>
+        <div class="faq-a">Se dentro de 7 dias você não gostar por qualquer motivo, entre em contato e devolvemos 100% do valor pago. Sem perguntas.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Preciso saber sobre IA ou tecnologia para usar?<span class="faq-icon">+</span></button>
+        <div class="faq-a">Não. Feito para criadores, não para programadores. Você escolhe o mundo, clica, e o roteiro aparece.</div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="final-cta">
+  <h2 class="reveal">Um roteiro de R$0,30<br>pode mudar seu canal.</h2>
+  <p class="reveal">Não deixa o preço fundador passar.</p>
+  <a href="#planos" class="btn-primary reveal" style="display:inline-block">Garantir meu acesso fundador ⚡</a>
+</section>
+<div class="sticky-bar" id="stickyBar">
+  <p><strong>Plano Fundador</strong>R$29,90/mês · preço travado por 1 ano</p>
+  <button onclick="checkout('Plano Fundador',29.90)">Garantir agora ⚡</button>
+</div>
+<button class="back-top" id="backTop" aria-label="Voltar ao topo">↑</button>
+<footer>
+  <p style="margin-bottom:14px">
+    <a href="mailto:autor.ai.app@gmail.com">autor.ai.app@gmail.com</a> &nbsp;·&nbsp;
+    <a href="#">Termos de Uso</a> &nbsp;·&nbsp;
+    <a href="#">Política de Privacidade</a>
+  </p>
+  <p style="margin-bottom:8px">© 2026 Autor.ai. Todos os direitos reservados.</p>
+  <p style="font-size:0.75rem">Resultados podem variar. Depoimentos são de usuários reais e não garantem resultados idênticos.</p>
+</footer>
+<script>
+const API = 'http://localhost:3001';
+async function checkout(title, price) {
+  const btns = document.querySelectorAll('.plan-cta');
+  btns.forEach(b => { b.disabled = true; b.textContent = 'Aguarde...'; });
+  try {
+    const res = await fetch(API + '/api/payment/create-preference', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, price, quantity: 1 }),
+    });
+    const data = await res.json();
+    if (data.init_point) {
+      window.location.href = data.init_point;
+    } else {
+      alert('Erro ao iniciar pagamento. Tente novamente.');
+      btns.forEach(b => b.disabled = false);
+    }
+  } catch(e) {
+    alert('Erro ao conectar com o servidor.');
+    btns.forEach(b => b.disabled = false);
+  }
+}
+(function() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 3 + 1;
+    const colors = ['rgba(0,229,176,0.4)','rgba(0,184,255,0.3)','rgba(124,58,237,0.3)'];
+    p.style.cssText = 'width:'+size+'px;height:'+size+'px;left:'+Math.random()*100+'%;background:'+colors[Math.floor(Math.random()*colors.length)]+';animation-duration:'+(Math.random()*20+15)+'s;animation-delay:-'+(Math.random()*20)+'s';
+    container.appendChild(p);
+  }
+})();
+const revealObs = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 30);
+      revealObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.01 });
+document.querySelectorAll('.reveal,.reveal-left,.reveal-right').forEach(r => revealObs.observe(r));
+function animCount(el, target, dur) {
+  const start = performance.now();
+  (function step(now) {
+    const p = Math.min((now - start) / dur, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.floor(target * ease).toLocaleString('pt-BR');
+    if (p < 1) requestAnimationFrame(step);
+  })(performance.now());
+}
+setTimeout(() => { document.getElementById('fw1').classList.add('show'); animCount(document.getElementById('fw-views'), 847, 2000); setTimeout(() => document.getElementById('fw-views-bar').style.width = '84%', 500); }, 1000);
+setTimeout(() => { document.getElementById('fw2').classList.add('show'); animCount(document.getElementById('fw-earn'), 3240, 2500); setTimeout(() => document.getElementById('fw-earn-bar').style.width = '72%', 500); }, 1600);
+setTimeout(() => { document.getElementById('fw4').classList.add('show'); setTimeout(() => document.getElementById('fw-likes-bar').style.width = '92%', 500); }, 2200);
+let likesVal = 12847;
+setInterval(() => {
+  likesVal += Math.floor(Math.random() * 8) + 1;
+  const el = document.getElementById('fw-likes');
+  if (el) el.textContent = likesVal.toLocaleString('pt-BR');
+}, 900);
+const demoScripts = [
+  "🎬 GANCHO: Você sabe quanto tempo leva para um vídeo viralizar?\n\n📖 DESENVOLVIMENTO: Os primeiros 3 segundos definem tudo. Criadores que dominam o gancho têm 4x mais retenção.\n\n📣 CTA: Salva esse vídeo e marca alguém que precisa ver isso.",
+  "🎬 GANCHO: Essa descoberta científica vai mudar a forma como você dorme hoje à noite.\n\n📖 DESENVOLVIMENTO: 20 minutos de luz natural pela manhã regulam o cortisol e melhoram o foco em até 40%.\n\n📣 CTA: Comenta aqui se você vai testar isso amanhã!",
+  "🎬 GANCHO: O maior erro de quem tenta criar conteúdo — e como evitar em 60 segundos.\n\n📖 DESENVOLVIMENTO: 90% dos criadores desistem antes dos 90 dias. Ficam esperando a ideia perfeita em vez de começar com o que têm.\n\n📣 CTA: Segue o canal para mais dicas que realmente funcionam."
+];
+let demoIdx = 0;
+let demoRunning = false;
+function runDemo() {
+  if (demoRunning) return;
+  demoRunning = true;
+  const el = document.getElementById('demoText');
+  if (!el) return;
+  const text = demoScripts[demoIdx % demoScripts.length];
+  demoIdx++;
+  el.innerHTML = '<span class="cursor"></span>';
+  let i = 0;
+  const iv = setInterval(() => {
+    if (i >= text.length) { clearInterval(iv); demoRunning = false; return; }
+    el.innerHTML = text.slice(0, ++i).split('\n').join('<br>') + '<span class="cursor"></span>';
+  }, 18);
+}
+setTimeout(runDemo, 800);
+const vagasObs = new IntersectionObserver((entries) => {
+  if (entries[0].isIntersecting) {
+    setTimeout(() => {
+      document.getElementById('vagasFill').style.width = '73%';
+      document.getElementById('vagasNum').textContent = 'Apenas 27 vagas restantes de 100';
+    }, 400);
+    vagasObs.disconnect();
+  }
+}, { threshold: 0.3 });
+const vb = document.querySelector('.vagas-bar');
+if (vb) vagasObs.observe(vb);
+function calcROI() {
+  const vids = parseInt(document.getElementById('sliderVids').value);
+  const red = parseInt(document.getElementById('sliderRed').value);
+  document.getElementById('vidLabel').textContent = vids;
+  document.getElementById('redLabel').textContent = red;
+  const mensal = vids * 4;
+  const economia = (mensal * red) - 29.90;
+  const custo = (vids * 4 * 0.30).toFixed(2).replace('.',',');
+  document.getElementById('roiEconomia').textContent = 'R$' + Math.max(0, Math.floor(economia)).toLocaleString('pt-BR');
+  document.getElementById('roiCusto').textContent = 'R$' + custo;
+  document.getElementById('roiVideos').textContent = mensal;
+}
+calcROI();
+const notifs = [
+  { init: 'JS', name: 'João de SP', msg: 'assinou o Plano Fundador agora' },
+  { init: 'AM', name: 'Ana de MG', msg: 'gerou o primeiro roteiro' },
+  { init: 'RL', name: 'Rafael de RJ', msg: 'assinou o Plano Pro agora' },
+  { init: 'CB', name: 'Camila de RS', msg: 'assinou o Plano Fundador agora' },
+  { init: 'FS', name: 'Felipe de BA', msg: 'gerou 5 roteiros hoje' },
+];
+let notifIdx = 0;
+function showNotif() {
+  const n = notifs[notifIdx % notifs.length];
+  notifIdx++;
+  const toast = document.getElementById('notifToast');
+  document.getElementById('notifAvatar').textContent = n.init;
+  document.getElementById('notifName').textContent = n.name;
+  document.getElementById('notifMsg').textContent = n.msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 4000);
+}
+setTimeout(showNotif, 5000);
+setInterval(showNotif, 18000);
+const stickyBar = document.getElementById('stickyBar');
+const backTop = document.getElementById('backTop');
+const heroH = document.querySelector('.hero')?.offsetHeight || 600;
+window.addEventListener('scroll', () => {
+  if (stickyBar) stickyBar.style.display = window.scrollY > heroH ? 'flex' : 'none';
+  if (backTop) backTop.classList.toggle('visible', window.scrollY > 400);
+});
+if (backTop) backTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+document.querySelectorAll('.faq-q').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const item = btn.parentElement;
+    const wasOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => {
+      i.classList.remove('open');
+      i.querySelector('.faq-a').style.maxHeight = null;
+      i.querySelector('.faq-a').style.paddingBottom = '0';
+    });
+    if (!wasOpen) {
+      item.classList.add('open');
+      const a = item.querySelector('.faq-a');
+      a.style.maxHeight = a.scrollHeight + 24 + 'px';
+      a.style.paddingBottom = '24px';
+    }
+  });
+});
+document.querySelectorAll('.demo-chip').forEach((chip, idx) => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.demo-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    runDemo();
+  });
+});
+</script>
+</body>
+</html>

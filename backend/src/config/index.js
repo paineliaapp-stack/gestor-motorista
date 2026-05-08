@@ -4,9 +4,11 @@ export const config = {
   port: process.env.PORT || 3001,
   nodeEnv: process.env.NODE_ENV || 'development',
   newsApiKey: process.env.NEWS_API_KEY,
+mpAccessToken: process.env.MP_ACCESS_TOKEN,
+mpPublicKey: process.env.MP_PUBLIC_KEY,
   groqApiKey: process.env.GROQ_API_KEY,
   geminiApiKey: process.env.GEMINI_API_KEY,
-  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  corsOrigin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173'],
 };
 
 export function validateConfig() {
