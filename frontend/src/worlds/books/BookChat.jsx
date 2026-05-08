@@ -134,12 +134,11 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
 
       {/* Personagens no canto superior direito — área do header */}
       <div style={{
-        position: 'fixed', top: 130, right: 24, zIndex: 300,
+        position: 'fixed', top: 46, right: 24, zIndex: 300,
         display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4,
       }}>
         {!open && (
           <>
-            <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 7, letterSpacing: '0.25em', color: 'rgba(255,255,255,0.2)', margin: '0 0 6px' }}>CONSULTORES</p>
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-end' }}>
               {Object.entries(PERSONAS).map(([key, p], idx) => (
                 <div key={key} className="persona-btn" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, position: 'relative' }}>
@@ -182,6 +181,7 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
                 </div>
               ))}
             </div>
+            <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 7, letterSpacing: '0.25em', color: 'rgba(255,255,255,0.2)', margin: '4px 0 0', textAlign: 'right' }}>CONSULTORES</p>
           </>
         )}
 
@@ -200,7 +200,7 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
       {/* Painel do chat */}
       {open && persona && (
         <div style={{
-          position: 'fixed', top: 250, right: 24, zIndex: 299,
+          position: 'fixed', top: 180, right: 24, zIndex: 299,
           width: 360, maxHeight: 'calc(100vh - 270px)',
           background: '#0a0700', border: `1px solid ${persona.color}33`,
           borderRadius: 16, display: 'flex', flexDirection: 'column',

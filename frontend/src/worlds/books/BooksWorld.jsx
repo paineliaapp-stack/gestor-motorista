@@ -690,7 +690,7 @@ export function BooksWorld() {
             <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px' }}>Biblioteca</span>
           </div>
         </div>
-        <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 8, letterSpacing: '0.28em', color: 'rgba(255,255,255,0.22)' }}>{isMobile ? '' : 'ACERVO'}</span>
+        {!isMobile && <span style={{ position: 'fixed', top: 148, right: 28, fontFamily: 'Space Mono, monospace', fontSize: 7, letterSpacing: '0.28em', color: 'rgba(255,255,255,0.18)', zIndex: 290 }}>ACERVO</span>}
       </header>
 
       <div style={{ padding: isMobile ? '32px 16px 24px' : '40px 24px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: `linear-gradient(180deg, rgba(${glow},0.04) 0%, transparent 100%)`, position: 'relative' }}>
