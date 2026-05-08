@@ -293,7 +293,7 @@ function BookCard({ book, index, onClick, highlighted = false, dimmed = false })
   const highlightStyle = highlighted
     ? { transform: 'translateY(-10px) scale(1.04)', zIndex: 10, filter: 'drop-shadow(0 16px 40px rgba(255,200,80,0.45))', transition: 'all 0.5s cubic-bezier(0.34,1.2,0.64,1)', opacity: 1 }
     : dimmed
-    ? { opacity: 0.15, filter: 'grayscale(1) blur(0.5px)', transform: 'scale(0.97)', transition: 'all 0.5s ease', zIndex: 0 }
+    ? { opacity: 0.12, filter: 'grayscale(1)', transform: 'scale(0.96)', transition: 'all 0.5s ease', zIndex: 0 }
     : { transition: 'all 0.5s ease' };
   const [showOpts, setShowOpts] = useState(false);
   const [platform, setPlatform] = useState('youtube_shorts');
