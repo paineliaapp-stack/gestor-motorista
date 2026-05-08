@@ -50,13 +50,13 @@ router.post('/google', async (req, res) => {
         email: user.email,
         name: user.name,
         picture: user.picture,
-        plan: pending?.plan || 'none',
+        plan: (pending?.plan && pending.plan !== 'pending') ? pending.plan : 'none',
         scripts_used: 0,
-        scripts_limit: pending?.scripts_limit || 0,
+        scripts_limit: (pending?.plan && pending.plan !== 'pending') ? pending.scripts_limit : 0,
         reset_at: new Date().toISOString(),
       });
 
-      if (pending) {
+      if (pending && pending.plan !== 'pending') {
         await supabase.from('pending_plans').delete().eq('email', user.email);
         console.log(`Plano pendente ${pending.plan} ativado para ${user.email}`);
       }
