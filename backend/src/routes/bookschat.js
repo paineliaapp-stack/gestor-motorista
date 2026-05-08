@@ -113,4 +113,41 @@ Responda APENAS com JSON válido neste formato, sem texto fora:
   }
 });
 
+
+// GET /api/books/cover?title=X&author=Y — proxy para evitar CORS
+router.get('/cover', async (req, res) => {
+  try {
+    const { title = '', author = '' } = req.query;
+    const a = author.split(' ').pop();
+    const q = encodeURIComponent(title);
+    const qa = encodeURIComponent(a);
+
+    // Tenta Open Library
+    const olRes = await fetch(`https://openlibrary.org/search.json?title=${q}&author=${qa}&limit=5&fields=cover_i,title,author_name`);
+    if (olRes.ok) {
+      const olData = await olRes.json();
+      const docs = olData.docs || [];
+      const match = docs.find(d => d.cover_i && d.title?.toLowerCase().includes(title.toLowerCase().slice(0, 6)));
+      const withCover = match || docs.find(d => d.cover_i);
+      if (withCover?.cover_i) {
+        return res.json({ url: `https://covers.openlibrary.org/b/id/${withCover.cover_i}-L.jpg` });
+      }
+    }
+
+    // Fallback Google Books
+    const gbQ = encodeURIComponent(`intitle:${title} inauthor:${a}`);
+    const gbRes = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${gbQ}&maxResults=3&fields=items(volumeInfo/imageLinks,volumeInfo/title)`);
+    if (gbRes.ok) {
+      const gbData = await gbRes.json();
+      const item = gbData.items?.[0];
+      const url = item?.volumeInfo?.imageLinks?.thumbnail?.replace('http:', 'https:') || null;
+      if (url) return res.json({ url });
+    }
+
+    res.json({ url: null });
+  } catch (err) {
+    res.json({ url: null });
+  }
+});
+
 export default router;
