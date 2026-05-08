@@ -110,15 +110,18 @@ router.post('/webhook', async (req, res) => {
         console.log('external_ref:', info.external_reference);
         console.log('order:', JSON.stringify(info.order));
         // Fallback: busca email pelo preference_id se MP nao enviou
-        if (!payerEmail && info.preference_id) {
+        // Fallback: busca o email mais recente com plan=pending no supabase
+        if (!payerEmail) {
           const { data: pending } = await supabase
             .from('pending_plans')
             .select('email')
-            .eq('preference_id', info.preference_id)
+            .eq('plan', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(1)
             .single();
           if (pending?.email) {
             payerEmail = pending.email;
-            console.log('Email recuperado pelo preference_id:', payerEmail);
+            console.log('Email recuperado do pending_plans:', payerEmail);
           }
         }
 
