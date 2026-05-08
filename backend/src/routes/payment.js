@@ -92,7 +92,13 @@ router.post('/webhook', async (req, res) => {
       if (info.status === 'approved') {
         const title = info.additional_info?.items?.[0]?.title || '';
         const planData = PLAN_MAP[title];
-        let payerEmail = info.payer?.email?.trim().toLowerCase();
+        const rawPayerEmail = info.payer?.email?.trim().toLowerCase();
+        // Valida se é realmente um email (MP às vezes envia CPF/telefone)
+        const isValidEmail = (e) => e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+        let payerEmail = isValidEmail(rawPayerEmail) ? rawPayerEmail : null;
+        if (rawPayerEmail && !payerEmail) {
+          console.log('MP enviou valor invalido no email:', rawPayerEmail);
+        }
 
         // Fallback: busca email pelo preference_id se MP nao enviou
         if (!payerEmail && info.preference_id) {
