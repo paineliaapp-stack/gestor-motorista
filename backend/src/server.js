@@ -18,6 +18,7 @@ import nicheRoutes from './routes/niche.js';
 import scienceRoutes from './routes/science.js';
 import youtubeRoutes from './routes/youtube.js';
 import authRoutes from './routes/auth.js';
+import booksChatRouter from './routes/bookschat.js';
 import paymentRoutes from './routes/payment.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
@@ -67,6 +68,7 @@ app.use('/api/niche', apiLimiter, nicheRoutes);
 app.use('/api/science', apiLimiter, scienceRoutes);
 app.use('/api/youtube', apiLimiter, youtubeRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/books', booksChatRouter);
 app.use('/api/payment', apiLimiter, paymentRoutes);
 
 // Headers para Google OAuth popup
