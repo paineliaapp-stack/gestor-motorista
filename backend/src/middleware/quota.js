@@ -1,8 +1,9 @@
 import { supabase } from '../config/supabase.js';
 
 const PLAN_LIMITS = {
+  basic: 30,
   founder: 150,
-  pro: 150,
+  pro: 200,
   agency: 500,
   none: 0
 };
