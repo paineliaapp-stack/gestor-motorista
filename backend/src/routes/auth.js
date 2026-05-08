@@ -62,7 +62,18 @@ router.post('/google', async (req, res) => {
       }
     }
 
-    const dbUser = existing || { plan: 'none', scripts_used: 0, scripts_limit: 0 };
+    let dbUser;
+    if (existing) {
+      dbUser = existing;
+    } else {
+      // Busca o usuario recem criado
+      const { data: newUser } = await supabase
+        .from('users')
+        .select('plan, scripts_used, scripts_limit')
+        .eq('id', user.id)
+        .single();
+      dbUser = newUser || { plan: 'none', scripts_used: 0, scripts_limit: 0 };
+    }
 
     const tokenPayload = {
       ...user,
