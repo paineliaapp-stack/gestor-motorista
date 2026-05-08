@@ -86,7 +86,20 @@ router.post('/webhook', async (req, res) => {
       if (info.status === 'approved') {
         const title = info.additional_info?.items?.[0]?.title || '';
         const planData = PLAN_MAP[title];
-        const payerEmail = info.payer?.email?.trim().toLowerCase();
+        let payerEmail = info.payer?.email?.trim().toLowerCase();
+
+        // Fallback: busca email pelo preference_id se MP nao enviou
+        if (!payerEmail && info.preference_id) {
+          const { data: pending } = await supabase
+            .from('pending_plans')
+            .select('email')
+            .eq('preference_id', info.preference_id)
+            .single();
+          if (pending?.email) {
+            payerEmail = pending.email;
+            console.log('Email recuperado pelo preference_id:', payerEmail);
+          }
+        }
 
         if (planData && payerEmail) {
           const now = new Date().toISOString();
