@@ -37,6 +37,25 @@ router.post('/google', async (req, res) => {
       .eq('id', user.id)
       .single();
 
+    // Se ja existe mas esta sem plano, verifica pending_plans
+    if (existing && existing.plan === 'none') {
+      const { data: pending } = await supabase
+        .from('pending_plans')
+        .select('plan, scripts_limit')
+        .eq('email', user.email)
+        .single();
+      if (pending && pending.plan && pending.plan !== 'pending') {
+        await supabase
+          .from('users')
+          .update({ plan: pending.plan, scripts_limit: pending.scripts_limit, scripts_used: 0, reset_at: new Date().toISOString() })
+          .eq('id', user.id);
+        await supabase.from('pending_plans').delete().eq('email', user.email);
+        existing.plan = pending.plan;
+        existing.scripts_limit = pending.scripts_limit;
+        console.log('Plano pendente ativado para usuario existente:', user.email);
+      }
+    }
+
     if (!existing) {
       // Verifica se tem plano pendente do pagamento
       const { data: pending } = await supabase
