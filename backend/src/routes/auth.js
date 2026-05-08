@@ -8,12 +8,29 @@ const JWT_SECRET = process.env.JWT_SECRET || 'viralnews-secret-2026';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
 async function verifyGoogleToken(token) {
-  const res = await axios.get(
-    `https://oauth2.googleapis.com/tokeninfo?id_token=${token}`
-  );
+  const res = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${token}`);
   const payload = res.data;
   if (payload.aud !== GOOGLE_CLIENT_ID) throw new Error('Client ID mismatch');
   return payload;
+}
+
+async function activatePendingPlan(userId, email) {
+  const { data: pending } = await supabase
+    .from('pending_plans')
+    .select('plan, scripts_limit')
+    .eq('email', email)
+    .single();
+
+  if (pending && pending.plan && pending.plan !== 'pending') {
+    await supabase
+      .from('users')
+      .update({ plan: pending.plan, scripts_limit: pending.scripts_limit, scripts_used: 0, reset_at: new Date().toISOString() })
+      .eq('id', userId);
+    await supabase.from('pending_plans').delete().eq('email', email);
+    console.log('Plano ativado:', pending.plan, 'para', email);
+    return pending;
+  }
+  return null;
 }
 
 router.post('/google', async (req, res) => {
@@ -22,7 +39,6 @@ router.post('/google', async (req, res) => {
     if (!credential) return res.status(400).json({ error: 'Token obrigatorio' });
 
     const payload = await verifyGoogleToken(credential);
-
     const user = {
       id: payload.sub,
       email: payload.email,
@@ -30,80 +46,53 @@ router.post('/google', async (req, res) => {
       picture: payload.picture,
     };
 
-    // Salva ou atualiza usuário no Supabase
     const { data: existing } = await supabase
       .from('users')
       .select('id, plan, scripts_used, scripts_limit')
       .eq('id', user.id)
       .single();
 
-    // Se ja existe mas esta sem plano, verifica pending_plans
-    if (existing && existing.plan === 'none') {
-      const { data: pending } = await supabase
-        .from('pending_plans')
-        .select('plan, scripts_limit')
-        .eq('email', user.email)
-        .single();
-      if (pending && pending.plan && pending.plan !== 'pending') {
-        await supabase
-          .from('users')
-          .update({ plan: pending.plan, scripts_limit: pending.scripts_limit, scripts_used: 0, reset_at: new Date().toISOString() })
-          .eq('id', user.id);
-        await supabase.from('pending_plans').delete().eq('email', user.email);
-        existing.plan = pending.plan;
-        existing.scripts_limit = pending.scripts_limit;
-        console.log('Plano pendente ativado para usuario existente:', user.email);
-      }
-      // NAO deleta pending_plans aqui - so o webhook deleta apos confirmar pagamento
-    }
-
     if (!existing) {
-      // Verifica se tem plano pendente do pagamento
+      // Novo usuario - verifica pending_plans
       const { data: pending } = await supabase
         .from('pending_plans')
         .select('plan, scripts_limit')
         .eq('email', user.email)
         .single();
+
+      const hasPlan = pending && pending.plan && pending.plan !== 'pending';
 
       await supabase.from('users').insert({
         id: user.id,
         email: user.email,
         name: user.name,
         picture: user.picture,
-        plan: (pending?.plan && pending.plan !== 'pending') ? pending.plan : 'none',
+        plan: hasPlan ? pending.plan : 'none',
         scripts_used: 0,
-        scripts_limit: (pending?.plan && pending.plan !== 'pending') ? pending.scripts_limit : 0,
+        scripts_limit: hasPlan ? pending.scripts_limit : 0,
         reset_at: new Date().toISOString(),
       });
 
-      if (pending && pending.plan && pending.plan !== 'pending') {
+      if (hasPlan) {
         await supabase.from('pending_plans').delete().eq('email', user.email);
-        console.log(`Plano pendente ${pending.plan} ativado para ${user.email}`);
+        console.log('Plano ativado no primeiro login:', pending.plan, 'para', user.email);
       }
+    } else if (existing.plan === 'none') {
+      // Usuario existe sem plano - verifica pending_plans
+      await activatePendingPlan(user.id, user.email);
     }
 
-    let dbUser;
-    if (existing) {
-      dbUser = existing;
-    } else {
-      // Busca o usuario recem criado
-      const { data: newUser } = await supabase
-        .from('users')
-        .select('plan, scripts_used, scripts_limit')
-        .eq('id', user.id)
-        .single();
-      dbUser = newUser || { plan: 'none', scripts_used: 0, scripts_limit: 0 };
-    }
+    // Busca dados finais do banco
+    const { data: dbUser } = await supabase
+      .from('users')
+      .select('plan, scripts_used, scripts_limit')
+      .eq('id', user.id)
+      .single();
 
-    const tokenPayload = {
-      ...user,
-      plan: dbUser.plan,
-      scripts_used: dbUser.scripts_used,
-      scripts_limit: dbUser.scripts_limit,
-    };
+    const finalUser = dbUser || { plan: 'none', scripts_used: 0, scripts_limit: 0 };
 
-    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ token, user: tokenPayload });
+    const token = jwt.sign({ ...user, ...finalUser }, JWT_SECRET, { expiresIn: '30d' });
+    res.json({ token, user: { ...user, ...finalUser } });
   } catch (err) {
     console.error('[AUTH ERROR]', err.message);
     res.status(401).json({ error: 'Token invalido' });
@@ -116,12 +105,20 @@ router.get('/me', async (req, res) => {
     if (!auth) return res.status(401).json({ error: 'Nao autenticado' });
     const user = jwt.verify(auth, JWT_SECRET);
 
-    // Busca dados atualizados do banco
     const { data: dbUser } = await supabase
       .from('users')
       .select('plan, scripts_used, scripts_limit, reset_at')
       .eq('id', user.id)
       .single();
+
+    // Se sem plano, verifica pending_plans (usado pelo botao "Ja paguei")
+    if (dbUser && dbUser.plan === 'none') {
+      const activated = await activatePendingPlan(user.id, user.email);
+      if (activated) {
+        dbUser.plan = activated.plan;
+        dbUser.scripts_limit = activated.scripts_limit;
+      }
+    }
 
     res.json({ user: { ...user, ...dbUser } });
   } catch {
