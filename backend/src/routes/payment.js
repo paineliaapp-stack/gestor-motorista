@@ -17,9 +17,9 @@ router.post('/create-preference', async (req, res) => {
       body: {
         items: [{ title, unit_price: Number(price), quantity }],
         back_urls: {
-          success: `${config.corsOrigin}/payment/success`,
-          failure: `${config.corsOrigin}/payment/failure`,
-          pending: `${config.corsOrigin}/payment/pending`,
+          success: `https://autorai.com.br/payment-success.html`,
+          failure: `https://autorai.com.br/payment-success.html`,
+          pending: `https://autorai.com.br/payment-success.html`,
         },
         auto_return: 'approved',
       },
