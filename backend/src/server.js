@@ -89,6 +89,17 @@ app.get('/api/health', (_req, res) => {
 
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
+
+// Keep-alive: evita cold start no Railway
+const BACKEND_URL = process.env.RAILWAY_PUBLIC_DOMAIN
+  ? \`https://\${process.env.RAILWAY_PUBLIC_DOMAIN}\`
+  : null;
+if (BACKEND_URL) {
+  setInterval(() => {
+    fetch(\`\${BACKEND_URL}/health\`).catch(() => {});
+  }, 8 * 60 * 1000); // ping a cada 8 minutos
+}
+
 app.listen(config.port, () => {
   console.log(`\n🚀 ViralNews AI Backend running at http://localhost:${config.port}`);
   console.log(`📡 Environment: ${config.nodeEnv}`);
