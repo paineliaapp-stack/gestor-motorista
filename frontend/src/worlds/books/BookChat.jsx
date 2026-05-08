@@ -139,7 +139,7 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
       }}>
         {!open && (
           <>
-            <div style={{ display: 'flex', gap: isMobile ? 8 : 14, alignItems: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: window.innerWidth < 768 ? 8 : 14, alignItems: 'flex-end' }}>
               {Object.entries(PERSONAS).map(([key, p], idx) => (
                 <div key={key} className="persona-btn" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, position: 'relative' }}>
                   
