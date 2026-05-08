@@ -154,9 +154,9 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
                     zIndex: 400,
                   }}>
                     <div style={{ height: 2, background: `linear-gradient(90deg, transparent, ${p.color})`, marginBottom: 8, borderRadius: 2 }} />
-                    <p style={{ margin: '0 0 4px', fontFamily: 'Space Mono, monospace', fontSize: 9, color: p.color, fontWeight: 700 }}>{p.emoji} {p.name}</p>
-                    <p style={{ margin: '0 0 6px', fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{p.role}</p>
-                    <p style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.35)', lineHeight: 1.5 }}>{p.desc}</p>
+                    <p style={{ margin: '0 0 4px', fontFamily: 'Space Mono, monospace', fontSize: 11, color: p.color, fontWeight: 700 }}>{p.emoji} {p.name}</p>
+                    <p style={{ margin: '0 0 6px', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{p.role}</p>
+                    <p style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>{p.desc}</p>
                   </div>
 
                   {/* Avatar flutuante */}
