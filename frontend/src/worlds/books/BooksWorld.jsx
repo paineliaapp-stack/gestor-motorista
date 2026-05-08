@@ -336,6 +336,7 @@ function BookCard({ book, index, onClick, highlighted = false, dimmed = false })
   }, [book.title, book.author]);
 
   return (
+    <div style={{ position: 'relative', ...highlightStyle }}>
     <div
       ref={ref}
       onMouseEnter={() => setHovered(true)}
@@ -417,6 +418,7 @@ function BookCard({ book, index, onClick, highlighted = false, dimmed = false })
           </button>
         </div>
       </div>
+    </div>
     </div>
   );
 }
