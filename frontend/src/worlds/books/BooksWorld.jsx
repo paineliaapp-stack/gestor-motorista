@@ -682,7 +682,7 @@ export function BooksWorld() {
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, #5c2a00, #ffbe4d, #e8a000, #5c2a00)', zIndex: 200, opacity: 0.75 }} />
 
       <header style={{ position: 'sticky', top: 42, zIndex: 100, height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '0 16px' : '0 24px', background: 'rgba(8,5,0,0.97)', backdropFilter: 'blur(32px)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button onClick={() => navigate('/')} style={{ fontFamily: 'Space Mono, monospace', fontSize: 9, letterSpacing: '0.22em', color: 'rgba(255,255,255,0.38)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>← PORTAL</button>
           <span style={{ color: 'rgba(255,255,255,0.08)' }}>|</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
