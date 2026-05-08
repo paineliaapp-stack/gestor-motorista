@@ -163,6 +163,20 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem('autor_user')); } catch { return null; }
   });
 
+  useEffect(() => {
+    const token = localStorage.getItem('autor_token');
+    if (!token) return;
+    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => {
+        if (data.user) {
+          localStorage.setItem('autor_user', JSON.stringify(data.user));
+          setUser(data.user);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   function handleLogin(u) { setUser(u); }
 
   function handleLogout() {
