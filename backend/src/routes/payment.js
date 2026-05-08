@@ -38,7 +38,7 @@ router.get('/config', (_req, res) => {
 
 router.post('/create-preference', async (req, res) => {
   try {
-    const { title, price, quantity = 1 } = req.body;
+    const { title, price, quantity = 1, email: customerEmail } = req.body;
     const preference = new Preference(client);
     const result = await preference.create({
       body: {
@@ -51,6 +51,15 @@ router.post('/create-preference', async (req, res) => {
         auto_return: 'approved',
       },
     });
+    // Salva email antecipado se fornecido
+    if (customerEmail && result.id) {
+      await supabase.from('pending_plans').upsert({
+        email: customerEmail.trim().toLowerCase(),
+        plan: 'pending',
+        scripts_limit: 0,
+        preference_id: result.id,
+      }).select();
+    }
     res.json({ id: result.id, init_point: result.init_point });
   } catch (err) {
     console.error('MP error:', err);
