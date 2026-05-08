@@ -275,6 +275,7 @@ Português coloquial. Máximo ${platformSpec.maxWords} palavras. Plataforma: ${p
 ${styleNote}
 
 Extraia os fatos do conteúdo abaixo. Não invente dados. Não resuma. Construa narrativa com o que está lá.
+REGRA JURÍDICA AUTOMÁTICA: Se o conteúdo envolver investigação, denúncia, operação policial ou processo judicial EM CURSO, use obrigatoriamente linguagem de alegação — "é acusado de", "segundo a denúncia", "as investigações apontam", "suspeito de". NUNCA afirme culpa como fato estabelecido antes de condenação transitada em julgado. Isso não limita o impacto narrativo — mantém o drama mas com precisão factual.
 OBRIGATÓRIO: use pelo menos 2 informações concretas do conteúdo — nomes reais, números, porcentagens, datas, comparações específicas. Roteiro sem dados concretos é inválido.
 O roteiro deve usar entre 180 e ${platformSpec.maxWords} palavras. Termine sempre com uma tensão aberta ou pergunta que o espectador não consegue responder sozinho.
 
