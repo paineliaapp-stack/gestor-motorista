@@ -71,6 +71,8 @@ router.post('/webhook', async (req, res) => {
       const payment = new Payment(client);
       const info = await payment.get({ id: data.id });
       console.log('Webhook pagamento:', info.status, info.id);
+      console.log('Titulo recebido:', JSON.stringify(info.additional_info?.items?.[0]?.title));
+      console.log('Payer email:', info.payer?.email);
 
       if (info.status === 'approved') {
         const title = info.additional_info?.items?.[0]?.title || '';
