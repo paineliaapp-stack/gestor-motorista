@@ -92,12 +92,12 @@ app.get('/api/health', (_req, res) => {
 
 // Keep-alive: evita cold start no Railway
 const BACKEND_URL = process.env.RAILWAY_PUBLIC_DOMAIN
-  ? \`https://\${process.env.RAILWAY_PUBLIC_DOMAIN}\`
+  ? ('https://' + process.env.RAILWAY_PUBLIC_DOMAIN)
   : null;
 if (BACKEND_URL) {
   setInterval(() => {
-    fetch(\`\${BACKEND_URL}/health\`).catch(() => {});
-  }, 8 * 60 * 1000); // ping a cada 8 minutos
+    fetch(BACKEND_URL + '/health').catch(() => {});
+  }, 8 * 60 * 1000);
 }
 
 app.listen(config.port, () => {
