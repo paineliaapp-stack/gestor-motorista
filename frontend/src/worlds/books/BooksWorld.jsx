@@ -769,7 +769,7 @@ export function BooksWorld() {
           )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
             {displayBooks.map((book, i) => (
-              <BookCard key={book.title + book.author} book={book} index={i} onClick={(b) => setSelectedBook(b)} highlighted={highlightedIndices.length > 0 && highlightedIndices.includes(i)} dimmed={highlightedIndices.length > 0 && !highlightedIndices.includes(i)} />
+              <BookCard key={book.title + book.author} book={book} index={i} onClick={(b) => { if (highlightedIndices.includes(i) && activePersonaKey) { setPersonaSelection({ book: b, personaKey: activePersonaKey }); } else { setSelectedBook(b); } }} highlighted={highlightedIndices.length > 0 && highlightedIndices.includes(i)} dimmed={highlightedIndices.length > 0 && !highlightedIndices.includes(i)} />
             ))}
           </div>
         )}
@@ -778,6 +778,7 @@ export function BooksWorld() {
       <BookChat
         books={BOOKS}
         onHighlight={setHighlightedIndices}
+        onPersonaChange={setActivePersonaKey}
         onSelectBook={(book, personaKey) => personaKey ? setPersonaSelection({ book, personaKey }) : setSelectedBook(book)}
       />
 

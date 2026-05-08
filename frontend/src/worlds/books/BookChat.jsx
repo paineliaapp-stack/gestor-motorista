@@ -30,7 +30,7 @@ const PERSONAS = {
   },
 };
 
-export function BookChat({ books = [], onHighlight, onSelectBook }) {
+export function BookChat({ books = [], onHighlight, onSelectBook, onPersonaChange }) {
   const [open, setOpen] = useState(false);
   const [activePersona, setActivePersona] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -55,6 +55,7 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
 
   function selectPersona(key) {
     setActivePersona(key);
+    if (onPersonaChange) onPersonaChange(key);
     setMessages([{ role: 'assistant', content: PERSONAS[key].intro }]);
     setRecommended([]);
     setJustificativa('');
@@ -124,6 +125,7 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
 
   function reset() {
     setActivePersona(null);
+    if (onPersonaChange) onPersonaChange(null);
     setMessages([]);
     setRecommended([]);
     setJustificativa('');
