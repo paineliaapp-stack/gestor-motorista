@@ -32,6 +32,44 @@ const EMAIL_HTML = `
 
 const client = new MercadoPagoConfig({ accessToken: config.mpAccessToken });
 
+router.get('/check-plan', async (req, res) => {
+  try {
+    const email = req.query.email?.trim().toLowerCase();
+    if (!email) return res.json({ ready: false });
+
+    const { data: pending } = await supabase
+      .from('pending_plans')
+      .select('plan')
+      .eq('email', email)
+      .single();
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('plan')
+      .eq('email', email)
+      .single();
+
+    const ready = (pending && pending.plan && pending.plan !== 'pending') ||
+                  (user && user.plan && user.plan !== 'none');
+
+    res.json({ ready: !!ready });
+  } catch {
+    res.json({ ready: false });
+  }
+});
+
+router.post('/lead', async (req, res) => {
+  try {
+    const { email, name, whats, uso } = req.body;
+    if (email) {
+      await supabase.from('leads').upsert({ email, name, whats, uso });
+    }
+  } catch(e) {
+    console.error('Lead error:', e.message);
+  }
+  res.json({ ok: true });
+});
+
 router.get('/config', (_req, res) => {
   res.json({ publicKey: config.mpPublicKey });
 });
