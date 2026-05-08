@@ -59,7 +59,7 @@ router.post('/create-preference', async (req, res) => {
 });
 
 const PLAN_MAP = {
-  'Plano Basico': { plan: 'basic', limit: 30 },
+  'Plano B\u00e1sico': { plan: 'basic', limit: 30 },
   'Plano Fundador': { plan: 'founder', limit: 100 },
   'Plano Pro': { plan: 'pro', limit: 200 },
 };
