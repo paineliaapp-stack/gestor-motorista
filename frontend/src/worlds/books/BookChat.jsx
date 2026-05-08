@@ -8,6 +8,7 @@ const PERSONAS = {
     color: '#ff6b9d',
     glow: '255,107,157',
     intro: 'Oi! Sou a Lira 🎙️ Qual é o seu nicho? Me conta em uma frase o que você cria.',
+    desc: 'Pensa em retenção e viralidade. Fala a língua do criador. Ideal para TikTok e Reels.',
   },
   atlas: {
     name: 'Atlas',
@@ -16,6 +17,7 @@ const PERSONAS = {
     color: '#00b8ff',
     glow: '0,184,255',
     intro: 'Olá. Sou o Atlas 🌍 Que tipo de transformação você quer provocar no seu espectador?',
+    desc: 'Conecta livros a ideias profundas. Roteiros com contexto e substância. Ideal para YouTube.',
   },
   faisca: {
     name: 'Faísca',
@@ -24,6 +26,7 @@ const PERSONAS = {
     color: '#ffbe4d',
     glow: '255,190,77',
     intro: 'Fala! ⚡ Sou Faísca. Me diz: você quer educar ou provocar? Porque os melhores vídeos fazem os dois 😈',
+    desc: 'Especialista em polêmica construtiva. Hooks agressivos e gatilhos que geram debate.',
   },
 };
 
@@ -122,55 +125,83 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
 
   return (
     <>
-      {/* Botão flutuante */}
+      <style>{`
+        @keyframes ghostFloat0 { 0%,100%{transform:translateY(0px) rotate(-2deg);} 50%{transform:translateY(-10px) rotate(2deg);} }
+        @keyframes ghostFloat1 { 0%,100%{transform:translateY(-6px) rotate(1deg);} 50%{transform:translateY(4px) rotate(-2deg);} }
+        @keyframes ghostFloat2 { 0%,100%{transform:translateY(-3px) rotate(2deg);} 50%{transform:translateY(-12px) rotate(-1deg);} }
+        .persona-btn:hover .persona-tooltip { opacity:1 !important; transform:translateY(0) !important; pointer-events:auto !important; }
+      `}</style>
+
+      {/* Personagens no canto superior direito — área do header */}
       <div style={{
-        position: 'fixed', bottom: 24, right: 24, zIndex: 300,
-        display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10,
+        position: 'fixed', top: 54, right: 24, zIndex: 300,
+        display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4,
       }}>
         {!open && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-            <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 8, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', margin: 0 }}>CONSULTORES</p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              {Object.entries(PERSONAS).map(([key, p]) => (
-                <button key={key} onClick={() => { setOpen(true); selectPersona(key); }}
-                  title={`${p.name} — ${p.role}`}
-                  style={{
-                    width: 52, height: 52, borderRadius: '50%',
-                    background: `radial-gradient(circle at 35% 35%, ${p.color}33, #0a0700)`,
-                    border: `2px solid ${p.color}55`,
-                    fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', boxShadow: `0 0 20px ${p.color}33`,
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)'; e.currentTarget.style.boxShadow = `0 0 30px ${p.color}66`; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = `0 0 20px ${p.color}33`; }}
-                >
-                  {p.emoji}
-                </button>
+          <>
+            <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 7, letterSpacing: '0.25em', color: 'rgba(255,255,255,0.2)', margin: '0 0 6px' }}>CONSULTORES</p>
+            <div style={{ display: 'flex', gap: 14, alignItems: 'flex-end' }}>
+              {Object.entries(PERSONAS).map(([key, p], idx) => (
+                <div key={key} className="persona-btn" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, position: 'relative' }}>
+                  
+                  {/* Tooltip explicativo */}
+                  <div className="persona-tooltip" style={{
+                    position: 'absolute', bottom: '110%', right: 0,
+                    width: 180, padding: '10px 12px',
+                    background: '#0a0700', border: `1px solid ${p.color}44`,
+                    borderRadius: 10, boxShadow: `0 8px 32px rgba(0,0,0,0.8)`,
+                    opacity: 0, transform: 'translateY(6px)',
+                    transition: 'all 0.2s ease', pointerEvents: 'none',
+                    zIndex: 400,
+                  }}>
+                    <div style={{ height: 2, background: `linear-gradient(90deg, transparent, ${p.color})`, marginBottom: 8, borderRadius: 2 }} />
+                    <p style={{ margin: '0 0 4px', fontFamily: 'Space Mono, monospace', fontSize: 9, color: p.color, fontWeight: 700 }}>{p.emoji} {p.name}</p>
+                    <p style={{ margin: '0 0 6px', fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{p.role}</p>
+                    <p style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.35)', lineHeight: 1.5 }}>{p.desc}</p>
+                  </div>
+
+                  {/* Avatar flutuante */}
+                  <button
+                    onClick={() => { setOpen(true); selectPersona(key); }}
+                    style={{
+                      width: 48, height: 48, borderRadius: '50%',
+                      background: `radial-gradient(circle at 35% 30%, ${p.color}44, #050300)`,
+                      border: `2px solid ${p.color}66`,
+                      fontSize: 20, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: `0 0 24px ${p.color}44, inset 0 1px 0 ${p.color}33`,
+                      animation: `ghostFloat${idx} ${2.8 + idx * 0.4}s ease-in-out infinite`,
+                      transition: 'border-color 0.2s, box-shadow 0.2s',
+                      outline: 'none',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = p.color; e.currentTarget.style.boxShadow = `0 0 36px ${p.color}77`; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = `${p.color}66`; e.currentTarget.style.boxShadow = `0 0 24px ${p.color}44`; }}
+                  >{p.emoji}</button>
+
+                  <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 9, color: `${p.color}88`, letterSpacing: '0.05em' }}>{p.name}</span>
+                </div>
               ))}
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              {Object.entries(PERSONAS).map(([key, p]) => (
-                <span key={key} style={{ width: 52, textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 9, color: `${p.color}99` }}>{p.name}</span>
-              ))}
-            </div>
-          </div>
+          </>
         )}
 
         {open && (
-          <button onClick={() => setOpen(false)} style={{
-            width: 44, height: 44, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-            color: 'rgba(255,255,255,0.5)', fontSize: 16, cursor: 'pointer',
-          }}>✕</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 8, color: 'rgba(255,255,255,0.2)' }}>CHAT ABERTO</span>
+            <button onClick={() => setOpen(false)} style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+              color: 'rgba(255,255,255,0.4)', fontSize: 14, cursor: 'pointer',
+            }}>✕</button>
+          </div>
         )}
       </div>
 
       {/* Painel do chat */}
       {open && persona && (
         <div style={{
-          position: 'fixed', bottom: 90, right: 24, zIndex: 299,
-          width: 360, maxHeight: '70vh',
+          position: 'fixed', top: 160, right: 24, zIndex: 299,
+          width: 360, maxHeight: 'calc(100vh - 200px)',
           background: '#0a0700', border: `1px solid ${persona.color}33`,
           borderRadius: 16, display: 'flex', flexDirection: 'column',
           boxShadow: `0 24px 80px rgba(0,0,0,0.8), 0 0 40px ${persona.color}11`,
