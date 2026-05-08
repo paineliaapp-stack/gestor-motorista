@@ -134,7 +134,7 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
 
       {/* Personagens no canto superior direito — área do header */}
       <div style={{
-        position: 'fixed', top: 54, right: 24, zIndex: 300,
+        position: 'fixed', top: 130, right: 24, zIndex: 300,
         display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4,
       }}>
         {!open && (
@@ -146,11 +146,11 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
                   
                   {/* Tooltip explicativo */}
                   <div className="persona-tooltip" style={{
-                    position: 'absolute', bottom: '110%', right: 0,
+                    position: 'absolute', top: '110%', right: 0,
                     width: 180, padding: '10px 12px',
                     background: '#0a0700', border: `1px solid ${p.color}44`,
                     borderRadius: 10, boxShadow: `0 8px 32px rgba(0,0,0,0.8)`,
-                    opacity: 0, transform: 'translateY(6px)',
+                    opacity: 0, transform: 'translateY(-6px)',
                     transition: 'all 0.2s ease', pointerEvents: 'none',
                     zIndex: 400,
                   }}>
@@ -200,8 +200,8 @@ export function BookChat({ books = [], onHighlight, onSelectBook }) {
       {/* Painel do chat */}
       {open && persona && (
         <div style={{
-          position: 'fixed', top: 160, right: 24, zIndex: 299,
-          width: 360, maxHeight: 'calc(100vh - 200px)',
+          position: 'fixed', top: 250, right: 24, zIndex: 299,
+          width: 360, maxHeight: 'calc(100vh - 270px)',
           background: '#0a0700', border: `1px solid ${persona.color}33`,
           borderRadius: 16, display: 'flex', flexDirection: 'column',
           boxShadow: `0 24px 80px rgba(0,0,0,0.8), 0 0 40px ${persona.color}11`,
