@@ -54,6 +54,7 @@ router.post('/google', async (req, res) => {
         existing.scripts_limit = pending.scripts_limit;
         console.log('Plano pendente ativado para usuario existente:', user.email);
       }
+      // NAO deleta pending_plans aqui - so o webhook deleta apos confirmar pagamento
     }
 
     if (!existing) {
@@ -75,7 +76,7 @@ router.post('/google', async (req, res) => {
         reset_at: new Date().toISOString(),
       });
 
-      if (pending && pending.plan !== 'pending') {
+      if (pending && pending.plan && pending.plan !== 'pending') {
         await supabase.from('pending_plans').delete().eq('email', user.email);
         console.log(`Plano pendente ${pending.plan} ativado para ${user.email}`);
       }
