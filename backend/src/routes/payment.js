@@ -114,22 +114,23 @@ router.post('/webhook', async (req, res) => {
             .eq('email', payerEmail)
             .single();
 
+          // Sempre salva em pending_plans primeiro
+          await supabase.from('pending_plans').upsert({
+            email: payerEmail,
+            plan: planData.plan,
+            scripts_limit: planData.limit,
+          });
+          console.log('Plano salvo em pending_plans para:', payerEmail);
+
+          // Se usuario ja existe, ativa imediatamente e limpa pending
           if (existing) {
             await supabase
               .from('users')
               .update({ plan: planData.plan, scripts_limit: planData.limit, scripts_used: 0, reset_at: now })
               .eq('email', payerEmail);
+            await supabase.from('pending_plans').delete().eq('email', payerEmail);
             console.log('Plano ativado para usuario existente:', payerEmail);
-          } else {
-            await supabase.from('pending_plans').upsert({
-              email: payerEmail,
-              plan: planData.plan,
-              scripts_limit: planData.limit,
-            });
-            console.log('Plano pendente salvo para:', payerEmail);
           }
-          // Garante que pending_plans esta limpo se usuario existe
-          await supabase.from('pending_plans').delete().eq('email', payerEmail);
           // Envia email sem bloquear
           sendEmail(payerEmail, 'Seu acesso ao Autor.ai esta liberado!', EMAIL_HTML).catch(e => console.error('Email falhou:', e.message));
         }
