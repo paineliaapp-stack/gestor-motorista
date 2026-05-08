@@ -5,6 +5,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useScriptGenerator } from '../../hooks/useScriptGenerator';
+import { BookChat } from './BookChat';
 import { ScriptModal } from '../../components/script/ScriptModal';
 
 if (typeof document !== 'undefined' && !document.getElementById('bw-fonts')) {
@@ -612,6 +613,7 @@ export function BooksWorld() {
     localStorage.setItem('viralnews_saved_scripts', JSON.stringify(updated));
   };
   const [apiBooks, setApiBooks] = useState([]);
+  const [highlightedIndices, setHighlightedIndices] = useState([]);
   const [searching, setSearching] = useState(false);
 
   const filtered = BOOKS.filter(b => {
@@ -738,6 +740,12 @@ export function BooksWorld() {
           </div>
         )}
       </div>
+
+      <BookChat
+        books={BOOKS}
+        onHighlight={setHighlightedIndices}
+        onSelectBook={(book) => setSelectedBook(book)}
+      />
 
       {selectedBook && (
         <BooksModal
