@@ -38,7 +38,7 @@ router.get('/config', (_req, res) => {
 
 router.post('/create-preference', async (req, res) => {
   try {
-    const { title, price, quantity = 1, email: customerEmail } = req.body;
+    const { title, price, quantity = 1, email: customerEmail, planTitle } = req.body;
     const preference = new Preference(client);
     const result = await preference.create({
       body: {
@@ -53,10 +53,16 @@ router.post('/create-preference', async (req, res) => {
     });
     // Salva email antecipado se fornecido
     if (customerEmail && result.id) {
+      const PLAN_MAP_LANDING = {
+        'Plano B\u00e1sico': { plan: 'basic', limit: 30 },
+        'Plano Fundador': { plan: 'founder', limit: 100 },
+        'Plano Pro': { plan: 'pro', limit: 200 },
+      };
+      const planData = PLAN_MAP_LANDING[planTitle] || { plan: 'pending', limit: 0 };
       await supabase.from('pending_plans').upsert({
         email: customerEmail.trim().toLowerCase(),
-        plan: 'pending',
-        scripts_limit: 0,
+        plan: planData.plan,
+        scripts_limit: planData.limit,
         preference_id: result.id,
       }).select();
     }
