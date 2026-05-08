@@ -77,7 +77,7 @@ router.post('/webhook', async (req, res) => {
       if (info.status === 'approved') {
         const title = info.additional_info?.items?.[0]?.title || '';
         const planData = PLAN_MAP[title];
-        const payerEmail = info.payer?.email;
+        const payerEmail = info.payer?.email?.trim().toLowerCase();
 
         if (planData && payerEmail) {
           const now = new Date().toISOString();
