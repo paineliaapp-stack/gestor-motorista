@@ -211,6 +211,22 @@ export default function App() {
           color:'#fff', fontWeight:700, fontSize:15, padding:'14px 32px',
           borderRadius:12, textDecoration:'none', marginBottom:16,
         }}>Ver planos →</a>
+        <button onClick={async () => {
+          const token = localStorage.getItem('autor_token');
+          if (!token) return;
+          const r = await fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+          const data = await r.json();
+          if (data.user && data.user.plan && data.user.plan !== 'none') {
+            localStorage.setItem('autor_user', JSON.stringify(data.user));
+            setUser(data.user);
+          } else {
+            alert('Pagamento ainda não confirmado. Aguarde alguns segundos e tente novamente.');
+          }
+        }} style={{
+          display:'block', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)',
+          color:'rgba(255,255,255,0.6)', fontWeight:600, fontSize:14, padding:'12px 32px',
+          borderRadius:12, cursor:'pointer', marginBottom:12, width:'100%',
+        }}>✓ Já paguei, verificar acesso</button>
         <button onClick={handleLogout} style={{
           background:'none', border:'none', color:'rgba(255,255,255,0.3)',
           fontSize:13, cursor:'pointer',
