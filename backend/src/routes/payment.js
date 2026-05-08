@@ -129,7 +129,8 @@ router.post('/webhook', async (req, res) => {
             });
             console.log('Plano pendente salvo para', payerEmail);
           }
-          await sendEmail(payerEmail, 'Seu acesso ao Autor.ai esta liberado!', EMAIL_HTML);
+          // Envia email sem bloquear
+          sendEmail(payerEmail, 'Seu acesso ao Autor.ai esta liberado!', EMAIL_HTML).catch(e => console.error('Email falhou:', e.message));
         }
       }
     }
