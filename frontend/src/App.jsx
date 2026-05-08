@@ -166,18 +166,30 @@ export default function App() {
   useEffect(() => {
     const token = localStorage.getItem('autor_token');
     if (!token) return;
+    if (window._justLoggedIn) return;
     fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(data => {
         if (data.user) {
           localStorage.setItem('autor_user', JSON.stringify(data.user));
           setUser(data.user);
+        } else {
+          localStorage.clear();
+          setUser(null);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        localStorage.clear();
+        setUser(null);
+      });
   }, []);
 
-  function handleLogin(u) { setUser(u); }
+  function handleLogin(u) {
+    setUser(u);
+    // Marca que acabou de fazer login para o useEffect nao sobrescrever
+    window._justLoggedIn = true;
+    setTimeout(() => { window._justLoggedIn = false; }, 5000);
+  }
 
   function handleLogout() {
     localStorage.removeItem('autor_token');
