@@ -15,26 +15,154 @@ if (typeof document !== 'undefined' && !document.getElementById('bw-fonts')) {
 }
 
 const BOOKS = [
-  { title: 'Hábitos Atômicos',                           author: 'James Clear',               cat: 'Produtividade', score: 9.1 },
-  { title: 'O Poder do Hábito',                      author: 'Charles Duhigg',            cat: 'Produtividade', score: 8.7 },
-  { title: 'Sapiens',                                 author: 'Yuval Noah Harari',         cat: 'História',      score: 9.4 },
-  { title: 'A Sutil Arte de Ligar o F*da-se',     author: 'Mark Manson',               cat: 'Autoajuda',     score: 8.9 },
-  { title: 'Mindset: A Nova Psicologia do Sucesso',                                 author: 'Carol Dweck',               cat: 'Psicologia',    score: 8.6 },
-  { title: 'Milagre da Manhã',                     author: 'Hal Elrod',                 cat: 'Produtividade', score: 7.8 },
-  { title: 'Ansiedade',                               author: 'Augusto Cury',              cat: 'Saúde Mental',  score: 7.5 },
-  { title: 'Os 7 Hábitos das Pessoas Altamente Eficazes', author: 'Stephen Covey',             cat: 'Liderança',     score: 8.8 },
-  { title: 'Rápido e Devagar',                  author: 'Daniel Kahneman',           cat: 'Psicologia',    score: 9.0 },
-  { title: 'Em Busca de Sentido',                author: 'Viktor Frankl',             cat: 'Filosofia',     score: 9.3 },
-  { title: 'Pai Rico Pai Pobre',                       author: 'Robert Kiyosaki',           cat: 'Finanças',      score: 8.5 },
-  { title: 'Como Fazer Amigos e Influenciar Pessoas', author: 'Dale Carnegie',             cat: 'Relacionamentos',score: 8.4 },
-  { title: 'O Poder do Agora',                        author: 'Eckhart Tolle',             cat: 'Filosofia',     score: 8.7 },
-  { title: 'Os Dons da Imperfeição',               author: 'Brené Brown',               cat: 'Autoajuda',     score: 8.3 },
-  { title: 'A Arte da Guerra',                          author: 'Sun Tzu',                   cat: 'Estratégia',    score: 8.9 },
-  { title: 'O Pequeno Príncipe',                       author: 'Antoine de Saint-Exupéry',  cat: 'Literatura',    score: 9.2 },
-  { title: 'Dom Casmurro',                            author: 'Machado de Assis',          cat: 'Literatura',    score: 8.8 },
-  { title: 'O Segredo',                              author: 'Rhonda Byrne',              cat: 'Autoajuda',     score: 7.4 },
-  { title: 'O Monge e o Executivo',                             author: 'James Hunter',              cat: 'Liderança',     score: 8.0 },
-  { title: 'A Revolução dos Bichos',                             author: 'George Orwell',             cat: 'Literatura',    score: 9.1 },
+  // PRODUTIVIDADE
+  { title: 'Hábitos Atômicos', author: 'James Clear', cat: 'Produtividade', score: 9.1 },
+  { title: 'O Poder do Hábito', author: 'Charles Duhigg', cat: 'Produtividade', score: 8.7 },
+  { title: 'Milagre da Manhã', author: 'Hal Elrod', cat: 'Produtividade', score: 7.8 },
+  { title: 'Os 7 Hábitos das Pessoas Altamente Eficazes', author: 'Stephen Covey', cat: 'Produtividade', score: 8.8 },
+  { title: 'Eat That Frog', author: 'Brian Tracy', cat: 'Produtividade', score: 8.2 },
+  { title: 'Deep Work', author: 'Cal Newport', cat: 'Produtividade', score: 8.9 },
+  { title: 'Essentialism', author: 'Greg McKeown', cat: 'Produtividade', score: 8.6 },
+  { title: 'Getting Things Done', author: 'David Allen', cat: 'Produtividade', score: 8.3 },
+  { title: 'The One Thing', author: 'Gary Keller', cat: 'Produtividade', score: 8.4 },
+  { title: 'Ikigai', author: 'Héctor García', cat: 'Produtividade', score: 8.5 },
+
+  // PSICOLOGIA
+  { title: 'Mindset: A Nova Psicologia do Sucesso', author: 'Carol Dweck', cat: 'Psicologia', score: 8.6 },
+  { title: 'Rápido e Devagar', author: 'Daniel Kahneman', cat: 'Psicologia', score: 9.0 },
+  { title: 'Ansiedade', author: 'Augusto Cury', cat: 'Psicologia', score: 7.5 },
+  { title: 'O Homem em Busca de Sentido', author: 'Viktor Frankl', cat: 'Psicologia', score: 9.3 },
+  { title: 'Os Dons da Imperfeição', author: 'Brené Brown', cat: 'Psicologia', score: 8.3 },
+  { title: 'Inteligência Emocional', author: 'Daniel Goleman', cat: 'Psicologia', score: 8.7 },
+  { title: 'O Poder da Vulnerabilidade', author: 'Brené Brown', cat: 'Psicologia', score: 8.5 },
+  { title: 'Flow', author: 'Mihaly Csikszentmihalyi', cat: 'Psicologia', score: 8.8 },
+  { title: 'Thinking Fast and Slow', author: 'Daniel Kahneman', cat: 'Psicologia', score: 9.0 },
+  { title: 'A Psicologia das Massas', author: 'Gustave Le Bon', cat: 'Psicologia', score: 8.1 },
+
+  // AUTOAJUDA
+  { title: 'A Sutil Arte de Ligar o F*da-se', author: 'Mark Manson', cat: 'Autoajuda', score: 8.9 },
+  { title: 'O Segredo', author: 'Rhonda Byrne', cat: 'Autoajuda', score: 7.4 },
+  { title: 'O Poder do Agora', author: 'Eckhart Tolle', cat: 'Autoajuda', score: 8.7 },
+  { title: 'Seja Dono do Seu Dia', author: 'Jocko Willink', cat: 'Autoajuda', score: 8.4 },
+  { title: 'O Ego é Seu Inimigo', author: 'Ryan Holiday', cat: 'Autoajuda', score: 8.6 },
+  { title: 'Acredite em Você', author: 'Jack Canfield', cat: 'Autoajuda', score: 7.8 },
+  { title: 'O Milagre da Gratidão', author: 'Rhonda Byrne', cat: 'Autoajuda', score: 7.5 },
+  { title: 'Desperte o Gigante Interior', author: 'Tony Robbins', cat: 'Autoajuda', score: 8.3 },
+  { title: 'Os Quatro Compromissos', author: 'Don Miguel Ruiz', cat: 'Autoajuda', score: 8.5 },
+  { title: 'O Obstáculo é o Caminho', author: 'Ryan Holiday', cat: 'Autoajuda', score: 8.7 },
+
+  // NEGÓCIOS
+  { title: 'Pai Rico Pai Pobre', author: 'Robert Kiyosaki', cat: 'Negócios', score: 8.5 },
+  { title: 'A Startup Enxuta', author: 'Eric Ries', cat: 'Negócios', score: 8.8 },
+  { title: 'De Zero a Um', author: 'Peter Thiel', cat: 'Negócios', score: 9.1 },
+  { title: 'A Lógica do Cisne Negro', author: 'Nassim Taleb', cat: 'Negócios', score: 9.0 },
+  { title: 'Como Fazer Amigos e Influenciar Pessoas', author: 'Dale Carnegie', cat: 'Negócios', score: 8.4 },
+  { title: 'O Monge e o Executivo', author: 'James Hunter', cat: 'Negócios', score: 8.0 },
+  { title: 'Blitzscaling', author: 'Reid Hoffman', cat: 'Negócios', score: 8.6 },
+  { title: 'Good to Great', author: 'Jim Collins', cat: 'Negócios', score: 8.9 },
+  { title: 'Rework', author: 'Jason Fried', cat: 'Negócios', score: 8.5 },
+  { title: 'O Ponto da Virada', author: 'Malcolm Gladwell', cat: 'Negócios', score: 8.8 },
+  { title: 'Fora de Série', author: 'Malcolm Gladwell', cat: 'Negócios', score: 8.7 },
+  { title: 'Traction', author: 'Gabriel Weinberg', cat: 'Negócios', score: 8.4 },
+
+  // FINANÇAS
+  { title: 'O Investidor Inteligente', author: 'Benjamin Graham', cat: 'Finanças', score: 9.2 },
+  { title: 'A Psicologia do Dinheiro', author: 'Morgan Housel', cat: 'Finanças', score: 9.3 },
+  { title: 'Antifrágil', author: 'Nassim Taleb', cat: 'Finanças', score: 9.0 },
+  { title: 'Os Segredos da Mente Milionária', author: 'T. Harv Eker', cat: 'Finanças', score: 8.2 },
+  { title: 'Dinheiro: Domine o Jogo', author: 'Tony Robbins', cat: 'Finanças', score: 8.0 },
+  { title: 'O Homem Mais Rico da Babilônia', author: 'George Clason', cat: 'Finanças', score: 8.6 },
+  { title: 'Múltiplos Fluxos de Renda', author: 'Robert Allen', cat: 'Finanças', score: 7.9 },
+  { title: 'Dinheiro Mestre do Jogo', author: 'Tony Robbins', cat: 'Finanças', score: 8.1 },
+
+  // LIDERANÇA
+  { title: 'Liderança Extrema', author: 'Jocko Willink', cat: 'Liderança', score: 8.9 },
+  { title: 'Os 21 Princípios da Liderança', author: 'John Maxwell', cat: 'Liderança', score: 8.5 },
+  { title: 'Comece pelo Porquê', author: 'Simon Sinek', cat: 'Liderança', score: 9.0 },
+  { title: 'Os Líderes se Servem Por Último', author: 'Simon Sinek', cat: 'Liderança', score: 8.8 },
+  { title: 'Tribu', author: 'Seth Godin', cat: 'Liderança', score: 8.3 },
+  { title: 'O Jogo Infinito', author: 'Simon Sinek', cat: 'Liderança', score: 8.7 },
+
+  // SOCIEDADE
+  { title: 'Sapiens', author: 'Yuval Noah Harari', cat: 'Sociedade', score: 9.4 },
+  { title: 'Homo Deus', author: 'Yuval Noah Harari', cat: 'Sociedade', score: 9.1 },
+  { title: '21 Lições para o Século 21', author: 'Yuval Noah Harari', cat: 'Sociedade', score: 8.9 },
+  { title: 'A Revolução dos Bichos', author: 'George Orwell', cat: 'Sociedade', score: 9.1 },
+  { title: '1984', author: 'George Orwell', cat: 'Sociedade', score: 9.5 },
+  { title: 'Admirável Mundo Novo', author: 'Aldous Huxley', cat: 'Sociedade', score: 9.2 },
+  { title: 'O Príncipe', author: 'Nicolau Maquiavel', cat: 'Sociedade', score: 8.9 },
+  { title: 'Armas Germes e Aço', author: 'Jared Diamond', cat: 'Sociedade', score: 9.1 },
+  { title: 'O Colapso', author: 'Jared Diamond', cat: 'Sociedade', score: 8.7 },
+  { title: 'Como as Democracias Morrem', author: 'Steven Levitsky', cat: 'Sociedade', score: 9.2 },
+  { title: 'A Origem das Espécies', author: 'Charles Darwin', cat: 'Sociedade', score: 9.0 },
+
+  // FILOSOFIA
+  { title: 'O Pequeno Príncipe', author: 'Antoine de Saint-Exupéry', cat: 'Filosofia', score: 9.2 },
+  { title: 'Meditações', author: 'Marco Aurélio', cat: 'Filosofia', score: 9.3 },
+  { title: 'A República', author: 'Platão', cat: 'Filosofia', score: 8.9 },
+  { title: 'Assim Falou Zaratustra', author: 'Friedrich Nietzsche', cat: 'Filosofia', score: 9.0 },
+  { title: 'Cartas a Lucílio', author: 'Sêneca', cat: 'Filosofia', score: 9.1 },
+  { title: 'A Arte de Amar', author: 'Erich Fromm', cat: 'Filosofia', score: 8.8 },
+  { title: 'O Mundo de Sofia', author: 'Jostein Gaarder', cat: 'Filosofia', score: 8.6 },
+
+  // LITERATURA
+  { title: 'Dom Casmurro', author: 'Machado de Assis', cat: 'Literatura', score: 8.8 },
+  { title: 'Grande Sertão Veredas', author: 'João Guimarães Rosa', cat: 'Literatura', score: 9.0 },
+  { title: 'O Alquimista', author: 'Paulo Coelho', cat: 'Literatura', score: 8.7 },
+  { title: 'Cem Anos de Solidão', author: 'Gabriel García Márquez', cat: 'Literatura', score: 9.4 },
+  { title: 'Crime e Castigo', author: 'Fiódor Dostoiévski', cat: 'Literatura', score: 9.3 },
+  { title: 'O Processo', author: 'Franz Kafka', cat: 'Literatura', score: 9.1 },
+  { title: 'A Metamorfose', author: 'Franz Kafka', cat: 'Literatura', score: 8.9 },
+
+  // CIÊNCIA
+  { title: 'Breve História do Tempo', author: 'Stephen Hawking', cat: 'Ciência', score: 9.2 },
+  { title: 'O Gene Egoísta', author: 'Richard Dawkins', cat: 'Ciência', score: 9.0 },
+  { title: 'A Ordem do Tempo', author: 'Carlo Rovelli', cat: 'Ciência', score: 8.9 },
+  { title: 'O Universo Elegante', author: 'Brian Greene', cat: 'Ciência', score: 8.7 },
+  { title: 'Sete Breves Lições de Física', author: 'Carlo Rovelli', cat: 'Ciência', score: 8.8 },
+
+  // ESTRATÉGIA
+  { title: 'A Arte da Guerra', author: 'Sun Tzu', cat: 'Estratégia', score: 8.9 },
+  { title: 'As 48 Leis do Poder', author: 'Robert Greene', cat: 'Estratégia', score: 9.0 },
+  { title: 'As 33 Estratégias de Guerra', author: 'Robert Greene', cat: 'Estratégia', score: 8.8 },
+  { title: 'A Sedução', author: 'Robert Greene', cat: 'Estratégia', score: 8.6 },
+  { title: 'O Domínio', author: 'Robert Greene', cat: 'Estratégia', score: 8.7 },
+
+  // COMPORTAMENTO HUMANO
+  { title: 'Previsivelmente Irracional', author: 'Dan Ariely', cat: 'Comportamento', score: 9.0 },
+  { title: 'Nudge', author: 'Richard Thaler', cat: 'Comportamento', score: 8.8 },
+  { title: 'A Lógica do Consumo', author: 'Martin Lindstrom', cat: 'Comportamento', score: 8.6 },
+  { title: 'Subliminar', author: 'Leonard Mlodinow', cat: 'Comportamento', score: 8.7 },
+  { title: 'O Efeito Halo', author: 'Phil Rosenzweig', cat: 'Comportamento', score: 8.4 },
+  { title: 'Blink', author: 'Malcolm Gladwell', cat: 'Comportamento', score: 8.9 },
+  { title: 'Previsível', author: 'Dan Ariely', cat: 'Comportamento', score: 8.5 },
+  { title: 'A Psicologia da Persuasão', author: 'Kevin Hogan', cat: 'Comportamento', score: 8.3 },
+  { title: 'O Poder do Contexto', author: 'Malcolm Gladwell', cat: 'Comportamento', score: 8.6 },
+  { title: 'Você não é tão Esperto quanto Pensa', author: 'David McRaney', cat: 'Comportamento', score: 8.4 },
+
+  // PERSUASÃO
+  { title: 'As Armas da Persuasão', author: 'Robert Cialdini', cat: 'Persuasão', score: 9.4 },
+  { title: 'Pré-Suasão', author: 'Robert Cialdini', cat: 'Persuasão', score: 9.1 },
+  { title: 'Como Convencer Alguém em 90 Segundos', author: 'Nicholas Boothman', cat: 'Persuasão', score: 8.3 },
+  { title: 'Neuromarketing', author: 'Patrick Renvoise', cat: 'Persuasão', score: 8.6 },
+  { title: 'Gatilhos Mentais', author: 'Gustavo Ferreira', cat: 'Persuasão', score: 8.8 },
+  { title: 'Pitch Anything', author: 'Oren Klaff', cat: 'Persuasão', score: 8.7 },
+  { title: 'Never Split the Difference', author: 'Chris Voss', cat: 'Persuasão', score: 9.2 },
+  { title: 'Como Falar em Público e Encantar as Pessoas', author: 'Dale Carnegie', cat: 'Persuasão', score: 8.4 },
+  { title: 'O Poder da Comunicação', author: 'Carmine Gallo', cat: 'Persuasão', score: 8.5 },
+  { title: 'Fale como Ted', author: 'Carmine Gallo', cat: 'Persuasão', score: 8.7 },
+
+  // VENDAS
+  { title: 'A Venda Desafiadora', author: 'Matthew Dixon', cat: 'Vendas', score: 8.9 },
+  { title: 'SPIN Selling', author: 'Neil Rackham', cat: 'Vendas', score: 9.0 },
+  { title: 'Receita Previsível', author: 'Aaron Ross', cat: 'Vendas', score: 9.1 },
+  { title: 'Vender é Humano', author: 'Daniel Pink', cat: 'Vendas', score: 8.7 },
+  { title: 'Way of the Wolf', author: 'Jordan Belfort', cat: 'Vendas', score: 8.6 },
+  { title: 'Objeções', author: 'Jeb Blount', cat: 'Vendas', score: 8.5 },
+  { title: 'Prospecção Fanática', author: 'Jeb Blount', cat: 'Vendas', score: 8.7 },
+  { title: 'O Guia do Mestre das Vendas', author: 'Jeffrey Gitomer', cat: 'Vendas', score: 8.4 },
+  { title: 'A Máquina de Vendas Definitiva', author: 'Chet Holmes', cat: 'Vendas', score: 8.6 },
+  { title: 'Venda ou Seja Vendido', author: 'Grant Cardone', cat: 'Vendas', score: 8.8 },
 ];
 
 // Títulos em PT para exibição (mantém busca em EN para melhor cobertura)
@@ -56,7 +184,7 @@ const DISPLAY_TITLES = {
   'A Revolução dos Bichos': 'A Revolução dos Bichos',
 };
 
-const CATS = ['Todos', 'Produtividade', 'Psicologia', 'Finanças', 'Autoajuda', 'Filosofia', 'Literatura', 'Liderança', 'Saúde Mental', 'História', 'Estratégia', 'Relacionamentos'];
+const CATS = ['Todos', 'Produtividade', 'Psicologia', 'Finanças', 'Autoajuda', 'Filosofia', 'Literatura', 'Liderança', 'Negócios', 'Sociedade', 'Estratégia', 'Comportamento', 'Persuasão', 'Vendas', 'Ciência'];
 const PLATFORMS = [['tiktok', 'TikTok / Instagram'], ['youtube_shorts', 'YT Shorts'], ['youtube_long', 'YT Longo']];
 const STYLES    = [['educational', 'Educacional'], ['storytelling', 'Storytelling'], ['dark_channel', 'Entretenimento'], ['controversial', 'Debate']];
 
