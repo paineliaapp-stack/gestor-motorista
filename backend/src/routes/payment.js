@@ -43,6 +43,7 @@ router.post('/create-preference', async (req, res) => {
     const result = await preference.create({
       body: {
         items: [{ title, unit_price: Number(price), quantity }],
+        external_reference: customerEmail || 'unknown',
         back_urls: {
           success: 'https://autorai.com.br/payment-success.html',
           failure: 'https://autorai.com.br/payment-success.html',
@@ -110,18 +111,12 @@ router.post('/webhook', async (req, res) => {
         console.log('external_ref:', info.external_reference);
         console.log('order:', JSON.stringify(info.order));
         // Fallback: busca email pelo preference_id se MP nao enviou
-        // Fallback: busca o email mais recente com plan=pending no supabase
-        if (!payerEmail) {
-          const { data: pending } = await supabase
-            .from('pending_plans')
-            .select('email')
-            .eq('plan', 'pending')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
-          if (pending?.email) {
-            payerEmail = pending.email;
-            console.log('Email recuperado do pending_plans:', payerEmail);
+        // Fallback: usa external_reference que foi setado com o email no checkout
+        if (!payerEmail && info.external_reference && info.external_reference !== 'unknown') {
+          const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(info.external_reference);
+          if (isValid) {
+            payerEmail = info.external_reference;
+            console.log('Email recuperado do external_reference:', payerEmail);
           }
         }
 
