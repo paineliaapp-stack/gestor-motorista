@@ -60,7 +60,9 @@ router.post('/google', async (req, res) => {
         .eq('email', user.email)
         .single();
 
+      console.log('pending encontrado:', JSON.stringify(pending));
       const hasPlan = pending && pending.plan && pending.plan !== 'pending';
+      console.log('hasPlan:', hasPlan);
 
       await supabase.from('users').insert({
         id: user.id,
