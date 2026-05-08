@@ -31,12 +31,53 @@ router.post('/create-preference', async (req, res) => {
   }
 });
 
+const PLAN_MAP = {
+  'Plano Básico': { plan: 'basic', limit: 30 },
+  'Plano Fundador': { plan: 'founder', limit: 100 },
+  'Plano Pro': { plan: 'pro', limit: 200 },
+};
+
 router.post('/webhook', async (req, res) => {
-  const { type, data } = req.body;
-  if (type === 'payment') {
-    const payment = new Payment(client);
-    const info = await payment.get({ id: data.id });
-    console.log('Pagamento recebido:', info.status, info.id);
+  try {
+    const { type, data } = req.body;
+    if (type === 'payment' && data?.id) {
+      const payment = new Payment(client);
+      const info = await payment.get({ id: data.id });
+      console.log('Webhook pagamento:', info.status, info.id);
+
+      if (info.status === 'approved') {
+        const title = info.additional_info?.items?.[0]?.title || '';
+        const planData = PLAN_MAP[title];
+        const payerEmail = info.payer?.email;
+
+        if (planData && payerEmail) {
+          const { supabase } = await import('../config/supabase.js');
+          const now = new Date().toISOString();
+          const { data: existing } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', payerEmail)
+            .single();
+
+          if (existing) {
+            await supabase
+              .from('users')
+              .update({
+                plan: planData.plan,
+                scripts_limit: planData.limit,
+                scripts_used: 0,
+                reset_at: now,
+              })
+              .eq('email', payerEmail);
+            console.log(`Plano ${planData.plan} ativado para ${payerEmail}`);
+          } else {
+            console.log(`Usuário ${payerEmail} ainda não fez login — plano pendente`);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Webhook error:', err.message);
   }
   res.sendStatus(200);
 });
