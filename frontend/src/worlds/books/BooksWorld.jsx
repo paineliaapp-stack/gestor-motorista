@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useScriptGenerator } from '../../hooks/useScriptGenerator';
 import { BookChat } from './BookChat';
+import { PersonaModal } from './PersonaModal';
 import { ScriptModal } from '../../components/script/ScriptModal';
 
 if (typeof document !== 'undefined' && !document.getElementById('bw-fonts')) {
@@ -621,6 +622,7 @@ export function BooksWorld() {
   };
   const [apiBooks, setApiBooks] = useState([]);
   const [highlightedIndices, setHighlightedIndices] = useState([]);
+  const [personaSelection, setPersonaSelection] = useState(null);
   const [searching, setSearching] = useState(false);
 
   const filtered = BOOKS.filter(b => {
@@ -751,8 +753,16 @@ export function BooksWorld() {
       <BookChat
         books={BOOKS}
         onHighlight={setHighlightedIndices}
-        onSelectBook={(book) => setSelectedBook(book)}
+        onSelectBook={(book, personaKey) => personaKey ? setPersonaSelection({ book, personaKey }) : setSelectedBook(book)}
       />
+
+      {personaSelection && (
+        <PersonaModal
+          book={personaSelection.book}
+          personaKey={personaSelection.personaKey}
+          onClose={() => setPersonaSelection(null)}
+        />
+      )}
 
       {selectedBook && (
         <BooksModal
