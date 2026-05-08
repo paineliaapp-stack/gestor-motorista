@@ -100,9 +100,15 @@ router.post('/webhook', async (req, res) => {
           console.log('MP enviou valor invalido no email:', rawPayerEmail);
         }
 
-        console.log('preference_id do MP:', info.preference_id);
-        console.log('preference_id do MP:', info.preference_id);
-        console.log('preference_id do MP:', info.preference_id);
+        console.log('preference_id:', info.preference_id);
+        console.log('external_ref:', info.external_reference);
+        console.log('order:', JSON.stringify(info.order));
+        console.log('preference_id:', info.preference_id);
+        console.log('external_ref:', info.external_reference);
+        console.log('order:', JSON.stringify(info.order));
+        console.log('preference_id:', info.preference_id);
+        console.log('external_ref:', info.external_reference);
+        console.log('order:', JSON.stringify(info.order));
         // Fallback: busca email pelo preference_id se MP nao enviou
         if (!payerEmail && info.preference_id) {
           const { data: pending } = await supabase
