@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { LoginScreen } from './components/LoginScreen';
 import { Termos } from './pages/Termos';
 import { Privacidade } from './pages/Privacidade';
+import { Planos } from './pages/Planos';
 const STATIC_ITEMS = [
   "0.3% dos vídeos passam de 1M de views",
   "73º vídeo — média do primeiro viral de um criador",
@@ -172,6 +173,38 @@ export default function App() {
 
   if (!user) return <LoginScreen onLogin={handleLogin} />;
 
+  if (!user.plan || user.plan === 'none') return (
+    <div style={{
+      minHeight:'100vh', background:'#07070f', display:'flex', alignItems:'center',
+      justifyContent:'center', flexDirection:'column', gap:24, fontFamily:'-apple-system,sans-serif', padding:24,
+    }}>
+      <div style={{textAlign:'center'}}>
+        <div style={{fontSize:48,fontWeight:800,color:'#fff',letterSpacing:'-2px'}}>
+          Autor<span style={{color:'#7c5cfc'}}>.AI</span>
+        </div>
+      </div>
+      <div style={{
+        background:'#111120', border:'1px solid rgba(255,255,255,0.08)',
+        borderRadius:16, padding:'40px 48px', maxWidth:400, width:'100%', textAlign:'center',
+      }}>
+        <div style={{fontSize:32,marginBottom:16}}>🔒</div>
+        <p style={{color:'#fff',fontWeight:600,fontSize:18,margin:'0 0 8px'}}>Acesso restrito</p>
+        <p style={{color:'rgba(255,255,255,0.4)',fontSize:14,margin:'0 0 24px',lineHeight:1.6}}>
+          Você precisa de um plano ativo para acessar a plataforma.
+        </p>
+        <a href="https://autorai.com.br/#planos" style={{
+          display:'block', background:'linear-gradient(135deg,#7c5cfc,#00e5b0)',
+          color:'#fff', fontWeight:700, fontSize:15, padding:'14px 32px',
+          borderRadius:12, textDecoration:'none', marginBottom:16,
+        }}>Ver planos →</a>
+        <button onClick={handleLogout} style={{
+          background:'none', border:'none', color:'rgba(255,255,255,0.3)',
+          fontSize:13, cursor:'pointer',
+        }}>Sair</button>
+      </div>
+    </div>
+  );
+
   return (
     <LanguageProvider>
       <BrowserRouter>
@@ -184,7 +217,8 @@ export default function App() {
           <Route path="/niche" element={<NicheWorld />} />
           <Route path="/termos" element={<Termos />} />
           <Route path="/privacidade" element={<Privacidade />} />
-        </Routes>
+<Route path="/planos" element={<Planos />} />       
+ </Routes>
       </BrowserRouter>
     </LanguageProvider>
   );
