@@ -742,21 +742,21 @@ export function BooksWorld() {
             <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.22)', fontWeight: 300 }}>Tente outra busca ou categoria</p>
           </div>
         ) : (
-          {highlightedIndices.length > 0 && activePersonaKey && (
+          {highlightedIndices.length > 0 && activePersonaKey && (() => {
+            const pEmoji = activePersonaKey === 'lira' ? '🎙️' : activePersonaKey === 'atlas' ? '🌍' : '⚡';
+            const pName = activePersonaKey === 'lira' ? 'Lira' : activePersonaKey === 'atlas' ? 'Atlas' : 'Faísca';
+            return (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 12,
               padding: '12px 18px', marginBottom: 14,
               background: 'rgba(255,255,255,0.05)',
               border: '1px solid rgba(255,255,255,0.12)',
               borderRadius: 12,
-              animation: 'bwSlideUp 0.4s ease',
             }}>
-              <span style={{ fontSize: 20 }}>
-                {{'lira': '🎙️', 'atlas': '🌍', 'faisca': '⚡'}[activePersonaKey]}
-              </span>
+              <span style={{ fontSize: 20 }}>{pEmoji}</span>
               <div style={{ flex: 1 }}>
                 <p style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
-                  {{'lira': 'Lira', 'atlas': 'Atlas', 'faisca': 'Faísca'}[activePersonaKey]} selecionou {highlightedIndices.length} livros para você
+                  {pName} selecionou {highlightedIndices.length} livros para você
                 </p>
                 <p style={{ margin: '2px 0 0', fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
                   Role a página para ver os destaques · Clique em um para gerar o roteiro
@@ -766,7 +766,8 @@ export function BooksWorld() {
                 OS OUTROS FICARAM EM 2º PLANO
               </span>
             </div>
-          )}
+            );
+          })()}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
             {displayBooks.map((book, i) => (
               <BookCard key={book.title + book.author} book={book} index={i} onClick={(b) => { if (highlightedIndices.includes(i) && activePersonaKey) { setPersonaSelection({ book: b, personaKey: activePersonaKey }); } else { setSelectedBook(b); } }} highlighted={highlightedIndices.length > 0 && highlightedIndices.includes(i)} dimmed={highlightedIndices.length > 0 && !highlightedIndices.includes(i)} />
