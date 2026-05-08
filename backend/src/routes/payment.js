@@ -52,21 +52,6 @@ router.post('/create-preference', async (req, res) => {
         auto_return: 'approved',
       },
     });
-    // Salva email antecipado se fornecido
-    if (customerEmail && result.id) {
-      const PLAN_MAP_LANDING = {
-        'Plano B\u00e1sico': { plan: 'basic', limit: 30 },
-        'Plano Fundador': { plan: 'founder', limit: 100 },
-        'Plano Pro': { plan: 'pro', limit: 200 },
-      };
-      const planData = PLAN_MAP_LANDING[planTitle] || { plan: 'pending', limit: 0 };
-      await supabase.from('pending_plans').upsert({
-        email: customerEmail.trim().toLowerCase(),
-        plan: planData.plan,
-        scripts_limit: planData.limit,
-        preference_id: result.id,
-      }).select();
-    }
     res.json({ id: result.id, init_point: result.init_point });
   } catch (err) {
     console.error('MP error:', err);
