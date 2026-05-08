@@ -1,4 +1,5 @@
 import express from 'express';
+import { supabase } from '../config/supabase.js';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { config } from '../config/index.js';
 
@@ -51,7 +52,6 @@ router.post('/webhook', async (req, res) => {
         const payerEmail = info.payer?.email;
 
         if (planData && payerEmail) {
-          const { supabase } = await import('../config/supabase.js');
           const now = new Date().toISOString();
           const { data: existing } = await supabase
             .from('users')
@@ -71,7 +71,13 @@ router.post('/webhook', async (req, res) => {
               .eq('email', payerEmail);
             console.log(`Plano ${planData.plan} ativado para ${payerEmail}`);
           } else {
-            console.log(`Usuário ${payerEmail} ainda não fez login — plano pendente`);
+            // Salva plano pendente para ativar no primeiro login
+            await supabase.from('pending_plans').upsert({
+              email: payerEmail,
+              plan: planData.plan,
+              scripts_limit: planData.limit,
+            });
+            console.log(`Plano ${planData.plan} salvo como pendente para ${payerEmail}`);
           }
         }
       }
