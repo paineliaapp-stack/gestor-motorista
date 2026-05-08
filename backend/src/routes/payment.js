@@ -19,6 +19,17 @@ async function sendEmail(to, subject, html) {
     console.error('Email error:', err.message);
   }
 }
+
+const EMAIL_HTML = `
+  <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#07080d;color:#fff;padding:40px;border-radius:16px">
+    <div style="font-size:28px;font-weight:800;margin-bottom:8px">Autor<span style="color:#00e5b0">.AI</span></div>
+    <h2 style="margin:24px 0 8px">Acesso liberado!</h2>
+    <p style="color:rgba(255,255,255,0.6);margin-bottom:24px">Seu pagamento foi confirmado. Clique no botao abaixo para acessar a plataforma:</p>
+    <a href="https://autorai.vercel.app" style="display:inline-block;background:linear-gradient(135deg,#00e5b0,#00b8ff);color:#07080d;font-weight:700;font-size:16px;padding:14px 32px;border-radius:12px;text-decoration:none;margin-bottom:24px">Acessar o Autor.ai</a>
+    <p style="color:rgba(255,255,255,0.4);font-size:13px">Faca login com o Google usando este email. Duvidas? autor.ai.app@gmail.com</p>
+  </div>
+`;
+
 const client = new MercadoPagoConfig({ accessToken: config.mpAccessToken });
 
 router.get('/config', (_req, res) => {
@@ -33,9 +44,9 @@ router.post('/create-preference', async (req, res) => {
       body: {
         items: [{ title, unit_price: Number(price), quantity }],
         back_urls: {
-          success: `https://autorai.com.br/payment-success.html`,
-          failure: `https://autorai.com.br/payment-success.html`,
-          pending: `https://autorai.com.br/payment-success.html`,
+          success: 'https://autorai.com.br/payment-success.html',
+          failure: 'https://autorai.com.br/payment-success.html',
+          pending: 'https://autorai.com.br/payment-success.html',
         },
         auto_return: 'approved',
       },
@@ -48,7 +59,7 @@ router.post('/create-preference', async (req, res) => {
 });
 
 const PLAN_MAP = {
-  'Plano Básico': { plan: 'basic', limit: 30 },
+  'Plano Basico': { plan: 'basic', limit: 30 },
   'Plano Fundador': { plan: 'founder', limit: 100 },
   'Plano Pro': { plan: 'pro', limit: 200 },
 };
@@ -77,51 +88,18 @@ router.post('/webhook', async (req, res) => {
           if (existing) {
             await supabase
               .from('users')
-              .update({
-                plan: planData.plan,
-                scripts_limit: planData.limit,
-                scripts_used: 0,
-                reset_at: now,
-              })
+              .update({ plan: planData.plan, scripts_limit: planData.limit, scripts_used: 0, reset_at: now })
               .eq('email', payerEmail);
-            console.log(`Plano ${planData.plan} ativado para ${payerEmail}`);
-            await sendEmail(
-              from: 'Autor.ai <acesso@autorai.com.br>',
-              to: payerEmail,
-              subject: 'Seu acesso ao Autor.ai está liberado! 🎉',
-              html: `
-                <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#07080d;color:#fff;padding:40px;border-radius:16px">
-                  <div style="font-size:28px;font-weight:800;margin-bottom:8px">Autor<span style="color:#00e5b0">.AI</span></div>
-                  <h2 style="margin:24px 0 8px">Acesso liberado! 🎉</h2>
-                  <p style="color:rgba(255,255,255,0.6);margin-bottom:24px">Seu pagamento foi confirmado. Clique no botão abaixo para acessar a plataforma:</p>
-                  <a href="https://autorai.vercel.app" style="display:inline-block;background:linear-gradient(135deg,#00e5b0,#00b8ff);color:#07080d;font-weight:700;font-size:16px;padding:14px 32px;border-radius:12px;text-decoration:none;margin-bottom:24px">Acessar o Autor.ai →</a>
-                  <p style="color:rgba(255,255,255,0.4);font-size:13px">Faça login com o Google usando este email. Dúvidas? autor.ai.app@gmail.com</p>
-                </div>
-              `
-            });
+            console.log('Plano ativado para', payerEmail);
           } else {
-            // Salva plano pendente para ativar no primeiro login
             await supabase.from('pending_plans').upsert({
               email: payerEmail,
               plan: planData.plan,
               scripts_limit: planData.limit,
             });
-            console.log(`Plano ${planData.plan} salvo como pendente para ${payerEmail}`);
-            await sendEmail(
-              from: 'Autor.ai <acesso@autorai.com.br>',
-              to: payerEmail,
-              subject: 'Seu acesso ao Autor.ai está liberado! 🎉',
-              html: `
-                <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#07080d;color:#fff;padding:40px;border-radius:16px">
-                  <div style="font-size:28px;font-weight:800;margin-bottom:8px">Autor<span style="color:#00e5b0">.AI</span></div>
-                  <h2 style="margin:24px 0 8px">Acesso liberado! 🎉</h2>
-                  <p style="color:rgba(255,255,255,0.6);margin-bottom:24px">Seu pagamento foi confirmado. Clique no botão abaixo para acessar a plataforma:</p>
-                  <a href="https://autorai.vercel.app" style="display:inline-block;background:linear-gradient(135deg,#00e5b0,#00b8ff);color:#07080d;font-weight:700;font-size:16px;padding:14px 32px;border-radius:12px;text-decoration:none;margin-bottom:24px">Acessar o Autor.ai →</a>
-                  <p style="color:rgba(255,255,255,0.4);font-size:13px">Faça login com o Google usando este email. Dúvidas? autor.ai.app@gmail.com</p>
-                </div>
-              `
-            });
+            console.log('Plano pendente salvo para', payerEmail);
           }
+          await sendEmail(payerEmail, 'Seu acesso ao Autor.ai esta liberado!', EMAIL_HTML);
         }
       }
     }
