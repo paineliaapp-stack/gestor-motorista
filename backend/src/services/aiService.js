@@ -374,7 +374,9 @@ MANDATORY SCENE STRUCTURE (all 4 layers required):
 1. Global Anchor (exact text above) + environment
 2. Character physical descriptions anchor (copy identical across all scenes)
 3. "Continuing from previous scene where [one sentence of what just happened]..." + what happens now + emotion + camera movement
-4. Character says in Brazilian Portuguese: "[fala]" — lip sync, emotional voice, no subtitles, no text on screen.
+4. MANDATORY — end every veo3_prompt with the dialogue embedded like this:
+   [Character name] says in Brazilian Portuguese: "[fala em português]" — lip sync, emotional voice acting, no subtitles, no text on screen.
+   The dialogue MUST appear inside the veo3_prompt field. The dialogue_pt field should contain only the Portuguese text isolated.
 
 Topic: ${topic}
 Context/niche: ${hint}
