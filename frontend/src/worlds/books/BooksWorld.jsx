@@ -325,7 +325,7 @@ function BookCard({ book, index, onClick, highlighted = false, dimmed = false })
 
   const handleImgError = useCallback(() => {
     // Se Open Library falhou, tenta Google Books diretamente
-    fetchGoogleBooksCover(book.title, book.author).then(url => {
+    fetchCover(book.title, book.author).then(url => {
       if (url) { setImgSrc(url); setImgLoaded(false); }
       else setImgFailed(true);
     }).catch(() => setImgFailed(true));
