@@ -45,6 +45,18 @@ export function PersonaModal({ book, personaKey, onClose, onSave }) {
   const [platform, setPlatform] = useState(null);
   const [angle, setAngle] = useState(null);
 
+  const BIAS_TO_STYLE = {
+    retention: 'storytelling',
+    emotional: 'storytelling',
+    relatable: 'storytelling',
+    historical: 'educational',
+    philosophical: 'educational',
+    contrarian: 'controversial',
+    provocative: 'controversial',
+    debate: 'controversial',
+    shocking: 'controversial',
+  };
+
   async function handleGenerate() {
     setStep(4);
     await generator.generate(
@@ -55,7 +67,7 @@ export function PersonaModal({ book, personaKey, onClose, onSave }) {
       },
       {
         platform: platform.id,
-        style: angle.bias,
+        style: BIAS_TO_STYLE[angle.bias] || 'storytelling',
       }
     );
   }
