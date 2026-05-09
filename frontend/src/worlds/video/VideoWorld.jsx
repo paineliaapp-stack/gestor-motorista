@@ -1,5 +1,5 @@
 /**
- * VideoWorld.jsx — Novelinha Viral · Gerador de roteiros Veo 3
+ * VideoWorld.jsx — Novelinha Viral · Gerador de Novelinhas
  * Padrão visual idêntico ao WorldPortal (Syne · DM Sans · Space Mono · dark theme)
  */
 
@@ -130,7 +130,7 @@ function SceneCard({ scene }) {
         fontFamily:"'DM Sans',sans-serif" }}>
         <p style={{ fontFamily:"'Space Mono',monospace", fontSize:8,
           color:'rgba(255,255,255,.22)', marginBottom:8, letterSpacing:'.15em' }}>
-          PROMPT VEO 3 — COLAR DIRETO
+          PROMPT DE VÍDEO — COLAR DIRETO
         </p>
         {scene.veo3_prompt}
         <CopyBtn text={scene.veo3_prompt} />
@@ -224,7 +224,7 @@ export function VideoWorld() {
           </p>
           <h1 style={{ fontFamily:"'Syne',sans-serif", fontSize: isMobile ? 20 : 26,
             fontWeight:800, lineHeight:1.1, margin:0 }}>
-            Gerador Veo 3
+            Gerador de Novelinhas
           </h1>
         </div>
       </div>
@@ -327,9 +327,9 @@ export function VideoWorld() {
               background:`radial-gradient(circle,${ACCENT},transparent)`,
               animation:'vwPulse 1.5s ease infinite' }} />
             <p style={{ fontFamily:"'Space Mono',monospace", fontSize:11,
-              color:ACCENT, letterSpacing:'.15em' }}>GEMINI ESTÁ CRIANDO</p>
+              color:ACCENT, letterSpacing:'.15em' }}>AUTOR.AI ESTÁ CRIANDO</p>
             <p style={{ fontSize:13, color:'rgba(255,255,255,.3)', marginTop:8 }}>
-              Roteiro + {DURACOES.find(d => d.id === duracao)?.scenes} prompts Veo 3 + thumbnails...
+              Roteiro + prompts de vídeo + thumbnails...
             </p>
           </div>
         )}
@@ -390,7 +390,7 @@ export function VideoWorld() {
             )}
 
             {/* Cenas */}
-            <SectionLabel>🎬 Sequência Veo 3 — cole cena por cena</SectionLabel>
+            <SectionLabel>🎬 Sequência de cenas — cole uma por vez</SectionLabel>
             {result.scenes?.map((scene, i) => (
               <SceneCard key={i} scene={scene} />
             ))}
