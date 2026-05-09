@@ -337,8 +337,8 @@ function buildVideoPrompt(topic, style, durationSec, hint) {
   const { scenes } = VIDEO_DURATIONS[durationSec] || VIDEO_DURATIONS[60];
   const styleDesc = VIDEO_STYLES[style] || VIDEO_STYLES.pixar_body;
 
-  return \`You are a world-class creative director for viral short-form educational videos.
-Concept: \${styleDesc}
+  return `You are a world-class creative director for viral short-form educational videos.
+Concept: ${styleDesc}
 
 ABSOLUTE RULES:
 1. ALL Veo 3 scene prompts MUST be in English (far better AI video results)
@@ -355,8 +355,8 @@ ABSOLUTE RULES:
 9. Story arc across all scenes: PROBLEM → HERO ARRIVAL → ACTION/BATTLE → TRANSFORMATION → HAPPY RESULT
 
 Topic: \${topic}
-Context/niche: \${hint}
-Total scenes: exactly \${scenes} (each 8 seconds = \${durationSec} seconds total)
+Context/niche: ${hint}
+Total scenes: exactly ${scenes} (each 8 seconds = \${durationSec} seconds total)
 
 Return ONLY valid JSON, no markdown, no explanation:
 {
@@ -398,9 +398,9 @@ export async function generateVideoScript({ topic, style, durationSec, hint }) {
       raw = await withTimeout(callGemini(prompt, 4000, useFallback), 60000);
       const parsed = safeJSONParse(raw);
       if (parsed) return parsed;
-      console.warn(\`[VIDEO_JSON_RETRY] tentativa \${attempt + 1}\`);
+      console.warn(\`[VIDEO_JSON_RETRY] tentativa ${attempt + 1}\`);
     } catch (err) {
-      console.warn(\`[VIDEO_API_RETRY] tentativa \${attempt + 1} — \${err.message}\`);
+      console.warn(\`[VIDEO_API_RETRY] tentativa ${attempt + 1} — ${err.message}\`);
       if (attempt === 3) throw err;
       await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
     }
