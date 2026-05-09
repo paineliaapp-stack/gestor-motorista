@@ -267,7 +267,7 @@ export function BookChat({ books = [], onHighlight, onSelectBook, onPersonaChang
                 <p style={{ margin: '0 0 8px', fontFamily: 'Space Mono, monospace', fontSize: 8, letterSpacing: '0.2em', color: persona.color }}>RECOMENDADOS PARA VOCÊ</p>
                 {justificativa && <p style={{ margin: '0 0 10px', fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>{justificativa}</p>}
                 {recommended.map(idx => books[idx] && (
-                  <button key={idx} onClick={() => onSelectBook(books[idx])}
+                  <button key={idx} onClick={() => onSelectBook(books[idx], activePersona)}
                     style={{ width: '100%', textAlign: 'left', padding: '8px 10px', marginBottom: 6, borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: `1px solid ${persona.color}22`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 16 }}>📖</span>
                     <div>
