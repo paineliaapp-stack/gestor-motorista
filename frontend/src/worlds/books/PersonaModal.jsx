@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ScriptModal } from '../ScriptModal';
 import { useScriptGenerator } from '../../hooks/useScriptGenerator';
 
 const PERSONAS = {
@@ -76,6 +77,30 @@ export function PersonaModal({ book, personaKey, onClose, onSave }) {
   }
 
   const accent = p.color;
+
+  const bookArticle = {
+    id: 'book_' + book.title,
+    title: book.title + ' — ' + book.author,
+    description: (angle?.label || '') + ' · ' + (platform?.label || ''),
+    source: 'Livro',
+    publishedAt: '',
+    viral_score: book.score || 8,
+    image: null,
+  };
+
+  if (step === 4 && !generator.loading && scriptText && !generator.error) {
+    return (
+      <ScriptModal
+        article={bookArticle}
+        generator={generator}
+        onClose={onClose}
+        onSave={onSave}
+        accentColor={accent}
+        glowColor={p.color.replace('#', '').match(/.{2}/g).map(h => parseInt(h, 16)).join(',')}
+        subtitle={'✨ ' + p.name + ' recomenda como inspiração · ' + book.title}
+      />
+    );
+  }
 
   return (
     <div style={{
@@ -181,46 +206,18 @@ export function PersonaModal({ book, personaKey, onClose, onSave }) {
             </div>
           )}
 
-          {/* Step 4 — Resultado */}
-          {step === 4 && (
-            <div>
-              {generator.loading && (
-                <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                  <div style={{ fontSize: 32, marginBottom: 16, animation: 'bwPulse 1.5s ease infinite' }}>{p.emoji}</div>
-                  <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 10, color: accent, letterSpacing: '0.2em' }}>GERANDO ROTEIRO...</p>
-                  <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 8 }}>{p.name} está trabalhando no seu roteiro</p>
-                </div>
-              )}
-              {scriptText && !generator.loading && (
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <p style={{ margin: 0, fontFamily: 'Space Mono, monospace', fontSize: 9, color: accent, letterSpacing: '0.2em' }}>ROTEIRO GERADO</p>
-                    <button onClick={() => { navigator.clipboard.writeText(scriptText); }} style={{ padding: '6px 12px', borderRadius: 8, background: `${accent}22`, border: `1px solid ${accent}44`, color: accent, fontFamily: 'DM Sans, sans-serif', fontSize: 11, cursor: 'pointer' }}>📋 Copiar</button>
-                  </div>
-                  <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '16px', fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, whiteSpace: 'pre-wrap', maxHeight: 320, overflowY: 'auto' }}>
-                    {scriptText}
-                  </div>
-                  {generator.hooks?.length > 0 && (
-                    <div style={{ marginTop: 12 }}>
-                      <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.2em', marginBottom: 8 }}>HOOKS</p>
-                      {generator.hooks.map((h, i) => (
-                        <div key={i} style={{ padding: '10px 12px', marginBottom: 6, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8, fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
-                          {h.text}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <button onClick={() => { if(onSave) onSave(); onClose(); }} style={{ width: '100%', marginTop: 14, padding: '14px', borderRadius: 12, background: `${accent}22`, border: `1.5px solid ${accent}44`, color: accent, fontFamily: 'Space Mono, monospace', fontSize: 11, cursor: 'pointer', letterSpacing: '0.1em' }}>
-                    ✓ SALVAR E FECHAR
-                  </button>
-                </div>
-              )}
-              {generator.error && (
-                <div style={{ textAlign: 'center', padding: 24 }}>
-                  <p style={{ color: '#ff4444', fontFamily: 'DM Sans, sans-serif' }}>Erro ao gerar. Tente novamente.</p>
-                  <button onClick={() => setStep(3)} style={{ marginTop: 8, background: 'none', border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 8, padding: '8px 16px', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>Voltar</button>
-                </div>
-              )}
+          {/* Step 4 — Loading */}
+          {step === 4 && generator.loading && (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <div style={{ fontSize: 32, marginBottom: 16, animation: 'bwPulse 1.5s ease infinite' }}>{p.emoji}</div>
+              <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 10, color: accent, letterSpacing: '0.2em' }}>GERANDO ROTEIRO...</p>
+              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 8 }}>{p.name} está trabalhando no seu roteiro</p>
+            </div>
+          )}
+          {step === 4 && generator.error && (
+            <div style={{ textAlign: 'center', padding: 24 }}>
+              <p style={{ color: '#ff4444', fontFamily: 'DM Sans, sans-serif' }}>Erro ao gerar. Tente novamente.</p>
+              <button onClick={() => setStep(3)} style={{ marginTop: 8, background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 16px', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>Voltar</button>
             </div>
           )}
         </div>
