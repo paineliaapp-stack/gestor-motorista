@@ -742,6 +742,7 @@ export function BooksWorld() {
             <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.22)', fontWeight: 300 }}>Tente outra busca ou categoria</p>
           </div>
         ) : (
+          <>
           {highlightedIndices.length > 0 && activePersonaKey && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 12,
@@ -771,6 +772,7 @@ export function BooksWorld() {
               <BookCard key={book.title + book.author} book={book} index={i} onClick={(b) => { if (highlightedIndices.includes(i) && activePersonaKey) { setPersonaSelection({ book: b, personaKey: activePersonaKey }); } else { setSelectedBook(b); } }} highlighted={highlightedIndices.length > 0 && highlightedIndices.includes(i)} dimmed={highlightedIndices.length > 0 && !highlightedIndices.includes(i)} />
             ))}
           </div>
+          </>
         )}
       </div>
 
