@@ -350,44 +350,7 @@ export function VideoWorld() {
                 lineHeight:1.7 }}>{result.story_summary}</p>
             </div>
 
-            {/* Personagens */}
-            {result.characters?.length > 0 && (
-              <div style={{ marginBottom:28 }}>
-                <SectionLabel>🎭 Personagens (âncora visual)</SectionLabel>
-                <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-                  {result.characters.map((c, i) => (
-                    <div key={i} style={{
-                      flex:'1 1 200px',
-                      background:'rgba(255,255,255,.03)',
-                      border:'1px solid rgba(255,255,255,.07)',
-                      borderRadius:12, padding:'14px 16px',
-                    }}>
-                      <p style={{ fontFamily:"'Syne',sans-serif", fontSize:13,
-                        fontWeight:700, marginBottom:2 }}>{c.name}</p>
-                      <p style={{ fontSize:11, color:ACCENT,
-                        marginBottom:6 }}>{c.food}</p>
-                      <p style={{ fontSize:11, color:'rgba(255,255,255,.4)',
-                        lineHeight:1.5 }}>{c.appearance}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Âncora global */}
-            {result.global_anchor && (
-              <div style={{ marginBottom:28 }}>
-                <SectionLabel>⚓ Âncora global — copie em todos os prompts</SectionLabel>
-                <div style={{ background:'rgba(167,139,250,.06)',
-                  border:'1px solid rgba(167,139,250,.2)',
-                  borderRadius:12, padding:'16px', fontSize:12,
-                  lineHeight:1.75, color:'rgba(255,255,255,.7)',
-                  fontFamily:"'DM Sans',sans-serif", position:'relative' }}>
-                  {result.global_anchor}
-                  <CopyBtn text={result.global_anchor} />
-                </div>
-              </div>
-            )}
+            {/* Personagens e âncora global — ocultos, usados internamente nos prompts */}
 
             {/* Cenas */}
             <SectionLabel>🎬 Sequência de cenas — cole uma por vez</SectionLabel>
