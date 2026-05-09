@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScriptModal } from '../ScriptModal';
+import { ScriptModal } from '../../components/script/ScriptModal';
 import { useScriptGenerator } from '../../hooks/useScriptGenerator';
 
 const PERSONAS = {
