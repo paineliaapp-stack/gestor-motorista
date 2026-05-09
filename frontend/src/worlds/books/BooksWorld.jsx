@@ -244,18 +244,13 @@ async function fetchGoogleBooksCover(title, author) {
 }
 
 async function fetchCover(title, author) {
-  const key = `${title}__${author}`;
+  const key = title + author;
   if (key in coverCache) return coverCache[key];
-
   try {
-    // Open Library primeiro (mais estável)
-    const olUrl = await fetchOpenLibraryCover(title, author);
-    if (olUrl) { coverCache[key] = olUrl; return olUrl; }
-
-    // Google Books como fallback
-    const gbUrl = await fetchGoogleBooksCover(title, author);
-    coverCache[key] = gbUrl;
-    return gbUrl;
+    const res = await fetch('/api/books/cover?title=' + encodeURIComponent(title) + '&author=' + encodeURIComponent(author));
+    const data = await res.json();
+    coverCache[key] = data.url || null;
+    return coverCache[key];
   } catch {
     coverCache[key] = null;
     return null;

@@ -50,13 +50,12 @@ export function PersonaModal({ book, personaKey, onClose, onSave }) {
     await generator.generate({
       article: {
         title: book.title,
-        content: `Livro: ${book.title}\nAutor: ${book.author}\nCategoria: ${book.cat}\nGere um roteiro inspirado nos conceitos e ideias desta obra. Não reproduza trechos — crie narrativa original baseada no universo temático do livro.`,
-        viral_score: book.score,
+        content: 'Livro: ' + book.title + '\nAutor: ' + book.author + '\nGere um roteiro inspirado nos conceitos e ideias desta obra. Não reproduza trechos — crie narrativa original baseada no universo temático do livro.',
+        viral_score: book.score || 8,
       },
       platform: platform.id,
       style: angle.bias,
       lang: 'pt',
-      bias: angle.bias,
     });
   }
 
