@@ -377,6 +377,7 @@ Concept: ${styleDesc}
    "CHARACTER SHEET: [Name]: [object type] body, [exact shape], [exact color], [face details], [accessories]. [Name 2]: ..."
 3. Environment phrase (same across all scenes)
 4. "Continuing from previous scene where [one sentence]..." + action + dominant emotion + camera movement
+   CRITICAL: every time a character performs an action or appears in a scene, repeat their full physical description inline — do NOT rely only on the CHARACTER SHEET at the top. Example: "Vitamina C — full anthropomorphic character, orange segment body, crescent shape, bright vibrant orange color, cheerful face integrated into body, small leafy green cap, clear arms and legs — floats gracefully..." This prevents the AI video model from changing the character's appearance mid-scene.
 5. DIALOGUE at the end of every veo3_prompt
 
 ### SCENE STRUCTURE RULES:
