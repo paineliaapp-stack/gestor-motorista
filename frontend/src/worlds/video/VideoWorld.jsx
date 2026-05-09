@@ -3,7 +3,7 @@
  * Padrão visual idêntico ao WorldPortal (Syne · DM Sans · Space Mono · dark theme)
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 
@@ -163,6 +163,42 @@ export function VideoWorld() {
   const nichoObj  = NICHOS.find(n => n.id === nicho);
   const temaFinal = tema.trim() || nichoObj?.label || '';
 
+  const [savedScripts, setSavedScripts] = useState([]);
+  const [showSaved, setShowSaved]       = useState(false);
+  const [loadingSaved, setLoadingSaved] = useState(false);
+
+  const fetchSaved = useCallback(async () => {
+    setLoadingSaved(true);
+    try {
+      const data = await api.get('/video/saved');
+      setSavedScripts(data.scripts || []);
+    } catch (e) {
+      console.error('Erro ao buscar salvos:', e.message);
+    } finally {
+      setLoadingSaved(false);
+    }
+  }, []);
+
+  async function deleteSaved(id) {
+    try {
+      await api.delete(`/video/saved/${id}`);
+      setSavedScripts(prev => prev.filter(s => s.id !== id));
+    } catch (e) {
+      console.error('Erro ao deletar:', e.message);
+    }
+  }
+
+  async function loadSaved(id) {
+    try {
+      const data = await api.get(`/video/saved/${id}`);
+      setResult(data.script);
+      setShowSaved(false);
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior:'smooth' }), 200);
+    } catch (e) {
+      console.error('Erro ao carregar:', e.message);
+    }
+  }
+
   async function gerar() {
     if (!temaFinal) { setError('Escolha um nicho ou descreva o tema.'); return; }
     setError(null); setLoading(true); setResult(null);
@@ -297,6 +333,49 @@ export function VideoWorld() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* BOTÃO MEUS ROTEIROS */}
+        <div style={{ marginBottom:16 }}>
+          <button onClick={() => { setShowSaved(!showSaved); if(!showSaved) fetchSaved(); }}
+            style={{
+              width:'100%', padding:14, borderRadius:12, border:'1px solid rgba(167,139,250,.3)',
+              background:'rgba(167,139,250,.06)', color:ACCENT,
+              fontFamily:"'DM Sans',sans-serif", fontWeight:600, fontSize:14, cursor:'pointer',
+            }}>
+            📁 {showSaved ? 'Fechar' : 'Meus Roteiros Salvos'}
+          </button>
+
+          {showSaved && (
+            <div style={{ marginTop:12, background:'rgba(255,255,255,.03)', borderRadius:12,
+              border:'1px solid rgba(255,255,255,.07)', padding:16 }}>
+              {loadingSaved ? (
+                <p style={{ color:'rgba(255,255,255,.4)', fontSize:13, textAlign:'center' }}>Carregando...</p>
+              ) : savedScripts.length === 0 ? (
+                <p style={{ color:'rgba(255,255,255,.3)', fontSize:13, textAlign:'center' }}>Nenhum roteiro salvo ainda.</p>
+              ) : (
+                savedScripts.map(s => (
+                  <div key={s.id} style={{
+                    display:'flex', alignItems:'center', justifyContent:'space-between',
+                    padding:'10px 12px', borderRadius:10, marginBottom:8,
+                    background:'rgba(255,255,255,.04)', border:'1px solid rgba(255,255,255,.06)',
+                  }}>
+                    <div style={{ flex:1, cursor:'pointer' }} onClick={() => loadSaved(s.id)}>
+                      <p style={{ fontSize:13, fontWeight:600, marginBottom:2 }}>{s.title || s.topic}</p>
+                      <p style={{ fontSize:11, color:'rgba(255,255,255,.35)' }}>
+                        {s.style} · {new Date(s.created_at).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    <button onClick={() => deleteSaved(s.id)} style={{
+                      background:'rgba(239,68,68,.1)', border:'1px solid rgba(239,68,68,.2)',
+                      borderRadius:8, padding:'6px 10px', color:'#fca5a5',
+                      fontSize:12, cursor:'pointer', marginLeft:10,
+                    }}>🗑️</button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         {/* BOTÃO GERAR */}
