@@ -27,6 +27,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 validateConfig();
 
 const app = express();
+app.set('trust proxy', 1); // Railway usa proxy reverso
 
 // ─── Security & Logging ───────────────────────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
