@@ -208,39 +208,6 @@ const coverCache = {};
  * Busca capa na Open Library pelo título em inglês.
  * Retorna URL da capa -L (large) se cover_i existir.
  */
-async function fetchOpenLibraryCover(title, author) {
-  const q = encodeURIComponent(title);
-  const a = encodeURIComponent(author.split(' ').slice(-1)[0]); // sobrenome
-  const res = await fetch(`https://openlibrary.org/search.json?title=${q}&author=${a}&limit=5&fields=cover_i,title,author_name`);
-  const data = await res.json();
-  const docs = data?.docs || [];
-
-  // Prefere match exato no título
-  for (const doc of docs) {
-    if (doc.cover_i && doc.title?.toLowerCase().includes(title.toLowerCase().slice(0, 8))) {
-      return `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`;
-    }
-  }
-  // Aceita qualquer resultado com capa
-  const withCover = docs.find(d => d.cover_i);
-  return withCover ? `https://covers.openlibrary.org/b/id/${withCover.cover_i}-L.jpg` : null;
-}
-
-/**
- * Fallback: Google Books
- */
-async function fetchGoogleBooksCover(title, author) {
-  const q = encodeURIComponent(`intitle:${title} inauthor:${author.split(' ').slice(-1)[0]}`);
-  const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=3&fields=items(volumeInfo/imageLinks,volumeInfo/title)`);
-  const data = await res.json();
-  const items = data?.items || [];
-  for (const item of items) {
-    const url = item.volumeInfo?.imageLinks?.thumbnail || item.volumeInfo?.imageLinks?.smallThumbnail;
-    if (url) {
-      return url.replace('zoom=1', 'zoom=3').replace('&edge=curl', '').replace('http://', 'https://');
-    }
-  }
-  return null;
 }
 
 async function fetchCover(title, author) {
