@@ -80,6 +80,14 @@ const WORLDS = [
     borderGlow:'rgba(255,190,77,0.55)',
   },
   {
+    id:'video', path:'/video', label:'Novelinha Viral', tag:'VEO 3', accent:'#a78bfa', glow:'167,139,250',
+    description:'Crie roteiros de novelinhas 3D Pixar com personagens de comida — prontos para gerar no Veo 3 cena por cena.',
+    stat1:'8s', stat1l:'Por cena', stat2:'Veo 3', stat2l:'Pronto pra usar', icon:'🎬',
+    gradient:'linear-gradient(160deg, #0d0a1a 0%, #150f2a 60%, #080613 100%)',
+    glowBg:'radial-gradient(ellipse at 50% 110%, rgba(167,139,250,0.26) 0%, transparent 60%)',
+    borderGlow:'rgba(167,139,250,0.55)',
+  },
+  {
     id:'niche', path:'/niche', label:'Meu Canal', tag:'PERSONALIZADO', accent:'#a78bfa', glow:'167,139,250',
     description:'Crie seu nicho, salve múltiplos canais e receba conteúdo personalizado para gerar roteiros todos os dias.',
     stat1:'∞', stat1l:'Nichos', stat2:'Diário', stat2l:'Atualizado', icon:'🎯',

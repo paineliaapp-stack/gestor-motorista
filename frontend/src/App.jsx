@@ -5,6 +5,7 @@ import { NewsWorld } from './worlds/news/NewsWorld';
 import { ScienceWorld } from './worlds/science/ScienceWorld';
 import { BooksWorld } from './worlds/books/BooksWorld';
 import { NicheWorld } from './worlds/niche/NicheWorld';
+import { VideoWorld } from './worlds/video/VideoWorld';
 import { useState, useEffect } from 'react';
 import { LoginScreen } from './components/LoginScreen';
 import { Termos } from './pages/Termos';
@@ -257,6 +258,7 @@ export default function App() {
           <Route path="/science" element={<ScienceWorld />} />
           <Route path="/books" element={<BooksWorld />} />
           <Route path="/niche" element={<NicheWorld />} />
+          <Route path="/video" element={<VideoWorld />} />
           <Route path="/termos" element={<Termos />} />
           <Route path="/privacidade" element={<Privacidade />} />
 <Route path="/planos" element={<Planos />} />       
