@@ -339,48 +339,52 @@ function buildVideoPrompt(topic, style, durationSec, hint) {
   const { scenes } = VIDEO_DURATIONS[durationSec] || VIDEO_DURATIONS[60];
   const styleDesc = VIDEO_STYLES[style] || VIDEO_STYLES.pixar_body;
 
-  return `You are a Creative Director specialized in 3D Pixar/Dreamworks novelinha scripts for AI video generation. Your standards are maximum. You NEVER deliver mediocre work.
+  return `You are a world-class expert in creating perfect prompts for Veo 3 (Google) and generating 3D Pixar/Dreamworks novelinha scripts. Your standards are maximum. You NEVER deliver mediocre work.
 
 Concept: ${styleDesc}
 
-ABSOLUTE RULES — NEVER BREAK ANY:
-1. ALL Veo 3 prompts must be 100% in ENGLISH, except character dialogue lines.
-2. ALL character dialogue must be in natural, emotional, fluid Brazilian Portuguese.
-3. Every character must be a FULL ANTHROPOMORPHIC Pixar-style character: detailed arms, legs, hands, neck, torso, head and highly expressive exaggerated facial expressions. NEVER "floating object with face" or "jar with head".
-4. Each scene = exactly 8 seconds.
-5. Strong visual consistency across all scenes (accessories, colors, lighting and style must be identical).
-6. NEVER create characters resembling SpongeBob SquarePants or any existing IP.
-9. CRITICAL CHARACTER DESIGN RULE:
-- OBJECT characters (soap, shampoo, sponge, food, vitamins, fruits, cells, bottles): The body BASE is the object itself. Arms and legs grow OUT of the object body. The face (big Pixar eyes, mouth, eyebrows) is ON the surface of the object. NEVER add a separate human head on top. NEVER replace the object with a human torso or human body. Think: Pixar Cars, Toy Story — the object IS the character.
-- HUMAN characters (warriors, heroes, doctors, children): Use stylized Pixar/Dreamworks human — big head, expressive eyes, exaggerated proportions. Fully human is correct here.
-- NEVER confuse: a soap bar has its face ON the soap, arms FROM the soap — not a human head sitting on top of a soap body.
+### MANDATORY RULES FOR ALL PROMPTS:
 
-GLOBAL ANCHOR — use this EXACT text at the start of EVERY scene prompt:
-"Cinematic high-quality 3D Pixar/Dreamworks style, vibrant colors, dramatic cinematic lighting with volumetric god rays, magical glowing particles, smooth fluid animation, ultra realistic textures, ultra detailed 8k. All characters are expressive full anthropomorphic Pixar-style characters with detailed arms, legs, hands, expressive faces and strong body language."
+1. VISUAL STYLE — always start every veo3_prompt with:
+"Cinematic high-quality 3D Pixar/Dreamworks style, vibrant colors, dramatic cinematic lighting with volumetric god rays, magical glowing particles, smooth fluid animation, ultra realistic textures, ultra detailed 8k."
 
-ENVIRONMENT RULES (auto-select the best):
+2. CHARACTERS (VERY IMPORTANT):
+- Describe every character as "full anthropomorphic character"
+- OBJECT characters (soap, shampoo, sponge, food, vitamins, bottles, fruits): maintain the base shape of the object and add: "with clear arms and legs, highly expressive face integrated into the object body, no human neck, no realistic human head"
+- HUMAN characters (warriors, heroes, doctors, children): stylized Pixar/Dreamworks human with exaggerated proportions, big expressive eyes, strong body language
+- NEVER create characters resembling SpongeBob SquarePants or any existing IP
+
+3. CONSISTENCY — repeat the full character description in EVERY scene. Use the same Global Anchor in all scenes.
+
+4. CINEMATIC QUALITY — use: slow camera pan, dramatic close-up, smooth zoom in, dynamic angle, orbiting shot, dolly in, slow motion.
+
+5. ENVIRONMENT RULES (auto-select):
 - Health/Body topics → "inside a transparent human torso with glowing organs and soft internal lighting"
 - Bathroom/Objects topics → "luxurious modern bathroom shelf environment with soft reflections, elegant lighting and subtle steam"
 - Kitchen topics → "bright modern kitchen counter with warm lighting and rich colors"
 - Other topics → create a fitting, beautiful, cinematic environment
 
-HIGH QUALITY INSTRUCTIONS:
-- Transform any object into a living, charismatic character with strong personality.
-- Use exaggerated facial expressions and clear body language (shock, guilt, rage, seduction, crying, relief, etc).
-- In emotional scenes: use dramatic close-ups, slight slow motion and cinematic angles.
-- In health scenes: show clear satisfying visual transformation (red/inflamed → green/healthy, dirty → clean).
-- Always use ALL named characters — never invent unnamed mysterious entities.
-- Story arc: Problem → Discovery/Arrival → Conflict/Action → Climax → Emotional Resolution.
+6. HIGH QUALITY:
+- Transform any object into a living, charismatic character with strong personality
+- Use exaggerated facial expressions and clear body language (shock, guilt, rage, seduction, crying, relief)
+- In emotional scenes: dramatic close-ups, slight slow motion, cinematic angles
+- Always use ALL named characters — never invent unnamed mysterious entities
+- Story arc: Problem → Discovery → Conflict → Climax → Emotional Resolution
 
-MANDATORY SCENE STRUCTURE (all 5 layers required, in this exact order):
-1. GLOBAL ANCHOR — copy the exact anchor text above, word for word, at the start of every scene. Never shorten it.
-2. CHARACTER SHEET ANCHOR — in scene 1, write a CHARACTER SHEET block describing every character with maximum physical detail: object type, exact body shape, exact color palette, exact face features (eye color, eyebrow style, mouth), exact accessories, exact clothing. Then copy this CHARACTER SHEET block WORD FOR WORD into scenes 2 through 8. Never paraphrase, never shorten, never change a single word. This is the consistency anchor.
-   Format: "CHARACTER SHEET: [Name]: [object type] body, [shape], [color], [face details], [accessories]. [Name 2]: [object type] body, [shape], [color], [face details], [accessories]."
-3. ENVIRONMENT — use the same environment phrase across all scenes, never change it.
-4. "Continuing from previous scene where [one sentence]..." + what happens in this scene + dominant emotion + camera movement (close-up / medium shot / dolly in / orbit / slow motion).
-5. DIALOGUE — this is MANDATORY and must appear INSIDE the veo3_prompt field at the very end, never outside it:
-   [Character A name] says in Brazilian Portuguese: "[emotional phrase, max 6 words, NO English words]" — [Character B name] replies in Brazilian Portuguese: "[emotional phrase, max 6 words, NO English words]" — lip sync, emotional voice acting, no subtitles, no text on screen.
-   CRITICAL: the dialogue_pt field contains ONLY the Portuguese phrases isolated. The veo3_prompt field MUST contain the full dialogue instruction above at the end.
+### MANDATORY SCENE STRUCTURE (in this exact order):
+1. Global Anchor (exact style text above)
+2. CHARACTER SHEET — create in scene 1 with maximum detail; copy WORD FOR WORD in all subsequent scenes:
+   "CHARACTER SHEET: [Name]: [object type] body, [exact shape], [exact color], [face details], [accessories]. [Name 2]: ..."
+3. Environment phrase (same across all scenes)
+4. "Continuing from previous scene where [one sentence]..." + action + dominant emotion + camera movement
+5. DIALOGUE at the end of every veo3_prompt
+
+### SCENE STRUCTURE RULES:
+- Scene 1 (0-8s): start directly with the problem + character speaking (no silent scene)
+- Maximum 2 dialogue lines per scene
+- MANDATORY format at the end of every veo3_prompt:
+[Character 1 name] says in Brazilian Portuguese: "Short natural phrase." [Character 2 name] says in Brazilian Portuguese: "Second short phrase." — lip sync, emotional voice acting, no subtitles, no text on screen.
+- ALL dialogue must be in natural, emotional, fluid Brazilian Portuguese — NO English words in dialogue
 
 Topic: ${topic}
 Context/niche: ${hint}
@@ -389,32 +393,30 @@ Total scenes: exactly ${scenes} (each 8 seconds = ${durationSec} seconds total)
 Return ONLY valid JSON, no markdown, no explanation:
 {
   "title": "catchy video title in Portuguese",
-  "hook": "1-sentence hook in Portuguese — the problem this video solves",
-  "story_summary": "2-3 sentence story arc summary in Portuguese",
+  "hook": "1-sentence hook in Portuguese",
+  "story_summary": "2-3 sentence story arc in Portuguese",
   "characters": [
     {
-      "name": "Character name in Portuguese",
-      "food": "what food/supplement it represents",
-      "appearance": "detailed physical description for visual consistency — color, clothing, expression, size"
+      "name": "Character name",
+      "appearance": "detailed physical description for visual consistency"
     }
   ],
-  "global_anchor": "The full reusable English anchor to paste in every scene: style description + all character physical descriptions + environment. This is what keeps visual consistency.",
   "scenes": [
     {
       "scene_number": 1,
-      "timestamp": "0:00–0:08",
+      "timestamp": "0:00-0:08",
       "scene_title": "short title in Portuguese",
-      "veo3_prompt": "complete ready-to-paste English prompt — MUST contain in this exact order: (1) full GLOBAL ANCHOR text, (2) full CHARACTER SHEET block identical to scene 1, (3) environment phrase, (4) continuity sentence + action + emotion + camera, (5) dialogue embedded: [Name] says in Brazilian Portuguese: \"fala\" — then [Name2] replies: \"fala\" — lip sync, no subtitles",
-      "dialogue_pt": "only the Portuguese dialogue lines isolated here",
-      "visual_note": "what visually happens — in Portuguese"
+      "veo3_prompt": "complete ready-to-paste English prompt: global anchor + character sheet + environment + action/emotion/camera + dialogue at the end",
+      "dialogue_pt": "only the Portuguese dialogue isolated here",
+      "visual_note": "what visually happens in Portuguese"
     }
   ],
   "thumbnail_prompts": [
     { "style": "Midjourney / DALL-E", "prompt": "English thumbnail prompt" },
-    { "style": "ChatGPT / Gemini Image", "prompt": "English thumbnail prompt, different angle" }
+    { "style": "IA de Imagem", "prompt": "English thumbnail prompt, different angle" }
   ],
   "posting_tips": ["tip 1 in Portuguese", "tip 2", "tip 3"]
-}`;
+}\`;
 }
 
 export async function generateVideoScript({ topic, style, durationSec, hint }) {
