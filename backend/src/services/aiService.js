@@ -406,8 +406,8 @@ Return ONLY valid JSON, no markdown, no explanation:
       "scene_number": 1,
       "timestamp": "0:00–0:08",
       "scene_title": "short title in Portuguese",
-      "veo3_prompt": "complete ready-to-paste English prompt for Veo 3 — includes global anchor + continuity anchor + local action",
-      "dialogue_pt": "the Portuguese dialogue in isolation",
+      "veo3_prompt": "complete ready-to-paste English prompt — MUST contain in this exact order: (1) full GLOBAL ANCHOR text, (2) full CHARACTER SHEET block identical to scene 1, (3) environment phrase, (4) continuity sentence + action + emotion + camera, (5) dialogue embedded: [Name] says in Brazilian Portuguese: \"fala\" — then [Name2] replies: \"fala\" — lip sync, no subtitles",
+      "dialogue_pt": "only the Portuguese dialogue lines isolated here",
       "visual_note": "what visually happens — in Portuguese"
     }
   ],
