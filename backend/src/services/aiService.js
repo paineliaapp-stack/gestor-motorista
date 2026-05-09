@@ -348,11 +348,8 @@ ABSOLUTE RULES — NEVER BREAK ANY:
 2. ALL character dialogue must be in natural, emotional, fluid Brazilian Portuguese.
 3. Every character must be a FULL ANTHROPOMORPHIC Pixar-style character: detailed arms, legs, hands, neck, torso, head and highly expressive exaggerated facial expressions. NEVER "floating object with face" or "jar with head".
 4. Each scene = exactly 8 seconds.
-5. DIALOGUE RULE: Each scene can have up to 2 short dialogue lines — one per character. Each line must be maximum 5-6 words in Portuguese to fit in 8 seconds. Format in veo3_prompt:
-   [Character A] says in Brazilian Portuguese: "[fala curta]" — then [Character B] replies: "[fala curta]" — lip sync, emotional voice acting, no subtitles, no text on screen.
-6. Strong visual consistency across all scenes (accessories, colors, lighting and style must be identical).
-7. NEVER create characters resembling SpongeBob SquarePants or any existing IP.
-8. CRITICAL: dialogue lines in Portuguese MUST be embedded inside the veo3_prompt at the end, in this format: Character says in Brazilian Portuguese: "[fala aqui]" — lip sync, emotional voice acting, no subtitles, no text on screen.
+5. Strong visual consistency across all scenes (accessories, colors, lighting and style must be identical).
+6. NEVER create characters resembling SpongeBob SquarePants or any existing IP.
 9. CRITICAL CHARACTER DESIGN RULE:
 - OBJECT characters (soap, shampoo, sponge, food, vitamins, fruits, cells, bottles): The body BASE is the object itself. Arms and legs grow OUT of the object body. The face (big Pixar eyes, mouth, eyebrows) is ON the surface of the object. NEVER add a separate human head on top. NEVER replace the object with a human torso or human body. Think: Pixar Cars, Toy Story — the object IS the character.
 - HUMAN characters (warriors, heroes, doctors, children): Use stylized Pixar/Dreamworks human — big head, expressive eyes, exaggerated proportions. Fully human is correct here.
@@ -381,8 +378,9 @@ MANDATORY SCENE STRUCTURE (all 5 layers required, in this exact order):
    Format: "CHARACTER SHEET: [Name]: [object type] body, [shape], [color], [face details], [accessories]. [Name 2]: [object type] body, [shape], [color], [face details], [accessories]."
 3. ENVIRONMENT — use the same environment phrase across all scenes, never change it.
 4. "Continuing from previous scene where [one sentence]..." + what happens in this scene + dominant emotion + camera movement (close-up / medium shot / dolly in / orbit / slow motion).
-5. DIALOGUE — end every veo3_prompt with: [Character A] says in Brazilian Portuguese: "[fala curta, max 6 words]" — then [Character B] replies: "[fala curta, max 6 words]" — lip sync, emotional voice acting, no subtitles, no text on screen.
-   The dialogue_pt field contains only the Portuguese lines isolated.
+5. DIALOGUE — this is MANDATORY and must appear INSIDE the veo3_prompt field at the very end, never outside it:
+   [Character A name] says in Brazilian Portuguese: "[emotional phrase, max 6 words, NO English words]" — [Character B name] replies in Brazilian Portuguese: "[emotional phrase, max 6 words, NO English words]" — lip sync, emotional voice acting, no subtitles, no text on screen.
+   CRITICAL: the dialogue_pt field contains ONLY the Portuguese phrases isolated. The veo3_prompt field MUST contain the full dialogue instruction above at the end.
 
 Topic: ${topic}
 Context/niche: ${hint}
