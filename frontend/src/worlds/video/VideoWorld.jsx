@@ -354,6 +354,17 @@ export function VideoWorld() {
 
             {/* Cenas */}
             <SectionLabel>🎬 Sequência de cenas — cole uma por vez</SectionLabel>
+
+            {/* Aviso de uso */}
+            <div style={{
+              background:'rgba(0,229,176,.06)',
+              border:'1px solid rgba(0,229,176,.2)',
+              borderRadius:12, padding:'14px 18px', marginBottom:20,
+              fontSize:13, color:'rgba(255,255,255,.65)', lineHeight:1.7,
+            }}>
+              💡 <strong style={{color:'rgba(0,229,176,.9)'}}>Como usar:</strong> Cole cada prompt no <strong style={{color:'#fff'}}>Veo 3</strong> ou <strong style={{color:'#fff'}}>Seedance</strong> para melhores resultados. Alguns vídeos podem precisar de pequenas edições — isso é natural das IAs de geração de vídeo ao interpretar o prompt.
+            </div>
+
             {result.scenes?.map((scene, i) => (
               <SceneCard key={i} scene={scene} />
             ))}
