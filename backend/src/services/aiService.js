@@ -352,6 +352,10 @@ ABSOLUTE RULES — NEVER BREAK ANY:
 6. Strong visual consistency across all scenes (accessories, colors, lighting and style must be identical).
 7. NEVER create characters resembling SpongeBob SquarePants or any existing IP.
 8. CRITICAL: dialogue lines in Portuguese MUST be embedded inside the veo3_prompt at the end, in this format: Character says in Brazilian Portuguese: "[fala aqui]" — lip sync, emotional voice acting, no subtitles, no text on screen.
+9. CRITICAL CHARACTER DESIGN RULE:
+- OBJECT characters (soap, shampoo, sponge, food, vitamins, fruits, cells, bottles): The body BASE is the object itself. Arms and legs grow OUT of the object body. The face (big Pixar eyes, mouth, eyebrows) is ON the surface of the object. NEVER add a separate human head on top. NEVER replace the object with a human torso or human body. Think: Pixar Cars, Toy Story — the object IS the character.
+- HUMAN characters (warriors, heroes, doctors, children): Use stylized Pixar/Dreamworks human — big head, expressive eyes, exaggerated proportions. Fully human is correct here.
+- NEVER confuse: a soap bar has its face ON the soap, arms FROM the soap — not a human head sitting on top of a soap body.
 
 GLOBAL ANCHOR — use this EXACT text at the start of EVERY scene prompt:
 "Cinematic high-quality 3D Pixar/Dreamworks style, vibrant colors, dramatic cinematic lighting with volumetric god rays, magical glowing particles, smooth fluid animation, ultra realistic textures, ultra detailed 8k. All characters are expressive full anthropomorphic Pixar-style characters with detailed arms, legs, hands, expressive faces and strong body language."
