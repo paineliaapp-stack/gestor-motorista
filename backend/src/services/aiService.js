@@ -339,22 +339,32 @@ function buildVideoPrompt(topic, style, durationSec, hint) {
   const { scenes } = VIDEO_DURATIONS[durationSec] || VIDEO_DURATIONS[60];
   const styleDesc = VIDEO_STYLES[style] || VIDEO_STYLES.pixar_body;
 
-  return `You are a world-class creative director for viral short-form educational videos.
+  return `You are a world-class expert in creating 3D Pixar/Dreamworks novelinha scripts for AI video generation.
 Concept: ${styleDesc}
 
 ABSOLUTE RULES:
-1. ALL Veo 3 scene prompts MUST be in English (far better AI video results)
-2. ALL character dialogue MUST be in Brazilian Portuguese — natural, energetic, real speech
-3. Max 1 short sentence of dialogue per character per scene (must fit in 8 seconds)
-4. Every prompt includes: Cinematic 3D Pixar/Dreamworks style, vibrant colors, dramatic lighting with glows and magical particles
-5. Each scene = exactly 8 seconds — Veo 3 hard limit
-6. CRITICAL CONSISTENCY RULE: Define characters ONCE with full physical description in scene 1. Every subsequent scene must repeat: same character names, same physical appearance, same color palette, same transparent torso environment — copy the exact character description anchor into every prompt.
-7. Each scene prompt has 3 layers:
-   - GLOBAL ANCHOR (identical in all scenes): style + all character physical descriptions + environment
-   - CONTINUITY ANCHOR (1 sentence): "Continuing from previous scene where [X happened]..."
-   - LOCAL ACTION: what specifically happens in these 8 seconds
-8. NO influencers, NO real people, NO text on screen, NO subtitles in prompts
-9. Story arc across all scenes: PROBLEM → HERO ARRIVAL → ACTION/BATTLE → TRANSFORMATION → HAPPY RESULT
+1. ALL scene prompts MUST be in English (except dialogue)
+2. ALL character dialogue MUST be in natural, emotional Brazilian Portuguese
+3. Every character MUST be FULLY ANTHROPOMORPHIC: arms, legs, torso, head, clear facial expressions and strong body language. NEVER generate just "a pot with a face" or static objects.
+4. NEVER create characters that resemble SpongeBob SquarePants or any existing IP character.
+5. Each scene = exactly 8 seconds
+6. Maximum 1 short dialogue line per character per scene
+
+GLOBAL ANCHOR — use this EXACT text at the start of EVERY single scene prompt:
+"Cinematic high-quality 3D Pixar/Dreamworks style, vibrant colors, dramatic cinematic lighting, magical glowing particles, smooth animation, ultra detailed 8k. All characters are fully anthropomorphic with clear arms, legs, expressive faces and strong body language."
+
+ENVIRONMENT RULES (choose based on topic):
+- Drama/objects topics (soap, shampoo, cream, food conflicts): use "luxurious modern bathroom shelf environment with soft reflections and warm lighting"
+- Health/body topics: use "inside transparent human torso showing glowing organs"
+- Adventure/free topics: use the most fitting environment for the story
+
+MANDATORY SCENE STRUCTURE (every scene must have all 4 layers):
+1. Global Anchor (exact text above)
+2. "Continuing from previous scene where [one sentence summary of what just happened]..."
+3. Clear description of what happens + emotion + camera movement
+4. Dialogue in Portuguese integrated naturally
+
+STORY ARC across all scenes: PROBLEM → DISCOVERY → CONFLICT → CONFRONTATION → TRANSFORMATION → RESOLUTION
 
 Topic: ${topic}
 Context/niche: ${hint}
