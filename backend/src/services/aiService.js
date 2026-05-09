@@ -339,32 +339,42 @@ function buildVideoPrompt(topic, style, durationSec, hint) {
   const { scenes } = VIDEO_DURATIONS[durationSec] || VIDEO_DURATIONS[60];
   const styleDesc = VIDEO_STYLES[style] || VIDEO_STYLES.pixar_body;
 
-  return `You are a world-class expert in creating 3D Pixar/Dreamworks novelinha scripts for AI video generation.
+  return `You are a Creative Director specialized in 3D Pixar/Dreamworks novelinha scripts for AI video generation. Your standards are maximum. You NEVER deliver mediocre work.
+
 Concept: ${styleDesc}
 
-ABSOLUTE RULES:
-1. ALL scene prompts MUST be in English (except dialogue)
-2. ALL character dialogue MUST be in natural, emotional Brazilian Portuguese
-3. Every character MUST be FULLY ANTHROPOMORPHIC: arms, legs, torso, head, clear facial expressions and strong body language. NEVER generate just "a pot with a face" or static objects.
-4. NEVER create characters that resemble SpongeBob SquarePants or any existing IP character.
-5. Each scene = exactly 8 seconds
-6. Maximum 1 short dialogue line per character per scene
+ABSOLUTE RULES — NEVER BREAK ANY:
+1. ALL Veo 3 prompts must be 100% in ENGLISH, except character dialogue lines.
+2. ALL character dialogue must be in natural, emotional, fluid Brazilian Portuguese.
+3. Every character must be a FULL ANTHROPOMORPHIC Pixar-style character: detailed arms, legs, hands, neck, torso, head and highly expressive exaggerated facial expressions. NEVER "floating object with face" or "jar with head".
+4. Each scene = exactly 8 seconds.
+5. Maximum 1 short impactful dialogue line per character per scene.
+6. Strong visual consistency across all scenes (accessories, colors, lighting and style must be identical).
+7. NEVER create characters resembling SpongeBob SquarePants or any existing IP.
+8. CRITICAL: dialogue lines in Portuguese MUST be embedded inside the veo3_prompt at the end, in this format: Character says in Brazilian Portuguese: "[fala aqui]" — lip sync, emotional voice acting, no subtitles, no text on screen.
 
-GLOBAL ANCHOR — use this EXACT text at the start of EVERY single scene prompt:
-"Cinematic high-quality 3D Pixar/Dreamworks style, vibrant colors, dramatic cinematic lighting, magical glowing particles, smooth animation, ultra detailed 8k. All characters are fully anthropomorphic with clear arms, legs, expressive faces and strong body language."
+GLOBAL ANCHOR — use this EXACT text at the start of EVERY scene prompt:
+"Cinematic high-quality 3D Pixar/Dreamworks style, vibrant colors, dramatic cinematic lighting with volumetric god rays, magical glowing particles, smooth fluid animation, ultra realistic textures, ultra detailed 8k. All characters are expressive full anthropomorphic Pixar-style characters with detailed arms, legs, hands, expressive faces and strong body language."
 
-ENVIRONMENT RULES (choose based on topic):
-- Drama/objects topics (soap, shampoo, cream, food conflicts): use "luxurious modern bathroom shelf environment with soft reflections and warm lighting"
-- Health/body topics: use "inside transparent human torso showing glowing organs"
-- Adventure/free topics: use the most fitting environment for the story
+ENVIRONMENT RULES (auto-select the best):
+- Health/Body topics → "inside a transparent human torso with glowing organs and soft internal lighting"
+- Bathroom/Objects topics → "luxurious modern bathroom shelf environment with soft reflections, elegant lighting and subtle steam"
+- Kitchen topics → "bright modern kitchen counter with warm lighting and rich colors"
+- Other topics → create a fitting, beautiful, cinematic environment
 
-MANDATORY SCENE STRUCTURE (every scene must have all 4 layers):
-1. Global Anchor (exact text above)
-2. "Continuing from previous scene where [one sentence summary of what just happened]..."
-3. Clear description of what happens + emotion + camera movement
-4. Dialogue in Portuguese integrated naturally
+HIGH QUALITY INSTRUCTIONS:
+- Transform any object into a living, charismatic character with strong personality.
+- Use exaggerated facial expressions and clear body language (shock, guilt, rage, seduction, crying, relief, etc).
+- In emotional scenes: use dramatic close-ups, slight slow motion and cinematic angles.
+- In health scenes: show clear satisfying visual transformation (red/inflamed → green/healthy, dirty → clean).
+- Always use ALL named characters — never invent unnamed mysterious entities.
+- Story arc: Problem → Discovery/Arrival → Conflict/Action → Climax → Emotional Resolution.
 
-STORY ARC across all scenes: PROBLEM → DISCOVERY → CONFLICT → CONFRONTATION → TRANSFORMATION → RESOLUTION
+MANDATORY SCENE STRUCTURE (all 4 layers required):
+1. Global Anchor (exact text above) + environment
+2. Character physical descriptions anchor (copy identical across all scenes)
+3. "Continuing from previous scene where [one sentence of what just happened]..." + what happens now + emotion + camera movement
+4. Character says in Brazilian Portuguese: "[fala]" — lip sync, emotional voice, no subtitles, no text on screen.
 
 Topic: ${topic}
 Context/niche: ${hint}
