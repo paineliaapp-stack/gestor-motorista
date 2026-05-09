@@ -328,9 +328,11 @@ const VIDEO_DURATIONS = {
 };
 
 const VIDEO_STYLES = {
-  pixar_body: 'Cute anthropomorphic food characters with arms, legs and big expressive eyes living INSIDE a transparent human torso showing stomach, intestines and organs. Pixar/Dreamworks 3D style.',
-  battle:     'Epic battle inside the body: heroic food characters vs villain characters (inflammation blobs, fat monsters, stress demons). Dramatic action, Pixar/Dreamworks 3D style.',
-  superhero:  'Food characters as superheroes with capes and special powers, flying through the body saving organs. Pixar/Dreamworks 3D style.',
+  pixar_body: 'Cute anthropomorphic characters with arms, legs and big expressive eyes living INSIDE a transparent human torso. Pixar/Dreamworks 3D style.',
+  battle:     'Epic battle: heroic characters vs villain characters. Dramatic action, explosions, magical effects. Pixar/Dreamworks 3D style.',
+  superhero:  'Characters as superheroes with capes and special powers saving the day. Pixar/Dreamworks 3D style.',
+  drama:      'Emotional drama with anthropomorphic characters — betrayal, love, discovery. Characters can be ANY objects: soap, shampoo, food, household items. Pixar/Dreamworks 3D style.',
+  adventure:  'Free-setting adventure in any environment — bathroom, kitchen, space, forest. Characters can be ANY objects the user describes. Pixar/Dreamworks 3D style.',
 };
 
 function buildVideoPrompt(topic, style, durationSec, hint) {

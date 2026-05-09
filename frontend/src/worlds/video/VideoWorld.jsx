@@ -39,9 +39,11 @@ const DURACOES = [
 ];
 
 const ESTILOS = [
-  { id:'pixar_body', label:'Pixar no Corpo',  desc:'Heróis de comida dentro do organismo transparente' },
-  { id:'battle',     label:'Batalha Épica',   desc:'Heróis vs. vilões — bactérias, gordura, stress' },
-  { id:'superhero',  label:'Super-Heróis',    desc:'Alimentos com poderes salvando órgãos' },
+  { id:'pixar_body', label:'Pixar no Corpo',  desc:'Personagens vivem dentro de um corpo humano transparente' },
+  { id:'battle',     label:'Batalha Épica',   desc:'Heróis vs. vilões em uma guerra épica' },
+  { id:'superhero',  label:'Super-Heróis',    desc:'Personagens com poderes e capas salvando o dia' },
+  { id:'drama',      label:'Drama & Traição', desc:'Conflito emocional, amor, traição e descoberta' },
+  { id:'adventure',  label:'Aventura Livre',  desc:'Qualquer cenário — banheiro, cozinha, espaço...' },
 ];
 
 function useIsMobile() {

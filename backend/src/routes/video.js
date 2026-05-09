@@ -11,7 +11,7 @@ import { generateVideoScript } from '../services/aiService.js';
 const router = Router();
 
 const VALID_DURATIONS = [30, 45, 60];
-const VALID_STYLES    = ['pixar_body', 'battle', 'superhero'];
+const VALID_STYLES    = ['pixar_body', 'battle', 'superhero', 'drama', 'adventure'];
 
 router.post('/', requireAuth, checkQuota, async (req, res) => {
   try {
