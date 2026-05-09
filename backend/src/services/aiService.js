@@ -425,7 +425,7 @@ export async function generateVideoScript({ topic, style, durationSec, hint }) {
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
       const useFallback = attempt >= 2;
-      raw = await withTimeout(callGemini(prompt, 4000, useFallback), 110000);
+      raw = await withTimeout(callGemini(prompt, 8000, useFallback), 110000);
       const parsed = safeJSONParse(raw);
       if (parsed) return parsed;
       console.warn(`[VIDEO_JSON_RETRY] tentativa ${attempt + 1}`);
