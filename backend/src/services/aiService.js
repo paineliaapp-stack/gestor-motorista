@@ -318,6 +318,96 @@ Responda APENAS com JSON válido, sem texto fora:
 }
 // END_BUILD_PROMPT
 
+
+// ─── Video / Novelinha Generation ────────────────────────────────────────────
+
+const VIDEO_DURATIONS = {
+  30: { scenes: 4, label: '30 segundos' },
+  45: { scenes: 6, label: '45 segundos' },
+  60: { scenes: 8, label: '1 minuto' },
+};
+
+const VIDEO_STYLES = {
+  pixar_body: 'Cute anthropomorphic food characters with arms, legs and big expressive eyes living INSIDE a transparent human torso showing stomach, intestines and organs. Pixar/Dreamworks 3D style.',
+  battle:     'Epic battle inside the body: heroic food characters vs villain characters (inflammation blobs, fat monsters, stress demons). Dramatic action, Pixar/Dreamworks 3D style.',
+  superhero:  'Food characters as superheroes with capes and special powers, flying through the body saving organs. Pixar/Dreamworks 3D style.',
+};
+
+function buildVideoPrompt(topic, style, durationSec, hint) {
+  const { scenes } = VIDEO_DURATIONS[durationSec] || VIDEO_DURATIONS[60];
+  const styleDesc = VIDEO_STYLES[style] || VIDEO_STYLES.pixar_body;
+
+  return \`You are a world-class creative director for viral short-form educational videos.
+Concept: \${styleDesc}
+
+ABSOLUTE RULES:
+1. ALL Veo 3 scene prompts MUST be in English (far better AI video results)
+2. ALL character dialogue MUST be in Brazilian Portuguese — natural, energetic, real speech
+3. Max 1 short sentence of dialogue per character per scene (must fit in 8 seconds)
+4. Every prompt includes: Cinematic 3D Pixar/Dreamworks style, vibrant colors, dramatic lighting with glows and magical particles
+5. Each scene = exactly 8 seconds — Veo 3 hard limit
+6. CRITICAL CONSISTENCY RULE: Define characters ONCE with full physical description in scene 1. Every subsequent scene must repeat: same character names, same physical appearance, same color palette, same transparent torso environment — copy the exact character description anchor into every prompt.
+7. Each scene prompt has 3 layers:
+   - GLOBAL ANCHOR (identical in all scenes): style + all character physical descriptions + environment
+   - CONTINUITY ANCHOR (1 sentence): "Continuing from previous scene where [X happened]..."
+   - LOCAL ACTION: what specifically happens in these 8 seconds
+8. NO influencers, NO real people, NO text on screen, NO subtitles in prompts
+9. Story arc across all scenes: PROBLEM → HERO ARRIVAL → ACTION/BATTLE → TRANSFORMATION → HAPPY RESULT
+
+Topic: \${topic}
+Context/niche: \${hint}
+Total scenes: exactly \${scenes} (each 8 seconds = \${durationSec} seconds total)
+
+Return ONLY valid JSON, no markdown, no explanation:
+{
+  "title": "catchy video title in Portuguese",
+  "hook": "1-sentence hook in Portuguese — the problem this video solves",
+  "story_summary": "2-3 sentence story arc summary in Portuguese",
+  "characters": [
+    {
+      "name": "Character name in Portuguese",
+      "food": "what food/supplement it represents",
+      "appearance": "detailed physical description for visual consistency — color, clothing, expression, size"
+    }
+  ],
+  "global_anchor": "The full reusable English anchor to paste in every scene: style description + all character physical descriptions + environment. This is what keeps visual consistency.",
+  "scenes": [
+    {
+      "scene_number": 1,
+      "timestamp": "0:00–0:08",
+      "scene_title": "short title in Portuguese",
+      "veo3_prompt": "complete ready-to-paste English prompt for Veo 3 — includes global anchor + continuity anchor + local action",
+      "dialogue_pt": "the Portuguese dialogue in isolation",
+      "visual_note": "what visually happens — in Portuguese"
+    }
+  ],
+  "thumbnail_prompts": [
+    { "style": "Midjourney / DALL-E", "prompt": "English thumbnail prompt" },
+    { "style": "ChatGPT / Gemini Image", "prompt": "English thumbnail prompt, different angle" }
+  ],
+  "posting_tips": ["tip 1 in Portuguese", "tip 2", "tip 3"]
+}\`;
+}
+
+export async function generateVideoScript({ topic, style, durationSec, hint }) {
+  const prompt = buildVideoPrompt(topic, style, durationSec, hint);
+  let raw = '';
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const useFallback = attempt >= 2;
+      raw = await withTimeout(callGemini(prompt, 4000, useFallback), 60000);
+      const parsed = safeJSONParse(raw);
+      if (parsed) return parsed;
+      console.warn(\`[VIDEO_JSON_RETRY] tentativa \${attempt + 1}\`);
+    } catch (err) {
+      console.warn(\`[VIDEO_API_RETRY] tentativa \${attempt + 1} — \${err.message}\`);
+      if (attempt === 3) throw err;
+      await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+    }
+  }
+  throw new Error('JSON invalido retornado pelo modelo para video');
+}
+
 export async function generateScript({ article, platform, style, version = 1, lang = 'pt', bias = 'neutral' }) {
   const platformSpec = PLATFORMS[platform];
   const styleSpec = STYLES[style];

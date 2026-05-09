@@ -20,6 +20,7 @@ import youtubeRoutes from './routes/youtube.js';
 import authRoutes from './routes/auth.js';
 import booksChatRouter from './routes/bookschat.js';
 import paymentRoutes from './routes/payment.js';
+import videoRoutes from './routes/video.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 // Validate env on startup
@@ -70,6 +71,7 @@ app.use('/api/youtube', apiLimiter, youtubeRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/books', booksChatRouter);
 app.use('/api/payment', apiLimiter, paymentRoutes);
+app.use('/api/video',   generateLimiter, videoRoutes);
 
 // Headers para Google OAuth popup
 app.use((req, res, next) => {
