@@ -350,11 +350,18 @@ export function ScienceWorld() {
       </div>
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '20px 16px 80px' : '28px 24px 100px', position: 'relative', zIndex: 5 }}>
+        {/* Texto explicativo */}
+        <div style={{ marginBottom: 16, padding: '14px 18px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <p style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>
+            🔬 <strong style={{ color: 'rgba(255,255,255,0.8)' }}>Digite qualquer assunto</strong> — a IA varre PubMed, Europe PMC e Semantic Scholar e traz os estudos mais relevantes. Escolha um artigo e transforme em roteiro viral.
+          </p>
+        </div>
+
         <div style={{ position: 'relative', marginBottom: 24 }}>
           <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', fontSize: 15, color: `rgba(${src.glow},0.45)`, pointerEvents: 'none' }}>⌕</span>
           <input
             type="text"
-            placeholder="Buscar artigos em inglês (ex: intermittent fasting)..."
+            placeholder="Ex: hipertrofia, sono profundo, ansiedade..."
             value={searchQuery}
             onChange={e => {
               setSearchQuery(e.target.value);
