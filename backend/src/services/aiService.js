@@ -416,7 +416,7 @@ Return ONLY valid JSON, no markdown, no explanation:
     { "style": "IA de Imagem", "prompt": "English thumbnail prompt, different angle" }
   ],
   "posting_tips": ["tip 1 in Portuguese", "tip 2", "tip 3"]
-}\`;
+}`;
 }
 
 export async function generateVideoScript({ topic, style, durationSec, hint }) {
