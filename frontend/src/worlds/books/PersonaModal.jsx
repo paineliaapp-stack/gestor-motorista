@@ -41,6 +41,9 @@ const PLATFORMS = [
 export function PersonaModal({ book, personaKey, onClose, onSave }) {
   const p = PERSONAS[personaKey] || PERSONAS.lira;
   const generator = useScriptGenerator();
+  const scriptText = generator.script
+    ? (typeof generator.script === 'string' ? generator.script : generator.script.script || JSON.stringify(generator.script))
+    : null;
   const [step, setStep] = useState(1);
   const [platform, setPlatform] = useState(null);
   const [angle, setAngle] = useState(null);
@@ -188,14 +191,14 @@ export function PersonaModal({ book, personaKey, onClose, onSave }) {
                   <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 8 }}>{p.name} está trabalhando no seu roteiro</p>
                 </div>
               )}
-              {generator.script && !generator.loading && (
+              {scriptText && !generator.loading && (
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                     <p style={{ margin: 0, fontFamily: 'Space Mono, monospace', fontSize: 9, color: accent, letterSpacing: '0.2em' }}>ROTEIRO GERADO</p>
-                    <button onClick={() => { navigator.clipboard.writeText(generator.script); }} style={{ padding: '6px 12px', borderRadius: 8, background: `${accent}22`, border: `1px solid ${accent}44`, color: accent, fontFamily: 'DM Sans, sans-serif', fontSize: 11, cursor: 'pointer' }}>📋 Copiar</button>
+                    <button onClick={() => { navigator.clipboard.writeText(scriptText); }} style={{ padding: '6px 12px', borderRadius: 8, background: `${accent}22`, border: `1px solid ${accent}44`, color: accent, fontFamily: 'DM Sans, sans-serif', fontSize: 11, cursor: 'pointer' }}>📋 Copiar</button>
                   </div>
                   <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '16px', fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, whiteSpace: 'pre-wrap', maxHeight: 320, overflowY: 'auto' }}>
-                    {generator.script}
+                    {scriptText}
                   </div>
                   {generator.hooks?.length > 0 && (
                     <div style={{ marginTop: 12 }}>
