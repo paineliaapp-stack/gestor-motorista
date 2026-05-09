@@ -375,13 +375,14 @@ HIGH QUALITY INSTRUCTIONS:
 - Always use ALL named characters — never invent unnamed mysterious entities.
 - Story arc: Problem → Discovery/Arrival → Conflict/Action → Climax → Emotional Resolution.
 
-MANDATORY SCENE STRUCTURE (all 4 layers required):
-1. Global Anchor (exact text above) + environment
-2. Character physical descriptions anchor (copy identical across all scenes)
-3. "Continuing from previous scene where [one sentence of what just happened]..." + what happens now + emotion + camera movement
-4. MANDATORY — end every veo3_prompt with the dialogue embedded like this:
-   [Character name] says in Brazilian Portuguese: "[fala em português]" — lip sync, emotional voice acting, no subtitles, no text on screen.
-   The dialogue MUST appear inside the veo3_prompt field. The dialogue_pt field should contain only the Portuguese text isolated.
+MANDATORY SCENE STRUCTURE (all 5 layers required, in this exact order):
+1. GLOBAL ANCHOR — copy the exact anchor text above, word for word, at the start of every scene. Never shorten it.
+2. CHARACTER SHEET ANCHOR — in scene 1, write a CHARACTER SHEET block describing every character with maximum physical detail: object type, exact body shape, exact color palette, exact face features (eye color, eyebrow style, mouth), exact accessories, exact clothing. Then copy this CHARACTER SHEET block WORD FOR WORD into scenes 2 through 8. Never paraphrase, never shorten, never change a single word. This is the consistency anchor.
+   Format: "CHARACTER SHEET: [Name]: [object type] body, [shape], [color], [face details], [accessories]. [Name 2]: [object type] body, [shape], [color], [face details], [accessories]."
+3. ENVIRONMENT — use the same environment phrase across all scenes, never change it.
+4. "Continuing from previous scene where [one sentence]..." + what happens in this scene + dominant emotion + camera movement (close-up / medium shot / dolly in / orbit / slow motion).
+5. DIALOGUE — end every veo3_prompt with: [Character A] says in Brazilian Portuguese: "[fala curta, max 6 words]" — then [Character B] replies: "[fala curta, max 6 words]" — lip sync, emotional voice acting, no subtitles, no text on screen.
+   The dialogue_pt field contains only the Portuguese lines isolated.
 
 Topic: ${topic}
 Context/niche: ${hint}
