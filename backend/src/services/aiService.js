@@ -328,11 +328,11 @@ const VIDEO_DURATIONS = {
 };
 
 const VIDEO_STYLES = {
-  pixar_body: 'Cute anthropomorphic characters with arms, legs and big expressive eyes living INSIDE a transparent human torso. Pixar/Dreamworks 3D style.',
-  battle:     'Epic battle: heroic characters vs villain characters. Dramatic action, explosions, magical effects. Pixar/Dreamworks 3D style.',
-  superhero:  'Characters as superheroes with capes and special powers saving the day. Pixar/Dreamworks 3D style.',
-  drama:      'Emotional drama with anthropomorphic characters — betrayal, love, discovery. Characters can be ANY objects: soap, shampoo, food, household items. Pixar/Dreamworks 3D style.',
-  adventure:  'Free-setting adventure in any environment — bathroom, kitchen, space, forest. Characters can be ANY objects the user describes. Pixar/Dreamworks 3D style.',
+  pixar_body: 'Narrative style: educational health story with anthropomorphic characters. Environment and characters must be chosen based on the topic — use the ENVIRONMENT RULES below to select the correct setting.',
+  battle:     'Narrative style: epic battle between hero characters and villain characters. Dramatic action, explosions, magical effects. Environment based on topic.',
+  superhero:  'Narrative style: characters with superpowers and capes saving the day. Epic and heroic tone. Environment based on topic.',
+  drama:      'Narrative style: emotional drama — betrayal, love, discovery, conflict. Characters can be ANY objects, food, or household items. Bathroom, kitchen or fitting environment based on topic.',
+  adventure:  'Narrative style: free adventure story. Characters can be ANY objects the user describes. Environment based on topic.',
 };
 
 function buildVideoPrompt(topic, style, durationSec, hint) {
