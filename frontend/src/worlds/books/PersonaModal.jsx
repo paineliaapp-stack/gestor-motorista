@@ -80,8 +80,9 @@ export function PersonaModal({ book, personaKey, onClose, onSave }) {
         <div style={{ padding: '20px 24px', borderBottom: `1px solid ${accent}22`, display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 48, height: 48, borderRadius: '50%', background: `radial-gradient(circle, ${accent}44, #050300)`, border: `2px solid ${accent}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{p.emoji}</div>
           <div style={{ flex: 1 }}>
-            <p style={{ margin: 0, fontFamily: 'Space Mono, monospace', fontSize: 10, color: accent, fontWeight: 700 }}>{p.name} recomenda</p>
+            <p style={{ margin: 0, fontFamily: 'Space Mono, monospace', fontSize: 10, color: accent, fontWeight: 700 }}>{p.name} recomenda como inspiração</p>
             <p style={{ margin: '2px 0 0', fontFamily: 'Playfair Display, serif', fontSize: 16, color: '#fff', fontWeight: 700 }}>{book.title}</p>
+            <p style={{ margin: '2px 0 0', fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' }}>Roteiro original inspirado no universo temático da obra · não reproduz conteúdo oficial</p>
             <p style={{ margin: 0, fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{book.author}</p>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: 20, cursor: 'pointer' }}>✕</button>
@@ -158,7 +159,7 @@ export function PersonaModal({ book, personaKey, onClose, onSave }) {
               </div>
               <button onClick={handleGenerate}
                 style={{ width: '100%', padding: '18px', borderRadius: 14, background: `linear-gradient(135deg, ${accent}33, ${accent}11)`, border: `1.5px solid ${accent}66`, color: accent, fontFamily: 'Space Mono, monospace', fontSize: 13, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.1em', boxShadow: `0 8px 32px ${accent}22` }}>
-                {p.emoji} GERAR COM {p.name.toUpperCase()}
+                {p.emoji} GERAR ROTEIRO INSPIRADO NA OBRA
               </button>
               <button onClick={() => setStep(2)} style={{ marginTop: 12, background: 'none', border: 'none', color: 'rgba(255,255,255,0.25)', fontFamily: 'DM Sans, sans-serif', fontSize: 12, cursor: 'pointer' }}>← Voltar</button>
             </div>
