@@ -354,9 +354,9 @@ ABSOLUTE RULES:
 8. NO influencers, NO real people, NO text on screen, NO subtitles in prompts
 9. Story arc across all scenes: PROBLEM → HERO ARRIVAL → ACTION/BATTLE → TRANSFORMATION → HAPPY RESULT
 
-Topic: \${topic}
+Topic: ${topic}
 Context/niche: ${hint}
-Total scenes: exactly ${scenes} (each 8 seconds = \${durationSec} seconds total)
+Total scenes: exactly ${scenes} (each 8 seconds = ${durationSec} seconds total)
 
 Return ONLY valid JSON, no markdown, no explanation:
 {
@@ -386,7 +386,7 @@ Return ONLY valid JSON, no markdown, no explanation:
     { "style": "ChatGPT / Gemini Image", "prompt": "English thumbnail prompt, different angle" }
   ],
   "posting_tips": ["tip 1 in Portuguese", "tip 2", "tip 3"]
-}\`;
+}`;
 }
 
 export async function generateVideoScript({ topic, style, durationSec, hint }) {
@@ -398,9 +398,9 @@ export async function generateVideoScript({ topic, style, durationSec, hint }) {
       raw = await withTimeout(callGemini(prompt, 4000, useFallback), 60000);
       const parsed = safeJSONParse(raw);
       if (parsed) return parsed;
-      console.warn(\`[VIDEO_JSON_RETRY] tentativa ${attempt + 1}\`);
+      console.warn(`[VIDEO_JSON_RETRY] tentativa ${attempt + 1}`);
     } catch (err) {
-      console.warn(\`[VIDEO_API_RETRY] tentativa ${attempt + 1} — ${err.message}\`);
+      console.warn(`[VIDEO_API_RETRY] tentativa ${attempt + 1} — ${err.message}`);
       if (attempt === 3) throw err;
       await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
     }
