@@ -204,11 +204,6 @@ function getFallbackColors(title) {
 // ── Cover fetcher ─────────────────────────────────────────────────────────────
 const coverCache = {};
 
-/**
- * Busca capa na Open Library pelo título em inglês.
- * Retorna URL da capa -L (large) se cover_i existir.
- */
-}
 
 async function fetchCover(title, author) {
   const key = title + author;
