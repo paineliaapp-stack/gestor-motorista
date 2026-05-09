@@ -622,6 +622,7 @@ export function BooksWorld() {
   };
   const [apiBooks, setApiBooks] = useState([]);
   const [highlightedIndices, setHighlightedIndices] = useState([]);
+  const [activePersonaKey, setActivePersonaKey] = useState(null);
   const [personaSelection, setPersonaSelection] = useState(null);
   const [searching, setSearching] = useState(false);
 
