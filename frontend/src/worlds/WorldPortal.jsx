@@ -91,7 +91,7 @@ const WORLDS = [
     id:'niche', path:'/niche', label:'Meu Canal', tag:'PERSONALIZADO', accent:'#ef4444', glow:'239,68,68',
     description:'Crie seu nicho, salve múltiplos canais e receba conteúdo personalizado para gerar roteiros todos os dias.',
     stat1:'∞', stat1l:'Nichos', stat2:'Diário', stat2l:'Atualizado', icon:'🎯',
-    gradient:'linear-gradient(160deg, #0d0a1a 0%, #150f2a 60%, #080613 100%)',
+    gradient:'linear-gradient(160deg, #1a0a0a 0%, #2a0f0f 60%, #130606 100%)',
     glowBg:'radial-gradient(ellipse at 50% 110%, rgba(239,68,68,0.26) 0%, transparent 60%)',
     borderGlow:'rgba(239,68,68,0.55)',
   },
