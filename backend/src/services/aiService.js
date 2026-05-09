@@ -348,7 +348,8 @@ ABSOLUTE RULES — NEVER BREAK ANY:
 2. ALL character dialogue must be in natural, emotional, fluid Brazilian Portuguese.
 3. Every character must be a FULL ANTHROPOMORPHIC Pixar-style character: detailed arms, legs, hands, neck, torso, head and highly expressive exaggerated facial expressions. NEVER "floating object with face" or "jar with head".
 4. Each scene = exactly 8 seconds.
-5. Maximum 1 short impactful dialogue line per character per scene.
+5. DIALOGUE RULE: Each scene can have up to 2 short dialogue lines — one per character. Each line must be maximum 5-6 words in Portuguese to fit in 8 seconds. Format in veo3_prompt:
+   [Character A] says in Brazilian Portuguese: "[fala curta]" — then [Character B] replies: "[fala curta]" — lip sync, emotional voice acting, no subtitles, no text on screen.
 6. Strong visual consistency across all scenes (accessories, colors, lighting and style must be identical).
 7. NEVER create characters resembling SpongeBob SquarePants or any existing IP.
 8. CRITICAL: dialogue lines in Portuguese MUST be embedded inside the veo3_prompt at the end, in this format: Character says in Brazilian Portuguese: "[fala aqui]" — lip sync, emotional voice acting, no subtitles, no text on screen.
