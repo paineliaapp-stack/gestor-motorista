@@ -407,8 +407,8 @@ Return ONLY valid JSON, no markdown, no explanation:
       "scene_number": 1,
       "timestamp": "0:00-0:08",
       "scene_title": "short title in Portuguese",
-      "veo3_prompt": "complete ready-to-paste English prompt: global anchor + character sheet + environment + action/emotion/camera + MANDATORY 2 dialogue lines at the end in format: [Name1] says in Brazilian Portuguese: \"frase.\" [Name2] says in Brazilian Portuguese: \"frase.\" — lip sync, emotional voice acting, no subtitles, no text on screen",
-      "dialogue_pt": "MANDATORY 2 lines: '[Nome1]: frase em português.' and '[Nome2]: frase em português.' — always 2 characters speaking, never just 1",
+      "veo3_prompt": "complete ready-to-paste English prompt: global anchor + character sheet + environment + action/emotion/camera + ONE single dialogue line at the end in format: [Name] says in Brazilian Portuguese: \"frase longa educativa com 20 a 30 palavras ensinando algo concreto sobre o tema, ocupando os 8 segundos inteiros do video.\" — lip sync, emotional voice acting, character speaks from start to end of scene, no subtitles, no text on screen",
+      "dialogue_pt": "1 fala longa: '[Nome]: frase educativa em português com 20 a 30 palavras ensinando algo real sobre o tema — o personagem fala do inicio ao fim dos 8 segundos.'",
       "visual_note": "what visually happens in Portuguese"
     }
   ],
