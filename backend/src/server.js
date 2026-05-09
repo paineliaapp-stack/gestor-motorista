@@ -43,7 +43,7 @@ app.use(
 );
 
 // ─── Body Parser ──────────────────────────────────────────────────────────────
-app.use(express.static('public'));
+app.use(express.static('public', { etag: false, lastModified: false, setHeaders: (res) => { res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); } }));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
