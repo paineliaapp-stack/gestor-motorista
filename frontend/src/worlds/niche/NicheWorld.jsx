@@ -94,6 +94,17 @@ function engagementRate(v) {
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 function SkeletonCard({ color }) {
+  const handleConectar = () => {
+    const handle = channelId.replace(/^@/,'').trim();
+    if(activeNiche && handle){
+      localStorage.setItem('vn_yt_handle_'+activeNiche.id, handle);
+      setShowApiModal(false);
+      const token = localStorage.getItem('autor_token');
+      fetch('/api/youtube/canal?handle='+encodeURIComponent(handle), { headers:{ Authorization:'Bearer '+token } })
+        .then(r=>r.json()).then(d=>{ setYtData(d); try { localStorage.setItem('vn_yt_data_'+activeNiche.id, JSON.stringify(d)); } catch {} }).catch(()=>{});
+    } else setShowApiModal(false);
+  };
+
   return (
     <div style={{ borderRadius:14, overflow:'hidden', border:'1px solid rgba(255,255,255,0.06)', background:'rgba(255,255,255,0.02)' }}>
       <div style={{ height:150, background:'linear-gradient(90deg,rgba(255,255,255,0.03) 25%,rgba(255,255,255,0.07) 50%,rgba(255,255,255,0.03) 75%)', backgroundSize:'200% 100%', animation:'nicheShimmer 1.5s ease infinite' }} />
@@ -1500,9 +1511,7 @@ export function NicheWorld() {
     fetch('/api/youtube/canal?handle='+encodeURIComponent(handle), { headers:{ Authorization:'Bearer '+token } })
       .then(r=>r.json()).then(d=>{ setYtData(d); try { localStorage.setItem('vn_yt_data_'+activeNiche.id, JSON.stringify(d)); } catch {} }).catch(()=>{});
   } else setShowApiModal(false);
-              }}
-              style={{ flex:2, padding:'10px', borderRadius:8, background:'rgba(255,50,50,0.15)', border:'1px solid rgba(255,50,50,0.4)', color:'#ff6b6b', fontFamily:'-apple-system,sans-serif', fontSize:13, fontWeight:600, cursor:'pointer' }}
-            >Conectar canal</button>
+              }}>Conectar canal</button>
             </div>
           </div>
         </div>
