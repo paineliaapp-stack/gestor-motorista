@@ -142,7 +142,7 @@ function WorldCard({ world, index, isMobile }) {
       onMouseLeave={()=>{ setHovered(false); setMousePos({x:0.5,y:0.5}); }}
       onMouseMove={handleMouseMove}
       style={{
-        position:'relative', flex:1, minWidth:0, cursor:'pointer',
+        position:'relative', flex:1, minWidth:'180px', cursor:'pointer',
         borderRadius:20, overflow:'hidden', background:world.gradient,
         border:`2px solid ${hovered ? world.borderGlow : `rgba(${world.glow},0.18)`}`, outline: `1px solid rgba(255,255,255,${hovered ? 0.12 : 0.04})`, outlineOffset: '-3px',
         boxShadow: hovered
