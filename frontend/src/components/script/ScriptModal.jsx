@@ -647,7 +647,7 @@ return (<div style={{margin:"4px 0 16px",padding:"9px 13px",borderRadius:8,backg
                       </Section>
                     )}
 
-                    {/* ── HASHTAGS ── */}}
+                    {/* ── HASHTAGS ── */}
                     {hashtags.length > 0 && (
                       <Section title="HASHTAGS" icon="#️⃣" accent={accentColor} glow={glowColor}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 10 }}>
