@@ -17,7 +17,7 @@ if (typeof document !== 'undefined' && !document.getElementById('niche-fonts')) 
 const PLATFORMS = [['tiktok','TikTok / Instagram'],['youtube_shorts','YT Shorts'],['youtube_long','YT Longo']];
 const STYLES    = [['educational','Educacional'],['storytelling','Storytelling'],['dark_channel','Entretenimento'],['controversial','Debate']];
 const NICHE_COLORS = [
-  { accent:'#a78bfa', glow:'167,139,250', bg:'#0d0a1a', grad:'linear-gradient(160deg,#0d0a1a 0%,#150f2a 60%,#080613 100%)', border:'rgba(167,139,250,0.6)' },
+  { accent:'#ff4444', glow:'255,68,68', bg:'#0d0a1a', grad:'linear-gradient(160deg,#0d0a1a 0%,#150f2a 60%,#080613 100%)', border:'rgba(255,68,68,0.6)' },
   { accent:'#34d399', glow:'52,211,153',  bg:'#070f0d', grad:'linear-gradient(160deg,#070f0d 0%,#0c1f18 60%,#040a08 100%)', border:'rgba(52,211,153,0.6)' },
   { accent:'#fb923c', glow:'251,146,60',  bg:'#0f0a07', grad:'linear-gradient(160deg,#0f0a07 0%,#1f1208 60%,#0a0703 100%)', border:'rgba(251,146,60,0.6)' },
   { accent:'#f472b6', glow:'244,114,182', bg:'#0f070d', grad:'linear-gradient(160deg,#0f070d 0%,#200f1c 60%,#0a0408 100%)', border:'rgba(244,114,182,0.6)' },
@@ -560,7 +560,7 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
           { label:'INSCRITOS',    value:fmt(channel.subscribers),  color:'#ff5555' },
           { label:'VIEWS TOTAIS', value:fmt(channel.totalViews),   color:'#ffbe4d' },
           { label:'VÍDEOS',       value:channel.videoCount,        color:'#00e5b0' },
-          { label:'MÉDIA/VÍDEO',  value:fmt(Math.round(totalViews/(videos.length||1))), color:'#a78bfa' },
+          { label:'MÉDIA/VÍDEO',  value:fmt(Math.round(totalViews/(videos.length||1))), color:'#ff4444' },
         ].map((s,i) => (
           <div key={i} style={{ background:'rgba(7,7,15,0.9)', padding:'14px 16px' }}>
             <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.18em', color:'rgba(255,255,255,0.7)', margin:'0 0 6px' }}>{s.label}</p>
@@ -659,12 +659,12 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
                   <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:scoreColor, margin:'2px 0 0' }}>{scoreLabel}</p>
                 </div>
                 <div style={{ display:'flex', gap:6, flexShrink:0 }}>
-                  <button onClick={()=>setShowGenOpts(showGenOpts===v.id?null:v.id)} style={{ padding:'5px 10px', borderRadius:6, background:'rgba(167,139,250,0.12)', border:'1px solid rgba(167,139,250,0.3)', color:'#a78bfa', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, cursor:'pointer', whiteSpace:'nowrap' }}>⚡ ROTEIRO</button>
+                  <button onClick={()=>setShowGenOpts(showGenOpts===v.id?null:v.id)} style={{ padding:'5px 10px', borderRadius:6, background:'rgba(255,68,68,0.12)', border:'1px solid rgba(255,68,68,0.3)', color:'#ff4444', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, cursor:'pointer', whiteSpace:'nowrap' }}>⚡ ROTEIRO</button>
                   <a href={`https://youtube.com/watch?v=${v.id}`} target="_blank" rel="noopener noreferrer" style={{ padding:'5px 8px', borderRadius:6, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.7)', textDecoration:'none', fontSize:12 }}>↗</a>
                 </div>
               </div>
               {showGenOpts === v.id && (
-                <div style={{ padding:'10px 12px 12px', borderTop:'1px solid rgba(167,139,250,0.1)', background:'rgba(167,139,250,0.04)', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', borderRadius:'0 0 10px 10px' }}>
+                <div style={{ padding:'10px 12px 12px', borderTop:'1px solid rgba(255,68,68,0.1)', background:'rgba(255,68,68,0.04)', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', borderRadius:'0 0 10px 10px' }}>
                   <select value={generateOpts.platform} onChange={e=>setGenerateOpts(o=>({...o,platform:e.target.value}))} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:6, padding:'5px 8px', color:'rgba(255,255,255,0.8)', fontSize:12, cursor:'pointer', fontFamily:'-apple-system,SF Pro Text,sans-serif' }}>
                     <option value="tiktok" style={{background:'#0a0a12'}}>TikTok / Instagram</option>
                     <option value="youtube_shorts" style={{background:'#0a0a12'}}>YT Shorts</option>
@@ -678,7 +678,7 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
                   </select>
                   <button
                     onClick={() => { onGenerate({ title: v.title, description: `Roteiro inspirado no vídeo '${v.title}' do canal ${channel.title}. Formato e narrativa criados por IA — não reproduz o conteúdo original do vídeo.`, viral_score: v.viral_score, url: `https://youtube.com/watch?v=${v.id}`, image: v.thumbnail, source: channel.title }, generateOpts); setShowGenOpts(null); }}
-                    style={{ marginLeft:'auto', padding:'6px 16px', borderRadius:6, background:'rgba(167,139,250,0.2)', border:'1px solid rgba(167,139,250,0.45)', color:'#a78bfa', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:12, fontWeight:600, cursor:'pointer', letterSpacing:'0.1em' }}>
+                    style={{ marginLeft:'auto', padding:'6px 16px', borderRadius:6, background:'rgba(255,68,68,0.2)', border:'1px solid rgba(255,68,68,0.45)', color:'#ff4444', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:12, fontWeight:600, cursor:'pointer', letterSpacing:'0.1em' }}>
                     GERAR →
                   </button>
                 </div>
@@ -696,11 +696,11 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
       </div>
 
       {/* Diagnóstico IA */}
-      <div style={{ margin:'16px 16px 16px', background:'rgba(167,139,250,0.04)', border:'1px solid rgba(167,139,250,0.15)', borderRadius:12, padding:'14px 16px' }}>
+      <div style={{ margin:'16px 16px 16px', background:'rgba(255,68,68,0.04)', border:'1px solid rgba(255,68,68,0.15)', borderRadius:12, padding:'14px 16px' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom: aiDiag ? 12 : 0 }}>
           <span style={{ fontSize:16 }}>🤖</span>
-          <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.15em', color:'rgba(167,139,250,0.8)', margin:0, flex:1 }}>DIAGNÓSTICO IA DO CANAL</p>
-          <button onClick={runAiDiagnosis} disabled={aiLoading} style={{ padding:'6px 14px', borderRadius:8, background:aiLoading?'rgba(255,255,255,0.05)':'rgba(167,139,250,0.15)', border:'1px solid rgba(167,139,250,0.3)', color:'#a78bfa', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.1em', cursor:aiLoading?'not-allowed':'pointer', transition:'all 0.15s' }}>
+          <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.15em', color:'rgba(255,68,68,0.8)', margin:0, flex:1 }}>DIAGNÓSTICO IA DO CANAL</p>
+          <button onClick={runAiDiagnosis} disabled={aiLoading} style={{ padding:'6px 14px', borderRadius:8, background:aiLoading?'rgba(255,255,255,0.05)':'rgba(255,68,68,0.15)', border:'1px solid rgba(255,68,68,0.3)', color:'#ff4444', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.1em', cursor:aiLoading?'not-allowed':'pointer', transition:'all 0.15s' }}>
             {aiLoading ? 'ANALISANDO...' : aiDiag ? 'REANALISAR' : 'ANALISAR CANAL'}
           </button>
         </div>
@@ -709,7 +709,7 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
         )}
         {aiDiag && sorted.length > 0 && (
           <div style={{ marginTop:16 }}>
-            <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, letterSpacing:'0.2em', color:'rgba(167,139,250,0.6)', margin:'0 0 10px' }}>GERAR ROTEIRO DAS SUGESTOES</p>
+            <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, letterSpacing:'0.2em', color:'rgba(255,68,68,0.6)', margin:'0 0 10px' }}>GERAR ROTEIRO DAS SUGESTOES</p>
             <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
               {sorted.slice(0,3).map((v,i) => (
                 <button key={v.id}
@@ -721,7 +721,7 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
                     image: v.thumbnail,
                     source: channel.title,
                   }, { platform: generateOpts.platform, style: generateOpts.style })}
-                  style={{ padding:'9px 14px', borderRadius:8, border:'1px solid rgba(167,139,250,0.25)', background:'rgba(167,139,250,0.08)', color:'#a78bfa', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:13, cursor:'pointer', textAlign:'left', transition:'all 0.2s' }}>
+                  style={{ padding:'9px 14px', borderRadius:8, border:'1px solid rgba(255,68,68,0.25)', background:'rgba(255,68,68,0.08)', color:'#ff4444', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:13, cursor:'pointer', textAlign:'left', transition:'all 0.2s' }}>
                   {`⚡ #${i+1} ${v.title.slice(0,55)}${v.title.length>55?'…':''}`}
                 </button>
               ))}
@@ -1023,14 +1023,14 @@ Gancho de abertura sugerido:
           </div>
 
           {/* Análise IA */}
-          <div style={{ padding:'16px 18px', borderRadius:12, background:'rgba(167,139,250,0.04)', border:'1px solid rgba(167,139,250,0.15)' }}>
+          <div style={{ padding:'16px 18px', borderRadius:12, background:'rgba(255,68,68,0.04)', border:'1px solid rgba(255,68,68,0.15)' }}>
             <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom: aiAnalysis ? 14 : 0 }}>
               <span>🤖</span>
-              <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, letterSpacing:'0.2em', color:'rgba(167,139,250,0.8)', margin:0, flex:1 }}>ANÁLISE DE PADRÕES COM IA</p>
+              <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, letterSpacing:'0.2em', color:'rgba(255,68,68,0.8)', margin:0, flex:1 }}>ANÁLISE DE PADRÕES COM IA</p>
               <button
                 onClick={analyzeWithAI}
                 disabled={aiLoading}
-                style={{ padding:'6px 14px', borderRadius:8, background:aiLoading?'rgba(255,255,255,0.05)':'rgba(167,139,250,0.15)', border:'1px solid rgba(167,139,250,0.3)', color:'#a78bfa', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, letterSpacing:'0.1em', cursor:aiLoading?'not-allowed':'pointer', transition:'all 0.15s', whiteSpace:'nowrap' }}>
+                style={{ padding:'6px 14px', borderRadius:8, background:aiLoading?'rgba(255,255,255,0.05)':'rgba(255,68,68,0.15)', border:'1px solid rgba(255,68,68,0.3)', color:'#ff4444', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, letterSpacing:'0.1em', cursor:aiLoading?'not-allowed':'pointer', transition:'all 0.15s', whiteSpace:'nowrap' }}>
                 {aiLoading ? 'ANALISANDO...' : aiAnalysis ? 'REANALISAR' : 'ANALISAR PADRÕES'}
               </button>
             </div>
@@ -1089,12 +1089,12 @@ function CreateNicheModal({ onSave, onClose }) {
   const save = () => name.trim() && onSave({ id:Date.now().toString(), name:name.trim(), icon, keywords:keywords.split(',').map(k=>k.trim()).filter(Boolean), createdAt:new Date().toISOString() });
   return (
     <div onClick={e=>e.target===e.currentTarget&&onClose()} style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(0,0,0,0.88)', backdropFilter:'blur(24px)', display:'flex', alignItems:isMobile?'flex-end':'center', justifyContent:'center', padding:isMobile?0:24, animation:'nicheFadeIn 0.2s ease' }}>
-      <div style={{ width:'100%', maxWidth:isMobile?'100%':520, background:'#0a0a12', border:'1px solid rgba(167,139,250,0.2)', borderRadius:isMobile?'20px 20px 0 0':16, overflow:'hidden', animation:'nicheSlideUp 0.3s cubic-bezier(0.34,1.1,0.64,1)', boxShadow:'0 40px 100px rgba(0,0,0,0.8)' }}>
-        <div style={{ height:3, background:'linear-gradient(90deg,#4c1d95,#a78bfa,#7c3aed)' }} />
+      <div style={{ width:'100%', maxWidth:isMobile?'100%':520, background:'#0a0a12', border:'1px solid rgba(255,68,68,0.2)', borderRadius:isMobile?'20px 20px 0 0':16, overflow:'hidden', animation:'nicheSlideUp 0.3s cubic-bezier(0.34,1.1,0.64,1)', boxShadow:'0 40px 100px rgba(0,0,0,0.8)' }}>
+        <div style={{ height:3, background:'linear-gradient(90deg,#8b0000,#ff4444,#cc2222)' }} />
         <div style={{ padding:isMobile?'20px 20px 32px':'28px 32px' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
             <div>
-              <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.4em', color:'rgba(167,139,250,0.5)', margin:'0 0 4px' }}>NOVO CANAL</p>
+              <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.4em', color:'rgba(255,68,68,0.5)', margin:'0 0 4px' }}>NOVO CANAL</p>
               <h2 style={{ fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:22, fontWeight:800, color:'#fff', margin:0 }}>Criar Nicho</h2>
             </div>
             <button onClick={onClose} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.4)', borderRadius:8, width:32, height:32, cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
@@ -1102,13 +1102,13 @@ function CreateNicheModal({ onSave, onClose }) {
           <div style={{ marginBottom:20 }}>
             <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.2em', color:'rgba(255,255,255,0.7)', marginBottom:10 }}>ÍCONE</p>
             <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-              {ICONS.map(ic=><button key={ic} onClick={()=>setIcon(ic)} style={{ width:40, height:40, borderRadius:10, fontSize:18, border:`1px solid ${icon===ic?'rgba(167,139,250,0.6)':'rgba(255,255,255,0.08)'}`, background:icon===ic?'rgba(167,139,250,0.15)':'rgba(255,255,255,0.03)', cursor:'pointer', transition:'all 0.15s' }}>{ic}</button>)}
+              {ICONS.map(ic=><button key={ic} onClick={()=>setIcon(ic)} style={{ width:40, height:40, borderRadius:10, fontSize:18, border:`1px solid ${icon===ic?'rgba(255,68,68,0.6)':'rgba(255,255,255,0.08)'}`, background:icon===ic?'rgba(255,68,68,0.15)':'rgba(255,255,255,0.03)', cursor:'pointer', transition:'all 0.15s' }}>{ic}</button>)}
             </div>
           </div>
           <div style={{ marginBottom:16 }}>
             <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.2em', color:'rgba(255,255,255,0.7)', marginBottom:8 }}>NOME DO NICHO *</p>
             <input type="text" placeholder="ex: Marketing Digital, Finanças Pessoais..." value={name} onChange={e=>setName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&save()} autoFocus
-              style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:`1px solid ${name?'rgba(167,139,250,0.35)':'rgba(255,255,255,0.08)'}`, borderRadius:10, padding:'11px 14px', fontSize:14, color:'#fff', fontFamily:'-apple-system,SF Pro Text,sans-serif', outline:'none', transition:'border-color 0.2s' }} />
+              style={{ width:'100%', background:'rgba(255,255,255,0.04)', border:`1px solid ${name?'rgba(255,68,68,0.35)':'rgba(255,255,255,0.08)'}`, borderRadius:10, padding:'11px 14px', fontSize:14, color:'#fff', fontFamily:'-apple-system,SF Pro Text,sans-serif', outline:'none', transition:'border-color 0.2s' }} />
           </div>
           <div style={{ marginBottom:28 }}>
             <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.2em', color:'rgba(255,255,255,0.7)', marginBottom:8 }}>PALAVRAS-CHAVE (separadas por vírgula)</p>
@@ -1117,7 +1117,7 @@ function CreateNicheModal({ onSave, onClose }) {
             <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:14, color:'rgba(255,255,255,0.6)', margin:'6px 0 0', fontWeight:300 }}>Usadas para buscar notícias, artigos e livros do seu nicho</p>
           </div>
           <button onClick={save} disabled={!name.trim()}
-            style={{ width:'100%', padding:'13px', borderRadius:10, background:name.trim()?'linear-gradient(135deg,#7c3aed 0%,#a78bfa 100%)':'rgba(255,255,255,0.06)', border:'none', color:name.trim()?'#fff':'rgba(255,255,255,0.6)', fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:14, fontWeight:700, letterSpacing:'0.03em', cursor:name.trim()?'pointer':'not-allowed', boxShadow:name.trim()?'0 4px 24px rgba(167,139,250,0.35)':'none', transition:'all 0.2s' }}>
+            style={{ width:'100%', padding:'13px', borderRadius:10, background:name.trim()?'linear-gradient(135deg,#cc2222 0%,#ff4444 100%)':'rgba(255,255,255,0.06)', border:'none', color:name.trim()?'#fff':'rgba(255,255,255,0.6)', fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:14, fontWeight:700, letterSpacing:'0.03em', cursor:name.trim()?'pointer':'not-allowed', boxShadow:name.trim()?'0 4px 24px rgba(255,68,68,0.35)':'none', transition:'all 0.2s' }}>
             {icon} Criar Nicho
           </button>
         </div>
@@ -1245,7 +1245,7 @@ export function NicheWorld() {
         input::placeholder{color:rgba(255,255,255,0.6);}
         input:focus{outline:none;}
         ::-webkit-scrollbar{width:3px;}
-        ::-webkit-scrollbar-thumb{background:rgba(167,139,250,0.2);border-radius:2px;}
+        ::-webkit-scrollbar-thumb{background:rgba(255,68,68,0.2);border-radius:2px;}
       `}} />
 
       <div style={{ position:'fixed', inset:0, zIndex:0, pointerEvents:'none', background:`radial-gradient(ellipse at 20% 0%,rgba(${color.glow},0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(${color.glow},0.05) 0%,transparent 50%)`, transition:'background 0.6s ease' }} />
@@ -1371,7 +1371,7 @@ export function NicheWorld() {
               <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.5em', color:`rgba(${color.glow},0.5)`, marginBottom:12 }}>MEU CANAL</p>
               <h1 style={{ fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:'clamp(28px,5vw,44px)', fontWeight:800, margin:'0 0 12px', lineHeight:1, letterSpacing:'-1.5px', background:'linear-gradient(90deg,#fff 0%,rgba(255,255,255,0.5) 100%)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Crie seu nicho</h1>
               <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:14, color:'rgba(255,255,255,0.4)', margin:'0 0 32px', fontWeight:300, maxWidth:440 }}>Defina seu nicho e receba notícias, discussões, artigos e livros — tudo para gerar roteiros virais.</p>
-              <button onClick={()=>setShowCreate(true)} style={{ padding:'14px 32px', borderRadius:12, background:'linear-gradient(135deg,#7c3aed 0%,#a78bfa 100%)', border:'none', color:'#fff', fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:15, fontWeight:700, cursor:'pointer', boxShadow:'0 8px 32px rgba(167,139,250,0.35)', letterSpacing:'0.02em' }}>
+              <button onClick={()=>setShowCreate(true)} style={{ padding:'14px 32px', borderRadius:12, background:'linear-gradient(135deg,#cc2222 0%,#ff4444 100%)', border:'none', color:'#fff', fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:15, fontWeight:700, cursor:'pointer', boxShadow:'0 8px 32px rgba(255,68,68,0.35)', letterSpacing:'0.02em' }}>
                 🎯 Criar Meu Primeiro Nicho
               </button>
             </div>
