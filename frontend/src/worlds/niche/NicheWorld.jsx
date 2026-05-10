@@ -17,12 +17,12 @@ if (typeof document !== 'undefined' && !document.getElementById('niche-fonts')) 
 const PLATFORMS = [['tiktok','TikTok / Instagram'],['youtube_shorts','YT Shorts'],['youtube_long','YT Longo']];
 const STYLES    = [['educational','Educacional'],['storytelling','Storytelling'],['dark_channel','Entretenimento'],['controversial','Debate']];
 const NICHE_COLORS = [
-  { accent:'#ff4444', glow:'255,68,68', bg:'#0d0a1a', grad:'linear-gradient(160deg,#0d0a1a 0%,#150f2a 60%,#080613 100%)', border:'rgba(255,68,68,0.6)' },
-  { accent:'#34d399', glow:'52,211,153',  bg:'#070f0d', grad:'linear-gradient(160deg,#070f0d 0%,#0c1f18 60%,#040a08 100%)', border:'rgba(52,211,153,0.6)' },
-  { accent:'#fb923c', glow:'251,146,60',  bg:'#0f0a07', grad:'linear-gradient(160deg,#0f0a07 0%,#1f1208 60%,#0a0703 100%)', border:'rgba(251,146,60,0.6)' },
-  { accent:'#f472b6', glow:'244,114,182', bg:'#0f070d', grad:'linear-gradient(160deg,#0f070d 0%,#200f1c 60%,#0a0408 100%)', border:'rgba(244,114,182,0.6)' },
-  { accent:'#38bdf8', glow:'56,189,248',  bg:'#070d14', grad:'linear-gradient(160deg,#070d14 0%,#0c1a2a 60%,#040810 100%)', border:'rgba(56,189,248,0.6)' },
-  { accent:'#facc15', glow:'250,204,21',  bg:'#0f0f07', grad:'linear-gradient(160deg,#0f0f07 0%,#1f1e08 60%,#0a0a03 100%)', border:'rgba(250,204,21,0.6)' },
+  { accent:'#ff4444', glow:'255,68,68',   bg:'#1e0a0a', grad:'linear-gradient(160deg,#1e0a0a 0%,#2d0f0f 60%,#160707 100%)', border:'rgba(255,68,68,0.6)' },
+  { accent:'#ff6666', glow:'255,102,102', bg:'#1f0b0b', grad:'linear-gradient(160deg,#1f0b0b 0%,#2e1010 60%,#170808 100%)', border:'rgba(255,102,102,0.6)' },
+  { accent:'#ff3333', glow:'255,51,51',   bg:'#1d0909', grad:'linear-gradient(160deg,#1d0909 0%,#2c0e0e 60%,#150606 100%)', border:'rgba(255,51,51,0.6)' },
+  { accent:'#ff5555', glow:'255,85,85',   bg:'#200a0a', grad:'linear-gradient(160deg,#200a0a 0%,#2f1010 60%,#180707 100%)', border:'rgba(255,85,85,0.6)' },
+  { accent:'#ff2222', glow:'255,34,34',   bg:'#1c0808', grad:'linear-gradient(160deg,#1c0808 0%,#2b0d0d 60%,#140505 100%)', border:'rgba(255,34,34,0.6)' },
+  { accent:'#ff7777', glow:'255,119,119', bg:'#210b0b', grad:'linear-gradient(160deg,#210b0b 0%,#301111 60%,#190808 100%)', border:'rgba(255,119,119,0.6)' },
 ];
 
 const SECTIONS = [
