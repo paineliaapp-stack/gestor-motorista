@@ -1184,10 +1184,10 @@ export function NicheWorld() {
     if (!activeNiche) return;
     const _cached = (() => { try { return JSON.parse(localStorage.getItem('vn_yt_data_'+activeNiche.id)||'null'); } catch { return null; } })();
     setYtData(_cached);
-    const _apiKey = localStorage.getItem('vn_yt_api_key_' + activeNiche.id) || '';
-    const _channelId = localStorage.getItem('vn_yt_channel_id_' + activeNiche.id) || '';
-    if (_apiKey && _channelId) {
-      fetch('/api/youtube?apiKey=' + encodeURIComponent(_apiKey) + '&channelId=' + encodeURIComponent(_channelId))
+    const _handle = localStorage.getItem('vn_yt_handle_' + activeNiche.id) || '';
+    if (_handle) {
+      const token = localStorage.getItem('autor_token');
+      fetch('/api/youtube/canal?handle=' + encodeURIComponent(_handle), { headers:{ Authorization:'Bearer '+token } })
         .then(r=>r.json()).then(d=>{ setYtData(d); try { localStorage.setItem('vn_yt_data_'+activeNiche.id, JSON.stringify(d)); } catch {} }).catch(()=>{});
     }
   }, []);
@@ -1198,8 +1198,7 @@ export function NicheWorld() {
 
   useEffect(() => {
     if (!activeNiche) return;
-    setApiKey(localStorage.getItem('vn_yt_api_key_' + activeNiche.id) || '');
-    setChannelId(localStorage.getItem('vn_yt_channel_id_' + activeNiche.id) || '');
+    setChannelId(localStorage.getItem('vn_yt_handle_' + activeNiche.id) || '');
   }, [activeNiche?.id]);
 
   const handleCreate = (niche) => {
@@ -1378,7 +1377,7 @@ export function NicheWorld() {
                 )}
                 {/* Botão Chave API */}
                 {(() => {
-                  const hasKey = !!(activeNiche && localStorage.getItem('vn_yt_api_key_' + activeNiche.id));
+                  const hasKey = !!(activeNiche && localStorage.getItem('vn_yt_handle_' + activeNiche.id));
                   return (
                     <div style={{ position:'absolute', top:52, right:isMobile?16:28 }}>
                       <button onClick={()=>setShowApiModal(true)} style={{
@@ -1393,8 +1392,8 @@ export function NicheWorld() {
                         boxShadow: hasKey ? 'none' : '0 0 0 0 rgba(255,50,50,0.4)',
                       }}>
                         {hasKey
-                          ? <><span style={{ width:6, height:6, borderRadius:'50%', background:'#00e5b0', display:'inline-block', boxShadow:'0 0 6px #00e5b0' }} /> API CONECTADA</>
-                          : <><span style={{ width:6, height:6, borderRadius:'50%', background:'#ff5555', display:'inline-block' }} /> CHAVE API</>
+                          ? <><span style={{ width:6, height:6, borderRadius:'50%', background:'#00e5b0', display:'inline-block', boxShadow:'0 0 6px #00e5b0' }} /> CANAL CONECTADO</>
+                          : <><span style={{ width:6, height:6, borderRadius:'50%', background:'#ff5555', display:'inline-block' }} /> MEU CANAL</>
                         }
                       </button>
                     </div>
@@ -1414,7 +1413,7 @@ export function NicheWorld() {
               </div>
 
               {/* Área canal — configurado ou não */}
-              {activeNiche && !localStorage.getItem('vn_yt_api_key_' + activeNiche.id) ? (
+              {activeNiche && !localStorage.getItem('vn_yt_handle_' + activeNiche.id) ? (
                 <div onClick={()=>setShowApiModal(true)} style={{ margin:'0', padding:'20px 28px', background:'rgba(255,50,50,0.04)', borderBottom:'1px solid rgba(255,50,50,0.1)', cursor:'pointer', display:'flex', alignItems:'center', gap:14 }}>
                   <div style={{ width:40, height:40, borderRadius:10, background:'rgba(255,50,50,0.1)', border:'1px solid rgba(255,50,50,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>📡</div>
                   <div>
@@ -1469,88 +1468,38 @@ export function NicheWorld() {
       {showCreate && <CreateNicheModal onSave={handleCreate} onClose={()=>setShowCreate(false)} />}
       {selected && <ScriptModal article={selected} generator={generator} onClose={()=>setSelected(null)} onGenerate={opts=>generator.generate(selected,opts)} />}
       {showApiModal && (
-        <div style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
-          <div style={{ width:'100%', maxWidth:500, background:'#0a1a16', border:'1px solid rgba(0,229,176,0.2)', borderRadius:16, padding:24, display:'flex', flexDirection:'column', gap:16, maxHeight:'90vh', overflowY:'auto' }}>
+        <div style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.85)', backdropFilter:'blur(12px)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div style={{ width:'100%', maxWidth:440, background:'#120a0a', border:'1px solid rgba(255,50,50,0.25)', borderRadius:16, padding:28, display:'flex', flexDirection:'column', gap:20 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-              <p style={{ fontFamily:'Syne,sans-serif', fontSize:16, fontWeight:700, color:'#fff', margin:0 }}>⚙️ Configurar canal YouTube</p>
+              <p style={{ fontFamily:'Syne,sans-serif', fontSize:16, fontWeight:700, color:'#fff', margin:0 }}>📡 Conectar canal YouTube</p>
               <button onClick={()=>setShowApiModal(false)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', fontSize:22, cursor:'pointer', lineHeight:1 }}>×</button>
             </div>
 
-            <div style={{ borderRadius:10, border:'1px solid rgba(0,229,176,0.15)', overflow:'hidden' }}>
-              <button onClick={()=>setShowApiHelp(v=>!v)} style={{ width:'100%', padding:'10px 14px', background:'rgba(0,229,176,0.06)', border:'none', color:'rgba(0,229,176,0.8)', fontFamily:'-apple-system,sans-serif', fontSize:12, cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                <span>💡 Como conseguir minha API key e Channel ID?</span>
-                <span>{showApiHelp ? '▲' : '▼'}</span>
-              </button>
-              {showApiHelp && (
-                <div style={{ padding:12, background:'rgba(0,0,0,0.3)', display:'flex', flexDirection:'column', gap:8 }}>
-                  <div style={{ maxHeight:240, overflowY:'auto', display:'flex', flexDirection:'column', gap:8 }}>
-                    {helpMessages.length === 0 && (
-                      <p style={{ fontFamily:'-apple-system,sans-serif', fontSize:12, color:'rgba(255,255,255,0.45)', margin:0 }}>Olá! Posso te guiar passo a passo para criar sua API key do YouTube e encontrar seu Channel ID. Pode mandar prints também — é só clicar no 📎. O que prefere começar?</p>
-                    )}
-                    {helpMessages.map((m,i) => (
-                      <div key={i} style={{ alignSelf: m.role==='user' ? 'flex-end' : 'flex-start', maxWidth:'88%', padding:'8px 12px', borderRadius:10, background: m.role==='user' ? 'rgba(0,229,176,0.15)' : 'rgba(255,255,255,0.06)', color: m.role==='user' ? '#00e5b0' : 'rgba(255,255,255,0.85)', fontFamily:'-apple-system,sans-serif', fontSize:12, lineHeight:1.5, whiteSpace:'pre-wrap' }}>
-                        {m.image && <img src={m.image} alt="" style={{ maxWidth:'100%', borderRadius:6, marginBottom:4, display:'block' }} />}
-                        {m.content}
-                      </div>
-                    ))}
-                    {helpLoading && <div style={{ alignSelf:'flex-start', color:'rgba(255,255,255,0.3)', fontSize:12 }}>digitando...</div>}
-                  </div>
-                  <div style={{ display:'flex', gap:6, marginTop:4, alignItems:'center' }}>
-                    <label style={{ cursor:'pointer', padding:'7px 10px', borderRadius:8, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.5)', fontSize:14, lineHeight:1 }}>
-                      📎<input type="file" accept="image/*" style={{ display:'none' }} onChange={async e=>{
-                        const file = e.target.files[0];
-                        if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = async ev => {
-                          const b64 = ev.target.result.split(',')[1];
-                          const mediaType = file.type;
-                          const imgUrl = ev.target.result;
-                          const newMsgs = [...helpMessages, {role:'user', content:'[imagem enviada]', image: imgUrl}];
-                          setHelpMessages(newMsgs);
-                          setHelpLoading(true);
-                          try {
-                            const res = await fetch('/api/chat/help',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:'Ajude criadores do YouTube a configurar API e Channel ID. Português simples, passos numerados.',messages:newMsgs})});
-                            const data = await res.json();
-                            const reply = data.message || 'Erro ao responder.';
-                            setHelpMessages([...newMsgs, {role:'assistant', content:reply}]);
-                          } catch { setHelpMessages([...newMsgs, {role:'assistant', content:'Erro de conexão.'}]); }
-                          setHelpLoading(false);
-                        };
-                        reader.readAsDataURL(file);
-                      }} />
-                    </label>
-                    <input value={helpInput} onChange={e=>setHelpInput(e.target.value)} onKeyDown={async e=>{ if(e.key!=='Enter'||!helpInput.trim()||helpLoading) return; const userMsg=helpInput.trim(); setHelpInput(''); const newMsgs=[...helpMessages,{role:'user',content:userMsg}]; setHelpMessages(newMsgs); setHelpLoading(true); try { const res=await fetch('/api/chat/help',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:'Você é um assistente especializado em ajudar criadores do YouTube a configurar a API do YouTube Data v3 e encontrar o Channel ID. Seja direto, passos numerados, português simples.',messages:newMsgs})}); const data=await res.json(); setHelpMessages([...newMsgs,{role:'assistant',content:data.message||'Erro.'}]); } catch { setHelpMessages([...newMsgs,{role:'assistant',content:'Erro de conexão.'}]); } setHelpLoading(false); }} placeholder="Dúvidas? Pergunte aqui..." style={{ flex:1, padding:'8px 12px', borderRadius:8, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', fontFamily:'-apple-system,sans-serif', fontSize:12, outline:'none' }} />
-                    <button onClick={async()=>{ if(!helpInput.trim()||helpLoading) return; const userMsg=helpInput.trim(); setHelpInput(''); const newMsgs=[...helpMessages,{role:'user',content:userMsg}]; setHelpMessages(newMsgs); setHelpLoading(true); try { const res=await fetch('/api/chat/help',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:'Você é um assistente especializado em ajudar criadores do YouTube a configurar a API do YouTube Data v3 e encontrar o Channel ID. Seja direto, passos numerados, português simples.',messages:newMsgs})}); const data=await res.json(); setHelpMessages([...newMsgs,{role:'assistant',content:data.message||'Erro.'}]); } catch { setHelpMessages([...newMsgs,{role:'assistant',content:'Erro.'}]); } setHelpLoading(false); }} style={{ padding:'8px 14px', borderRadius:8, background:'rgba(0,229,176,0.15)', border:'1px solid rgba(0,229,176,0.3)', color:'#00e5b0', fontSize:13, cursor:'pointer' }}>→</button>
-                  </div>
-                </div>
-              )}
+            <div style={{ background:'rgba(255,50,50,0.05)', border:'1px solid rgba(255,50,50,0.15)', borderRadius:10, padding:'14px 16px' }}>
+              <p style={{ fontFamily:'-apple-system,sans-serif', fontSize:12, color:'rgba(255,100,100,0.7)', margin:'0 0 4px', fontWeight:500 }}>Sem chaves. Sem complicação.</p>
+              <p style={{ fontFamily:'-apple-system,sans-serif', fontSize:12, color:'rgba(255,255,255,0.35)', margin:0, lineHeight:1.5 }}>Digite o @ do seu canal e o Autor.ai busca os dados usando nossa integração. Seus dados ficam só no seu navegador.</p>
             </div>
 
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              <div>
-                <p style={{ fontFamily:'-apple-system,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', margin:'0 0 6px', letterSpacing:'0.08em' }}>API KEY DO YOUTUBE</p>
-                <input value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="AIza..." style={{ width:'100%', padding:'10px 14px', borderRadius:8, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', fontFamily:"Space Mono,monospace", fontSize:12, outline:'none', boxSizing:'border-box' }} />
+            <div>
+              <p style={{ fontFamily:'-apple-system,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', margin:'0 0 8px', letterSpacing:'0.1em' }}>HANDLE DO CANAL</p>
+              <div style={{ display:'flex', alignItems:'center', gap:0, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,50,50,0.25)', borderRadius:8, overflow:'hidden' }}>
+                <span style={{ padding:'10px 12px', fontFamily:'Space Mono,monospace', fontSize:14, color:'rgba(255,80,80,0.6)', background:'rgba(255,50,50,0.08)', borderRight:'1px solid rgba(255,50,50,0.15)' }}>@</span>
+                <input value={channelId.replace(/^@/,'')} onChange={e=>setChannelId(e.target.value)} placeholder="seucanal" style={{ flex:1, padding:'10px 14px', background:'transparent', border:'none', color:'#fff', fontFamily:'Space Mono,monospace', fontSize:13, outline:'none' }} />
               </div>
-              <div>
-                <p style={{ fontFamily:'-apple-system,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)', margin:'0 0 6px', letterSpacing:'0.08em' }}>URL OU HANDLE DO CANAL</p>
-                <input value={channelId} onChange={e=>setChannelId(e.target.value)} placeholder="@seucanal ou youtube.com/@seucanal" style={{ width:'100%', padding:'10px 14px', borderRadius:8, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', color:'#fff', fontFamily:"Space Mono,monospace", fontSize:12, outline:'none', boxSizing:'border-box' }} />
-              </div>
+              <p style={{ fontFamily:'-apple-system,sans-serif', fontSize:11, color:'rgba(255,255,255,0.25)', margin:'6px 0 0' }}>Ex: @MrBeast, @nomedoseucanal</p>
             </div>
 
             <div style={{ display:'flex', gap:10 }}>
               <button onClick={()=>setShowApiModal(false)} style={{ flex:1, padding:'10px', borderRadius:8, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.5)', fontFamily:'-apple-system,sans-serif', fontSize:13, cursor:'pointer' }}>Cancelar</button>
               <button onClick={()=>{ if(activeNiche){
-  localStorage.setItem('vn_yt_api_key_'+activeNiche.id, apiKey);
-  setShowApiModal(false);
-  if(apiKey && channelId){
-    fetch('/api/youtube/mine?url='+encodeURIComponent(channelId.trim())+'&key='+encodeURIComponent(apiKey))
-      .then(r=>r.json()).then(mine=>{
-        const resolvedId = mine?.channel?.id || channelId.trim();
-        localStorage.setItem('vn_yt_channel_id_'+activeNiche.id, resolvedId);
-        return fetch('/api/youtube?apiKey='+encodeURIComponent(apiKey)+'&channelId='+encodeURIComponent(resolvedId));
-      }).then(r=>r.json()).then(d=>{ setYtData(d); try { localStorage.setItem('vn_yt_data_'+activeNiche.id, JSON.stringify(d)); } catch {} }).catch(()=>{});
-  }
-} else setShowApiModal(false); }} style={{ flex:2, padding:'10px', borderRadius:8, background:'rgba(0,229,176,0.15)', border:'1px solid rgba(0,229,176,0.3)', color:'#00e5b0', fontFamily:'-apple-system,sans-serif', fontSize:13, fontWeight:600, cursor:'pointer' }}>💾 Salvar</button>
+  const handle = channelId.replace(/^@/,'').trim();
+  if(activeNiche && handle){
+    localStorage.setItem('vn_yt_handle_'+activeNiche.id, handle);
+    setShowApiModal(false);
+    const token = localStorage.getItem('autor_token');
+    fetch('/api/youtube/canal?handle='+encodeURIComponent(handle), { headers:{ Authorization:'Bearer '+token } })
+      .then(r=>r.json()).then(d=>{ setYtData(d); try { localStorage.setItem('vn_yt_data_'+activeNiche.id, JSON.stringify(d)); } catch {} }).catch(()=>{});
+  } else setShowApiModal(false); }} style={{ flex:2, padding:'10px', borderRadius:8, background:'rgba(0,229,176,0.15)', border:'1px solid rgba(0,229,176,0.3)', color:'#00e5b0', fontFamily:'-apple-system,sans-serif', fontSize:13, fontWeight:600, cursor:'pointer' }}>💾 Salvar</button>
             </div>
           </div>
         </div>

@@ -221,4 +221,71 @@ router.get('/trending', async (req, res) => {
   }
 });
 
+
+// Rota nova — usa chave do servidor, usuário passa só o handle
+router.get('/canal', async (req, res) => {
+  try {
+    const handle = (req.query.handle || '').trim().replace(/^@/, '');
+    if (!handle) return res.status(400).json({ error: 'handle obrigatorio' });
+    const key = API_KEY;
+    if (!key) return res.status(500).json({ error: 'YOUTUBE_API_KEY nao configurada no servidor' });
+
+    // Resolve handle -> channelId
+    const searchRes = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+      params: { part: 'snippet', q: handle, type: 'channel', maxResults: 1, key }
+    });
+    const channelId = searchRes.data.items?.[0]?.id?.channelId;
+    if (!channelId) return res.status(404).json({ error: 'Canal nao encontrado para @' + handle });
+
+    // Dados do canal
+    const channelRes = await axios.get('https://www.googleapis.com/youtube/v3/channels', {
+      params: { part: 'snippet,statistics', id: channelId, key }
+    });
+    const channel = channelRes.data.items?.[0];
+    if (!channel) return res.status(404).json({ error: 'Canal nao encontrado' });
+
+    // Ultimos 20 videos
+    const videosSearch = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+      params: { part: 'snippet', channelId, order: 'date', maxResults: 20, type: 'video', key }
+    });
+    const videoIds = videosSearch.data.items?.map(i => i.id.videoId).join(',');
+
+    const videosRes = await axios.get('https://www.googleapis.com/youtube/v3/videos', {
+      params: { part: 'snippet,statistics,contentDetails', id: videoIds, key }
+    });
+    const videos = videosRes.data.items?.map(v => ({
+      id: v.id,
+      title: v.snippet.title,
+      publishedAt: v.snippet.publishedAt,
+      thumbnail: v.snippet.thumbnails?.medium?.url,
+      views: parseInt(v.statistics.viewCount || 0),
+      likes: parseInt(v.statistics.likeCount || 0),
+      comments: parseInt(v.statistics.commentCount || 0),
+      duration: v.contentDetails.duration,
+    })) || [];
+
+    const maxViews = Math.max(...videos.map(v => v.views), 1);
+    const videosWithScore = videos.map(v => ({
+      ...v,
+      viral_score: Math.round((v.views / maxViews) * 10),
+    }));
+
+    res.json({
+      channel: {
+        id: channelId,
+        title: channel.snippet.title,
+        description: channel.snippet.description,
+        thumbnail: channel.snippet.thumbnails?.medium?.url,
+        subscribers: parseInt(channel.statistics.subscriberCount || 0),
+        totalViews: parseInt(channel.statistics.viewCount || 0),
+        videoCount: parseInt(channel.statistics.videoCount || 0),
+      },
+      videos: videosWithScore,
+    });
+  } catch (err) {
+    console.error('[youtube/canal]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
