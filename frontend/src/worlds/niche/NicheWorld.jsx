@@ -1423,17 +1423,7 @@ export function NicheWorld() {
                 </form>
               </div>
 
-              {/* Área canal — configurado ou não */}
-              {activeNiche && !localStorage.getItem('vn_yt_handle_' + activeNiche.id) ? (
-                <div onClick={()=>setShowApiModal(true)} style={{ margin:'0', padding:'20px 28px', background:'rgba(255,50,50,0.04)', borderBottom:'1px solid rgba(255,50,50,0.1)', cursor:'pointer', display:'flex', alignItems:'center', gap:14 }}>
-                  <div style={{ width:40, height:40, borderRadius:10, background:'rgba(255,50,50,0.1)', border:'1px solid rgba(255,50,50,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>📡</div>
-                  <div>
-                    <p style={{ fontFamily:'-apple-system,sans-serif', fontSize:13, fontWeight:600, color:'#ff5555', margin:'0 0 2px' }}>Configure seu canal</p>
-                    <p style={{ fontFamily:'-apple-system,sans-serif', fontSize:12, color:'rgba(255,255,255,0.35)', margin:0 }}>Conecte sua chave API para ver analytics e personalizar conteúdo</p>
-                  </div>
-                  <div style={{ marginLeft:'auto', fontFamily:'Space Mono,monospace', fontSize:10, color:'rgba(255,50,50,0.6)', letterSpacing:'0.1em' }}>CONECTAR →</div>
-                </div>
-              ) : null}
+
               {/* Analytics YouTube */}
               {ytData?.channel && (
                 <div>
