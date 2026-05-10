@@ -175,12 +175,14 @@ export default function App() {
           localStorage.setItem('autor_user', JSON.stringify(data.user));
           setUser(data.user);
         } else {
-          localStorage.clear();
+          localStorage.removeItem('autor_token');
+          localStorage.removeItem('autor_user');
           setUser(null);
         }
       })
       .catch(() => {
-        localStorage.clear();
+        localStorage.removeItem('autor_token');
+        localStorage.removeItem('autor_user');
         setUser(null);
       });
   }, []);
