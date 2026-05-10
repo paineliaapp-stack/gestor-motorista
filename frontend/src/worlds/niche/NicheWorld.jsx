@@ -1502,16 +1502,7 @@ export function NicheWorld() {
 
             <div style={{ display:'flex', gap:10 }}>
               <button onClick={()=>setShowApiModal(false)} style={{ flex:1, padding:'10px', borderRadius:8, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.5)', fontFamily:'-apple-system,sans-serif', fontSize:13, cursor:'pointer' }}>Cancelar</button>
-              <button onClick={()=>{ if(activeNiche){
-  const handle = channelId.replace(/^@/,'').trim();
-  if(activeNiche && handle){
-    localStorage.setItem('vn_yt_handle_'+activeNiche.id, handle);
-    setShowApiModal(false);
-    const token = localStorage.getItem('autor_token');
-    fetch('/api/youtube/canal?handle='+encodeURIComponent(handle), { headers:{ Authorization:'Bearer '+token } })
-      .then(r=>r.json()).then(d=>{ setYtData(d); try { localStorage.setItem('vn_yt_data_'+activeNiche.id, JSON.stringify(d)); } catch {} }).catch(()=>{});
-  } else setShowApiModal(false);
-              }}>Conectar canal</button>
+              <button onClick={handleConectar} style={{ flex:2, padding:'10px', borderRadius:8, background:'rgba(255,50,50,0.15)', border:'1px solid rgba(255,50,50,0.4)', color:'#ff6b6b', fontFamily:'-apple-system,sans-serif', fontSize:13, fontWeight:600, cursor:'pointer' }}>Conectar canal</button>
             </div>
           </div>
         </div>
