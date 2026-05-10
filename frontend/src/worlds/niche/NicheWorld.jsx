@@ -1220,6 +1220,19 @@ export function NicheWorld() {
   const totalItems = data.news.length + data.reddit.length + data.articles.length + data.books.length;
   const sectionsToShow = activeSection === 'all' ? SECTIONS : SECTIONS.filter(s=>s.id===activeSection);
 
+  const handleConectar = () => {
+    const handle = channelId.replace(/^@/,'').trim();
+    if (activeNiche && handle) {
+      localStorage.setItem('vn_yt_handle_' + activeNiche.id, handle);
+      setShowApiModal(false);
+      const token = localStorage.getItem('autor_token');
+      fetch('/api/youtube/canal?handle=' + encodeURIComponent(handle), { headers: { Authorization: 'Bearer ' + token } })
+        .then(r => r.json()).then(d => { setYtData(d); try { localStorage.setItem('vn_yt_data_' + activeNiche.id, JSON.stringify(d)); } catch {} }).catch(() => {});
+    } else {
+      setShowApiModal(false);
+    }
+  };
+
   return (
     <div style={{ minHeight:'100vh', background:'#07070f', color:'#fff', fontFamily:'-apple-system,SF Pro Text,sans-serif' }}>
       <style dangerouslySetInnerHTML={{ __html:`
