@@ -181,10 +181,10 @@ function WorldCard({ world, index, isMobile }) {
         {/* Título */}
         <h2 style={{
           fontFamily:'Syne,sans-serif',
-          fontSize: isMobile ? 'clamp(18px,4vw,22px)' : 'clamp(22px,1.8vw,32px)',
+          fontSize: isMobile ? 'clamp(16px,3.5vw,20px)' : 'clamp(16px,1.4vw,24px)',
           fontWeight:800,
           color: hovered ? world.accent : '#fff',
-          margin: isMobile ? '0 0 4px' : '0 0 12px', lineHeight:1.0, letterSpacing:'-1px',
+          margin: isMobile ? '0 0 4px' : '0 0 12px', lineHeight:1.1, letterSpacing:'-0.5px', wordBreak:'break-word', overflowWrap:'break-word',
           transition:'color 0.26s ease',
         }}>{world.label}</h2>
 
