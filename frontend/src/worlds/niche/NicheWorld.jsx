@@ -1158,7 +1158,7 @@ export function NicheWorld() {
   }, [niches]);
 
   const activeIdx = niches.findIndex(n=>n.id===activeNiche?.id);
-  const color = { accent:'#ff4444', glow:'255,68,68', bg:'#0f0707', grad:'linear-gradient(160deg,#0f0707 0%,#1f0a0a 60%,#0a0404 100%)', border:'rgba(255,68,68,0.6)' };
+  const color = { accent:'#ff4444', glow:'255,68,68', bg:'#1e0a0a', grad:'linear-gradient(160deg,#1e0a0a 0%,#2d0f0f 60%,#160707 100%)', border:'rgba(255,68,68,0.6)' };
 
   const fetchAll = useCallback(async (niche, customQuery) => {
     if (!niche) return;
