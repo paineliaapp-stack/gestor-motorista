@@ -21,6 +21,7 @@ import authRoutes from './routes/auth.js';
 import booksChatRouter from './routes/bookschat.js';
 import paymentRoutes from './routes/payment.js';
 import videoRoutes from './routes/video.js';
+import historiaRoutes from './routes/historia.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 // Validate env on startup
@@ -63,7 +64,8 @@ const generateLimiter = rateLimit({
 });
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-app.use('/api/news', apiLimiter, newsRoutes);
+app.use("/api/news", apiLimiter, newsRoutes);
+app.use("/api/historia", apiLimiter, historiaRoutes);
 app.use('/api/generate', generateLimiter, generateRoutes);
 app.use('/api/chat', apiLimiter, chatRoutes);
 app.use('/api/niche', apiLimiter, nicheRoutes);

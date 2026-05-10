@@ -562,6 +562,97 @@ REGRAS OBRIGATÓRIAS:
   );
 }
 
+
+function HistoriaCard({ isMobile }) {
+  const [historia, setHistoria] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const buscar = async () => {
+    setLoading(true); setError(null); setHistoria(null);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/historia', { headers: { Authorization: 'Bearer ' + token } });
+      const data = await res.json();
+      if (data.success) setHistoria(data.historia);
+      else setError(data.error || 'Erro ao buscar história');
+    } catch (e) {
+      setError('Erro de conexão');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copiar = () => {
+    if (!historia) return;
+    navigator.clipboard?.writeText(historia.narrativa);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div style={{ marginBottom: 32, borderRadius: 16, border: '1px solid rgba(255,180,50,0.18)', background: 'rgba(255,180,50,0.03)', overflow: 'hidden' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,180,50,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#ffbe4d', boxShadow: '0 0 8px rgba(255,190,77,0.8)', animation: 'bwPulse 2s ease infinite' }} />
+          <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 16, fontWeight: 700, color: '#fff' }}>História Real do Dia</span>
+          <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 8, letterSpacing: '0.2em', color: 'rgba(255,190,77,0.5)', background: 'rgba(255,190,77,0.08)', padding: '3px 8px', borderRadius: 4 }}>FATOS REAIS · COM FONTE</span>
+        </div>
+        <button onClick={buscar} disabled={loading} style={{ fontFamily: 'Space Mono, monospace', fontSize: 9, letterSpacing: '0.18em', color: loading ? 'rgba(255,190,77,0.3)' : '#0a0700', background: loading ? 'rgba(255,190,77,0.08)' : 'linear-gradient(135deg, #ffbe4d 0%, #e8a000 100%)', border: 'none', borderRadius: 8, padding: '8px 18px', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 700 }}>
+          {loading ? 'GERANDO...' : historia ? '↺ NOVA HISTÓRIA' : '▶ GERAR'}
+        </button>
+      </div>
+
+      {!historia && !loading && !error && (
+        <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.25)', fontWeight: 300, margin: 0 }}>A IA pesquisa um fato real da história, narra no estilo storytelling viral e entrega a fonte verificável.</p>
+        </div>
+      )}
+
+      {loading && (
+        <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+          <div style={{ fontSize: 28, animation: 'bwPulse 1.5s ease infinite', opacity: 0.5, marginBottom: 10 }}>📜</div>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.3)', margin: 0 }}>Buscando um fato real incrível...</p>
+        </div>
+      )}
+
+      {error && (
+        <div style={{ padding: '16px 20px' }}>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: 'rgba(255,100,100,0.8)', margin: 0 }}>{error}</p>
+        </div>
+      )}
+
+      {historia && (
+        <div style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 15, fontWeight: 700, color: '#ffbe4d' }}>{historia.titulo}</span>
+            <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 9, color: 'rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 4 }}>{historia.periodo}</span>
+          </div>
+
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: isMobile ? 13 : 14, color: 'rgba(255,255,255,0.82)', lineHeight: 1.85, fontWeight: 300, whiteSpace: 'pre-wrap', margin: '0 0 16px' }}>{historia.narrativa}</p>
+
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {historia.wikipedia && (
+                <a href={historia.wikipedia} target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'Space Mono, monospace', fontSize: 10, color: 'rgba(255,190,77,0.7)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span>🔗</span> Wikipedia
+                </a>
+              )}
+              {historia.fonte_adicional && (
+                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>+ {historia.fonte_adicional}</span>
+              )}
+            </div>
+            <button onClick={copiar} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: copied ? '#00e5b0' : 'rgba(255,190,77,0.75)', background: 'transparent', border: '1px solid ' + (copied ? 'rgba(0,229,176,0.3)' : 'rgba(255,190,77,0.15)'), borderRadius: 6, padding: '6px 16px', cursor: 'pointer' }}>
+              {copied ? '✓ Copiado' : 'Copiar roteiro'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function BooksWorld() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -690,6 +781,7 @@ export function BooksWorld() {
           </div>
         </div>
 
+        <HistoriaCard isMobile={isMobile} />
         {searching ? (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
             <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 9, letterSpacing: '0.3em', color: 'rgba(255,190,77,0.6)' }}>BUSCANDO...</p>
