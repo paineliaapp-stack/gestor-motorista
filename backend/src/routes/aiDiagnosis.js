@@ -15,31 +15,8 @@ async function callGemini(prompt) {
 
 router.post('/', async (req, res) => {
   try {
-    const { channel, videos } = req.body;
-    if (!channel) return res.status(400).json({ error: 'channel obrigatorio' });
-
-    const topVideos = (videos || []).slice(0, 5).map(v =>
-      `- "${v.title}" | ${v.views} views | ${v.likes} likes | ${v.comments} comentários | engajamento: ${v.viral_score}/10`
-    ).join('\n');
-
-    const prompt = `Você é um especialista em crescimento de canais do YouTube. Analise os dados abaixo e forneça um diagnóstico direto e acionável em português brasileiro.
-
-CANAL: ${channel.title}
-Inscritos: ${channel.subscribers}
-Views totais: ${channel.totalViews}
-Total de vídeos: ${channel.videoCount}
-
-TOP VÍDEOS:
-${topVideos || 'Nenhum vídeo disponível'}
-
-Forneça:
-1. Diagnóstico geral do canal (2-3 frases)
-2. Pontos fortes (2 itens)
-3. Pontos de melhoria (2-3 itens)
-4. Próximos passos concretos (2-3 ações)
-
-Seja direto, use dados concretos, evite clichês. Máximo 200 palavras.`;
-
+    const { prompt } = req.body;
+    if (!prompt) return res.status(400).json({ error: 'prompt obrigatorio' });
     const text = await callGemini(prompt);
     res.json({ text });
   } catch (err) {
