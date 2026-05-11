@@ -335,7 +335,7 @@ function WeeklyReminder({ onDismiss }) {
     <div style={{ margin:'16px 20px 0', background:'linear-gradient(135deg,rgba(255,190,77,0.08) 0%,rgba(255,150,0,0.04) 100%)', border:'1px solid rgba(255,190,77,0.25)', borderRadius:12, padding:'12px 16px', display:'flex', alignItems:'center', gap:12 }}>
       <span style={{ fontSize:20, flexShrink:0 }}>🔔</span>
       <div style={{ flex:1 }}>
-        <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.15em', color:'#ffbe4d', margin:'0 0 3px' }}>LEMBRETE SEMANAL</p>
+        <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:9, letterSpacing:'0.1em', color:'#ffbe4d', margin:'0 0 2px' }}>LEMBRETE SEMANAL</p>
         <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:'rgba(255,255,255,0.7)', margin:0, fontWeight:300 }}>Atualize os prints do TikTok e Instagram para manter seu painel de métricas atualizado.</p>
       </div>
       <button onClick={onDismiss} style={{ flexShrink:0, background:'rgba(255,190,77,0.12)', border:'1px solid rgba(255,190,77,0.25)', borderRadius:8, padding:'5px 12px', color:'#ffbe4d', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.1em', cursor:'pointer', whiteSpace:'nowrap' }}>OK, JÁ FIZ</button>
@@ -544,9 +544,9 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
 
   return (
     <div>
-      <div style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 20px', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:6, padding:'10px 12px', borderBottom:'1px solid rgba(255,255,255,0.04)', overflow:'hidden' }}>
         {channel.thumbnail && <img src={channel.thumbnail} alt="" style={{ width:32, height:32, borderRadius:'50%' }} />}
-        <span style={{ fontFamily:'-apple-system,sans-serif', fontSize:14, fontWeight:600, color:'#fff' }}>{channel.title}</span>
+        <span style={{ fontFamily:'-apple-system,sans-serif', fontSize:12, fontWeight:600, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>{channel.title}</span>
         <div style={{ flex:1 }} />
         <a href={`https://youtube.com/channel/${channel.id}`} target="_blank" rel="noopener noreferrer"
           style={{ padding:'6px 12px', borderRadius:8, background:'rgba(255,50,50,0.12)', border:'1px solid rgba(255,50,50,0.25)', color:'rgba(255,100,100,0.8)', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, letterSpacing:'0.05em', textDecoration:'none', whiteSpace:'nowrap' }}>
@@ -591,16 +591,16 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
           <img src={bestVideo.thumbnail} alt="" style={{ width:80, height:45, borderRadius:6, objectFit:'cover', flexShrink:0 }} />
           <div style={{ flex:1, minWidth:0 }}>
             <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.15em', color:'#ffbe4d', margin:'0 0 3px' }}>MELHOR VÍDEO</p>
-            <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, fontWeight:500, color:'#fff', margin:'0 0 4px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{bestVideo.title}</p>
+            <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:12, fontWeight:500, color:'#fff', margin:'0 0 3px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{bestVideo.title}</p>
             <div style={{ display:'flex', gap:12 }}>
-              <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:'rgba(255,255,255,0.4)' }}>👁 {fmt(bestVideo.views)}</span>
+              <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, color:'rgba(255,255,255,0.4)' }}>👁 {fmt(bestVideo.views)}</span>
               <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:'rgba(255,255,255,0.4)' }}>👍 {fmt(bestVideo.likes)}</span>
               <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:'rgba(255,255,255,0.4)' }}>💬 {fmt(bestVideo.comments)}</span>
-              <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:'#00e5b0' }}>⚡ {engagementRate(bestVideo)}% eng.</span>
+              <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, color:'#00e5b0' }}>⚡ {engagementRate(bestVideo)}% eng.</span>
             </div>
           </div>
           <a href={`https://youtube.com/watch?v=${bestVideo.id}`} target="_blank" rel="noopener noreferrer"
-            style={{ padding:'6px 12px', borderRadius:8, background:'rgba(255,190,77,0.12)', border:'1px solid rgba(255,190,77,0.25)', color:'#ffbe4d', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, textDecoration:'none', flexShrink:0 }}>VER ↗</a>
+            style={{ padding:'6px 12px', borderRadius:8, background:'rgba(255,190,77,0.12)', border:'1px solid rgba(255,190,77,0.25)', color:'#ffbe4d', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, textDecoration:'none', flexShrink:0 }}>VER ↗</a>
         </div>
       )}
 
@@ -609,7 +609,7 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
         <div style={{ margin:'12px 16px 0', display:'flex', gap:10 }}>
           {['tiktok','tiktok'].map(p => socialData[p] ? (
             <div key={p} style={{ flex:1, background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:10, padding:'10px 14px' }}>
-              <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.15em', color:'rgba(255,255,255,0.7)', margin:'0 0 8px' }}>{p === 'tiktok' ? '🎵 TIKTOK' : '📸 INSTAGRAM'} · {new Date(socialData[p].updatedAt).toLocaleDateString('pt-BR')}</p>
+              <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:10, letterSpacing:'0.1em', color:'rgba(255,255,255,0.7)', margin:'0 0 6px' }}>{p === 'tiktok' ? '🎵 TIKTOK' : '📸 INSTAGRAM'} · {new Date(socialData[p].updatedAt).toLocaleDateString('pt-BR')}</p>
               <div style={{ display:'flex', gap:14, flexWrap:'wrap' }}>
                 {Object.entries(socialData[p]).filter(([k])=>k!=='updatedAt'&&socialData[p][k]!==null).slice(0,4).map(([k,v])=>(
                   <div key={k}>
@@ -629,9 +629,9 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
       {/* Lista de vídeos */}
       <div style={{ padding:'16px 16px 0' }}>
         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
-          <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.15em', color:'rgba(255,255,255,0.7)', margin:0, flex:1 }}>SEUS VÍDEOS</p>
+          <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, letterSpacing:'0.1em', color:'rgba(255,255,255,0.7)', margin:0, flex:1 }}>SEUS VÍDEOS</p>
           {[['views','👁'],['likes','👍'],['engagement','⚡'],['date','📅']].map(([k,l])=>(
-            <button key={k} onClick={()=>setSort(k)} style={{ padding:'4px 10px', borderRadius:6, border:`1px solid ${sort===k?'rgba(255,50,50,0.4)':'rgba(255,255,255,0.08)'}`, background:sort===k?'rgba(255,50,50,0.1)':'rgba(255,255,255,0.03)', color:sort===k?'#ff5555':'rgba(255,255,255,0.35)', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:14, cursor:'pointer', transition:'all 0.15s' }}>{l} {k.charAt(0).toUpperCase()+k.slice(1)}</button>
+            <button key={k} onClick={()=>setSort(k)} style={{ padding:'4px 10px', borderRadius:6, border:`1px solid ${sort===k?'rgba(255,50,50,0.4)':'rgba(255,255,255,0.08)'}`, background:sort===k?'rgba(255,50,50,0.1)':'rgba(255,255,255,0.03)', color:sort===k?'#ff5555':'rgba(255,255,255,0.35)', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, cursor:'pointer', transition:'all 0.15s' }}>{l} {k.charAt(0).toUpperCase()+k.slice(1)}</button>
           ))}
         </div>
 
@@ -642,12 +642,12 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
             return (
               <div key={v.id} style={{ borderRadius:10, overflow:'hidden', border:'1px solid rgba(255,255,255,0.05)' }}>
               <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 12px', background:'rgba(255,255,255,0.02)' }}>
-                <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:'rgba(255,255,255,0.6)', minWidth:20 }}>#{i+1}</span>
+                <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:12, color:'rgba(255,255,255,0.6)', minWidth:18 }}>#{i+1}</span>
                 <img src={v.thumbnail} alt="" style={{ width:80, height:45, borderRadius:6, objectFit:'cover', flexShrink:0 }} />
                 <div style={{ flex:1, minWidth:0 }}>
-                  <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:'#fff', margin:'0 0 2px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v.title}</p>
+                  <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:12, color:'#fff', margin:'0 0 2px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v.title}</p>
                   <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-                    <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:'rgba(255,255,255,0.35)' }}>👁 {fmt(v.views)}</span>
+                    <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, color:'rgba(255,255,255,0.35)' }}>👁 {fmt(v.views)}</span>
                     <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:'rgba(255,255,255,0.35)' }}>👍 {fmt(v.likes)}</span>
                     <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:'rgba(255,255,255,0.35)' }}>⚡ {engagementRate(v)}%</span>
                     <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:'rgba(255,255,255,0.6)' }}>⏱ {parseDuration(v.duration)}</span>
