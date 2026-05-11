@@ -1332,14 +1332,14 @@ export function NicheWorld() {
 
       <header style={{ position:'sticky', top:tickerH, zIndex:100, height:56, display:'flex', alignItems:'center', justifyContent:'space-between', padding:isMobile?'0 16px':'0 24px', background:'rgba(7,7,15,0.88)', backdropFilter:'blur(32px)', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:16 }}>
-          <button onClick={()=>navigate('/')} style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.22em', color:'rgba(255,255,255,0.38)', background:'none', border:'none', cursor:'pointer', padding:0 }}>← PORTAL</button>
+          <button onClick={()=>navigate('/')} style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:isMobile?11:15, letterSpacing:'0.15em', color:'rgba(255,255,255,0.38)', background:'none', border:'none', cursor:'pointer', padding:0 }}>← PORTAL</button>
           <span style={{ color:'rgba(255,255,255,0.1)' }}>|</span>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ width:6, height:6, borderRadius:'50%', background:color.accent, boxShadow:`0 0 10px rgba(${color.glow},0.9)`, animation:'nichePulse 2.5s ease-in-out infinite', transition:'background 0.4s' }} />
-            <span style={{ fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:18, fontWeight:800, color:'#fff', letterSpacing:'-0.5px' }}>Meu Canal</span>
+            <span style={{ fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:isMobile?13:18, fontWeight:800, color:'#fff', letterSpacing:'-0.5px' }}>Meu Canal</span>
           </div>
         </div>
-        <button onClick={()=>setShowCreate(true)} style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 16px', borderRadius:10, background:`rgba(${color.glow},0.12)`, border:`1px solid rgba(${color.glow},0.3)`, color:color.accent, fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.18em', cursor:'pointer', transition:'all 0.2s' }}
+        <button onClick={()=>setShowCreate(true)} style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 16px', borderRadius:10, background:`rgba(${color.glow},0.12)`, border:`1px solid rgba(${color.glow},0.3)`, color:color.accent, fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:isMobile?11:15, letterSpacing:'0.12em', cursor:'pointer', transition:'all 0.2s' }}
           onMouseEnter={e=>{e.currentTarget.style.background=`rgba(${color.glow},0.2)`;}}
           onMouseLeave={e=>{e.currentTarget.style.background=`rgba(${color.glow},0.12)`;}}>
           + NOVO NICHO
@@ -1460,7 +1460,7 @@ export function NicheWorld() {
                 <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.45em', color:`rgba(${color.glow},0.6)`, marginBottom:8 }}>MEU CANAL</p>
                 <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:8 }}>
                   <span style={{ fontSize:28 }}>{activeNiche.icon||'🎯'}</span>
-                  <h1 style={{ fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:isMobile?'clamp(22px,7vw,32px)':'clamp(26px,3.5vw,40px)', fontWeight:800, margin:0, lineHeight:1, letterSpacing:'-1.5px', color:'#fff' }}>{activeNiche.name}</h1>
+                  <h1 style={{ fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:isMobile?18:'clamp(26px,3.5vw,40px)', fontWeight:800, margin:0, lineHeight:1.2, letterSpacing:'-0.5px', color:'#fff', wordBreak:'break-word' }}>{activeNiche.name}</h1>
                 </div>
                 {activeNiche.keywords?.length > 0 && (
                   <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:16 }}>
@@ -1491,7 +1491,7 @@ export function NicheWorld() {
                     </div>
                   );
                 })()}
-                <form onSubmit={handleSearch} style={{ display:'flex', flexDirection:isMobile?'column':'row', gap:8, maxWidth:520 }}>
+                <form onSubmit={handleSearch} style={{ display:isMobile?'none':'flex', flexDirection:'row', gap:8, maxWidth:520 }}>
                   <div style={{ position:'relative', flex:1 }}>
                     <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', fontSize:14, color:'rgba(255,255,255,0.6)', pointerEvents:'none' }}>⌕</span>
                     <input type="text" placeholder={`Buscar em ${activeNiche.name}...`} value={searchInput} onChange={e=>setSearchInput(e.target.value)}
