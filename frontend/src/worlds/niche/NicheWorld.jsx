@@ -432,6 +432,7 @@ function YoutubeAnalytics({ ytData, color, onGenerate }) {
   const [aiDiag, setAiDiag] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [showData, setShowData] = useState(null);
   const [socialData, setSocialData] = useState(() => loadSocialData());
   const [showSocialModal, setShowSocialModal] = useState(false);
   const [reminderDismissed, setReminderDismissed] = useState(() => loadReminderDismissed());
@@ -645,24 +646,27 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
                 <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:12, color:'rgba(255,255,255,0.6)', minWidth:18 }}>#{i+1}</span>
                 <img src={v.thumbnail} alt="" style={{ width:80, height:45, borderRadius:6, objectFit:'cover', flexShrink:0 }} />
                 <div style={{ flex:1, minWidth:0 }}>
-                  <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:12, color:'#fff', margin:'0 0 2px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v.title}</p>
-                  <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-                    <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, color:'rgba(255,255,255,0.35)' }}>👁 {fmt(v.views)}</span>
-                    <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, color:'rgba(255,255,255,0.35)' }}>👍 {fmt(v.likes)}</span>
-                    <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, color:'rgba(255,255,255,0.35)' }}>⚡ {engagementRate(v)}%</span>
-                    <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, color:'rgba(255,255,255,0.6)' }}>⏱ {parseDuration(v.duration)}</span>
-                  </div>
-                  <ViewsBar value={v.views||0} max={maxViews} color={color.glow} />
+                  <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:12, color:'#fff', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v.title}</p>
                 </div>
                 <div style={{ textAlign:'center', flexShrink:0, minWidth:36 }}>
                   <p style={{ fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:15, fontWeight:700, color:scoreColor, margin:0, lineHeight:1 }}>{v.viral_score}</p>
                   <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:10, color:scoreColor, margin:'2px 0 0' }}>{scoreLabel}</p>
                 </div>
-                <div style={{ display:'flex', gap:6, flexShrink:0 }}>
-                  <button onClick={()=>setShowGenOpts(showGenOpts===v.id?null:v.id)} style={{ padding:'5px 10px', borderRadius:6, background:'rgba(255,68,68,0.12)', border:'1px solid rgba(255,68,68,0.3)', color:'#ff4444', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, cursor:'pointer', whiteSpace:'nowrap' }}>⚡ ROTEIRO</button>
+                <div style={{ display:'flex', gap:5, flexShrink:0, alignItems:'center' }}>
+                  <button onClick={()=>setShowData(showData===v.id?null:v.id)} style={{ padding:'5px 8px', borderRadius:6, background:showData===v.id?'rgba(255,255,255,0.1)':'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.6)', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, cursor:'pointer', whiteSpace:'nowrap' }}>📊</button>
+                  <button onClick={()=>setShowGenOpts(showGenOpts===v.id?null:v.id)} style={{ padding:'5px 8px', borderRadius:6, background:'rgba(255,68,68,0.12)', border:'1px solid rgba(255,68,68,0.3)', color:'#ff4444', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, cursor:'pointer', whiteSpace:'nowrap' }}>⚡</button>
                   <a href={`https://youtube.com/watch?v=${v.id}`} target="_blank" rel="noopener noreferrer" style={{ padding:'5px 8px', borderRadius:6, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.7)', textDecoration:'none', fontSize:12 }}>↗</a>
                 </div>
               </div>
+              {showData === v.id && (
+                <div style={{ padding:'10px 12px', borderTop:'1px solid rgba(255,255,255,0.05)', background:'rgba(255,255,255,0.02)', display:'flex', gap:16, alignItems:'center', flexWrap:'wrap' }}>
+                  <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, color:'rgba(255,255,255,0.45)' }}>👁 {fmt(v.views)}</span>
+                  <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, color:'rgba(255,255,255,0.45)' }}>👍 {fmt(v.likes)}</span>
+                  <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, color:'rgba(255,255,255,0.45)' }}>⚡ {engagementRate(v)}%</span>
+                  <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, color:'rgba(255,255,255,0.45)' }}>⏱ {parseDuration(v.duration)}</span>
+                  <ViewsBar value={v.views||0} max={maxViews} color={color.glow} />
+                </div>
+              )}
               {showGenOpts === v.id && (
                 <div style={{ padding:'10px 12px 12px', borderTop:'1px solid rgba(255,68,68,0.1)', background:'rgba(255,68,68,0.04)', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', borderRadius:'0 0 10px 10px' }}>
                   <select value={generateOpts.platform} onChange={e=>setGenerateOpts(o=>({...o,platform:e.target.value}))} style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:6, padding:'5px 8px', color:'rgba(255,255,255,0.8)', fontSize:12, cursor:'pointer', fontFamily:'-apple-system,SF Pro Text,sans-serif' }}>
