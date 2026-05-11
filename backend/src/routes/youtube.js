@@ -6,12 +6,19 @@ import { Router } from 'express';
 import axios from 'axios';
 
 const router = Router();
-const API_KEY = process.env.YOUTUBE_API_KEY;
+const API_KEYS = [
+  process.env.YOUTUBE_API_KEY,
+  process.env.YOUTUBE_API_KEY_2,
+  process.env.YOUTUBE_API_KEY_3,
+].filter(Boolean);
+let keyIndex = 0;
+function getKey() { const k = API_KEYS[keyIndex % API_KEYS.length]; keyIndex++; return k; }
+
 const CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID;
 
 // Cache por nicho
 const cacheMap = {};
-const CACHE_TTL = 5 * 60 * 1000; // 5 min
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
 
 router.get('/', async (req, res) => {
   try {
@@ -227,8 +234,17 @@ router.get('/canal', async (req, res) => {
   try {
     const handle = (req.query.handle || '').trim().replace(/^@/, '');
     if (!handle) return res.status(400).json({ error: 'handle obrigatorio' });
-    const key = API_KEY;
-    if (!key) return res.status(500).json({ error: 'YOUTUBE_API_KEY nao configurada no servidor' });
+    if (!API_KEYS.length) return res.status(500).json({ error: 'YOUTUBE_API_KEY nao configurada no servidor' });
+
+    // Cache 24h por handle
+    const cacheKey = 'canal_' + handle;
+    const cached = cacheMap[cacheKey];
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      console.log('[youtube/canal] cache hit:', handle);
+      return res.json(cached.data);
+    }
+
+    const key = getKey();
 
     // Resolve handle -> channelId
     const searchRes = await axios.get('https://www.googleapis.com/youtube/v3/search', {
@@ -270,7 +286,7 @@ router.get('/canal', async (req, res) => {
       viral_score: Math.round((v.views / maxViews) * 10),
     }));
 
-    res.json({
+    const result = {
       channel: {
         id: channelId,
         title: channel.snippet.title,
@@ -281,7 +297,10 @@ router.get('/canal', async (req, res) => {
         videoCount: parseInt(channel.statistics.videoCount || 0),
       },
       videos: videosWithScore,
-    });
+    };
+    cacheMap['canal_' + handle] = { ts: Date.now(), data: result };
+    console.log('[youtube/canal] cache saved:', handle);
+    res.json(result);
   } catch (err) {
     console.error('[youtube/canal]', err.message);
     res.status(500).json({ error: err.message });
