@@ -1137,6 +1137,9 @@ function HistoriaNicheCard({ activeNiche, color, isMobile }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [historico, setHistorico] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('vn_historico_' + activeNiche?.id) || '[]'); } catch { return []; }
+  });
 
   const tema = activeNiche?.keywords?.slice(0,3).join(', ') || activeNiche?.name || 'história mundial';
   const accent = color?.accent || '#ff4444';
@@ -1149,10 +1152,15 @@ function HistoriaNicheCard({ activeNiche, color, isMobile }) {
       const res = await fetch('/api/historia-nicho', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tema, seed })
+        body: JSON.stringify({ tema, seed, historico: historico.slice(-20) })
       });
       const data = await res.json();
-      if (data.success) setHistoria(data.historia);
+      if (data.success) {
+        setHistoria(data.historia);
+        const novo = [...historico, data.historia.titulo].slice(-30);
+        setHistorico(novo);
+        try { localStorage.setItem('vn_historico_' + activeNiche?.id, JSON.stringify(novo)); } catch {}
+      }
       else setError(data.error || 'Erro ao buscar história');
     } catch(e) { setError('Erro de conexão'); }
     finally { setLoading(false); }
