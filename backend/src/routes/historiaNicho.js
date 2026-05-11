@@ -14,11 +14,34 @@ async function callGemini(prompt) {
 }
 
 router.post('/', async (req, res) => {
-  const { tema, seed } = req.body;
+  const { tema, seed, historico = [] } = req.body;
   if (!tema) return res.status(400).json({ success: false, error: 'tema obrigatorio' });
 
-  const agora = new Date().toISOString();
-  const prompt = `Seed: ${seed} | Momento: ${agora}\n\nEscolha UMA história real pouco conhecida relacionada ao tema "${tema}" e narre em português brasileiro no estilo storytelling viral para vídeo curto.
+  const historicoStr = historico.length > 0
+    ? `\n\nHISTÓRIAS JÁ CONTADAS — PROIBIDO repetir qualquer uma destas:\n${historico.map((h,i) => `${i+1}. ${h}`).join('\n')}`
+    : '';
+
+  const categorias = [
+    'cientistas e inventores esquecidos',
+    'guerras e batalhas obscuras',
+    'crimes e escândalos históricos',
+    'desastres e acidentes',
+    'descobertas científicas acidentais',
+    'personagens históricos excêntricos',
+    'eventos políticos surpreendentes',
+    'histórias de sobrevivência extrema',
+    'fraudes e golpes históricos',
+    'fatos sobre animais e natureza',
+  ];
+  const cat = categorias[Math.floor(Math.random() * categorias.length)];
+
+  const prompt = `Você é um pesquisador especialista em histórias reais obscuras e surpreendentes.
+
+Tema geral: "${tema}"
+Categoria desta vez: "${cat}"
+Variação: ${seed}${historicoStr}
+
+Escolha UMA história real POUCO CONHECIDA do grande público, preferencialmente fora do Brasil, sobre "${tema}" dentro da categoria "${cat}".
 
 ESTRUTURA OBRIGATÓRIA:
 1. Gancho: frase que gera curiosidade imediata (ex: "Pesquisa agora o nome X...")
@@ -26,11 +49,13 @@ ESTRUTURA OBRIGATÓRIA:
 3. Virada: o fato mais perturbador ou surpreendente de tudo
 4. Moral: 2 a 3 frases finais com reflexão
 
-REGRAS:
+REGRAS ABSOLUTAS:
 - 100% real e verificável, zero invenção
 - Tom conversacional, como se contasse pra um amigo
 - Entre 120 e 150 palavras
-- Cada execução deve trazer uma história DIFERENTE sobre o tema: ${tema}
+- NUNCA repita as histórias já listadas acima
+- Varie épocas: ancient, medieval, século XIX, XX, XXI
+- Varie países e culturas
 
 Responda APENAS com JSON válido:
 {
