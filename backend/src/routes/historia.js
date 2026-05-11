@@ -40,9 +40,13 @@ Responda APENAS com JSON válido:
 
   try {
     const raw = await callGemini(prompt);
+    console.log('[historia] raw:', raw?.slice(0, 300));
     const clean = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
     const start = clean.indexOf('{');
     const end = clean.lastIndexOf('}');
+    if (start === -1 || end === -1) {
+      return res.status(500).json({ success: false, error: 'Resposta da IA inválida: ' + clean.slice(0, 100) });
+    }
     const parsed = JSON.parse(clean.slice(start, end + 1));
     res.json({ success: true, historia: parsed });
   } catch (err) {
