@@ -9,7 +9,7 @@ async function callGemini(prompt) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
   const response = await axios.post(url, {
     contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { maxOutputTokens: 2048, temperature: 0.9 },
+    generationConfig: { maxOutputTokens: 4096, temperature: 0.9 },
   }, { timeout: 30000 });
   return response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
