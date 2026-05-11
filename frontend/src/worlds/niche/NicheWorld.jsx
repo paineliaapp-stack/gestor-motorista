@@ -1330,7 +1330,7 @@ export function NicheWorld() {
       <div style={{ position:'fixed', inset:0, zIndex:0, pointerEvents:'none', background:`radial-gradient(ellipse at 20% 0%,rgba(${color.glow},0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(${color.glow},0.05) 0%,transparent 50%)`, transition:'background 0.6s ease' }} />
       <div style={{ position:'fixed', top:0, left:0, right:0, height:3, background:`linear-gradient(90deg,transparent,${color.accent},transparent)`, zIndex:200, opacity:0.7, transition:'background 0.4s' }} />
 
-      <header style={{ position:'sticky', top:tickerH, zIndex:100, height:56, display:'flex', alignItems:'center', justifyContent:'space-between', padding:isMobile?'0 16px':'0 24px', background:'rgba(7,7,15,0.88)', backdropFilter:'blur(32px)', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+      <header style={{ position:'fixed', top:tickerH, left:0, right:0, zIndex:150, height:56, display:'flex', alignItems:'center', justifyContent:'space-between', padding:isMobile?'0 16px':'0 24px', background:'rgba(7,7,15,0.88)', backdropFilter:'blur(32px)', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:16 }}>
           <button onClick={()=>navigate('/')} style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:isMobile?11:15, letterSpacing:'0.15em', color:'rgba(255,255,255,0.38)', background:'none', border:'none', cursor:'pointer', padding:0 }}>← PORTAL</button>
           <span style={{ color:'rgba(255,255,255,0.1)' }}>|</span>
@@ -1346,7 +1346,7 @@ export function NicheWorld() {
         </button>
       </header>
 
-      <div style={{ display:'flex', minHeight:`calc(100vh - ${tickerH+56}px)`, position:'relative', zIndex:5, overflowX:'hidden', width:'100%' }}>
+      <div style={{ display:'flex', minHeight:`calc(100vh - ${tickerH+56}px)`, position:'relative', zIndex:5, overflowX:'hidden', width:'100%', paddingTop:`${tickerH+56}px` }}>
 
         {!isMobile && (
           <aside style={{ width:260, flexShrink:0, borderRight:'1px solid rgba(255,255,255,0.05)', padding:'20px 16px', background:'rgba(7,7,15,0.6)', backdropFilter:'blur(20px)', position:'sticky', top:tickerH+56, height:`calc(100vh - ${tickerH+56}px)`, overflowY:'auto', display:'flex', flexDirection:'column' }}>
