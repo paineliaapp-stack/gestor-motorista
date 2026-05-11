@@ -222,6 +222,7 @@ async function fetchBooks(query) {
           viral_score: Math.min(10, 5 + Math.round((info.averageRating || 0) * 0.8)),
           authors: author,
           rating: info.averageRating,
+          amazonUrl: `https://www.amazon.com.br/s?k=${encodeURIComponent(info.title + ' ' + (info.authors?.[0] || ''))}&tag=renanfilgueir-20`,
         };
       });
       toCache(cKey, items);
