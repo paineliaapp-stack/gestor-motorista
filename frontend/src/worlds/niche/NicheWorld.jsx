@@ -1537,9 +1537,13 @@ export function NicheWorld() {
               <div style={{ padding:isMobile?'24px 16px 80px':'28px 28px 100px' }}>
                 {activeSection === 'mining'
                   ? <ChannelMiner color={color} onGenerate={handleGenerate} />
-                  : sectionsToShow.map(section=>(
+                  : (<>
+                    <HistoriaNicheCard activeNiche={activeNiche} color={color} isMobile={isMobile} />
+                    {sectionsToShow.map(section=>(
                     <ContentSection key={section.id} section={section} items={data[section.id]||[]} loading={loading} color={color} onGenerate={handleGenerate} />
-                  ))
+                  ))}
+                    </>
+                  )
                 }
               </div>
             </>
