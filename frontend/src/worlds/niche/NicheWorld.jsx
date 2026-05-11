@@ -228,10 +228,10 @@ function BookCard({ item, index, color, onGenerate }) {
 }
 
 // ─── ContentSection ───────────────────────────────────────────────────────────
-function ContentSection({ section, items, loading, color, onGenerate }) {
+function ContentSection({ section, items, loading, color, onGenerate, isMobile }) {
   const isBooks = section.id === 'books';
   const [expanded, setExpanded] = useState(false);
-  const LIMIT = 6;
+  const LIMIT = isMobile ? 3 : 6;
   const visible = expanded ? items : items.slice(0, LIMIT);
   const hasMore = items.length > LIMIT;
 
@@ -700,7 +700,7 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom: aiDiag ? 12 : 0 }}>
           <span style={{ fontSize:16 }}>🤖</span>
           <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.15em', color:'rgba(255,68,68,0.8)', margin:0, flex:1 }}>DIAGNÓSTICO IA DO CANAL</p>
-          <button onClick={runAiDiagnosis} disabled={aiLoading} style={{ padding:'6px 14px', borderRadius:8, background:aiLoading?'rgba(255,255,255,0.05)':'rgba(255,68,68,0.15)', border:'1px solid rgba(255,68,68,0.3)', color:'#ff4444', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.1em', cursor:aiLoading?'not-allowed':'pointer', transition:'all 0.15s' }}>
+          <button onClick={runAiDiagnosis} disabled={aiLoading} style={{ padding:'6px 14px', borderRadius:8, background:aiLoading?'rgba(255,255,255,0.05)':'rgba(255,68,68,0.15)', border:'1px solid rgba(255,68,68,0.3)', color:'#ffffff', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.1em', cursor:aiLoading?'not-allowed':'pointer', transition:'all 0.15s' }}>
             {aiLoading ? 'ANALISANDO...' : aiDiag ? 'REANALISAR' : 'ANALISAR CANAL'}
           </button>
         </div>
@@ -1491,7 +1491,7 @@ export function NicheWorld() {
                     </div>
                   );
                 })()}
-                <form onSubmit={handleSearch} style={{ display:'flex', gap:8, maxWidth:520 }}>
+                <form onSubmit={handleSearch} style={{ display:'flex', flexDirection:isMobile?'column':'row', gap:8, maxWidth:520 }}>
                   <div style={{ position:'relative', flex:1 }}>
                     <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', fontSize:14, color:'rgba(255,255,255,0.6)', pointerEvents:'none' }}>⌕</span>
                     <input type="text" placeholder={`Buscar em ${activeNiche.name}...`} value={searchInput} onChange={e=>setSearchInput(e.target.value)}
@@ -1540,7 +1540,7 @@ export function NicheWorld() {
                   : (<>
                     <HistoriaNicheCard activeNiche={activeNiche} color={color} isMobile={isMobile} />
                     {sectionsToShow.map(section=>(
-                    <ContentSection key={section.id} section={section} items={data[section.id]||[]} loading={loading} color={color} onGenerate={handleGenerate} />
+                    <ContentSection key={section.id} section={section} items={data[section.id]||[]} loading={loading} color={color} onGenerate={handleGenerate} isMobile={isMobile} />
                   ))}
                     </>
                   )
