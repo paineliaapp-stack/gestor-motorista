@@ -49,7 +49,14 @@ Responda APENAS com JSON válido:
     if (start === -1 || end === -1) {
       return res.status(500).json({ success: false, error: 'Resposta da IA inválida: ' + clean.slice(0, 100) });
     }
-    const parsed = JSON.parse(clean.slice(start, end + 1));
+    let parsed;
+    try {
+      parsed = JSON.parse(clean.slice(start, end + 1));
+    } catch(e) {
+      // tenta sanitizar quebras de linha dentro de strings JSON
+      const sanitized = clean.slice(start, end + 1).replace(/("narrativa"\s*:\s*")([\s\S]*?)("(?:\s*,|\s*\}))/g, (m,a,b,c) => a + b.replace(/\n/g,' ').replace(/"/g,'\\"') + c);
+      parsed = JSON.parse(sanitized);
+    }
     res.json({ success: true, historia: parsed });
   } catch (err) {
     console.error('[historia]', err.message);
