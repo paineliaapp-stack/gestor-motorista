@@ -38,7 +38,7 @@ function extractImage(item, url) {
   return item['media:content']?.$.url
     || item['media:thumbnail']?.$.url
     || item.enclosure?.url
-    || (url ? `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(url)}&size=128` : null);
+    || (url ? `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent('https://' + (item.source?.value || 'google.com'))}&size=128` : null);
 }
 
 // ── 1. Google News RSS ────────────────────────────────────────────────────────
