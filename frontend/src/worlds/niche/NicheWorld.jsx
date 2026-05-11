@@ -588,7 +588,7 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
       {bestVideo && (
         <div style={{ margin:'12px 16px 0', background:'rgba(255,190,77,0.05)', border:'1px solid rgba(255,190,77,0.15)', borderRadius:12, padding:'10px 12px', display:'flex', alignItems:'flex-start', gap:8, flexWrap:'wrap' }}>
           <span style={{ fontSize:18, flexShrink:0 }}>🏆</span>
-          <img src={bestVideo.thumbnail} alt="" style={{ width:80, height:45, borderRadius:6, objectFit:'cover', flexShrink:0 }} />
+          <img src={bestVideo.thumbnail} alt="" style={{ width:60, height:34, borderRadius:6, objectFit:'cover', flexShrink:0 }} />
           <div style={{ flex:1, minWidth:0 }}>
             <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.15em', color:'#ffbe4d', margin:'0 0 3px' }}>MELHOR VÍDEO</p>
             <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:12, fontWeight:500, color:'#fff', margin:'0 0 3px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{bestVideo.title}</p>
@@ -631,7 +631,7 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
           <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, letterSpacing:'0.1em', color:'rgba(255,255,255,0.7)', margin:0, flex:1 }}>SEUS VÍDEOS</p>
           {[['views','👁'],['likes','👍'],['engagement','⚡'],['date','📅']].map(([k,l])=>(
-            <button key={k} onClick={()=>setSort(k)} style={{ padding:'4px 10px', borderRadius:6, border:`1px solid ${sort===k?'rgba(255,50,50,0.4)':'rgba(255,255,255,0.08)'}`, background:sort===k?'rgba(255,50,50,0.1)':'rgba(255,255,255,0.03)', color:sort===k?'#ff5555':'rgba(255,255,255,0.35)', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, cursor:'pointer', transition:'all 0.15s' }}>{l} {k.charAt(0).toUpperCase()+k.slice(1)}</button>
+            <button key={k} onClick={()=>setSort(k)} style={{ padding:'3px 7px', borderRadius:6, border:`1px solid ${sort===k?'rgba(255,50,50,0.4)':'rgba(255,255,255,0.08)'}`, background:sort===k?'rgba(255,50,50,0.1)':'rgba(255,255,255,0.03)', color:sort===k?'#ff5555':'rgba(255,255,255,0.35)', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, cursor:'pointer', transition:'all 0.15s' }}>{l} {k.charAt(0).toUpperCase()+k.slice(1)}</button>
           ))}
         </div>
 
@@ -641,25 +641,25 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
             const scoreLabel = v.viral_score>=8?'VIRAL':v.viral_score>=5?'BOM':'NORMAL';
             return (
               <div key={v.id} style={{ borderRadius:10, overflow:'hidden', border:'1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 12px', background:'rgba(255,255,255,0.02)' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', background:'rgba(255,255,255,0.02)' }}>
                 <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:12, color:'rgba(255,255,255,0.6)', minWidth:18 }}>#{i+1}</span>
                 <img src={v.thumbnail} alt="" style={{ width:80, height:45, borderRadius:6, objectFit:'cover', flexShrink:0 }} />
                 <div style={{ flex:1, minWidth:0 }}>
                   <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:12, color:'#fff', margin:'0 0 2px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v.title}</p>
                   <div style={{ display:'flex', gap:10, alignItems:'center' }}>
                     <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, color:'rgba(255,255,255,0.35)' }}>👁 {fmt(v.views)}</span>
-                    <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:'rgba(255,255,255,0.35)' }}>👍 {fmt(v.likes)}</span>
-                    <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:'rgba(255,255,255,0.35)' }}>⚡ {engagementRate(v)}%</span>
-                    <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:'rgba(255,255,255,0.6)' }}>⏱ {parseDuration(v.duration)}</span>
+                    <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, color:'rgba(255,255,255,0.35)' }}>👍 {fmt(v.likes)}</span>
+                    <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, color:'rgba(255,255,255,0.35)' }}>⚡ {engagementRate(v)}%</span>
+                    <span style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, color:'rgba(255,255,255,0.6)' }}>⏱ {parseDuration(v.duration)}</span>
                   </div>
                   <ViewsBar value={v.views||0} max={maxViews} color={color.glow} />
                 </div>
-                <div style={{ textAlign:'center', flexShrink:0, minWidth:48 }}>
-                  <p style={{ fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:18, fontWeight:700, color:scoreColor, margin:0, lineHeight:1 }}>{v.viral_score}</p>
-                  <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:scoreColor, margin:'2px 0 0' }}>{scoreLabel}</p>
+                <div style={{ textAlign:'center', flexShrink:0, minWidth:36 }}>
+                  <p style={{ fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:15, fontWeight:700, color:scoreColor, margin:0, lineHeight:1 }}>{v.viral_score}</p>
+                  <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:10, color:scoreColor, margin:'2px 0 0' }}>{scoreLabel}</p>
                 </div>
                 <div style={{ display:'flex', gap:6, flexShrink:0 }}>
-                  <button onClick={()=>setShowGenOpts(showGenOpts===v.id?null:v.id)} style={{ padding:'5px 10px', borderRadius:6, background:'rgba(255,68,68,0.12)', border:'1px solid rgba(255,68,68,0.3)', color:'#ff4444', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, cursor:'pointer', whiteSpace:'nowrap' }}>⚡ ROTEIRO</button>
+                  <button onClick={()=>setShowGenOpts(showGenOpts===v.id?null:v.id)} style={{ padding:'5px 10px', borderRadius:6, background:'rgba(255,68,68,0.12)', border:'1px solid rgba(255,68,68,0.3)', color:'#ff4444', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, cursor:'pointer', whiteSpace:'nowrap' }}>⚡ ROTEIRO</button>
                   <a href={`https://youtube.com/watch?v=${v.id}`} target="_blank" rel="noopener noreferrer" style={{ padding:'5px 8px', borderRadius:6, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.7)', textDecoration:'none', fontSize:12 }}>↗</a>
                 </div>
               </div>
