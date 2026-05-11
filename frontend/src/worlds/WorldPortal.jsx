@@ -192,6 +192,7 @@ function WorldCard({ world, index, isMobile }) {
         <p style={{
           fontFamily:'DM Sans,sans-serif',fontSize: isMobile ? 12 : 13,fontWeight:300,
           color:'rgba(255,255,255,0.6)',margin:'0 0 auto',lineHeight:1.65,
+          display:'-webkit-box',WebkitLineClamp:3,WebkitBoxOrient:'vertical',overflow:'hidden',
         }}>{world.description}</p>
 
         {/* Divider + Stats */}
