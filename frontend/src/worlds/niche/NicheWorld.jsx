@@ -549,13 +549,13 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
         <span style={{ fontFamily:'-apple-system,sans-serif', fontSize:14, fontWeight:600, color:'#fff' }}>{channel.title}</span>
         <div style={{ flex:1 }} />
         <a href={`https://youtube.com/channel/${channel.id}`} target="_blank" rel="noopener noreferrer"
-          style={{ padding:'6px 12px', borderRadius:8, background:'rgba(255,50,50,0.12)', border:'1px solid rgba(255,50,50,0.25)', color:'rgba(255,100,100,0.8)', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.1em', textDecoration:'none', whiteSpace:'nowrap' }}>
+          style={{ padding:'6px 12px', borderRadius:8, background:'rgba(255,50,50,0.12)', border:'1px solid rgba(255,50,50,0.25)', color:'rgba(255,100,100,0.8)', fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:11, letterSpacing:'0.05em', textDecoration:'none', whiteSpace:'nowrap' }}>
           VER CANAL ↗
         </a>
       </div>
 
       {/* Stats principais 4 colunas */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:1, background:'rgba(255,255,255,0.04)' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:1, background:'rgba(255,255,255,0.04)' }}>
         {[
           { label:'INSCRITOS',    value:fmt(channel.subscribers),  color:'#ff5555' },
           { label:'VIEWS TOTAIS', value:fmt(channel.totalViews),   color:'#ffbe4d' },
@@ -563,30 +563,30 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
           { label:'MÉDIA/VÍDEO',  value:fmt(Math.round(totalViews/(videos.length||1))), color:'#ff4444' },
         ].map((s,i) => (
           <div key={i} style={{ background:'rgba(7,7,15,0.9)', padding:'14px 16px' }}>
-            <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.18em', color:'rgba(255,255,255,0.7)', margin:'0 0 6px' }}>{s.label}</p>
-            <p style={{ fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:22, fontWeight:700, color:s.color, margin:0, lineHeight:1 }}>{s.value}</p>
+            <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:9, letterSpacing:'0.12em', color:'rgba(255,255,255,0.7)', margin:'0 0 4px' }}>{s.label}</p>
+            <p style={{ fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:18, fontWeight:700, color:s.color, margin:0, lineHeight:1 }}>{s.value}</p>
           </div>
         ))}
       </div>
 
       {/* Stats secundárias 3 colunas */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:1, background:'rgba(255,255,255,0.04)' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:1, background:'rgba(255,255,255,0.04)' }}>
         {[
           { label:'ENGAJAMENTO MÉDIO', value:avgEngagement+'%', sub:'likes+comentários/views' },
           { label:'DURAÇÃO MÉDIA',     value:`${Math.floor(avgDurSec/60)}m${String(avgDurSec%60).padStart(2,'0')}s`, sub:'dos seus vídeos' },
           { label:'PIOR DESEMPENHO',   value:fmt(worstVideo?.views||0), sub:worstVideo?.title?.slice(0,30)+'…'||'—', dimColor:true },
         ].map((s,i) => (
-          <div key={i} style={{ background:'rgba(7,7,15,0.85)', padding:'12px 16px' }}>
-            <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.15em', color:'rgba(255,255,255,0.65)', margin:'0 0 4px' }}>{s.label}</p>
-            <p style={{ fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:18, fontWeight:700, color:s.dimColor?'rgba(255,100,100,0.6)':'rgba(255,255,255,0.7)', margin:0, lineHeight:1.1 }}>{s.value}</p>
-            {s.sub && <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, color:'rgba(255,255,255,0.6)', margin:'3px 0 0', fontWeight:300 }}>{s.sub}</p>}
+          <div key={i} style={{ background:'rgba(7,7,15,0.85)', padding:'8px 12px' }}>
+            <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:9, letterSpacing:'0.1em', color:'rgba(255,255,255,0.65)', margin:'0 0 2px' }}>{s.label}</p>
+            <p style={{ fontFamily:'-apple-system,SF Pro Display,SF Pro Text,sans-serif', fontSize:14, fontWeight:700, color:s.dimColor?'rgba(255,100,100,0.6)':'rgba(255,255,255,0.7)', margin:0, lineHeight:1.1 }}>{s.value}</p>
+            {s.sub && <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:10, color:'rgba(255,255,255,0.6)', margin:'2px 0 0', fontWeight:300 }}>{s.sub}</p>}
           </div>
         ))}
       </div>
 
       {/* Melhor vídeo destaque */}
       {bestVideo && (
-        <div style={{ margin:'12px 16px 0', background:'rgba(255,190,77,0.05)', border:'1px solid rgba(255,190,77,0.15)', borderRadius:12, padding:'12px 16px', display:'flex', alignItems:'center', gap:12 }}>
+        <div style={{ margin:'12px 16px 0', background:'rgba(255,190,77,0.05)', border:'1px solid rgba(255,190,77,0.15)', borderRadius:12, padding:'10px 12px', display:'flex', alignItems:'flex-start', gap:8, flexWrap:'wrap' }}>
           <span style={{ fontSize:18, flexShrink:0 }}>🏆</span>
           <img src={bestVideo.thumbnail} alt="" style={{ width:80, height:45, borderRadius:6, objectFit:'cover', flexShrink:0 }} />
           <div style={{ flex:1, minWidth:0 }}>
@@ -1346,7 +1346,7 @@ export function NicheWorld() {
         </button>
       </header>
 
-      <div style={{ display:'flex', minHeight:`calc(100vh - ${tickerH+56}px)`, position:'relative', zIndex:5 }}>
+      <div style={{ display:'flex', minHeight:`calc(100vh - ${tickerH+56}px)`, position:'relative', zIndex:5, overflowX:'hidden', width:'100%' }}>
 
         {!isMobile && (
           <aside style={{ width:260, flexShrink:0, borderRight:'1px solid rgba(255,255,255,0.05)', padding:'20px 16px', background:'rgba(7,7,15,0.6)', backdropFilter:'blur(20px)', position:'sticky', top:tickerH+56, height:`calc(100vh - ${tickerH+56}px)`, overflowY:'auto', display:'flex', flexDirection:'column' }}>
@@ -1432,7 +1432,7 @@ export function NicheWorld() {
           </aside>
         )}
 
-        <main style={{ flex:1, minWidth:0, overflowY:'auto', paddingTop:0 }}>
+        <main style={{ flex:1, minWidth:0, overflowX:'hidden', overflowY:'auto', paddingTop:0 }}>
 
           {isMobile && niches.length > 0 && (
             <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.05)', scrollbarWidth:'none' }}>
@@ -1456,7 +1456,7 @@ export function NicheWorld() {
             </div>
           ) : (
             <>
-              <div style={{ padding:isMobile?'24px 16px 18px':'32px 28px 20px', paddingTop:isMobile?'20px':'24px', borderBottom:'1px solid rgba(255,255,255,0.05)', position:'relative', background:`linear-gradient(180deg,rgba(${color.glow},0.05) 0%,transparent 100%)`, transition:'background 0.5s ease' }}>
+              <div style={{ padding:isMobile?'20px 16px 16px':'32px 28px 20px', paddingTop:isMobile?'20px':'24px', borderBottom:'1px solid rgba(255,255,255,0.05)', position:'relative', background:`linear-gradient(180deg,rgba(${color.glow},0.05) 0%,transparent 100%)`, transition:'background 0.5s ease' }}>
                 <p style={{ fontFamily:'-apple-system,SF Pro Text,sans-serif', fontSize:15, letterSpacing:'0.45em', color:`rgba(${color.glow},0.6)`, marginBottom:8 }}>MEU CANAL</p>
                 <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:8 }}>
                   <span style={{ fontSize:28 }}>{activeNiche.icon||'🎯'}</span>
