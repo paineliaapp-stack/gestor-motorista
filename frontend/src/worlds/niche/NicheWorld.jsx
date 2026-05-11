@@ -520,7 +520,7 @@ ${(sorted||[]).map(v=>v.title).join(', ')}`;
       if (!resp.ok) throw new Error(`Erro na API: ${resp.status}`);
       const data = await resp.json();
       setAiDiag(data?.text || 'Erro ao gerar diagnostico.');
-    } catch(e) { setAiDiag('Erro ao conectar com a IA. Tente novamente.'); }
+    } catch(e) { console.error('[ai-diagnosis error]', e); setAiDiag('Erro: ' + e.message); }
     finally { setAiLoading(false); }
   }
 
