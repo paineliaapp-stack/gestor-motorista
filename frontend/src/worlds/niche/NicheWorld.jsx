@@ -1127,6 +1127,85 @@ function CreateNicheModal({ onSave, onClose }) {
 }
 
 // ─── NicheWorld Principal ─────────────────────────────────────────────────────
+
+function HistoriaNicheCard({ activeNiche, color, isMobile }) {
+  const [historia, setHistoria] = React.useState(null);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
+  const [copied, setCopied] = React.useState(false);
+
+  const tema = activeNiche?.keywords?.slice(0,3).join(', ') || activeNiche?.name || 'história mundial';
+  const accent = color?.accent || '#ff4444';
+  const glow = color?.glow || '255,68,68';
+
+  const buscar = async () => {
+    setLoading(true); setError(null); setHistoria(null);
+    try {
+      const seed = Math.random().toString(36).slice(2,8);
+      const res = await fetch('/api/historia-nicho', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tema, seed })
+      });
+      const data = await res.json();
+      if (data.success) setHistoria(data.historia);
+      else setError(data.error || 'Erro ao buscar história');
+    } catch(e) { setError('Erro de conexão'); }
+    finally { setLoading(false); }
+  };
+
+  const copiar = () => {
+    if (!historia) return;
+    navigator.clipboard?.writeText(historia.narrativa);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div style={{ marginBottom: 28, borderRadius: 16, border: `1px solid rgba(${glow},0.18)`, background: `rgba(${glow},0.03)`, overflow: 'hidden' }}>
+      <div style={{ padding: '16px 20px', borderBottom: `1px solid rgba(${glow},0.1)`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 7, height: 7, borderRadius: '50%', background: accent, boxShadow: `0 0 8px ${accent}` }} />
+          <span style={{ fontFamily: '-apple-system,SF Pro Display,sans-serif', fontSize: 15, fontWeight: 700, color: '#fff' }}>História Real do Nicho</span>
+          <span style={{ fontFamily: 'Space Mono,monospace', fontSize: 8, letterSpacing: '0.2em', color: `rgba(${glow},0.5)`, background: `rgba(${glow},0.08)`, padding: '3px 8px', borderRadius: 4 }}>FATOS REAIS · COM FONTE</span>
+        </div>
+        <button onClick={buscar} disabled={loading} style={{ fontFamily: 'Space Mono,monospace', fontSize: 9, letterSpacing: '0.18em', color: loading ? `rgba(${glow},0.3)` : '#fff', background: loading ? `rgba(${glow},0.08)` : `linear-gradient(135deg,${accent} 0%,rgba(${glow},0.7) 100%)`, border: 'none', borderRadius: 8, padding: '8px 18px', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 700 }}>
+          {loading ? 'GERANDO...' : historia ? '↺ NOVA HISTÓRIA' : '▶ GERAR'}
+        </button>
+      </div>
+      {!historia && !loading && !error && (
+        <div style={{ padding: '28px 20px', textAlign: 'center' }}>
+          <p style={{ fontFamily: '-apple-system,sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.25)', margin: 0 }}>A IA busca um fato real sobre <strong style={{ color: `rgba(${glow},0.5)` }}>{tema}</strong> no estilo storytelling viral.</p>
+        </div>
+      )}
+      {loading && (
+        <div style={{ padding: '28px 20px', textAlign: 'center' }}>
+          <p style={{ fontFamily: '-apple-system,sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.3)', margin: 0 }}>Buscando fato real sobre {tema}...</p>
+        </div>
+      )}
+      {error && <div style={{ padding: '16px 20px' }}><p style={{ color: 'rgba(255,100,100,0.8)', fontSize: 13, margin: 0 }}>{error}</p></div>}
+      {historia && (
+        <div style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: '-apple-system,SF Pro Display,sans-serif', fontSize: 15, fontWeight: 700, color: accent }}>{historia.titulo}</span>
+            <span style={{ fontFamily: 'Space Mono,monospace', fontSize: 9, color: 'rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 4 }}>{historia.periodo}</span>
+          </div>
+          <p style={{ fontFamily: '-apple-system,sans-serif', fontSize: isMobile ? 13 : 14, color: 'rgba(255,255,255,0.82)', lineHeight: 1.85, fontWeight: 300, whiteSpace: 'pre-wrap', margin: '0 0 16px' }}>{historia.narrativa}</p>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {historia.wikipedia && <a href={historia.wikipedia} target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'Space Mono,monospace', fontSize: 10, color: `rgba(${glow},0.7)`, textDecoration: 'none' }}>🔗 Wikipedia</a>}
+              {historia.fonte_adicional && <span style={{ fontFamily: '-apple-system,sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>+ {historia.fonte_adicional}</span>}
+            </div>
+            <button onClick={copiar} style={{ fontFamily: '-apple-system,sans-serif', fontSize: 12, color: copied ? '#00e5b0' : `rgba(${glow},0.75)`, background: 'transparent', border: `1px solid ${copied ? 'rgba(0,229,176,0.3)' : `rgba(${glow},0.15)`}`, borderRadius: 6, padding: '6px 16px', cursor: 'pointer' }}>
+              {copied ? '✓ Copiado' : 'Copiar roteiro'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function NicheWorld() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
