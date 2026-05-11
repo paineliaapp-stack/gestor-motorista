@@ -15,7 +15,9 @@ async function callGemini(prompt) {
 }
 
 router.get('/', async (req, res) => {
-  const prompt = `Escolha UMA história real pouco conhecida que aconteceu na história mundial e narre em português brasileiro no estilo storytelling viral para vídeo curto.
+  const seed = Math.random().toString(36).slice(2, 8);
+  const agora = new Date().toISOString();
+  const prompt = `Seed: ${seed} | Momento: ${agora}\n\nEscolha UMA história real pouco conhecida que aconteceu na história mundial e narre em português brasileiro no estilo storytelling viral para vídeo curto.
 
 ESTRUTURA OBRIGATÓRIA:
 1. Gancho: frase que gera curiosidade imediata (ex: "Pesquisa agora o nome X...")
