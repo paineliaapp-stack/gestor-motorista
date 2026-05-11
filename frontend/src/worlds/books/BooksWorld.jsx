@@ -374,6 +374,7 @@ function BookCard({ book, index, onClick, highlighted = false, dimmed = false })
             <span style={{ fontSize: 13 }}>📖</span>
             {showOpts ? 'Fechar opções' : 'Gerar Roteiro'}
           </button>
+          <a href={`https://www.amazon.com.br/s?k=${encodeURIComponent(displayTitle + ' ' + book.author)}&tag=renanfilgueir-20`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ flexShrink: 0, width: 38, height: 38, borderRadius: 8, background: 'rgba(255,153,0,0.1)', border: '1px solid rgba(255,153,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', fontSize: 16, transition: 'all 0.2s' }} title="Comprar na Amazon">🛒</a>
         </div>
       </div>
     </div>
