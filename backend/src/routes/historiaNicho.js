@@ -5,11 +5,10 @@ const router = Router();
 
 async function callGemini(prompt) {
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
   const response = await axios.post(url, {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: { maxOutputTokens: 4096, temperature: 1.0 },
-    thinkingConfig: { thinkingBudget: 0 },
   }, { timeout: 30000 });
   return response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
