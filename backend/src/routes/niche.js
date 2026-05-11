@@ -247,8 +247,42 @@ router.get('/', async (req, res) => {
   const query = (req.query.q || '').trim();
   if (!query) return res.status(400).json({ success: false, error: 'query param ?q= required' });
 
-  const [news, reddit, articles, books] = await Promise.allSettled([
+
+async function fetchNewsAPI(query) {
+  const cKey = `newsapi:${query}`;
+  const cached = fromCache(cKey);
+  if (cached) return cached;
+  const key = process.env.NEWS_API_KEY || process.env.NEWSAPI_KEY;
+  if (!key) return [];
+  try {
+    const res = await axios.get('https://newsapi.org/v2/everything', {
+      params: { q: query, language: 'pt', pageSize: 10, sortBy: 'publishedAt', apiKey: key },
+      timeout: 8000,
+    });
+    const items = (res.data.articles || [])
+      .filter(a => a.title && a.url && !a.title.includes('[Removed]'))
+      .map(a => ({
+        id: `newsapi_${Buffer.from(a.url).toString('base64').slice(0, 16)}`,
+        type: 'news',
+        title: a.title,
+        description: a.description || '',
+        url: a.url,
+        source: a.source?.name || 'NewsAPI',
+        publishedAt: a.publishedAt || '',
+        image: a.urlToImage || null,
+        viral_score: scoreItem(a.title, a.description),
+      }));
+    toCache(cKey, items);
+    return items;
+  } catch (e) {
+    console.error('[newsapi]', e.message);
+    return [];
+  }
+}
+
+  const [news, newsapi, reddit, articles, books] = await Promise.allSettled([
     fetchGoogleNews(query),
+    fetchNewsAPI(query),
     fetchReddit(query),
     fetchArticles(query),
     fetchBooks(query),
@@ -257,7 +291,7 @@ router.get('/', async (req, res) => {
   res.json({
     success: true,
     query,
-    news:     news.status     === 'fulfilled' ? news.value     : [],
+    news:     [...(news.status === 'fulfilled' ? news.value : []), ...(newsapi.status === 'fulfilled' ? newsapi.value : [])],
     reddit:   reddit.status   === 'fulfilled' ? reddit.value   : [],
     articles: articles.status === 'fulfilled' ? articles.value : [],
     books:    books.status    === 'fulfilled' ? books.value    : [],
