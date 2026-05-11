@@ -14,7 +14,7 @@ async function callGemini(prompt) {
   return response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', async (req, res) => {
   const prompt = `Escolha UMA história real pouco conhecida que aconteceu na história mundial e narre em português brasileiro no estilo storytelling viral para vídeo curto.
 
 ESTRUTURA OBRIGATÓRIA:
