@@ -28,14 +28,18 @@ ESTRUTURA OBRIGATÓRIA:
 REGRAS:
 - 100% real e verificável, zero invenção
 - Tom conversacional, como se contasse pra um amigo
-- Entre 120 e 150 palavras
+- Entre 250 e 320 palavras
 - Cada execução deve trazer uma história DIFERENTE
+- A Escalada deve ter pelo menos 5 fatos, cada um mais absurdo que o anterior
+- A Virada deve ser o momento mais impactante, com 2 a 3 frases fortes
+- A Moral deve provocar reflexão genuína, não ser genérica
 
 Responda APENAS com JSON válido:
 {
   "titulo": "nome da pessoa ou evento",
   "periodo": "ex: 1914 / Segunda Guerra / etc",
   "narrativa": "o roteiro completo aqui",
+  "hooks": ["hook estilo pergunta curiosa", "hook estilo fato absurdo", "hook estilo afirmação polêmica"],
   "wikipedia": "https://pt.wikipedia.org/wiki/...",
   "fonte_adicional": "nome ou url de fonte jornalística ou acadêmica"
 }`;
