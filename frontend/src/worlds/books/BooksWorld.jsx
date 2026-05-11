@@ -572,7 +572,7 @@ function HistoriaCard({ isMobile }) {
   const buscar = async () => {
     setLoading(true); setError(null); setHistoria(null);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('autor_token');
       const res = await fetch('/api/historia', { headers: { Authorization: 'Bearer ' + token } });
       const data = await res.json();
       if (data.success) setHistoria(data.historia);
