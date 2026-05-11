@@ -1129,10 +1129,10 @@ function CreateNicheModal({ onSave, onClose }) {
 // ─── NicheWorld Principal ─────────────────────────────────────────────────────
 
 function HistoriaNicheCard({ activeNiche, color, isMobile }) {
-  const [historia, setHistoria] = React.useState(null);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState(null);
-  const [copied, setCopied] = React.useState(false);
+  const [historia, setHistoria] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   const tema = activeNiche?.keywords?.slice(0,3).join(', ') || activeNiche?.name || 'história mundial';
   const accent = color?.accent || '#ff4444';
