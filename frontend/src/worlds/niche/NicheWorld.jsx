@@ -1222,8 +1222,7 @@ export function NicheWorld() {
   const [ytData, setYtData] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(true);
   const [showApiModal, setShowApiModal] = useState(false);
-  const tickerVisible = (() => { try { return localStorage.getItem('vn_generated') === '1'; } catch { return false; } })();
-  const tickerH = tickerVisible ? 42 : 0;
+  const tickerH = 42; // ticker do App.jsx sempre visivel
   const [apiKey, setApiKey] = useState('');
   const [channelId, setChannelId] = useState('');
   const [showApiHelp, setShowApiHelp] = useState(false);
