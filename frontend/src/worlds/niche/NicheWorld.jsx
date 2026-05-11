@@ -1190,7 +1190,7 @@ export function NicheWorld() {
       fetch('/api/youtube/canal?handle=' + encodeURIComponent(_handle), { headers:{ Authorization:'Bearer '+token } })
         .then(r=>r.json()).then(d=>{ setYtData(d); try { localStorage.setItem('vn_yt_data_'+activeNiche.id, JSON.stringify(d)); } catch {} }).catch(()=>{});
     }
-  }, []);
+  }, [activeNiche?.id]);
 
   useEffect(() => {
     if (activeNiche) fetchAll(activeNiche, '');
