@@ -34,11 +34,11 @@ function scoreItem(title = '', description = '') {
   return Math.min(10, score);
 }
 
-function extractImage(item) {
+function extractImage(item, url) {
   return item['media:content']?.$.url
     || item['media:thumbnail']?.$.url
     || item.enclosure?.url
-    || null;
+    || (url ? `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(url)}&size=128` : null);
 }
 
 // ── 1. Google News RSS ────────────────────────────────────────────────────────
@@ -58,7 +58,7 @@ async function fetchGoogleNews(query) {
       url: item.link || '',
       source: 'Google News',
       publishedAt: item.isoDate || item.pubDate || '',
-      image: extractImage(item),
+      image: extractImage(item, item.link || ''),
       viral_score: scoreItem(item.title, item.contentSnippet),
     }));
     toCache(cKey, items);
