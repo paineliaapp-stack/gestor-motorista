@@ -569,14 +569,25 @@ function HistoriaCard({ isMobile }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [historico, setHistorico] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('books_historico') || '[]'); } catch { return []; }
+  });
 
   const buscar = async () => {
     setLoading(true); setError(null); setHistoria(null);
     try {
       const token = localStorage.getItem('autor_token');
-      const res = await fetch('/api/historia', { headers: { Authorization: 'Bearer ' + token } });
+      const params = historico.length > 0
+        ? '?historico=' + encodeURIComponent(JSON.stringify(historico.slice(-20)))
+        : '';
+      const res = await fetch('/api/historia' + params, { headers: { Authorization: 'Bearer ' + token } });
       const data = await res.json();
-      if (data.success) setHistoria(data.historia);
+      if (data.success) {
+        setHistoria(data.historia);
+        const novo = [...historico, data.historia.titulo].slice(-30);
+        setHistorico(novo);
+        try { localStorage.setItem('books_historico', JSON.stringify(novo)); } catch {}
+      }
       else setError(data.error || 'Erro ao buscar história');
     } catch (e) {
       setError('Erro de conexão');
