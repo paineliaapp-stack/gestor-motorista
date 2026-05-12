@@ -17,7 +17,13 @@ async function callGemini(prompt) {
 router.get('/', async (req, res) => {
   const seed = Math.random().toString(36).slice(2, 8);
   const agora = new Date().toISOString();
-  const prompt = `Seed: ${seed} | Momento: ${agora}\n\nEscolha UMA história real pouco conhecida que aconteceu na história mundial e narre em português brasileiro no estilo storytelling viral para vídeo curto.
+  const historico = req.query.historico ? JSON.parse(decodeURIComponent(req.query.historico)) : [];
+  const historicoStr = historico.length > 0
+    ? `\n\nHISTORICO JA VISTO - NAO REPITA NENHUMA DESTAS:\n${historico.map((h,i) => `${i+1}. ${h}`).join('\n')}`
+    : '';
+  const categorias = ['cientistas e inventores esquecidos','guerras e batalhas obscuras','crimes e escandalos historicos','desastres e acidentes inusitados','descobertas cientificas acidentais','personagens historicos excentricos','eventos politicos surpreendentes','historias de sobrevivencia extrema','fraudes e golpes historicos','curiosidades sobre animais e natureza'];
+  const cat = categorias[Math.floor(Math.random() * categorias.length)];
+  const prompt = `Seed: ${seed} | Momento: ${agora} | Categoria: ${cat}${historicoStr}\n\nEscolha UMA historia real pouco conhecida que aconteceu na historia mundial, dentro da categoria "${cat} e narre em português brasileiro no estilo storytelling viral para vídeo curto.
 
 ESTRUTURA OBRIGATÓRIA:
 1. Gancho: frase que gera curiosidade imediata (ex: "Pesquisa agora o nome X...")
