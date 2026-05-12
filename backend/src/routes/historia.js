@@ -9,7 +9,7 @@ async function callGemini(prompt) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
   const response = await axios.post(url, {
     contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { maxOutputTokens: 4096, temperature: 0.9 },
+    generationConfig: { maxOutputTokens: 8192, temperature: 0.9 },
   }, { timeout: 30000 });
   return response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
@@ -28,10 +28,10 @@ ESTRUTURA OBRIGATÓRIA:
 REGRAS:
 - 100% real e verificável, zero invenção
 - Tom conversacional, como se contasse pra um amigo
-- Entre 250 e 320 palavras
+- Entre 120 e 160 palavras
 - Cada execução deve trazer uma história DIFERENTE
-- A Escalada deve ter pelo menos 5 fatos, cada um mais absurdo que o anterior
-- A Virada deve ser o momento mais impactante, com 2 a 3 frases fortes
+- A Escalada deve ter 4 fatos curtos, cada um mais absurdo que o anterior
+- A Virada: 1 a 2 frases fortes
 - A Moral deve provocar reflexão genuína, não ser genérica
 
 Responda APENAS com JSON válido:
