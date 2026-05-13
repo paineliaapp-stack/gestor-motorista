@@ -34,11 +34,11 @@ ESTRUTURA OBRIGATÓRIA:
 REGRAS:
 - 100% real e verificável, zero invenção
 - Tom conversacional, como se contasse pra um amigo
-- Entre 120 e 160 palavras
+- Entre 220 e 280 palavras
 - Cada execução deve trazer uma história DIFERENTE
-- A Escalada deve ter 4 fatos curtos, cada um mais absurdo que o anterior
-- A Virada: 1 a 2 frases fortes
-- A Moral deve provocar reflexão genuína, não ser genérica
+- A Escalada deve ter 5 fatos reais e absurdos, cada um mais surpreendente que o anterior, com detalhes específicos (nomes, datas, números)
+- A Virada deve ser o momento mais impactante, com 2 a 3 frases fortes e detalhadas
+- A Moral deve provocar reflexão genuína com uma perspectiva inesperada, não ser genérica
 
 Responda APENAS com JSON válido:
 {
