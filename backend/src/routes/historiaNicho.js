@@ -52,7 +52,7 @@ ESTRUTURA OBRIGATÓRIA:
 REGRAS ABSOLUTAS:
 - 100% real e verificável, zero invenção
 - Tom conversacional, como se contasse pra um amigo
-- Entre 120 e 150 palavras
+- Entre 220 e 280 palavras, com detalhes específicos (nomes, datas, números reais)
 - NUNCA repita as histórias já listadas acima
 - Varie épocas: ancient, medieval, século XIX, XX, XXI
 - Varie países e culturas
