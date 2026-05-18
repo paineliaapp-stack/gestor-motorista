@@ -308,7 +308,7 @@ document.addEventListener('touchend', function(e){ var now=Date.now(); if(now-lt
     <div class="sc tg" data-g="💰"><div class="sc-l">Ganhos do mês</div><div class="sc-v gn" id="c-ganhos">R$ 0,00</div><div class="sc-s">bruto total</div></div>
     <div class="sc tr" data-g="💸"><div class="sc-l">Despesas</div><div class="sc-v rd" id="c-despesas">R$ 0,00</div><div class="sc-s">todas as categorias</div></div>
     <div class="sc ta" data-g="✨"><div class="sc-l">Lucro real</div><div class="sc-v am" id="c-lucro">R$ 0,00</div><div class="sc-s">o que sobrou</div></div>
-    <div class="sc tb" data-g="⏱️"><div class="sc-l">Por hora</div><div class="sc-v bl" id="c-hora">R$ 0,00</div><div class="sc-s">ganho médio</div></div>
+    <div class="sc tb" data-g="💳"><div class="sc-l">Contas a pagar</div><div class="sc-v rd" id="c-contas-pend">R$ 0,00</div><div class="sc-s">total pendente</div></div>
   </div>
 
   <!-- GRAFICOS -->
@@ -627,10 +627,13 @@ async function loadDash(){
     const pctLucro=100-pctDesp;
     if(gPizza)gPizza.destroy();
     gPizza=new Chart(document.getElementById('g-pizza'),{type:'doughnut',data:{labels:['Lucro','Despesas'],datasets:[{data:[pctLucro,pctDesp],backgroundColor:['#2ECC8F','#FF4D6A'],borderWidth:0,hoverOffset:4}]},options:{cutout:'72%',plugins:{legend:{labels:{color:'#888',font:{size:11}}},datalabels:{color:'#fff',font:{size:13,weight:'bold'},formatter:(v)=>v>3?v.toFixed(0)+'%':''}},animation:{animateRotate:true}}});
-    const pd={};todosLanc.forEach(l=>{if(!pd[l.data])pd[l.data]=0;if(l.tipo==='ganho')pd[l.data]+=parseFloat(l.valor)});
-    const dias=Object.keys(pd).sort();
+    const hoje14=new Date();
+    const ultDias=[];
+    for(let i=13;i>=0;i--){const dd=new Date(hoje14);dd.setDate(dd.getDate()-i);ultDias.push(dd.toISOString().slice(0,10));}
+    const pd={};ultDias.forEach(d=>pd[d]=0);
+    todosLanc.forEach(l=>{if(l.tipo==='ganho'&&pd[l.data]!==undefined)pd[l.data]+=parseFloat(l.valor);});
     if(gLinha)gLinha.destroy();
-    gLinha=new Chart(document.getElementById('g-linha'),{type:'line',data:{labels:dias.map(x=>x.slice(5)),datasets:[{label:'Ganhos',data:dias.map(x=>pd[x]),borderColor:'#F5A623',backgroundColor:'rgba(245,166,35,.08)',fill:true,tension:.4,pointBackgroundColor:'#F5A623',pointRadius:3}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#555'},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#555'},grid:{color:'rgba(255,255,255,.04)'}}}}});
+    gLinha=new Chart(document.getElementById('g-linha'),{type:'bar',data:{labels:ultDias.map(x=>x.slice(8)+'/'+x.slice(5,7)),datasets:[{label:'Ganhos',data:ultDias.map(x=>pd[x]),backgroundColor:ultDias.map(x=>pd[x]>0?'rgba(245,166,35,.7)':'rgba(255,255,255,.05)'),borderColor:ultDias.map(x=>pd[x]>0?'#F5A623':'rgba(255,255,255,.08)'),borderWidth:1,borderRadius:4}]},options:{plugins:{legend:{display:false},datalabels:{display:false}},scales:{x:{ticks:{color:'#555',maxRotation:0,font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#555'},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
     const ct={};todosLanc.filter(l=>l.tipo==='despesa').forEach(l=>{const k=l.descricao||'outros';ct[k]=(ct[k]||0)+parseFloat(l.valor)});
     const mx=Math.max(...Object.values(ct),1);
     const el=document.getElementById('barras-cat');el.innerHTML='';
@@ -966,9 +969,13 @@ async function loadContasDash() {
     const data = await r.json();
     const el = document.getElementById('contas-dash-lista');
     if (!el) return;
-    const pendentes = (data.contas||data||[]).filter(c=>!c.pago).slice(0,4);
-    if (!pendentes.length) { el.innerHTML='<span style="color:var(--mt)">Nenhuma conta pendente ✅</span>'; return; }
-    el.innerHTML = pendentes.map(c=>{
+    const pendentes = (data.contas||data||[]).filter(c=>!c.pago);
+    const totalPend = pendentes.reduce((s,c)=>s+(parseFloat(c.valor)-parseFloat(c.valor_pago||0)),0);
+    const cardPend = document.getElementById('c-contas-pend');
+    if(cardPend) cardPend.textContent = 'R$ '+totalPend.toFixed(2).replace('.',',');
+    const pendentes4 = pendentes.slice(0,4);
+    if (!pendentes4.length) { el.innerHTML='<span style="color:var(--mt)">Nenhuma conta pendente ✅</span>'; return; }
+    el.innerHTML = pendentes4.map(c=>{
       const dias = Math.ceil((new Date(c.vencimento)-new Date())/(1000*60*60*24));
       const cor = dias<0?'#e74c3c':dias<=3?'#f39c12':'var(--tx)';
       return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--b)">'
