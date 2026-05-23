@@ -10,7 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <style>
-:root{--bg:#080c10;--s:rgba(255,255,255,.04);--s2:rgba(255,255,255,.07);--b:rgba(255,255,255,.08);--b2:rgba(255,255,255,.14);--am:#F5A623;--am-d:rgba(245,166,35,.08);--gn:#2ECC8F;--gn-g:rgba(46,204,143,.15);--rd:#FF4D6A;--rd-g:rgba(255,77,106,.15);--bl:#5B9CF6;--tx:#F0EDE8;--mt:rgba(240,237,232,.45);--mt2:rgba(240,237,232,.22)}
+:root{--bg:#080c10;--s:rgba(255,255,255,.04);--s2:rgba(255,255,255,.07);--b:rgba(255,255,255,.08);--b2:rgba(255,255,255,.14);--am:#F5A623;--am-d:rgba(245,166,35,.08);--gn:#2ECC8F;--gn-g:rgba(46,204,143,.15);--rd:#FF4D6A;--rd-g:rgba(255,77,106,.15);--bl:#5B9CF6;--tx:#F0EDE8;--mt:rgba(240,237,232,.45);--mt2:rgba(240,237,232,.22);--pp:#6c63ff}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;overflow-x:hidden}
 .ob{position:fixed;inset:0;background:#080c10;z-index:999;display:flex;align-items:center;justify-content:center;padding:24px}
@@ -172,9 +172,25 @@ document.addEventListener('touchmove', function(e){ if(e.touches.length>1) e.pre
 var lt=0;
 document.addEventListener('touchend', function(e){ var now=Date.now(); if(now-lt<300) e.preventDefault(); lt=now; }, {passive:false});
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const _supa = supabase.createClient(
+  'https://xtihcmzjwklfsfgsdpww.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0aWhjbXpqd2tsZnNmZ3NkcHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4OTQ3NjUsImV4cCI6MjA5NDQ3MDc2NX0.gdkIbko-Ig8yROXP2LMgUVwCbC2UnHOLxzb0u8AZChk',
+);
+</script>
+
 </head>
 <body>
-
+<div id="tela-login" style="display:none;position:fixed;inset:0;background:#0f0f0f;z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:24px">
+  <div style="font-size:48px">🚗</div>
+  <div style="font-size:28px;font-weight:700;color:#fff">Painel<span style="color:#6c63ff">.IA</span></div>
+  <div style="font-size:14px;color:#888;text-align:center;max-width:280px">Gestão financeira inteligente para motoristas de app</div>
+  <button onclick="loginGoogle()" style="display:flex;align-items:center;gap:12px;background:#fff;color:#333;border:none;padding:14px 28px;border-radius:50px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;box-shadow:0 4px 20px rgba(0,0,0,.3)">
+    <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+    Entrar com Google
+  </button>
+</div>
 <div class="ob" id="onboarding" style="display:none">
   <div class="ob-box">
     <div class="ob-logo"><div class="ob-mark">🚗</div>Painel<span style="color:#F5A623">.IA</span></div>
@@ -270,7 +286,7 @@ document.addEventListener('touchend', function(e){ var now=Date.now(); if(now-lt
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if(!SpeechRecognition){ document.getElementById('mic-btn').style.display='none'; return; }
       let rec = null, listening = false;
-      window.toggleMic = function(){
+      window.toggleMic = async function(){
         const btn = document.getElementById('mic-btn');
         const inp = document.getElementById('dash-chat-input');
         if(listening){
@@ -284,14 +300,14 @@ document.addEventListener('touchend', function(e){ var now=Date.now(); if(now-lt
         rec.maxAlternatives = 1;
         rec.onstart = () => { listening=true; btn.textContent='🔴'; btn.style.background='rgba(255,50,50,.25)'; btn.style.border='1px solid rgba(255,80,80,.5)'; };
         rec.onend   = () => { listening=false; btn.textContent='🎤'; btn.style.background='rgba(255,255,255,.07)'; btn.style.border='1px solid rgba(255,255,255,.12)'; };
-        rec.onerror = () => { listening=false; btn.textContent='🎤'; btn.style.background='rgba(255,255,255,.07)'; btn.style.border='1px solid rgba(255,255,255,.12)'; };
+        rec.onerror = (ev) => { listening=false; btn.textContent='🎤'; btn.style.background='rgba(255,255,255,.07)'; btn.style.border='1px solid rgba(255,255,255,.12)'; console.warn('mic erro:', ev.error); };
         rec.onresult = (e) => {
-          const txt = e.results[0][0].transcript;
-          inp.value = txt;
+          const t = e.results[0][0].transcript;
+          inp.value = t;
           rec.stop();
           setTimeout(()=>sendDashChat(), 300);
         };
-        rec.start();
+        try { rec.start(); } catch(e) { console.warn('mic start erro:', e); }
       };
     })();
     </script>
@@ -316,6 +332,7 @@ document.addEventListener('touchend', function(e){ var now=Date.now(); if(now-lt
     <div class="gc"><h3>Lucro vs Despesas</h3><canvas id="g-pizza" height="200"></canvas></div>
     <div class="gc"><h3>Evolução diária</h3><canvas id="g-linha" height="200"></canvas></div>
   </div>
+  <div class="gc"><h3>Faturamento por plataforma</h3><canvas id="g-plataforma" height="80"></canvas></div>
   <div class="gc"><h3>Despesas por categoria</h3><div id="barras-cat" style="margin-top:6px"></div></div>
 </div>
 
@@ -332,7 +349,7 @@ document.addEventListener('touchend', function(e){ var now=Date.now(); if(now-lt
       <div class="fr">
         <div class="fg"><label>Plataforma</label>
           <select id="f-plat"><option value="uber">Uber</option><option value="99">99</option><option value="indrive">InDrive</option><option value="outro">Outro</option></select></div>
-        <div class="fg"><label>Valor (R$)</label><input type="number" id="f-val" placeholder="0,00" step="0.01" min="0"></div>
+        <div class="fg"><label>Valor (R$)</label><input type="number" id="f-val" placeholder="0,00" step="0.01" min="0" onkeydown="if(event.key==='Enter'){salvar()}"></div>
       </div>
       <div class="fr">
         <div class="fg"><label>Horas rodadas</label><input type="number" id="f-hrs" placeholder="Ex: 6" step="0.5" min="0"></div>
@@ -340,11 +357,11 @@ document.addEventListener('touchend', function(e){ var now=Date.now(); if(now-lt
       </div>
     </div>
     <div id="area-despesa" style="display:none">
-      <div class="fg" style="margin-bottom:14px"><label>Valor (R$)</label><input type="number" id="f-val-d" placeholder="0,00" step="0.01" min="0"></div>
+      <div class="fg" style="margin-bottom:14px"><label>Valor (R$)</label><input type="number" id="f-val-d" placeholder="0,00" step="0.01" min="0" onkeydown="if(event.key==='Enter'){salvar()}"></div>
       <div class="fg" style="margin-bottom:10px"><label>Categoria</label></div>
       <div class="cg" id="cat-grid"></div>
     </div>
-    <div class="fg" style="margin-bottom:18px"><label>Observação</label><input type="text" id="f-obs" placeholder="opcional..."></div>
+    <div class="fg" style="margin-bottom:18px"><label>Observação</label><input type="text" id="f-obs" placeholder="opcional..." onkeydown="if(event.key==='Enter'){salvar()}"></div>
     <button class="bsave" onclick="salvar()">Salvar lançamento →</button>
   </div>
 </div>
@@ -379,6 +396,10 @@ document.addEventListener('touchend', function(e){ var now=Date.now(); if(now-lt
   <div class="gc"><h3>Estatísticas do mês</h3><div id="cal-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px"></div></div>
 </div>
 
+<style>
+.ranking-blur{position:relative;overflow:hidden;border-radius:12px}
+.ranking-blur::after{content:"🏆 Em breve — Compete com motoristas da sua região e veja quem fatura mais na cidade";position:absolute;inset:0;background:rgba(10,10,20,.88);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;font-size:15px;font-weight:600;line-height:1.8;padding:24px;border-radius:12px}
+</style>
 <div class="page" id="page-corrida">
   <div class="ph"><div><h1>Corrida</h1><div class="sub">Compete com motoristas da sua região</div></div></div>
   <div class="sk"><div class="sk-flame">🔥</div><div class="sk-info"><h3 id="streak-num">0 dias</h3><p id="streak-desc">Sequência ativa — continue!</p></div></div>
@@ -388,7 +409,7 @@ document.addEventListener('touchend', function(e){ var now=Date.now(); if(now-lt
     <div class="ch-meta"><span>Progresso: <strong id="ch-prog">R$ 0,00</strong></span><span>Meta: <strong>R$ 1.500,00</strong></span></div>
   </div>
   <div class="comp-grid">
-    <div class="gc"><h3>🏆 Ranking semanal</h3><div class="rk-list" id="ranking-list"></div></div>
+    <div class="gc ranking-blur"><h3>🏆 Ranking semanal</h3><div class="rk-list" id="ranking-list"></div></div>
     
 <div class="gc" id="card-contas-dash" style="cursor:pointer" onclick="goPage(document.querySelector('.ni:nth-child(7)'),'contas')">
   <h3>📅 Contas a Pagar</h3>
@@ -455,12 +476,12 @@ document.addEventListener('touchend', function(e){ var now=Date.now(); if(now-lt
   </div>
 </div>
 </main></div>
-<div class="toast" id="toast">
+<div class="toast" id="toast"></div>
 
 <script>
-Chart.register(ChartDataLabels);const API='https://gestor-motorista-production.up.railway.app';
-let MID=localStorage.getItem('mid');
-let NOME=localStorage.getItem('nome')||'Motorista';
+try{Chart.register(ChartDataLabels);}catch(e){}const API='https://gestor-motorista-production.up.railway.app';
+let MID=null;
+let NOME='Motorista';
 let META_DIARIA=parseFloat(localStorage.getItem('meta')||'150');
 let tipoAtual='ganho',catAtual='',todosLanc=[];
 let gPizza=null,gLinha=null;
@@ -527,7 +548,7 @@ async function obFim(){
     const r=await fetch(API+'/motoristas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,telefone:tel})});
     const data=await r.json();
     MID=data[0].id;
-    localStorage.setItem('mid',MID);
+    // mid agora vem do Google Auth
     localStorage.setItem('nome',nome);
     localStorage.setItem('meta',obMeta);
     META_DIARIA=obMeta;
@@ -616,13 +637,13 @@ async function loadDash(){
     document.getElementById('c-ganhos').textContent=fmt(d.ganhos);
     document.getElementById('c-despesas').textContent=fmt(d.despesas);
     document.getElementById('c-lucro').textContent=fmt(d.lucro);
-    document.getElementById('c-hora').textContent=fmt(d.ganho_por_hora);
+    // c-hora removido
     const hoje=new Date().toISOString().slice(0,10);
     const ganhoHoje=todosLanc.filter(l=>l.data===hoje&&l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
     const pct=Math.min(100,Math.round(ganhoHoje/META_DIARIA*100));
     document.getElementById('meta-fill').style.width=pct+'%';
     document.getElementById('meta-pct').textContent=pct+'%';
-    document.getElementById('dash-sub').textContent='Hoje: '+fmt(ganhoHoje)+' de '+fmt(META_DIARIA)+' de meta';
+    const dashSub=document.getElementById('dash-sub'); if(dashSub) dashSub.textContent='Hoje: '+fmt(ganhoHoje)+' de '+fmt(META_DIARIA)+' de meta';
     const pctDesp=d.ganhos>0?Math.min(100,d.despesas/d.ganhos*100):0;
     const pctLucro=100-pctDesp;
     if(gPizza)gPizza.destroy();
@@ -634,6 +655,21 @@ async function loadDash(){
     todosLanc.forEach(l=>{if(l.tipo==='ganho'&&pd[l.data]!==undefined)pd[l.data]+=parseFloat(l.valor);});
     if(gLinha)gLinha.destroy();
     gLinha=new Chart(document.getElementById('g-linha'),{type:'bar',data:{labels:ultDias.map(x=>x.slice(8)+'/'+x.slice(5,7)),datasets:[{label:'Ganhos',data:ultDias.map(x=>pd[x]),backgroundColor:ultDias.map(x=>pd[x]>0?'rgba(245,166,35,.7)':'rgba(255,255,255,.05)'),borderColor:ultDias.map(x=>pd[x]>0?'#F5A623':'rgba(255,255,255,.08)'),borderWidth:1,borderRadius:4}]},options:{plugins:{legend:{display:false},datalabels:{display:false}},scales:{x:{ticks:{color:'#555',maxRotation:0,font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#555'},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
+
+    // Gráfico faturamento por plataforma
+    const plat={uber:0,'99':0,indrive:0,outros:0};
+    todosLanc.filter(l=>l.tipo==='ganho').forEach(l=>{
+      const p=(l.plataforma||'').toLowerCase();
+      if(p==='uber')plat.uber+=parseFloat(l.valor);
+      else if(p==='99')plat['99']+=parseFloat(l.valor);
+      else if(p==='indrive')plat.indrive+=parseFloat(l.valor);
+      else plat.outros+=parseFloat(l.valor);
+    });
+    const platLabels=['Uber','99','inDrive','Outros'];
+    const platVals=[plat.uber,plat['99'],plat.indrive,plat.outros];
+    const platColors=['rgba(0,180,120,.8)','rgba(255,77,106,.8)','rgba(99,102,241,.8)','rgba(245,166,35,.8)'];
+    if(window.gPlat)window.gPlat.destroy();
+    window.gPlat=new Chart(document.getElementById('g-plataforma'),{type:'bar',data:{labels:platLabels,datasets:[{data:platVals,backgroundColor:platColors,borderWidth:0,borderRadius:6}]},options:{indexAxis:'y',plugins:{legend:{display:false},datalabels:{display:false}},scales:{x:{ticks:{color:'#555',callback:(v)=>'R$'+v.toLocaleString('pt-BR')},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true},y:{ticks:{color:'#aaa',font:{size:12}},grid:{display:false}}}}});
     const ct={};todosLanc.filter(l=>l.tipo==='despesa').forEach(l=>{const k=l.descricao||'outros';ct[k]=(ct[k]||0)+parseFloat(l.valor)});
     const mx=Math.max(...Object.values(ct),1);
     const el=document.getElementById('barras-cat');el.innerHTML='';
@@ -753,7 +789,7 @@ async function init(){
   const metaSalva=localStorage.getItem('meta');
   if(metaSalva)META_DIARIA=parseFloat(metaSalva);
   if(!MID){
-    document.getElementById('onboarding').style.display='flex';
+    document.getElementById('tela-login').style.display='flex';
     return;
   }
   document.getElementById('user-nome').textContent=NOME.split(' ')[0];
@@ -1042,6 +1078,79 @@ function quickDashChat(txt) {
 }
 </script>
 
-<script>init();</script>
+
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs=>{
+    regs.forEach(r=>r.unregister());
+  });
+}
+
+</script>
+<script>
+async function loginGoogle(){
+  await _supa.auth.signInWithOAuth({
+    provider:'google',
+    options:{redirectTo:'https://gestor-motorista-production.up.railway.app'}
+  });
+}
+
+async function checkAuth(){
+  console.log('checkAuth chamado');
+  console.log('hash:', window.location.hash);
+  console.log('search:', window.location.search);
+  const {data:{session}} = await _supa.auth.getSession();
+  console.log('session:', JSON.stringify(session));
+  if(session && session.user){
+    window.MID = session.user.id;
+    const nome = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário';
+    const el = document.getElementById('user-nome');
+    if(el) el.textContent = nome;
+    const telaLogin = document.getElementById('tela-login');
+    if(telaLogin) telaLogin.style.display='none';
+    console.log('MID definido:', window.MID);
+    if(typeof init === 'function') init();
+  } else {
+    console.log('sem sessao, mostrando login');
+    const telaLogin = document.getElementById('tela-login');
+    if(telaLogin) telaLogin.style.display='flex';
+  }
+}
+
+_supa.auth.onAuthStateChange((event, session)=>{
+  if(event === 'SIGNED_IN' && session){
+    window.MID = session.user.id;
+    const nome = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário';
+    const el = document.getElementById('user-nome');
+    if(el) el.textContent = nome;
+    NOME = nome;
+    const telaLogin = document.getElementById('tela-login');
+    if(telaLogin) telaLogin.remove();
+    if(typeof init === 'function') init();
+  }
+  if(event === 'SIGNED_OUT'){
+    window.MID = null;
+    const telaLogin = document.getElementById('tela-login');
+    if(telaLogin) telaLogin.style.display='flex';
+  }
+});
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  // onAuthStateChange cuida de SIGNED_IN após redirect OAuth
+  // Aqui só verificamos se já existe sessão ativa
+  const {data:{session}} = await _supa.auth.getSession();
+  if(session && session.user){
+    window.MID = session.user.id;
+    NOME = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário';
+    const el = document.getElementById('user-nome');
+    if(el) el.textContent = NOME;
+    const tl = document.getElementById('tela-login');
+    if(tl) tl.remove();
+    if(typeof init === 'function') init();
+  } else {
+    document.getElementById('tela-login').style.display='flex';
+  }
+});
+</script>
 </body>
 </html>
