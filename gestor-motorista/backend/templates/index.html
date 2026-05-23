@@ -592,7 +592,7 @@ function buildCatGrid(){
 }
 
 async function salvar(){
-  if(!MID){toast('Faça o cadastro primeiro',false);return}
+  if(!MID&&!window.MID){toast('Faça o cadastro primeiro',false);return}
   let body={motorista_id:MID,tipo:tipoAtual,data:new Date().toISOString().slice(0,10)};
   if(tipoAtual==='ganho'){
     body.valor=parseFloat(document.getElementById('f-val').value)||0;
