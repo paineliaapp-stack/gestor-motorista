@@ -971,7 +971,7 @@ async function sendChat() {
     const res = await fetch(API + '/chat', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({mid: MID, mensagem: msg, historico: chatHistory.slice(-10)})
+      body: JSON.stringify({mid: MID||window.MID, mensagem: msg, historico: chatHistory.slice(-10)})
     });
     const data = await res.json();
     document.getElementById('typing-indicator')?.remove();
@@ -1042,7 +1042,7 @@ function appendDashMsg(role, text) {
 async function sendDashChat() {
   const inp = document.getElementById('dash-chat-input');
   const msg = inp.value.trim();
-  if (!msg || !MID) return;
+  if (!msg || !MID && !window.MID) return;
   inp.value = '';
   appendDashMsg('user', msg);
   dashChatHistory.push({role:'user', content: msg});
@@ -1057,7 +1057,7 @@ async function sendDashChat() {
     const res = await fetch(API + '/chat', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({mid: MID, mensagem: msg, historico: dashChatHistory.slice(-6)})
+      body: JSON.stringify({mid: MID||window.MID, mensagem: msg, historico: dashChatHistory.slice(-6)})
     });
     const data = await res.json();
     document.getElementById('dash-typing')?.remove();
