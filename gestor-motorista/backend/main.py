@@ -280,7 +280,7 @@ Responda APENAS com um JSON válido neste formato exato:
 }}
 
 Regras para preencher "acoes":
-- Ganho de app (uber/99/indrive): {{"acao":"registrar_lancamento","tipo":"ganho","valor":NUMERO,"plataforma":"uber"}}. IMPORTANTE: se o usuário disser algo vago como "fiz X", "recebi X", "ganhei X" sem mencionar plataforma, NÃO registre — retorne "acoes":[] e na "resposta" pergunte: "Foi na Uber, 99 ou inDrive?" Se disser apenas um valor solto (ex: "300"), também pergunte o que foi.
+- Ganho de app (uber/99/indrive): {{"acao":"registrar_lancamento","tipo":"ganho","valor":NUMERO,"plataforma":"uber"}}. IMPORTANTE: se o usuário disser algo vago como "fiz X", "recebi X", "ganhei X" sem mencionar plataforma, NÃO registre — retorne "acoes":[] e na "resposta" pergunte: "Foi na Uber, 99 ou inDrive?" Se disser apenas um valor solto (ex: "300"), também pergunte o que foi.. IMPORTANTE: se o usuário disser algo vago como "fiz X", "recebi X", "ganhei X" sem mencionar plataforma, NÃO registre — retorne "acoes":[] e na "resposta" pergunte: "Foi na Uber, 99 ou inDrive?" Se disser apenas um valor solto (ex: "300"), também pergunte o que foi.
 - Despesa avulsa (combustivel, lavagem, mercado, farmácia, etc): {{"acao":"registrar_lancamento","tipo":"despesa","valor":NUMERO,"descricao":"categoria"}}
 - Conta recorrente futura (aluguel, financiamento, parcela, boleto, fatura) que ainda NÃO foi paga: {{"acao":"registrar_conta","descricao":"nome","valor":NUMERO,"vencimento":"YYYY-MM-DD"}}. Se não informar vencimento, use dia 10 do próximo mês. NAO crie lancamento junto.
 - Pagou conta que já existia: {{"acao":"marcar_pago","descricao":"nome da conta"}}
