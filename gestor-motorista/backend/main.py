@@ -281,9 +281,10 @@ Responda APENAS com um JSON válido neste formato exato:
 
 Regras para preencher "acoes":
 - Ganho de app (uber/99/indrive): {{"acao":"registrar_lancamento","tipo":"ganho","valor":NUMERO,"plataforma":"uber"}}
-- Despesa: {{"acao":"registrar_lancamento","tipo":"despesa","valor":NUMERO,"descricao":"categoria"}}
-- Conta futura (aluguel, financiamento, parcela, boleto, fatura): {{"acao":"registrar_conta","descricao":"nome","valor":NUMERO,"vencimento":"YYYY-MM-DD"}}. Se o usuário não informar vencimento, use o dia 10 do próximo mês. NAO crie lancamento junto — o lançamento só é criado quando a conta for paga.
-- Pagou conta: {{"acao":"marcar_pago","descricao":"nome da conta"}}
+- Despesa avulsa (combustivel, lavagem, mercado, farmácia, etc): {{"acao":"registrar_lancamento","tipo":"despesa","valor":NUMERO,"descricao":"categoria"}}
+- Conta recorrente futura (aluguel, financiamento, parcela, boleto, fatura) que ainda NÃO foi paga: {{"acao":"registrar_conta","descricao":"nome","valor":NUMERO,"vencimento":"YYYY-MM-DD"}}. Se não informar vencimento, use dia 10 do próximo mês. NAO crie lancamento junto.
+- Pagou conta que já existia: {{"acao":"marcar_pago","descricao":"nome da conta"}}
+- Pagou conta recorrente diretamente (ex: "paguei 900 de aluguel", "paguei 4 parcelas de 160"): use DUAS ações — primeiro {{"acao":"registrar_conta","descricao":"nome","valor":NUMERO,"vencimento":"hoje","pago":true}} depois {{"acao":"registrar_lancamento","tipo":"despesa","valor":NUMERO,"descricao":"categoria"}}
 - Abateu conta: {{"acao":"abater_conta","descricao":"nome","valor_pago":NUMERO}}
 - Desfazer último: {{"acao":"deletar_ultimo_lancamento","tipo":"ganho ou despesa"}}
 - Corrigir valor: {{"acao":"editar_ultimo_lancamento","tipo":"despesa","campo":"valor","novo_valor":NUMERO,"descricao":"categoria_ou_nome_da_conta"}}
