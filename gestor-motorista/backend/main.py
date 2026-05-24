@@ -426,7 +426,7 @@ Categorias de despesa: combustivel, manutencao, aluguel_carro, financiamento, se
                     "descricao": acao.get("descricao", ""),
                     "valor": float(acao.get("valor", 0)),
                     "vencimento": acao.get("vencimento", __import__("datetime").date.today().isoformat()),
-                    "pago": False
+                    "pago": bool(acao.get("pago", False))
                 }).execute()
                 acoes_executadas.append("conta_registrada")
             elif acao.get("acao") == "marcar_pago":
