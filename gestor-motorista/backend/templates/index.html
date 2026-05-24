@@ -12,7 +12,7 @@
 <style>
 *{box-sizing:border-box}html{height:100%;overflow:hidden}body{height:100%;overflow:hidden}:root{--bg:#080c10;--s:rgba(255,255,255,.04);--s2:rgba(255,255,255,.07);--b:rgba(255,255,255,.08);--b2:rgba(255,255,255,.14);--am:#F5A623;--am-d:rgba(245,166,35,.08);--gn:#2ECC8F;--gn-g:rgba(46,204,143,.15);--rd:#FF4D6A;--rd-g:rgba(255,77,106,.15);--bl:#5B9CF6;--tx:#F0EDE8;--mt:rgba(240,237,232,.45);--mt2:rgba(240,237,232,.22);--pp:#6c63ff}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;overflow-x:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);height:100%;overflow:hidden}
 .ob{position:fixed;inset:0;background:#080c10;z-index:999;display:flex;align-items:center;justify-content:center;padding:24px}
 .ob-box{width:100%;max-width:420px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:40px 36px}
 .ob-logo{display:flex;align-items:center;gap:10px;font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:32px}
@@ -787,6 +787,8 @@ async function loadCorrida(){
 }
 
 async function init(){
+  dashChatHistory=(()=>{try{const s=localStorage.getItem(getDashHistoryKey());return s?JSON.parse(s):[]}catch{return[]}})();
+  (()=>{dashChatHistory.forEach(m=>{if(m.role&&m.content)appendDashMsg(m.role,m.content)})})();
   const metaSalva=localStorage.getItem('meta');
   if(metaSalva)META_DIARIA=parseFloat(metaSalva);
   if(!MID){
@@ -1025,7 +1027,8 @@ async function loadContasDash() {
 </script>
 
 <script>
-let dashChatHistory = (()=>{try{const s=localStorage.getItem('dashHistory');return s?JSON.parse(s):[]}catch{return[]}})();
+function getDashHistoryKey(){return 'dashHistory_'+(MID||'anon');}
+let dashChatHistory = [];
 (()=>{dashChatHistory.forEach(m=>{if(m.role&&m.content)appendDashMsg(m.role,m.content)})})();
 
 function appendDashMsg(role, text) {
@@ -1066,7 +1069,7 @@ async function sendDashChat() {
     const reply = data.resposta || 'Sem resposta';
     appendDashMsg('assistant', reply);
     dashChatHistory.push({role:'assistant', content: reply});
-    try{localStorage.setItem('dashHistory',JSON.stringify(dashChatHistory.slice(-20)))}catch{}
+    try{localStorage.setItem(getDashHistoryKey(),JSON.stringify(dashChatHistory.slice(-20)))}catch{}
     // Sempre recarrega dados após resposta da IA
     loadDash(); loadContasDash(); if(document.getElementById("page-contas").classList.contains("active")) loadContas();
   } catch(e) {
