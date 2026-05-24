@@ -280,8 +280,8 @@ Responda APENAS com um JSON válido neste formato exato:
 }}
 
 Regras para preencher "acoes":
-- Ganho de app (uber/99/indrive): {{"acao":"registrar_lancamento","tipo":"ganho","valor":NUMERO,"plataforma":"uber"}}. IMPORTANTE: se o usuário disser algo vago como "fiz X", "recebi X", "ganhei X" sem mencionar plataforma, NÃO registre — retorne "acoes":[] e na "resposta" pergunte: "Foi na Uber, 99 ou inDrive?" Se disser apenas um valor solto (ex: "300"), também pergunte o que foi.. IMPORTANTE: se o usuário disser algo vago como "fiz X", "recebi X", "ganhei X" sem mencionar plataforma, NÃO registre — retorne "acoes":[] e na "resposta" pergunte: "Foi na Uber, 99 ou inDrive?" Se disser apenas um valor solto (ex: "300"), também pergunte o que foi.
-- Despesa avulsa (combustivel, lavagem, mercado, farmácia, etc): {{"acao":"registrar_lancamento","tipo":"despesa","valor":NUMERO,"descricao":"categoria"}}
+- Ganho de app (uber/99/indrive): {{"acao":"registrar_lancamento","tipo":"ganho","valor":NUMERO,"plataforma":"uber","data":"YYYY-MM-DD"}}. Se o usuário disser "ontem", use a data de ontem. Se disser "hoje" ou não mencionar data, use a data de hoje.. IMPORTANTE: se o usuário disser algo vago como "fiz X", "recebi X", "ganhei X" sem mencionar plataforma, NÃO registre — retorne "acoes":[] e na "resposta" pergunte: "Foi na Uber, 99 ou inDrive?" Se disser apenas um valor solto (ex: "300"), também pergunte o que foi.. IMPORTANTE: se o usuário disser algo vago como "fiz X", "recebi X", "ganhei X" sem mencionar plataforma, NÃO registre — retorne "acoes":[] e na "resposta" pergunte: "Foi na Uber, 99 ou inDrive?" Se disser apenas um valor solto (ex: "300"), também pergunte o que foi.
+- Despesa avulsa (combustivel, lavagem, mercado, farmácia, etc): {{"acao":"registrar_lancamento","tipo":"despesa","valor":NUMERO,"descricao":"categoria","data":"YYYY-MM-DD"}}. Se o usuário disser "ontem", use a data de ontem.
 - Conta recorrente futura (aluguel, financiamento, parcela, boleto, fatura) que ainda NÃO foi paga: {{"acao":"registrar_conta","descricao":"nome","valor":NUMERO,"vencimento":"YYYY-MM-DD"}}. Se não informar vencimento, use dia 10 do próximo mês. NAO crie lancamento junto.
 - Pagou conta que já existia: {{"acao":"marcar_pago","descricao":"nome da conta"}}
 - Pagou conta recorrente diretamente (ex: "paguei 900 de aluguel", "paguei 4 parcelas de 160"): use DUAS ações — primeiro {{"acao":"registrar_conta","descricao":"nome","valor":NUMERO,"vencimento":"hoje","pago":true}} depois {{"acao":"registrar_lancamento","tipo":"despesa","valor":NUMERO,"descricao":"categoria"}}
@@ -358,12 +358,22 @@ Categorias de despesa: combustivel, manutencao, aluguel_carro, financiamento, se
             acao = linha if isinstance(linha, dict) else json.loads(linha)
             print(f"DEBUG acao={acao} motorista_id={motorista_id}")
             if acao.get("acao") == "registrar_lancamento":
-                hoje_str = __import__("datetime").date.today().isoformat()
+                import datetime as _dt
+                hoje = _dt.date.today()
+                ontem = (hoje - _dt.timedelta(days=1)).isoformat()
+                data_ia = acao.get("data", "")
+                # Resolve "ontem" literal ou usa a data fornecida pela IA, senão hoje
+                if data_ia == "ontem":
+                    data_final = ontem
+                elif data_ia and data_ia != "hoje" and len(data_ia) == 10:
+                    data_final = data_ia
+                else:
+                    data_final = hoje.isoformat()
                 dados = {
                     "motorista_id": motorista_id,
                     "tipo": acao.get("tipo", "ganho"),
                     "valor": float(acao.get("valor", 0)),
-                    "data": hoje_str
+                    "data": data_final
                 }
                 if acao.get("plataforma"): dados["plataforma"] = acao["plataforma"]
                 if acao.get("descricao"): dados["descricao"] = acao["descricao"]
