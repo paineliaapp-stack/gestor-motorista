@@ -1123,9 +1123,10 @@ _supa.auth.onAuthStateChange((event, session)=>{
     window.MID = session.user.id;
     MID = session.user.id;
     const nome = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário';
+    NOME = nome;
     const el = document.getElementById('user-nome');
     if(el) el.textContent = nome;
-    NOME = nome;
+    fetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:nome})});
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.remove();
     if(typeof init === 'function') init();

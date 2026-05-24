@@ -60,6 +60,18 @@ def criar_motorista(m: Motorista):
     res = supabase.table("motoristas").insert(m.dict()).execute()
     return res.data
 
+@app.post("/upsert-motorista")
+def upsert_motorista(dados: dict = Body(...)):
+    uid = dados.get("id")
+    nome = dados.get("nome", "Usuário")
+    try:
+        res = supabase.table("motoristas").select("id").eq("id", uid).execute()
+        if not res.data:
+            supabase.table("motoristas").insert({"id": uid, "nome": nome, "telefone": uid[:8]}).execute()
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "erro": str(e)}
+
 @app.get("/motoristas/{telefone}")
 def buscar_motorista(telefone: str):
     res = supabase.table("motoristas").select("*").eq("telefone", telefone).execute()
