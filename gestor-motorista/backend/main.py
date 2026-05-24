@@ -139,14 +139,14 @@ EVOLUTION_INSTANCE = os.getenv("EVOLUTION_INSTANCE", "painel")
 
 async def interpretar_mensagem(texto: str, motorista_id: str) -> dict:
     import json
-    prompt = f"""Você é um assistente financeiro para motoristas de app.
+    prompt = f"""Você é um assistente financeiro inteligente para motoristas de app (Uber, 99, inDrive).
 O motorista mandou: "{texto}"
 
 Extraia as informações e responda APENAS com JSON válido, sem texto extra, sem markdown:
 {{
   "tipo": "ganho" ou "despesa",
   "valor": numero float,
-  "plataforma": "uber" ou "99" ou "indrive" ou null,
+  "plataforma": "uber" ou "99" ou "indrive" ou null (se não informada, tente inferir pelo contexto ou use null),
   "descricao": categoria da despesa ou null,
   "resposta": mensagem amigável de confirmação em português
 }}
