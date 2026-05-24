@@ -243,7 +243,7 @@ const _supa = supabase.createClient(
     </div>
     <div class="chip">
       <div class="av" id="user-av">?</div>
-      <span id="user-nome">Entrar</span>
+      <span id="user-nome" onclick="async function(){await _supa.auth.signOut();location.reload()}()" style="cursor:pointer" title="Clique para sair">Entrar</span>
       <div class="dot-on"></div>
     </div>
   </div>
