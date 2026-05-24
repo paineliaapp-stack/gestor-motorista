@@ -629,6 +629,7 @@ async function deletar(id){
 }
 
 async function loadDash(){
+  if(!MID && window.MID) MID = window.MID;
   if(!MID)return;
   try{
     const r=await fetch(API+'/resumo/'+MID);
