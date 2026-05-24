@@ -421,14 +421,24 @@ Categorias de despesa: combustivel, manutencao, aluguel_carro, financiamento, se
                             acoes_executadas.append("conta_editada")
                             break
             elif acao.get("acao") == "registrar_conta":
+                pago_direto = bool(acao.get("pago", False))
                 supabase.table("contas").insert({
                     "motorista_id": motorista_id,
                     "descricao": acao.get("descricao", ""),
                     "valor": float(acao.get("valor", 0)),
                     "vencimento": acao.get("vencimento", __import__("datetime").date.today().isoformat()),
-                    "pago": bool(acao.get("pago", False))
+                    "pago": pago_direto
                 }).execute()
                 acoes_executadas.append("conta_registrada")
+                if pago_direto:
+                    supabase.table("lancamentos").insert({
+                        "motorista_id": motorista_id,
+                        "tipo": "despesa",
+                        "valor": float(acao.get("valor", 0)),
+                        "descricao": acao.get("descricao", "conta"),
+                        "data": __import__("datetime").date.today().isoformat()
+                    }).execute()
+                    acoes_executadas.append("lancamento_despesa")
             elif acao.get("acao") == "marcar_pago":
                 # Marca a conta como paga e cria lancamento de despesa
                 descricao = acao.get("descricao", "").lower()
