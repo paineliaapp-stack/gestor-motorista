@@ -1103,6 +1103,7 @@ async function checkAuth(){
   console.log('session:', JSON.stringify(session));
   if(session && session.user){
     window.MID = session.user.id;
+    MID = session.user.id;
     const nome = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário';
     const el = document.getElementById('user-nome');
     if(el) el.textContent = nome;
@@ -1120,6 +1121,7 @@ async function checkAuth(){
 _supa.auth.onAuthStateChange((event, session)=>{
   if(event === 'SIGNED_IN' && session){
     window.MID = session.user.id;
+    MID = session.user.id;
     const nome = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário';
     const el = document.getElementById('user-nome');
     if(el) el.textContent = nome;
