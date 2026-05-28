@@ -2,43 +2,69 @@
 <html lang="pt-BR">
 <head>
 <link rel="manifest" href="/static/manifest.json">
-<meta name="theme-color" content="#6c63ff">
+<meta name="theme-color" content="#F5A623">
+<link rel="icon" type="image/png" href="/static/favicon.png">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
 <title>Painel.IA</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap&v=2" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <style>
-*{box-sizing:border-box}html{height:100%;overflow:hidden}body{height:100%;overflow:hidden}:root{--bg:#080c10;--s:rgba(255,255,255,.04);--s2:rgba(255,255,255,.07);--b:rgba(255,255,255,.08);--b2:rgba(255,255,255,.14);--am:#F5A623;--am-d:rgba(245,166,35,.08);--gn:#2ECC8F;--gn-g:rgba(46,204,143,.15);--rd:#FF4D6A;--rd-g:rgba(255,77,106,.15);--bl:#5B9CF6;--tx:#F0EDE8;--mt:rgba(240,237,232,.45);--mt2:rgba(240,237,232,.22);--pp:#6c63ff}
+*{box-sizing:border-box}html{height:100%;overflow:hidden}body{height:100%;overflow:hidden}:root{
+  --bg:#07090d;
+  --bg2:#0d1117;
+  --s:rgba(255,255,255,.03);
+  --s2:rgba(255,255,255,.06);
+  --b:rgba(255,255,255,.07);
+  --b2:rgba(255,255,255,.12);
+  --am:#F0B429;
+  --am2:#FFD166;
+  --am-d:rgba(240,180,41,.07);
+  --am-g:linear-gradient(135deg,#F0B429,#C47A0A);
+  --gn:#00D897;
+  --gn-g:rgba(0,216,151,.12);
+  --rd:#FF4560;
+  --rd-g:rgba(255,69,96,.12);
+  --bl:#4E9EFF;
+  --tx:#EEE9E0;
+  --mt:rgba(238,233,224,.4);
+  --mt2:rgba(238,233,224,.2);
+  --card-r:14px;
+  --gap:12px;
+}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);height:100%;overflow:hidden}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--tx);height:100%;overflow:hidden}
 .ob{position:fixed;inset:0;background:#080c10;z-index:999;display:flex;align-items:center;justify-content:center;padding:24px}
 .ob-box{width:100%;max-width:420px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:40px 36px}
-.ob-logo{display:flex;align-items:center;gap:10px;font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:32px}
+.ob-logo{display:flex;align-items:center;gap:10px;font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;margin-bottom:32px}
 .ob-mark{width:40px;height:40px;background:linear-gradient(135deg,#F5A623,#C47A0A);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
-.ob-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px}
+.ob-title{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px}
 .ob-sub{font-size:13px;color:rgba(240,237,232,.45);margin-bottom:28px;line-height:1.6}
 .ob-step{display:none}.ob-step.active{display:block}
 .ob-label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:rgba(240,237,232,.45);font-weight:600;margin-bottom:8px}
 input,textarea,select{font-size:16px!important;}
-.ob-input{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;color:#F0EDE8;font-size:16px;font-family:'DM Sans',sans-serif;width:100%;transition:border-color .2s;-webkit-appearance:none;margin-bottom:14px;display:block}
+.ob-input{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;color:#F0EDE8;font-size:16px;font-family:'Outfit',sans-serif;width:100%;transition:border-color .2s;-webkit-appearance:none;margin-bottom:14px;display:block}
 .ob-input:focus{outline:none;border-color:#F5A623}
 .ob-plats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
-.ob-plat{padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:transparent;color:rgba(240,237,232,.45);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:center;transition:all .18s}
+.ob-plat{padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:transparent;color:rgba(240,237,232,.45);font-size:13px;font-family:'Outfit',sans-serif;cursor:pointer;text-align:center;transition:all .18s}
 .ob-plat.sel{border-color:rgba(245,166,35,.5);background:rgba(245,166,35,.08);color:#F5A623;font-weight:600}
-.ob-btn{width:100%;padding:15px;background:linear-gradient(135deg,#F5A623,#C47A0A);border:none;border-radius:12px;color:#000;font-size:15px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;margin-top:8px}
+.ob-btn{width:100%;padding:15px;background:linear-gradient(135deg,#F0B429,#C47A0A);border:none;border-radius:12px;color:#000;font-size:15px;font-weight:700;font-family:'Barlow Condensed',sans-serif;cursor:pointer;margin-top:8px}
 .ob-btn:disabled{opacity:.4;cursor:not-allowed}
 .ob-dots{display:flex;gap:6px;margin-bottom:28px}
 .ob-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.12);transition:all .3s}
 .ob-dot.active{background:#F5A623;width:20px;border-radius:3px}
 .ob-meta-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
-.ob-meta{padding:10px 6px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:transparent;color:rgba(240,237,232,.45);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:center;transition:all .18s}
+.ob-meta{padding:10px 6px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:transparent;color:rgba(240,237,232,.45);font-size:12px;font-family:'Outfit',sans-serif;cursor:pointer;text-align:center;transition:all .18s}
 .ob-meta.sel{border-color:rgba(245,166,35,.5);background:rgba(245,166,35,.08);color:#F5A623;font-weight:600}
-.shell{display:grid;grid-template-columns:68px 1fr;grid-template-rows:auto 1fr;min-height:100dvh;position:relative;z-index:1}
-.topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--b);background:rgba(8,12,16,.95);backdrop-filter:blur(20px);position:sticky;top:0;z-index:150;height:64px}
-.brand{display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-size:19px;font-weight:800;letter-spacing:-.5px;flex-shrink:0}
-.brand-mark{width:32px;height:32px;background:linear-gradient(135deg,#F5A623,#C47A0A);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.shell{display:grid;grid-template-columns:64px 1fr;grid-template-rows:auto 1fr;height:100dvh;position:relative;z-index:1}
+.topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid rgba(240,180,41,.08);background:rgba(7,9,13,.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);position:sticky;top:0;z-index:150;height:58px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:9px;font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;letter-spacing:-.5px;flex-shrink:0}
+.brand-mark{width:36px;height:36px;background:transparent;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .brand em{color:var(--am);font-style:normal}
 .topbar-r{display:flex;align-items:center;gap:12px;min-width:0;overflow:hidden}
 .meta-wrap{display:flex;align-items:center;gap:8px;background:var(--s);border:1px solid var(--b);border-radius:999px;padding:5px 13px 5px 5px;font-size:11px}
@@ -48,61 +74,62 @@ input,textarea,select{font-size:16px!important;}
 .chip{display:flex;align-items:center;gap:7px;background:var(--s);border:1px solid var(--b);border-radius:999px;padding:4px 12px 4px 4px;font-size:12px}
 .av{width:26px;height:26px;background:linear-gradient(135deg,var(--am),#C47A0A);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000}
 .dot-on{width:6px;height:6px;background:var(--gn);border-radius:50%}
-.sidenav{background:rgba(8,12,16,.6);border-right:1px solid var(--b);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:4px;position:sticky;top:64px;height:calc(100dvh - 64px);overflow:hidden}
+.sidenav{background:rgba(7,9,13,.7);border-right:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:2px;position:sticky;top:58px;height:calc(100dvh - 58px);overflow:hidden}
 .ni{width:42px;height:42px;border:none;border-radius:10px;background:transparent;color:var(--mt);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;position:relative}
 .ni:hover{background:var(--s2);color:var(--tx)}
 .ni.active{background:var(--am-d);color:var(--am);box-shadow:inset 0 0 0 1px rgba(245,166,35,.25)}
-.ni .tip{position:absolute;left:calc(100% + 10px);background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:4px 10px;font-size:11px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;color:var(--tx);font-family:'DM Sans',sans-serif}
+.ni .tip{position:absolute;left:calc(100% + 10px);background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:4px 10px;font-size:11px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;color:var(--tx);font-family:'Outfit',sans-serif}
 .ni:hover .tip{opacity:1}
 .ndiv{width:28px;height:1px;background:var(--b);margin:6px 0}
-.main{padding:26px;padding-top:26px;overflow-y:auto;overflow-x:hidden}
-.page{display:none;animation:fu .3s ease}
+.main{padding:20px;padding-top:20px;overflow-y:auto;overflow-x:hidden;height:0;min-height:100%}
+.page{display:none;animation:fu .25s cubic-bezier(.4,0,.2,1)}
 .page.active{display:block}
-@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page.active.page-flex{display:flex}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .ph{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:26px}
-.ph h1{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.8px}
+.ph h1{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.8px}
 .ph .sub{font-size:12px;color:var(--mt);margin-top:4px}
-.live{display:flex;align-items:center;gap:6px;background:var(--gn-g);border:1px solid rgba(46,204,143,.3);border-radius:999px;padding:4px 12px;font-size:10px;font-weight:700;color:var(--gn);text-transform:uppercase;letter-spacing:.5px}
-.live::before{content:'';width:6px;height:6px;background:var(--gn);border-radius:50%;animation:pulse 2s infinite}
+.live{display:flex;align-items:center;gap:5px;background:rgba(0,216,151,.08);border:1px solid rgba(0,216,151,.2);border-radius:999px;padding:4px 11px;font-size:9px;font-weight:700;color:var(--gn);text-transform:uppercase;letter-spacing:.8px;font-family:'Outfit',sans-serif}
+.live::before{content:'';width:5px;height:5px;background:var(--gn);border-radius:50%;animation:pulse 2s infinite;box-shadow:0 0 6px var(--gn)}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(46,204,143,.4)}50%{box-shadow:0 0 0 5px transparent}}
 .sg{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:18px}
 .sc{background:var(--s);border:1px solid var(--b);border-radius:16px;padding:18px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s}
 .sc:hover{border-color:var(--b2);transform:translateY(-2px)}
 .sc::after{content:attr(data-g);position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:38px;opacity:.07;pointer-events:none}
-.sc-l{font-size:10px;color:var(--mt);text-transform:uppercase;letter-spacing:.8px;margin-bottom:9px}
-.sc-v{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:3px}
-.sc-s{font-size:11px;color:var(--mt2)}
+.sc-l{font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-v{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:-.5px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-s{font-size:11px;color:var(--mt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sc.tg{border-top:2px solid rgba(46,204,143,.4)}.sc.tr{border-top:2px solid rgba(255,77,106,.4)}.sc.ta{border-top:2px solid rgba(245,166,35,.4)}.sc.tb{border-top:2px solid rgba(91,156,246,.4)}
 .gn{color:var(--gn)}.rd{color:var(--rd)}.am{color:var(--am)}.bl{color:var(--bl)}
 .cr{display:grid;grid-template-columns:1fr 2fr;gap:13px;margin-bottom:18px}
-.gc{background:var(--s);border:1px solid var(--b);border-radius:16px;padding:20px}
-.gc h3{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--mt);margin-bottom:16px;font-weight:500}
+.gc{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:var(--card-r);padding:18px;margin-bottom:var(--gap)}
+.gc h3{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--mt);margin-bottom:14px;font-weight:600}
 .cb-item{margin-bottom:12px}
 .cb-top{display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px}
 .cb-bg{background:rgba(255,255,255,.05);border-radius:999px;height:4px}
 .cb-fill{height:4px;border-radius:999px;background:linear-gradient(90deg,var(--am),rgba(245,166,35,.5));transition:width .8s}
 .cb-val{color:var(--rd);font-weight:600}
 .fc{background:var(--s);border:1px solid var(--b);border-radius:16px;padding:26px;max-width:620px}
-.ft{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;margin-bottom:3px}
+.ft{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;margin-bottom:3px}
 .fs{font-size:12px;color:var(--mt);margin-bottom:22px}
 .tt{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
-.tb2{padding:13px;border-radius:10px;border:1px solid var(--b);background:transparent;color:var(--mt);font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px}
+.tb2{padding:13px;border-radius:10px;border:1px solid var(--b);background:transparent;color:var(--mt);font-size:13px;font-weight:600;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px}
 .tb2.ag{border-color:rgba(46,204,143,.5);background:var(--gn-g);color:var(--gn)}
 .tb2.ad{border-color:rgba(255,77,106,.5);background:var(--rd-g);color:var(--rd)}
 .fr{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
 .fg{display:flex;flex-direction:column;gap:5px}
 .fg label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--mt);font-weight:600}
-input,select{background:rgba(255,255,255,.05);border:1px solid var(--b);border-radius:10px;padding:10px 13px;color:var(--tx);font-size:16px;font-family:'DM Sans',sans-serif;width:100%;transition:border-color .2s;-webkit-appearance:none}
+input,select{background:rgba(255,255,255,.05);border:1px solid var(--b);border-radius:10px;padding:10px 13px;color:var(--tx);font-size:16px;font-family:'Outfit',sans-serif;width:100%;transition:border-color .2s;-webkit-appearance:none}
 input::placeholder{color:var(--mt2)}
 input:focus,select:focus{outline:none;border-color:var(--am)}
 select option{background:#141820}
 .cg{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:18px}
-.cb2{padding:9px 5px;border:1px solid var(--b);border-radius:10px;background:var(--s);color:var(--mt);font-size:10px;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:center;line-height:1.4;transition:all .18s}
+.cb2{padding:9px 5px;border:1px solid var(--b);border-radius:10px;background:var(--s);color:var(--mt);font-size:10px;font-family:'Outfit',sans-serif;cursor:pointer;text-align:center;line-height:1.4;transition:all .18s}
 .cb2 .em{display:block;font-size:19px;margin-bottom:2px}
 .cb2.sel{border-color:var(--am);color:var(--am);background:var(--am-d)}
-.bsave{width:100%;padding:14px;background:linear-gradient(135deg,#F5A623,#C47A0A);border:none;border-radius:10px;color:#000;font-size:14px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;transition:opacity .2s}
+.bsave{width:100%;padding:14px;background:linear-gradient(135deg,#F5A623,#C47A0A);border:none;border-radius:10px;color:#000;font-size:14px;font-weight:700;font-family:'Barlow Condensed',sans-serif;cursor:pointer;transition:opacity .2s}
 .hf{display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap}
-.fp{padding:6px 14px;border:1px solid var(--b);border-radius:999px;background:transparent;color:var(--mt);font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .18s}
+.fp{padding:6px 14px;border:1px solid var(--b);border-radius:999px;background:transparent;color:var(--mt);font-size:11px;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .18s}
 .fp.active{background:var(--am);color:#000;border-color:var(--am);font-weight:700}
 .ll{display:flex;flex-direction:column;gap:1px}
 .li{display:flex;align-items:center;gap:13px;padding:12px 13px;border-radius:10px;transition:background .15s}
@@ -111,16 +138,16 @@ select option{background:#141820}
 .li-info{flex:1}
 .li-cat{font-size:13px;font-weight:500}
 .li-meta{font-size:10px;color:var(--mt);margin-top:1px}
-.li-val{font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
-.cal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-.cal-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700}
-.cal-leg{display:flex;gap:12px}
+.li-val{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700}
+.cal-hdr{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.cal-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700}
+.cal-leg{display:flex;flex-wrap:wrap;gap:8px}
 .leg{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--mt)}
 .ld{width:7px;height:7px;border-radius:3px}
 .cwds{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:5px}
 .cwd{text-align:center;font-size:10px;color:var(--mt2);padding:2px;font-weight:500}
 .cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-.cd{aspect-ratio:1;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;cursor:pointer;transition:transform .15s}
+.cd{aspect-ratio:1;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;cursor:pointer;transition:transform .15s;min-width:0;overflow:hidden}
 .ce{background:transparent;cursor:default;opacity:0}
 .co{background:rgba(255,255,255,.03);color:var(--mt2)}
 .cw{background:rgba(91,156,246,.15);color:var(--bl);border:1px solid rgba(91,156,246,.25)}
@@ -129,18 +156,18 @@ select option{background:#141820}
 .ct{box-shadow:0 0 0 2px var(--am)}
 .sk{background:linear-gradient(135deg,rgba(245,166,35,.12),rgba(245,166,35,.04));border:1px solid rgba(245,166,35,.3);border-radius:16px;padding:20px;margin-bottom:14px;display:flex;align-items:center;gap:16px}
 .sk-flame{font-size:44px;line-height:1}
-.sk-info h3{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--am)}
+.sk-info h3{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--am)}
 .sk-info p{font-size:12px;color:var(--mt);margin-top:2px}
 .rk-list{display:flex;flex-direction:column;gap:7px}
 .rk{display:flex;align-items:center;gap:12px;padding:13px 15px;background:var(--s);border:1px solid var(--b);border-radius:10px;transition:all .2s}
 .rk.r1{border-color:rgba(245,166,35,.4);background:var(--am-d)}
-.rk-pos{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;min-width:28px;color:var(--mt)}
+.rk-pos{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;min-width:28px;color:var(--mt)}
 .r1 .rk-pos{color:var(--am)}
 .rk-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--am),#C47A0A);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#000;flex-shrink:0}
 .rk-info{flex:1}
 .rk-name{font-size:13px;font-weight:600}
 .rk-city{font-size:10px;color:var(--mt)}
-.rk-earn{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--gn)}
+.rk-earn{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--gn)}
 .bg-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .bg-item{background:var(--s);border:1px solid var(--b);border-radius:10px;padding:14px;text-align:center;transition:all .2s}
 .bg-item.earned{background:var(--am-d);border-color:rgba(245,166,35,.35)}
@@ -150,21 +177,111 @@ select option{background:#141820}
 .bg-desc{font-size:10px;color:var(--mt);line-height:1.4}
 .ch-card{background:var(--s);border:1px solid var(--b);border-radius:16px;padding:20px;margin-bottom:13px}
 .ch-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:13px}
-.ch-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
+.ch-name{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700}
 .ch-end{font-size:10px;color:var(--mt)}
 .ch-pb{background:rgba(255,255,255,.06);border-radius:999px;height:7px;margin-bottom:7px;overflow:hidden}
 .ch-pf{height:7px;border-radius:999px;background:linear-gradient(90deg,var(--am),#FFD166);transition:width 1s}
 .ch-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--mt)}
 .ch-meta strong{color:var(--tx)}
 .comp-grid{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:18px}
-.toast{position:fixed;bottom:22px;right:22px;padding:13px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none}
+/* CELEBRACAO META */
+.celebracao{position:fixed;inset:0;z-index:9998;pointer-events:none;overflow:hidden}
+.cel-msg{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:9999;background:linear-gradient(135deg,rgba(245,166,35,.15),rgba(245,166,35,.05));border:1px solid rgba(245,166,35,.5);border-radius:24px;padding:32px 40px;text-align:center;backdrop-filter:blur(20px);transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.cel-msg.show{transform:translate(-50%,-50%) scale(1)}
+.cel-emoji{font-size:48px;margin-bottom:12px}
+.cel-title{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:var(--am);letter-spacing:-.5px}
+.cel-sub{font-size:14px;color:var(--mt);margin-top:6px}
+.confete{position:absolute;width:8px;height:8px;border-radius:2px;animation:confeteQueda linear forwards}
+@keyframes confeteQueda{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+.toast{position:fixed;bottom:calc(70px + env(safe-area-inset-bottom));right:16px;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;transform:translateY(60px);opacity:0;transition:all .28s cubic-bezier(.4,0,.2,1);pointer-events:none;backdrop-filter:blur(12px)}
 .toast.show{transform:translateY(0);opacity:1}
-.tok{background:rgba(46,204,143,.15);border:1px solid rgba(46,204,143,.4);color:var(--gn)}
-.ter{background:rgba(255,77,106,.15);border:1px solid rgba(255,77,106,.4);color:var(--rd)}
+.tok{background:rgba(0,216,151,.12);border:1px solid rgba(0,216,151,.3);color:var(--gn)}
+.ter{background:rgba(255,69,96,.12);border:1px solid rgba(255,69,96,.3);color:var(--rd)}
 .empty{text-align:center;padding:44px 20px;color:var(--mt)}
 .empty-icon{font-size:36px;margin-bottom:10px}
 .empty p{font-size:13px}
-@media(max-width:860px){.shell{grid-template-columns:1fr;height:100dvh;overflow:hidden}.sidenav{position:fixed;bottom:0;left:0;right:0;height:calc(58px + env(safe-area-inset-bottom));flex-direction:row;justify-content:space-around;align-items:flex-start;border-right:none;border-top:1px solid var(--b);background:rgba(8,12,16,.95);backdrop-filter:blur(20px);padding:0 12px;padding-bottom:env(safe-area-inset-bottom);z-index:200}.main{padding:16px;padding-top:80px;padding-bottom:calc(76px + env(safe-area-inset-bottom));overflow-x:hidden;overflow-y:auto;max-width:100vw;box-sizing:border-box;-webkit-overflow-scrolling:touch;height:calc(100dvh - 64px)}.sg{grid-template-columns:1fr 1fr}.cr{grid-template-columns:1fr}.fr{grid-template-columns:1fr}.comp-grid{grid-template-columns:1fr}.topbar{padding:0 10px;gap:6px;overflow:visible}.topbar-r{gap:6px;min-width:0;overflow:hidden;flex-shrink:1}.meta-wrap{max-width:110px;min-width:0;flex-shrink:1;overflow:hidden}.meta-track{width:36px}.meta-pct{font-size:10px}.chip{max-width:80px;overflow:hidden}.ni .tip{display:none!important}.meta-wrap>span:first-child{display:none}}
+@media(max-width:1024px){
+  /* MOBILE LAYOUT: topbar fixo no topo, nav fixo no bottom, main no meio */
+  body{overflow:hidden;height:100dvh}
+  .shell{display:flex;flex-direction:column;height:100dvh;width:100vw;overflow:hidden;position:fixed;top:0;left:0}
+  .topbar{position:relative!important;flex-shrink:0;height:52px;z-index:300;width:100%}
+  .sidenav{
+    order:3;
+    position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;
+    width:100%!important;
+    height:calc(60px + env(safe-area-inset-bottom))!important;
+    flex-direction:row!important;justify-content:space-around!important;align-items:center!important;
+    border-right:none!important;border-top:1px solid rgba(255,255,255,.06)!important;
+    background:rgba(7,9,13,.97)!important;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+    padding:0 8px!important;padding-bottom:env(safe-area-inset-bottom)!important;
+    z-index:200!important;gap:0!important;
+    display:flex!important;flex-shrink:0!important
+  }
+  .ni{width:44px;height:44px;border-radius:12px;font-size:20px;flex-direction:column;gap:2px}
+  .ni.active{background:rgba(240,180,41,.12);box-shadow:none}
+  .main{
+    order:2;
+    flex:1!important;
+    padding:14px 14px calc(90px + env(safe-area-inset-bottom))!important;
+    overflow-x:hidden!important;overflow-y:auto!important;
+    width:100%!important;max-width:100vw!important;
+    box-sizing:border-box!important;-webkit-overflow-scrolling:touch!important;
+    height:0!important;min-height:0!important
+  }
+  .sg{grid-template-columns:1fr 1fr;gap:8px}
+  .sc{min-width:0;padding:14px 12px}
+  .sc-v{font-size:14px;letter-spacing:-.3px}
+  .sc-l{font-size:8px}
+  .sc-s{font-size:10px}
+  .cr{grid-template-columns:1fr}
+  .fr{grid-template-columns:1fr}
+  .comp-grid{grid-template-columns:1fr}
+  .topbar{padding:0 12px;height:52px;gap:6px;position:fixed;top:0;left:0;right:0;z-index:300}
+  .topbar-r{gap:6px;min-width:0;overflow:hidden;flex-shrink:1}
+  .meta-wrap{max-width:100px;min-width:0;flex-shrink:1;overflow:hidden}
+  .meta-track{width:36px}
+  .meta-pct{font-size:10px}
+  .chip{max-width:75px;overflow:hidden}
+  .ni .tip{display:none!important}
+  .meta-wrap>span:first-child{display:none}
+  .ph h1{font-size:24px}
+  .ndiv{display:none}
+}
+.rh-item{background:var(--b2);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.rh-label{font-size:11px;color:var(--mt2)}
+.rh-val{font-size:15px;font-weight:700}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes pulse-ring{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:.6}}
+.dots-anim{animation:blink 1s infinite}
+@keyframes typing-b{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+/* Modal Começar o dia */
+.modal-dia-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:flex-end;justify-content:center;padding:0;animation:fadeIn .2s ease}
+.modal-dia-overlay.hidden{display:none}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-dia{background:#0d1117;border:1px solid rgba(245,166,35,.3);border-radius:24px 24px 0 0;padding:28px 24px 36px;width:100%;max-width:480px;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-dia-header{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.modal-dia-emoji{font-size:32px;line-height:1}
+.modal-dia-saudacao{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--am);letter-spacing:-.5px}
+.modal-dia-sub{font-size:13px;color:var(--mt);margin-bottom:24px;padding-left:44px}
+.modal-dia-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.modal-dia-field label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--mt);font-weight:600;margin-bottom:6px}
+.modal-dia-field input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:13px 14px;color:var(--tx);font-size:17px;font-family:'Outfit',sans-serif;text-align:center;-webkit-appearance:none}
+.modal-dia-field input:focus{outline:none;border-color:rgba(245,166,35,.5);background:rgba(245,166,35,.04)}
+.modal-dia-btn{width:100%;padding:16px;background:linear-gradient(135deg,#F0B429,#C47A0A);border:none;border-radius:14px;color:#000;font-size:16px;font-weight:700;font-family:'Barlow Condensed',sans-serif;cursor:pointer;letter-spacing:.3px}
+.modal-dia-skip{width:100%;padding:10px;background:transparent;border:none;color:var(--mt);font-size:13px;font-family:'Outfit',sans-serif;cursor:pointer;margin-top:8px}
+/* Banner mini no topo do dashboard quando turno ativo */
+.banner-turno{display:none;background:rgba(0,216,151,.06);border:1px solid rgba(0,216,151,.2);border-radius:12px;padding:10px 14px;margin-bottom:14px;align-items:center;justify-content:space-between;gap:10px}
+.banner-turno.ativo{display:flex!important}
+.banner-turno.inativo{display:flex!important;background:rgba(245,166,35,.06);border-color:rgba(245,166,35,.2)}
+.banner-turno.inativo .bt-titulo{color:var(--am)}
+.bt-info{flex:1;min-width:0}
+.bt-titulo{font-size:12px;font-weight:700;color:var(--gn);margin-bottom:1px}
+.bt-sub{font-size:11px;color:var(--mt)}
+.bt-btn{background:linear-gradient(135deg,#F5A623,#C47A0A);color:#000;border:none;border-radius:10px;padding:10px 16px;font-family:'Outfit',sans-serif;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.bt-btn.encerrar{background:rgba(255,77,106,.15);color:#FF4D6A;border:1px solid rgba(255,77,106,.3)}
+.voice-btn{background:rgba(255,255,255,.05);border:1px solid var(--b);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px;flex-shrink:0;transition:all .2s;color:var(--mt)}
+.voice-btn.on{background:rgba(245,166,35,.15);border-color:rgba(245,166,35,.4);color:var(--am)}
 </style>
 <script>
 // Bloqueia zoom por pinça e duplo-toque em qualquer browser embutido
@@ -182,18 +299,52 @@ const _supa = supabase.createClient(
 
 </head>
 <body>
-<div id="tela-login" style="display:none;position:fixed;inset:0;background:#0f0f0f;z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:24px">
-  <div style="font-size:48px">🚗</div>
-  <div style="font-size:28px;font-weight:700;color:#fff">Painel<span style="color:#6c63ff">.IA</span></div>
-  <div style="font-size:14px;color:#888;text-align:center;max-width:280px">Gestão financeira inteligente para motoristas de app</div>
-  <button onclick="loginGoogle()" style="display:flex;align-items:center;gap:12px;background:#fff;color:#333;border:none;padding:14px 28px;border-radius:50px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;box-shadow:0 4px 20px rgba(0,0,0,.3)">
-    <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-    Entrar com Google
-  </button>
+<div id="tela-login" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:0">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 100%,rgba(240,180,41,.08) 0%,transparent 70%);pointer-events:none"></div>
+  <div style="position:relative;text-align:center;padding:0 32px;max-width:340px">
+    <div style="width:80px;height:80px;border-radius:50%;overflow:hidden;margin:0 auto 28px;box-shadow:0 0 0 1px rgba(245,166,35,.3),0 0 30px rgba(245,166,35,.25),0 0 60px rgba(245,166,35,.1)"><img src="/static/icon-512.png" style="width:100%;height:100%;object-fit:cover"></div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--tx);margin-bottom:6px">Painel<span style="color:var(--am)">.IA</span></div>
+    <div style="font-size:13px;color:var(--mt);line-height:1.6;margin-bottom:36px">Gestão financeira inteligente<br>para motoristas de app</div>
+    <button onclick="loginGoogle()" style="display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;color:#1a1a1a;border:none;padding:14px 32px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;width:100%;font-family:'Outfit',sans-serif;box-shadow:0 4px 24px rgba(0,0,0,.4)">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Entrar com Google
+    </button>
+  </div>
 </div>
+<!-- SETUP MODE OVERLAY - app bloqueado para novo usuário -->
+<div id="setup-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:#0d0d12;flex-direction:column;overflow:hidden">
+  <!-- Header simples -->
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08)">
+    <div style="width:32px;height:32px;border-radius:8px;overflow:hidden;flex-shrink:0"><img src="/static/icon-192.png" style="width:100%;height:100%;object-fit:cover"></div>
+    <div>
+      <div style="font-size:15px;font-weight:700;color:#fff">Painel<span style="color:#F5A623">.IA</span></div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4)">Gestor Financeiro · configurando seu perfil</div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+      <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block"></span>
+      <span style="font-size:11px;color:rgba(255,255,255,.5)">online</span>
+    </div>
+  </div>
+  <!-- Chat de setup -->
+  <div id="setup-msgs" style="flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth"></div>
+  <!-- Indicador de digitando -->
+  <div id="setup-typing" style="display:none;padding:0 14px 4px;font-size:12px;color:rgba(255,255,255,.4)">Gestor digitando...</div>
+  <!-- Input -->
+  <div style="padding:12px 14px;border-top:1px solid rgba(255,255,255,.08);background:#0d0d12">
+    <div style="display:flex;gap:10px;align-items:center">
+      <input id="setup-inp" type="text" placeholder="Digite sua resposta..." autocomplete="off"
+        style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:11px 16px;color:#fff;font-size:14px;outline:none"
+        onkeydown="if(event.key==='Enter')enviarSetup()">
+      <button onclick="enviarSetup()" style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#6d28d9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="ob" id="onboarding" style="display:none">
   <div class="ob-box">
-    <div class="ob-logo"><div class="ob-mark">🚗</div>Painel<span style="color:#F5A623">.IA</span></div>
+    <div class="ob-logo"><div class="ob-mark" style="padding:0;overflow:hidden"><img src="/static/icon-192.png" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div>Painel<span style="color:#F5A623">.IA</span></div>
     <div class="ob-dots"><div class="ob-dot active" id="dot0"></div><div class="ob-dot" id="dot1"></div><div class="ob-dot" id="dot2"></div></div>
     <div class="ob-step active" id="ob-step0">
       <div class="ob-title">Bem-vindo! 👋</div>
@@ -211,6 +362,7 @@ const _supa = supabase.createClient(
         <button class="ob-plat" onclick="togglePlat(this,'uber')">🖤 Uber</button>
         <button class="ob-plat" onclick="togglePlat(this,'99')">🟡 99</button>
         <button class="ob-plat" onclick="togglePlat(this,'indrive')">🟢 InDrive</button>
+        <button class="ob-plat" onclick="togglePlat(this,'outras')">🔵 Outras</button>
         <button class="ob-plat" onclick="togglePlat(this,'outro')">➕ Outro</button>
       </div>
       <button class="ob-btn" onclick="obNext(2)">Continuar →</button>
@@ -232,91 +384,178 @@ const _supa = supabase.createClient(
   </div>
 </div>
 
+<div id="celebracao" class="celebracao" style="display:none"></div>
+<div id="cel-msg" class="cel-msg">
+  <div class="cel-emoji">🏆</div>
+  <div class="cel-title">Meta batida!</div>
+  <div class="cel-sub" id="cel-sub">Você arrasou hoje!</div>
+</div>
+<!-- MODAL BOAS-VINDAS / COMEÇAR O DIA -->
+<div class="modal-dia-overlay hidden" id="modal-dia">
+  <div class="modal-dia">
+    <div class="modal-dia-header">
+      <span class="modal-dia-emoji" id="modal-emoji">☀️</span>
+      <div class="modal-dia-saudacao" id="modal-saudacao">Bom dia!</div>
+    </div>
+    <div class="modal-dia-sub" id="modal-nome-sub">Vamos registrar seu turno de hoje?</div>
+    <div class="modal-dia-row">
+      <div class="modal-dia-field">
+        <label>Hora de início</label>
+        <input type="time" id="modal-inicio" value="07:00">
+      </div>
+      <div class="modal-dia-field">
+        <label>Meta de término</label>
+        <input type="time" id="modal-fim" value="15:00">
+      </div>
+    </div>
+    <button class="modal-dia-btn" onclick="confirmarModalDia()">▶ Começar o dia</button>
+    <button class="modal-dia-skip" onclick="fecharModalDia()">Pular por agora</button>
+  </div>
+</div>
+
 <div class="shell">
 <header class="topbar">
-  <div class="brand"><div class="brand-mark">🚗</div>Painel<em>.IA</em></div>
+  <div class="brand"><div class="brand-mark"><img src="/static/icon-192.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>Painel<em>.IA</em></div>
   <div class="topbar-r">
     <div class="meta-wrap">
-      <span style="font-size:10px;color:var(--mt)">Meta diária</span>
       <div class="meta-track"><div class="meta-fill" id="meta-fill" style="width:0%"></div></div>
       <span class="meta-pct" id="meta-pct">0%</span>
     </div>
     <div class="chip">
-      <div class="av" id="user-av">?</div>
-      <span id="user-nome" onclick="async function(){await _supa.auth.signOut();location.reload()}()" style="cursor:pointer" title="Clique para sair">Entrar</span>
+      <div class="av" id="user-av" style="overflow:hidden;padding:0">?</div>
       <div class="dot-on"></div>
     </div>
+    <button class="voice-btn" id="voice-toggle" onclick="toggleVoice()" title="Voz da IA">🔇</button>
+    <button onclick="fazerLogout()" title="Sair" style="background:rgba(255,77,106,.12);border:1px solid rgba(255,77,106,.3);border-radius:8px;color:#FF4D6A;font-size:13px;font-weight:700;padding:7px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0">⏻</button>
   </div>
 </header>
 <nav class="sidenav">
-  <button class="ni active" onclick="goPage(this,'dashboard')">📊<span class="tip">Dashboard</span></button>
-  <button class="ni" onclick="goPage(this,'registrar')">➕<span class="tip">Registrar</span></button>
-  <button class="ni" onclick="goPage(this,'historico')">📋<span class="tip">Histórico</span></button>
+  <button id="ni-dashboard" class="ni active" onclick="goPage(this,'dashboard')">📊<span class="tip">Dashboard</span></button>
+  <button id="ni-registrar" class="ni" onclick="goPage(this,'registrar')">➕<span class="tip">Registrar</span></button>
+  <button id="ni-historico" class="ni" onclick="goPage(this,'historico')">📋<span class="tip">Histórico</span></button>
   <div class="ndiv"></div>
-  <button class="ni" onclick="goPage(this,'calendario')">📅<span class="tip">Calendário</span></button>
-  <button class="ni" onclick="goPage(this,'corrida')">🏆<span class="tip">Corrida</span></button>
-  <button class="ni" onclick="goContas(this)">💳<span class="tip">Contas</span></button>
+  <button id="ni-calendario" class="ni" onclick="goPage(this,'calendario')">📅<span class="tip">Calendário</span></button>
+  <button id="ni-corrida" class="ni" onclick="goPage(this,'corrida')">🏆<span class="tip">Corrida</span></button>
+  <button id="ni-contas" class="ni" onclick="goContas(this)">💳<span class="tip">Contas</span></button>
+
+  <button id="ni-fechamento" class="ni" onclick="goPage(this,'fechamento')">🔒<span class="tip">Fechamento</span></button>
 </nav>
 <main class="main">
 <div class="page active" id="page-dashboard">
-  <div class="ph"><div><h1>Dashboard</h1><div class="sub" id="dash-sub">Carregando...</div></div><div class="live">Ao vivo</div></div>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px">
+    <div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mt);font-weight:600;margin-bottom:4px">Lucro do mês</div>
+      <div id="hero-lucro" style="font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:700;letter-spacing:.5px;line-height:1;color:var(--am)">R$ 0,00</div>
+      <div class="sub" id="dash-sub" style="margin-top:4px;font-size:12px;color:var(--mt)">Carregando...</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;margin-top:4px">
+      <div class="live">Ao vivo</div>
+    </div>
+  </div>
 
-  <!-- IA NO TOPO — CEREBRO DO SISTEMA -->
-  <div style="background:linear-gradient(135deg,rgba(245,166,35,.07),rgba(245,166,35,.02));border:1px solid rgba(245,166,35,.25);border-radius:18px;padding:20px;margin-bottom:18px">
+  <!-- BANNER TURNO ATIVO (mini, aparece após iniciar turno) -->
+  <div class="banner-turno" id="banner-turno">
+    <div class="bt-info">
+      <div class="bt-titulo" id="bt-titulo">🟢 Turno ativo</div>
+      <div class="bt-sub" id="bt-sub"></div>
+    </div>
+    <button id="banner-turno-btn" onclick="bannerTurnoBtnClick()" style="background:rgba(255,77,106,.1);border:1px solid rgba(255,77,106,.25);border-radius:8px;padding:6px 12px;color:#FF4D6A;font-size:11px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer">⏹ Encerrar</button>
+  </div>
+
+  <!-- ALERTA CONTAS VENCENDO -->
+  <div id="alerta-contas" style="display:none;background:rgba(255,77,106,.07);border:1px solid rgba(255,77,106,.25);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:13px;gap:8px;align-items:center;flex-wrap:wrap"></div>
+
+  <!-- GESTOR FINANCEIRO UNIFICADO — CEREBRO DO SISTEMA -->
+  <div style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(99,102,241,.02));border:1px solid rgba(99,102,241,.25);border-radius:18px;padding:16px;margin-bottom:18px">
+    <!-- Header -->
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-      <div style="width:36px;height:36px;background:linear-gradient(135deg,#F5A623,#C47A0A);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🤖</div>
-      <div>
-        <div style="font-family:Syne,sans-serif;font-size:15px;font-weight:800;color:var(--am)">IA · Cérebro do sistema</div>
-        <div style="font-size:11px;color:var(--mt)">Registre ganhos e despesas falando naturalmente</div>
+      <div style="position:relative;flex-shrink:0">
+        <div style="width:38px;height:38px;background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px">🧠</div>
+        <div style="position:absolute;bottom:0;right:0;width:10px;height:10px;background:#22c55e;border-radius:50%;border:2px solid var(--bg,#0f0f1a)"></div>
       </div>
-      <div style="margin-left:auto;display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gn)">
-        <div style="width:6px;height:6px;background:var(--gn);border-radius:50%;animation:pulse 2s infinite"></div>online
+      <div style="flex:1;min-width:0">
+        <div style="font-family:Syne,sans-serif;font-size:15px;font-weight:800;color:var(--tx)">Gestor Financeiro</div>
+        <div style="font-size:11px;color:#22c55e;display:flex;align-items:center;gap:4px">
+          <span style="display:inline-block;width:6px;height:6px;background:#22c55e;border-radius:50%;animation:pulse 2s infinite"></span>
+          Online · por dentro de tudo
+        </div>
       </div>
+      <button onclick="limparChat()" title="Limpar conversa" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--mt);border-radius:8px;padding:5px 9px;cursor:pointer;font-size:11px;flex-shrink:0">🗑</button>
     </div>
-    <div id="dash-chat-msgs" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;max-height:220px;overflow-y:auto;padding-right:4px;min-height:48px">
-      <div style="color:var(--mt);font-size:13px;font-style:italic">Olá! Me conta o que você fez hoje — ganhos e despesas — e eu registro tudo automaticamente. 💰</div>
-    </div>
+    <!-- Mensagens — mesmo elemento do Gestor -->
+    <div id="chat-msgs" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;max-height:420px;overflow-y:auto;padding-right:4px;min-height:52px;scroll-behavior:smooth"></div>
+    <!-- Input -->
     <div style="display:flex;gap:6px;align-items:center">
-      <input id="dash-chat-input" placeholder="Ex: fiz 350 na uber, paguei 80 de combustível..." style="flex:1;padding:11px 14px;border-radius:12px;border:1px solid rgba(245,166,35,.3);background:rgba(255,255,255,.05);color:var(--tx);font-size:16px;font-family:inherit" onkeydown="if(event.key==='Enter'){sendDashChat()}">
+      <input id="chat-input" placeholder="Ex: fiz 350 na uber, paguei 80 de combustível..." style="flex:1;padding:11px 14px;border-radius:12px;border:1px solid rgba(99,102,241,.3);background:rgba(255,255,255,.05);color:var(--tx);font-size:15px;font-family:inherit;transition:border .2s" onkeydown="if(event.key==='Enter'){sendChat()}" onfocus="this.style.borderColor='rgba(99,102,241,.6)'" onblur="this.style.borderColor='rgba(99,102,241,.3)'">
       <button id="mic-btn" onclick="toggleMic()" title="Falar" style="padding:11px 13px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:var(--tx);cursor:pointer;font-size:18px;flex-shrink:0;transition:all .2s">🎤</button>
-      <button onclick="sendDashChat()" style="padding:11px 16px;border-radius:12px;background:linear-gradient(135deg,#F5A623,#C47A0A);color:#000;border:none;cursor:pointer;font-size:16px;font-weight:800;flex-shrink:0">➤</button>
+      <button id="chat-send-btn" onclick="sendChat()" style="padding:11px 16px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;cursor:pointer;font-size:16px;font-weight:800;flex-shrink:0">➤</button>
     </div>
     <script>
     (function(){
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if(!SpeechRecognition){ document.getElementById('mic-btn').style.display='none'; return; }
-      let rec = null, listening = false;
-      window.toggleMic = async function(){
-        const btn = document.getElementById('mic-btn');
-        const inp = document.getElementById('dash-chat-input');
-        if(listening){
-          rec && rec.stop();
-          return;
-        }
-        rec = new SpeechRecognition();
-        rec.lang = 'pt-BR';
-        rec.interimResults = false;
-        rec.continuous = false;
-        rec.maxAlternatives = 1;
-        rec.onstart = () => { listening=true; btn.textContent='🔴'; btn.style.background='rgba(255,50,50,.25)'; btn.style.border='1px solid rgba(255,80,80,.5)'; };
-        rec.onend   = () => { listening=false; btn.textContent='🎤'; btn.style.background='rgba(255,255,255,.07)'; btn.style.border='1px solid rgba(255,255,255,.12)'; };
-        rec.onerror = (ev) => { listening=false; btn.textContent='🎤'; btn.style.background='rgba(255,255,255,.07)'; btn.style.border='1px solid rgba(255,255,255,.12)'; console.warn('mic erro:', ev.error); };
-        rec.onresult = (e) => {
-          const t = e.results[0][0].transcript;
-          inp.value = t;
-          rec.stop();
-          setTimeout(()=>sendDashChat(), 300);
-        };
-        try { rec.start(); } catch(e) { console.warn('mic start erro:', e); }
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if(!SR){ const b=document.getElementById('mic-btn'); if(b) b.style.display='none'; return; }
+      let rec=null, listening=false;
+      window.toggleMic = function(){
+        const btn=document.getElementById('mic-btn');
+        const inp=document.getElementById('chat-input');
+        if(listening){ rec&&rec.stop(); return; }
+        rec=new SR();
+        rec.lang='pt-BR'; rec.interimResults=false; rec.continuous=false; rec.maxAlternatives=1;
+        rec.onstart = ()=>{ listening=true; btn.textContent='🔴'; btn.style.background='rgba(255,50,50,.25)'; btn.style.border='1px solid rgba(255,80,80,.5)'; };
+        rec.onend   = ()=>{ listening=false; btn.textContent='🎤'; btn.style.background='rgba(255,255,255,.07)'; btn.style.border='1px solid rgba(255,255,255,.12)'; };
+        rec.onerror = ()=>{ listening=false; btn.textContent='🎤'; btn.style.background='rgba(255,255,255,.07)'; btn.style.border='1px solid rgba(255,255,255,.12)'; };
+        rec.onresult = (e)=>{ inp.value=e.results[0][0].transcript; rec.stop(); setTimeout(sendChat,300); };
+        try{ rec.start(); } catch(ex){ console.warn('mic',ex); }
       };
     })();
     </script>
+    <!-- Atalhos rápidos -->
     <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
-      <button onclick="quickDashChat('Quanto ganhei esse mês?')" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(245,166,35,.2);background:rgba(245,166,35,.06);color:var(--am);font-size:11px;cursor:pointer;font-family:inherit">💰 Mês?</button>
-      <button onclick="quickDashChat('Tenho contas pendentes?')" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(245,166,35,.2);background:rgba(245,166,35,.06);color:var(--am);font-size:11px;cursor:pointer;font-family:inherit">📅 Contas?</button>
-      <button onclick="quickDashChat('Quanto estou ganhando por hora?')" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(245,166,35,.2);background:rgba(245,166,35,.06);color:var(--am);font-size:11px;cursor:pointer;font-family:inherit">⏱ Por hora?</button>
-      <button onclick="quickDashChat('Me dá uma dica financeira')" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(245,166,35,.2);background:rgba(245,166,35,.06);color:var(--am);font-size:11px;cursor:pointer;font-family:inherit">💡 Dica</button>
+      <button onclick="mostrarResumoMes()" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(99,102,241,.2);background:rgba(99,102,241,.07);color:#a5b4fc;font-size:11px;cursor:pointer;font-family:inherit">💰 Mês?</button>
+      <button onclick="quickChat('Tenho contas pendentes?')" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(99,102,241,.2);background:rgba(99,102,241,.07);color:#a5b4fc;font-size:11px;cursor:pointer;font-family:inherit">📅 Contas?</button>
+      <button onclick="mostrarGanhoPorHora()" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(99,102,241,.2);background:rgba(99,102,241,.07);color:#a5b4fc;font-size:11px;cursor:pointer;font-family:inherit">⏱ Por hora?</button>
+      <button onclick="quickChat('Como estou hoje?')" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(99,102,241,.2);background:rgba(99,102,241,.07);color:#a5b4fc;font-size:11px;cursor:pointer;font-family:inherit">📊 Status</button>
+      <button onclick="quickChat('Me dá uma dica financeira')" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(99,102,241,.2);background:rgba(99,102,241,.07);color:#a5b4fc;font-size:11px;cursor:pointer;font-family:inherit">💡 Dica</button>
     </div>
+  </div>
+
+  <!-- CARD PLANO IA — DESTAQUE PRINCIPAL -->
+  <!-- CARD GESTOR — muda visual quando há urgência -->
+  <div id="card-plano-ia" onclick="abrirConsultorIA()" style="cursor:pointer;margin-bottom:18px;border-radius:18px;overflow:hidden;position:relative;background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#1e1b4b 100%);border:1px solid rgba(139,92,246,.5);box-shadow:0 0 28px rgba(99,102,241,.25);transition:opacity .2s,filter .2s">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(139,92,246,.18) 0%,transparent 65%),radial-gradient(ellipse at 80% 30%,rgba(99,102,241,.12) 0%,transparent 55%);pointer-events:none"></div>
+    <!-- Badge de urgência — aparece quando tem conta vencendo em ≤3 dias -->
+    <div id="card-gestor-urgencia" style="display:none;background:linear-gradient(90deg,#dc2626,#ef4444);padding:8px 18px;font-size:11px;font-weight:700;color:#fff;align-items:center;gap:6px">
+      <span style="animation:pulse-ring 1.2s infinite">🔴</span>
+      <span id="card-gestor-urgencia-txt">Conta vencendo — o Gestor tem um plano pra você</span>
+    </div>
+    <div style="position:relative;padding:18px 18px 14px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+        <div style="background:rgba(139,92,246,.3);border:1px solid rgba(139,92,246,.5);border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700;color:#c4b5fd;letter-spacing:.4px;text-transform:uppercase">✦ IA Financeira</div>
+        <div style="font-size:10px;color:rgba(196,181,253,.6)">personalizado para você</div>
+      </div>
+      <div id="card-gestor-titulo" style="font-size:19px;font-weight:800;color:#fff;font-family:Syne,sans-serif;line-height:1.2;margin-bottom:8px">Qual é a saída<br>nos próximos dias?</div>
+      <div id="card-gestor-sub" style="font-size:12px;color:rgba(196,181,253,.8);line-height:1.6;margin-bottom:14px">
+        A IA analisa suas contas, seu caixa e o que você consegue faturar — e entrega <strong style="color:#e2d9f3">o que pagar primeiro</strong>, <strong style="color:#e2d9f3">texto pronto pra negociar prazo</strong> e <strong style="color:#e2d9f3">a meta exata de hoje</strong>.
+      </div>
+      <div id="card-plano-cta" style="background:linear-gradient(135deg,#7c3aed,#6366f1);border-radius:12px;padding:13px;text-align:center;font-size:14px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px">
+        <span>🧠</span> <span id="card-plano-cta-txt">Gerar meu plano agora</span> <span style="font-size:16px">→</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD ACOMPANHAMENTO DO PLANO — aparece só quando há compromissos ativos -->
+  <div id="card-compromissos" style="display:none;margin-bottom:18px;border-radius:16px;overflow:hidden;border:1px solid rgba(99,102,241,.3);background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(99,102,241,.02))">
+    <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:16px">📋</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--tx)">Seu plano em andamento</div>
+          <div style="font-size:11px;color:var(--mt)" id="comp-resumo-txt">Carregando...</div>
+        </div>
+      </div>
+      <button onclick="loadCompromissos()" title="Atualizar" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--mt);border-radius:8px;padding:4px 8px;cursor:pointer;font-size:12px">↻</button>
+    </div>
+    <div id="comp-lista" style="padding:0 16px 14px;display:flex;flex-direction:column;gap:6px"></div>
   </div>
 
   <!-- CARDS DE MÉTRICAS -->
@@ -325,6 +564,102 @@ const _supa = supabase.createClient(
     <div class="sc tr" data-g="💸"><div class="sc-l">Despesas</div><div class="sc-v rd" id="c-despesas">R$ 0,00</div><div class="sc-s">todas as categorias</div></div>
     <div class="sc ta" data-g="✨"><div class="sc-l">Lucro real</div><div class="sc-v am" id="c-lucro">R$ 0,00</div><div class="sc-s">o que sobrou</div></div>
     <div class="sc tb" data-g="💳"><div class="sc-l">Contas a pagar</div><div class="sc-v rd" id="c-contas-pend">R$ 0,00</div><div class="sc-s">total pendente</div></div>
+
+  </div>
+
+  <!-- CARD FONTES DE RENDA -->
+  <div id="card-fontes" style="background:var(--s);border:1px solid var(--b);border-radius:16px;padding:16px 18px;margin-bottom:0;display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--mt);font-weight:600">💼 Fontes de renda do mês</div>
+      <div id="fontes-total" style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--am)">R$ 0,00</div>
+    </div>
+    <div id="fontes-lista" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+
+  <!-- CARD QUANTO FALTA FATURAR -->
+  <div id="card-falta" style="display:none;background:linear-gradient(135deg,rgba(255,69,96,.07),rgba(255,69,96,.02));border:1px solid rgba(255,69,96,.25);border-radius:16px;padding:16px 18px">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--mt);font-weight:600;margin-bottom:12px">🎯 Plano de faturamento</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <!-- Resumo caixa -->
+      <div style="display:flex;justify-content:space-between;font-size:13px">
+        <span style="color:var(--mt)">💵 Líquido em caixa agora</span>
+        <span id="falta-plat" style="font-weight:600;color:var(--gn)">R$ 0,00</span>
+      </div>
+      <div id="falta-renda-row" style="display:none;justify-content:space-between;font-size:13px">
+        <span style="color:var(--mt)">💼 Renda extra recebida</span>
+        <span id="falta-renda" style="font-weight:600;color:#4e9eff">+ R$ 0,00</span>
+      </div>
+      <div style="height:1px;background:rgba(255,255,255,.07);margin:2px 0"></div>
+      <!-- Blocos de prazo inteligente -->
+      <div id="falta-blocos" style="display:flex;flex-direction:column;gap:6px"></div>
+      <!-- Total geral -->
+      <div style="height:1px;background:rgba(255,255,255,.07);margin:2px 0"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;font-weight:600;color:var(--tx)">Total falta faturar</span>
+        <span id="falta-valor" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--rd)">R$ 0,00</span>
+      </div>
+      <!-- Sugestão do dia -->
+      <div id="falta-sugestao" style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px"></div>
+      <div id="falta-previsto-row" style="display:none;flex-direction:column;gap:2px;margin-top:2px">
+        <div style="display:flex;justify-content:space-between;font-size:12px">
+          <span style="color:#f5a623">📅 Renda prevista próx. mês</span>
+          <span id="falta-previsto" style="font-weight:600;color:#f5a623">R$ 0,00</span>
+        </div>
+        <div style="font-size:10px;color:var(--mt)">Registrado mas ainda não caiu — não abate este mês</div>
+      </div>
+      <!-- Card Meta Diária + Botão Plano -->
+      <div style="margin-top:10px">
+        <!-- Card de meta diária editável -->
+        <div id="card-meta-diaria" style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:10px;color:rgba(99,102,241,.9);font-weight:600;letter-spacing:.3px;margin-bottom:2px">🎯 META DIÁRIA</div>
+            <div id="meta-display" style="font-size:20px;font-weight:700;color:var(--tx)">R$ <span id="meta-valor-txt">300</span></div>
+            <div id="comb-display" style="font-size:10px;color:var(--mt);margin-top:1px">⛽ combustível: <span id="comb-valor-txt">—</span></div>
+          </div>
+          <button onclick="editarMeta()" style="background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);border-radius:8px;padding:6px 12px;color:rgba(99,102,241,1);font-size:12px;font-weight:600;cursor:pointer">✏️ Editar</button>
+        </div>
+        <!-- Formulário de edição (oculto por padrão) -->
+        <div id="form-meta" style="display:none;background:rgba(255,255,255,.05);border:1px solid rgba(99,102,241,.4);border-radius:12px;padding:12px;margin-bottom:10px">
+          <div style="font-size:11px;color:var(--mt);margin-bottom:8px">Configure sua capacidade de faturamento:</div>
+          <div style="font-size:10px;color:var(--mt);margin-bottom:4px">💰 Quanto você consegue faturar num dia cheio?</div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+            <span style="font-size:13px;color:var(--mt)">R$</span>
+            <input id="cap-max" type="number" min="50" max="3000" step="50"
+              style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(99,102,241,.4);border-radius:8px;padding:8px 12px;color:var(--tx);font-size:16px;font-weight:700;outline:none;text-align:center">
+            <input id="cap-min" type="hidden" value="0">
+          </div>
+          <div style="font-size:10px;color:rgba(255,165,0,.9);margin-bottom:4px">⛽ Quanto gasta de combustível num dia normal de trabalho?</div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+            <span style="font-size:13px;color:var(--mt)">R$</span>
+            <input id="comb-input" type="number" min="0" max="500" step="10" placeholder="ex: 150"
+              style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,165,0,.4);border-radius:8px;padding:8px 12px;color:var(--tx);font-size:16px;font-weight:700;outline:none;text-align:center">
+          </div>
+          <div style="font-size:10px;color:var(--mt);margin-bottom:10px;line-height:1.5">💡 Se fizer R$600, gasta ~R$150. O plano deduz isso primeiro antes de calcular o que sobra para as contas.</div>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button onclick="salvarMetaCard()" style="flex:1;padding:8px;background:#6366f1;border:none;border-radius:8px;color:white;font-size:13px;font-weight:600;cursor:pointer">✅ Salvar</button>
+            <button onclick="cancelarMeta()" style="padding:8px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--mt);font-size:13px;cursor:pointer">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- CARD LANÇAMENTOS FUTUROS -->
+  <div id="card-futuros" style="display:none;background:linear-gradient(135deg,rgba(245,166,35,.09),rgba(245,166,35,.02));border:1px solid rgba(245,166,35,.3);border-radius:16px;padding:16px 18px">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--mt);font-weight:600;margin-bottom:10px">📅 Previsto para o próximo mês</div>
+    <div id="futuros-lista" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div style="margin-top:10px;font-size:11px;color:var(--mt);border-top:1px solid rgba(255,255,255,.06);padding-top:8px">Esses lançamentos já estão salvos e vão aparecer automaticamente quando o mês virar.</div>
+  </div>
+
+  <div class="gc" style="margin-top:0">
+    <h3 id="label-resultado-dia" style="margin:0 0 10px;font-size:13px;color:var(--mt2);text-transform:uppercase;letter-spacing:.5px">📅 Resultado de hoje</h3>
+    <div id="resumo-hoje" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="rh-item"><span class="rh-label">💰 Faturado</span><span class="rh-val gn">—</span></div>
+      <div class="rh-item"><span class="rh-label">💸 Gastos</span><span class="rh-val rd">—</span></div>
+      <div class="rh-item"><span class="rh-label">✅ Líquido</span><span class="rh-val am">—</span></div>
+      <div class="rh-item"><span class="rh-label">⏱ Horas</span><span class="rh-val">—</span></div>
+    </div>
   </div>
 
   <!-- GRAFICOS -->
@@ -348,7 +683,22 @@ const _supa = supabase.createClient(
     <div id="area-ganho">
       <div class="fr">
         <div class="fg"><label>Plataforma</label>
-          <select id="f-plat"><option value="uber">Uber</option><option value="99">99</option><option value="indrive">InDrive</option><option value="outro">Outro</option></select></div>
+          <select id="f-plat">
+            <optgroup label="🚗 Plataformas">
+              <option value="uber">Uber</option>
+              <option value="99">99</option>
+              <option value="indrive">InDrive</option>
+              <option value="outro">Outra plataforma</option>
+            </optgroup>
+            <optgroup label="💼 Renda Extra">
+              <option value="seguro_desemprego">Seguro-desemprego</option>
+              <option value="freelance">Freelance / Bico</option>
+              <option value="aluguel_recebido">Aluguel recebido</option>
+              <option value="venda">Venda de item</option>
+              <option value="bonus">Bônus / Premiação</option>
+              <option value="renda_extra">Outros (renda extra)</option>
+            </optgroup>
+          </select></div>
         <div class="fg"><label>Valor (R$)</label><input type="number" id="f-val" placeholder="0,00" step="0.01" min="0" onkeydown="if(event.key==='Enter'){salvar()}"></div>
       </div>
       <div class="fr">
@@ -367,15 +717,26 @@ const _supa = supabase.createClient(
 </div>
 
 <div class="page" id="page-historico">
-  <div class="ph"><div><h1>Histórico</h1><div class="sub">Todos os seus lançamentos</div></div></div>
+  <div class="ph"><div><h1>Histórico</h1><div class="sub">Lançamentos e comparativos</div></div></div>
   <div class="gc">
-    <div class="hf">
-      <button class="fp active" onclick="filtrar(this,'todos')">Todos</button>
-      <button class="fp" onclick="filtrar(this,'ganho')">💰 Ganhos</button>
-      <button class="fp" onclick="filtrar(this,'despesa')">💸 Despesas</button>
+    <div class="hf" style="flex-wrap:wrap;gap:6px">
+      <button class="fp active" onclick="mudarVisaoHist(this,'lancamentos')">📋 Lançamentos</button>
+      <button class="fp" onclick="mudarVisaoHist(this,'semanal')">📆 Semanal</button>
+      <button class="fp" onclick="mudarVisaoHist(this,'mensal')">📅 Mensal</button>
     </div>
-    <div class="ll" id="lanc-list"><div class="empty"><div class="empty-icon">📭</div><p>Nenhum lançamento ainda</p></div></div>
   </div>
+  <div id="visao-lancamentos">
+    <div class="gc">
+      <div class="hf">
+        <button class="fp active" onclick="filtrar(this,'todos')">Todos</button>
+        <button class="fp" onclick="filtrar(this,'ganho')">💰 Ganhos</button>
+        <button class="fp" onclick="filtrar(this,'despesa')">💸 Despesas</button>
+      </div>
+      <div class="ll" id="lanc-list"><div class="empty"><div class="empty-icon">📭</div><p>Nenhum lançamento ainda</p></div></div>
+    </div>
+  </div>
+  <div id="visao-semanal" style="display:none"></div>
+  <div id="visao-mensal" style="display:none"></div>
 </div>
 
 <div class="page" id="page-calendario">
@@ -393,7 +754,7 @@ const _supa = supabase.createClient(
     <div class="cwds"><div class="cwd">Dom</div><div class="cwd">Seg</div><div class="cwd">Ter</div><div class="cwd">Qua</div><div class="cwd">Qui</div><div class="cwd">Sex</div><div class="cwd">Sáb</div></div>
     <div class="cgrid" id="cal-grid"></div>
   </div>
-  <div class="gc"><h3>Estatísticas do mês</h3><div id="cal-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px"></div></div>
+  <div class="gc"><h3>Estatísticas do mês</h3><div id="cal-stats" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px"></div></div>
 </div>
 
 <style>
@@ -411,7 +772,7 @@ const _supa = supabase.createClient(
   <div class="comp-grid">
     <div class="gc ranking-blur"><h3>🏆 Ranking semanal</h3><div class="rk-list" id="ranking-list"></div></div>
     
-<div class="gc" id="card-contas-dash" style="cursor:pointer" onclick="goPage(document.querySelector('.ni:nth-child(7)'),'contas')">
+<div class="gc" id="card-contas-dash" style="cursor:pointer" onclick="goContas(document.getElementById('ni-contas'))">
   <h3>📅 Contas a Pagar</h3>
   <div id="contas-dash-lista" style="font-size:13px;color:var(--tx)">Carregando...</div>
 </div>
@@ -419,24 +780,63 @@ const _supa = supabase.createClient(
   </div>
 </div>
 
-<div class="page" id="page-assistente">
-  <div style="padding:16px 0 8px;font-size:18px;font-weight:700">🤖 Assistente IA</div>
-  <div style="font-size:12px;color:var(--mt);margin-bottom:16px">Fale em linguagem natural — registro e consulta automáticos</div>
-  <div id="chat-msgs" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;max-height:55vh;overflow-y:auto;padding-right:4px"></div>
-  <div style="display:flex;gap:8px;align-items:flex-end">
-    <textarea id="chat-input" placeholder="Ex: Ganhei 180 reais hoje na Uber, rodei 4 horas e 60km" style="flex:1;padding:12px;border-radius:12px;border:1px solid var(--b);background:var(--s);color:var(--tx);font-size:16px;resize:none;height:52px;font-family:inherit" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
-    <button onclick="sendChat()" style="padding:14px 18px;border-radius:12px;background:var(--pp);color:#fff;border:none;cursor:pointer;font-size:18px;flex-shrink:0">➤</button>
+
+<style>
+  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .msg-gestor { background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);color:var(--tx);align-self:flex-start;border-bottom-left-radius:4px;max-width:88% }
+  .msg-gestor.confirmacao { background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.35) }
+  .msg-gestor.alerta { background:rgba(245,166,35,.08);border-color:rgba(245,166,35,.3) }
+  .msg-gestor.sucesso { background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.25) }
+  .msg-user { background:linear-gradient(135deg,rgba(99,102,241,.9),rgba(79,70,229,.9));color:#fff;align-self:flex-end;border-bottom-right-radius:4px;max-width:82% }
+  .msg-base { padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.55;word-break:break-word }
+  .msg-time { font-size:10px;opacity:.5;margin-top:3px;display:block }
+  .msg-avatar { width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:2px }
+  .confirm-btns { display:flex;gap:6px;margin-top:8px }
+  .confirm-btns button { padding:6px 14px;border-radius:10px;border:none;cursor:pointer;font-size:12px;font-weight:600 }
+  .btn-sim { background:rgba(34,197,94,.2);color:#22c55e;border:1px solid rgba(34,197,94,.4) !important }
+  .btn-nao { background:rgba(255,69,96,.15);color:#ff4560;border:1px solid rgba(255,69,96,.35) !important }
+</style>
+
+<div class="page" id="page-fechamento">
+  <div class="ph"><div><h1>Fechamento</h1><div class="sub">Confira se as contas fecham</div></div></div>
+
+  <div class="gc">
+    <div class="hf" style="flex-wrap:wrap;gap:6px">
+      <button class="fp active" onclick="mudarFechamento(this,'diario')">📅 Diário</button>
+      <button class="fp" onclick="mudarFechamento(this,'semanal')">📆 Semanal</button>
+      <button class="fp" onclick="mudarFechamento(this,'mensal')">📅 Mensal</button>
+    </div>
   </div>
-  <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
-    <button onclick="quickChat('Quanto ganhei essa semana?')" style="padding:6px 10px;border-radius:20px;border:1px solid var(--b);background:var(--s);color:var(--tx);font-size:11px;cursor:pointer">Quanto ganhei?</button>
-    <button onclick="quickChat('Quais contas estão pendentes?')" style="padding:6px 10px;border-radius:20px;border:1px solid var(--b);background:var(--s);color:var(--tx);font-size:11px;cursor:pointer">Contas pendentes?</button>
-    <button onclick="quickChat('Me dá uma dica financeira')" style="padding:6px 10px;border-radius:20px;border:1px solid var(--b);background:var(--s);color:var(--tx);font-size:11px;cursor:pointer">Dica financeira</button>
+
+  <div id="fech-diario">
+    <div class="gc">
+      <h3 style="margin:0 0 12px">Selecione o dia</h3>
+      <input type="date" id="fech-data" style="background:var(--b2);border:1px solid var(--b);color:var(--tx);padding:10px 14px;border-radius:10px;font-size:14px;width:100%;box-sizing:border-box" onchange="calcFechamentoDiario()">
+    </div>
+    <div id="fech-diario-result"></div>
+  </div>
+
+  <div id="fech-semanal" style="display:none">
+    <div class="gc">
+      <h3 style="margin:0 0 12px">Selecione a semana</h3>
+      <input type="week" id="fech-semana" style="background:var(--b2);border:1px solid var(--b);color:var(--tx);padding:10px 14px;border-radius:10px;font-size:14px;width:100%;box-sizing:border-box" onchange="calcFechamentoSemanal()">
+    </div>
+    <div id="fech-semanal-result"></div>
+  </div>
+
+  <div id="fech-mensal" style="display:none">
+    <div class="gc">
+      <h3 style="margin:0 0 12px">Selecione o mês</h3>
+      <input type="month" id="fech-mes" style="background:var(--b2);border:1px solid var(--b);color:var(--tx);padding:10px 14px;border-radius:10px;font-size:14px;width:100%;box-sizing:border-box" onchange="calcFechamentoMensal()">
+    </div>
+    <div id="fech-mensal-result"></div>
   </div>
 </div>
+
 <div class="page" id="page-contas">
 
   <!-- Resumo -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px" id="contas-resumo"></div>
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:20px" id="contas-resumo"></div>
 
   <!-- Calculadora -->
   <div class="gc" id="calc-meta-box" style="margin-bottom:20px;display:none">
@@ -480,12 +880,19 @@ const _supa = supabase.createClient(
 
 <script>
 try{Chart.register(ChartDataLabels);}catch(e){}const API='https://gestor-motorista-production.up.railway.app';
+// Data atual no horário de Brasília (UTC-3)
+function hojeStr(){const d=new Date(Date.now()-3*60*60*1000);return d.toISOString().slice(0,10);}
 let MID=null;
 let NOME='Motorista';
 let META_DIARIA=parseFloat(localStorage.getItem('meta')||'150');
 let tipoAtual='ganho',catAtual='',todosLanc=[];
 let gPizza=null,gLinha=null;
 let obPlats=[],obMeta=150;
+
+// ── SETUP MODE ──────────────────────────────────────────────────────────────
+let _setupMode = false;       // true quando usuário novo ainda não configurou
+let _setupHistorico = [];     // histórico da conversa de setup
+let _setupIniciado = false;   // evita reiniciar
 
 const CATS=[
   {k:'combustivel',e:'⛽',n:'Combustível'},{k:'manutencao',e:'🔧',n:'Manutenção'},
@@ -512,7 +919,281 @@ const BADGES=[
 ];
 
 function fmt(v){return'R$ '+parseFloat(v||0).toFixed(2).replace('.',',')}
+
+function editarMeta(){
+  const meta = window.META_DIARIA || 300;
+  document.getElementById('cap-max').value = meta;
+  // Preenche campo de combustível se já tiver salvo
+  const combEl = document.getElementById('comb-input');
+  if(combEl && window.COMB_DIARIO) combEl.value = window.COMB_DIARIO;
+  document.getElementById('form-meta').style.display = 'block';
+  document.getElementById('card-meta-diaria').style.display = 'none';
+}
+function cancelarMeta(){
+  document.getElementById('form-meta').style.display = 'none';
+  document.getElementById('card-meta-diaria').style.display = 'flex';
+}
+async function salvarMetaCard(){
+  const nova = parseFloat(document.getElementById('cap-max').value || 300);
+  if(!nova || nova < 50){ alert('Informe um valor válido'); return; }
+  const combVal = parseFloat(document.getElementById('comb-input')?.value || 0);
+  const novaComb = combVal > 0 ? combVal : null;
+  const mid = window.MID || window.MOTORISTA_ID || localStorage.getItem('mid');
+  try{
+    await fetch(API+'/meta-diaria/'+mid,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({meta:nova, comb_diario:novaComb})});
+    window.META_DIARIA = nova;
+    localStorage.setItem('meta', nova);
+    if(novaComb){ window.COMB_DIARIO = novaComb; localStorage.setItem('comb_diario', novaComb); }
+    document.getElementById('meta-valor-txt').textContent = nova.toFixed(0);
+    // Atualiza exibição do combustível no card
+    const combTxt = document.getElementById('comb-valor-txt');
+    if(combTxt) combTxt.textContent = novaComb ? 'R$'+novaComb.toFixed(0)+'/dia' : '—';
+    cancelarMeta();
+    toast('Meta e combustível salvos 🎯');
+  }catch(e){ toast('Erro ao salvar','error'); }
+}
+function atualizarExibicaoMeta(v, comb){
+  const meta = parseFloat(v||300);
+  window.META_DIARIA = meta;
+  const el = document.getElementById('meta-valor-txt');
+  if(el) el.textContent = meta.toFixed(0);
+  const inp = document.getElementById('cap-max');
+  if(inp) inp.value = meta;
+  // Atualiza combustível se veio
+  if(comb){
+    window.COMB_DIARIO = parseFloat(comb);
+    localStorage.setItem('comb_diario', comb);
+    const combTxt = document.getElementById('comb-valor-txt');
+    if(combTxt) combTxt.textContent = 'R$'+parseFloat(comb).toFixed(0)+'/dia';
+    const combInp = document.getElementById('comb-input');
+    if(combInp) combInp.value = comb;
+  }
+}
 function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(ok?'tok':'ter')+' show';setTimeout(()=>t.classList.remove('show'),3000)}
+
+let _planoGerando = false;
+// Estado da conversa do plano
+let _planoEtapa = 0; // 0=idle, 1=aguardando resposta do usuário, 2=gerando
+let _planoCapMax = 0;
+
+async function abrirConsultorIA(){
+  if(_planoGerando) return;
+
+  const mid = window.MID || window.MOTORISTA_ID || localStorage.getItem('mid');
+  const box = document.getElementById('chat-msgs');
+
+  // Rola para o chat
+  if(box){
+    box.style.maxHeight = '420px';
+    const chatCard = box.closest ? box.closest('[style*="border-radius:18px"]') : null;
+    (chatCard || box).scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  // Busca histórico real por dia da semana (sempre tenta, usa cache se disponível)
+  let hist = window._historicoSemana || null;
+  if((!hist || !hist.tem_historico) && mid){
+    try{
+      const r = await fetch(API+'/historico-semana/'+mid);
+      hist = await r.json();
+      window._historicoSemana = hist;
+    }catch(e){ hist = null; }
+  }
+
+  const temHistorico = hist && hist.tem_historico;
+  const capMaxRaw = parseFloat(document.getElementById('cap-max')?.value || 0);
+  const capMaxConhecido = capMaxRaw > 0 ? capMaxRaw : (temHistorico ? hist.media_geral : (window.META_DIARIA > 0 && window.META_DIARIA !== 150 ? window.META_DIARIA : 0));
+
+  // Tem histórico real? Mostra que o sistema conhece a rotina e gera direto
+  if(temHistorico){
+    const DIAS = {0:'Segunda',1:'Terça',2:'Quarta',3:'Quinta',4:'Sexta',5:'Sábado',6:'Domingo'};
+    const hoje_dow = new Date().getDay(); // 0=dom, ajusta para segunda=0
+    const dow_ajustado = hoje_dow === 0 ? 6 : hoje_dow - 1;
+    const diaHoje = DIAS[dow_ajustado] || '';
+
+    // Monta resumo do padrão que o sistema conhece
+    const diasOrdenados = Object.entries(hist.media_por_dia)
+      .sort((a,b) => b[1].media - a[1].media);
+    const melhor = diasOrdenados[0];
+    const pior = diasOrdenados[diasOrdenados.length-1];
+
+    // Média de hoje
+    const mediaHoje = hist.media_por_dia[dow_ajustado];
+    const ehDiaFraco = hist.dias_fracos && hist.dias_fracos.includes(diaHoje);
+    const ehDiaForte = hist.dias_fortes && hist.dias_fortes.includes(diaHoje);
+
+    // Verifica contas urgentes
+    const contas = window._contas || [];
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const urgentes = contas.filter(c => {
+      if(c.pago) return false;
+      const diff = Math.ceil((new Date(c.vencimento+'T12:00:00') - hoje)/(1000*60*60*24));
+      return diff <= 3;
+    });
+
+    let abertura = '';
+    if(urgentes.length > 0){
+      const nomesUrg = urgentes.map(c=>`${c.descricao} (R$${parseFloat(c.valor).toFixed(0)})`).join(', ');
+      abertura += `⚠️ ${nomesUrg} vence${urgentes.length>1?'m':''} em breve — precisa de atenção.\n\n`;
+    }
+
+    // Mostra que o sistema conhece a rotina
+    abertura += `📊 Vi seu histórico dos últimos dias:\n`;
+    if(melhor) abertura += `• ${melhor[1].nome} é seu dia mais forte: R$${melhor[1].media.toFixed(0)}/dia em média\n`;
+    if(pior && pior[0] !== melhor[0]) abertura += `• ${pior[1].nome} costuma ser mais fraco: R$${pior[1].media.toFixed(0)}/dia\n`;
+    if(mediaHoje){
+      if(ehDiaFraco) abertura += `• Hoje (${diaHoje}) costuma ser mais lento — R$${mediaHoje.media.toFixed(0)} de média. Mas tá tudo bem, o plano já leva isso em conta.\n`;
+      else if(ehDiaForte) abertura += `• Hoje (${diaHoje}) é um dos seus dias fortes — R$${mediaHoje.media.toFixed(0)} de média. Bora aproveitar! 🚀\n`;
+      else abertura += `• Hoje (${diaHoje}): R$${mediaHoje.media.toFixed(0)} de média histórica.\n`;
+    }
+    abertura += `\nDeixa eu montar o plano completo com base nisso...`;
+
+    appendMsg('assistant', abertura);
+    chatHistory.push({role:'assistant', content: abertura, date: hojeStr()});
+    try{localStorage.setItem(getDashHistoryKey(),JSON.stringify(chatHistory.slice(-20)))}catch{}
+
+    await _executarGeracaoPlano(mid, hist.media_geral || capMaxConhecido, box);
+    return;
+  }
+
+  // Sem histórico: pergunta capacidade normalmente
+  const capJaConfigurada = capMaxConhecido > 0 && capMaxConhecido !== 150;
+  if(!capJaConfigurada){
+    _planoEtapa = 1;
+    const contas = window._contas || [];
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const urgentes = contas.filter(c => {
+      if(c.pago) return false;
+      const diff = Math.ceil((new Date(c.vencimento+'T12:00:00') - hoje)/(1000*60*60*24));
+      return diff <= 3;
+    });
+    let msg;
+    if(urgentes.length > 0){
+      const nomesUrg = urgentes.map(c=>`${c.descricao} (R$${parseFloat(c.valor).toFixed(0)})`).join(', ');
+      msg = `Vi aqui que você tem conta${urgentes.length>1?'s':''} vencendo em breve: ${nomesUrg}. Vou te ajudar a montar um plano.\n\nPrimeiro: em média, quanto você consegue faturar num dia bom de trabalho? (só o número, ex: 400)`;
+    } else {
+      msg = `Vou montar um plano financeiro pra você. Antes, me fala: num dia normal de trabalho, quanto você costuma faturar de bruto? (ex: 350, 400...)`;
+    }
+    appendMsg('assistant', msg);
+    // Não salva msg de onboarding no histórico permanente (evita poluir sessões futuras)
+    const inp = document.getElementById('chat-inp');
+    if(inp){ inp.placeholder = 'Ex: 400'; inp.focus(); }
+    return;
+  }
+
+  // Tem meta configurada mas sem histórico detalhado: gera direto
+  await _executarGeracaoPlano(mid, capMaxConhecido, box);
+}
+
+async function _responderPerguntaCapacidade(valor){
+  // Extrai número da resposta do usuário
+  const num = parseFloat((valor.match(/\d+[\.,]?\d*/)||[])[0]?.replace(',','.') || 0);
+  if(!num || num < 100 || num > 2000){
+    appendMsg('assistant', 'Não entendi bem. Me manda só o número — ex: 400 (sem R$ nem texto).');
+    return;
+  }
+
+  _planoEtapa = 0;
+  _planoCapMax = num;
+
+  // Confirma e gera
+  const mid = window.MID || window.MOTORISTA_ID || localStorage.getItem('mid');
+  const box = document.getElementById('chat-msgs');
+
+  appendMsg('assistant', `Ok, R$${num.toFixed(0)}/dia. Deixa eu analisar tudo e montar seu plano...`);
+  chatHistory.push({role:'assistant', content:`Ok, R$${num}/dia — analisando...`});
+
+  await _executarGeracaoPlano(mid, num, box);
+}
+
+async function _executarGeracaoPlano(mid, capMax, box){
+  if(_planoGerando) return;
+  _planoGerando = true;
+
+  const cardEl = document.getElementById('card-plano-ia');
+  const ctaTxt = document.getElementById('card-plano-cta-txt');
+  if(cardEl){ cardEl.style.opacity='0.6'; cardEl.style.pointerEvents='none'; }
+  if(ctaTxt) ctaTxt.textContent = 'Gerando plano...';
+
+  const capMin = Math.round(capMax * 0.6);
+
+  // Digitando...
+  const typing = document.createElement('div');
+  typing.id = 'typing-consultor';
+  typing.style.cssText = 'display:flex;align-items:flex-start;gap:8px';
+  typing.innerHTML = '<div class="msg-avatar">🧠</div>' +
+    '<div class="msg-base msg-gestor" style="padding:10px 14px">' +
+      '<div style="font-size:10px;font-weight:600;color:rgba(99,102,241,.8);margin-bottom:6px;letter-spacing:.3px">GESTOR · analisando tudo...</div>' +
+      '<div style="display:flex;gap:5px;align-items:center;height:18px">' +
+        '<span style="width:7px;height:7px;background:#6366f1;border-radius:50%;animation:typing-b 1.2s .0s infinite"></span>' +
+        '<span style="width:7px;height:7px;background:#6366f1;border-radius:50%;animation:typing-b 1.2s .2s infinite"></span>' +
+        '<span style="width:7px;height:7px;background:#6366f1;border-radius:50%;animation:typing-b 1.2s .4s infinite"></span>' +
+      '</div>' +
+    '</div>';
+  if(box){ box.appendChild(typing); box.scrollTop = box.scrollHeight; }
+
+  try {
+    const resp = await fetch(API + '/plano-financeiro', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ motorista_id: mid, min_dia: capMin, max_dia: capMax })
+    });
+    const data = await resp.json();
+    document.getElementById('typing-consultor')?.remove();
+
+    if(data.partes && data.partes.length){
+      for(let i = 0; i < data.partes.length; i++){
+        const parte = data.partes[i].trim();
+        if(!parte) continue;
+        if(i > 0){
+          await new Promise(r => setTimeout(r, 700));
+          const t2 = document.createElement('div');
+          t2.id = 'typing-parte-' + i;
+          t2.style.cssText = 'display:flex;align-items:flex-start;gap:8px';
+          t2.innerHTML = '<div class="msg-avatar">🧠</div>' +
+            '<div class="msg-base msg-gestor" style="padding:10px 14px">' +
+              '<div style="display:flex;gap:5px;align-items:center;height:18px">' +
+                '<span style="width:6px;height:6px;background:#6366f1;border-radius:50%;animation:typing-b 1.2s .0s infinite"></span>' +
+                '<span style="width:6px;height:6px;background:#6366f1;border-radius:50%;animation:typing-b 1.2s .2s infinite"></span>' +
+                '<span style="width:6px;height:6px;background:#6366f1;border-radius:50%;animation:typing-b 1.2s .4s infinite"></span>' +
+              '</div>' +
+            '</div>';
+          if(box){ box.appendChild(t2); box.scrollTop = box.scrollHeight; }
+          await new Promise(r => setTimeout(r, 1400));
+          document.getElementById('typing-parte-' + i)?.remove();
+        }
+        appendMsg('assistant', parte);
+        chatHistory.push({role:'assistant', content: parte, date: hojeStr()});
+        if(box) box.scrollTop = box.scrollHeight;
+      }
+      // Pergunta sobre dias de esforço extra
+      await new Promise(r => setTimeout(r, 800));
+      const t3 = document.createElement('div');
+      t3.style.cssText = 'display:flex;align-items:flex-start;gap:8px';
+      t3.innerHTML = '<div class="msg-avatar">🧠</div><div class="msg-base msg-gestor" style="padding:10px 14px"><div style="display:flex;gap:5px;align-items:center;height:18px"><span style="width:6px;height:6px;background:#6366f1;border-radius:50%;animation:typing-b 1.2s .0s infinite"></span><span style="width:6px;height:6px;background:#6366f1;border-radius:50%;animation:typing-b 1.2s .2s infinite"></span><span style="width:6px;height:6px;background:#6366f1;border-radius:50%;animation:typing-b 1.2s .4s infinite"></span></div></div>';
+      if(box){ box.appendChild(t3); box.scrollTop = box.scrollHeight; }
+      await new Promise(r => setTimeout(r, 1300));
+      t3.remove();
+      const msgFim = 'Tem algum dia dessa semana que você consegue trabalhar mais? Me fala os dias e quanto acha que faz (ex: "sexta faço 500, sábado 400") e eu ajusto o plano.';
+      appendMsg('assistant', msgFim);
+      chatHistory.push({role:'assistant', content: msgFim, date: hojeStr()});
+      try{localStorage.setItem(getDashHistoryKey(),JSON.stringify(chatHistory.slice(-20)))}catch{}
+    } else if(data.erro) {
+      appendMsg('assistant', data.mensagem || 'Não consegui gerar o plano agora. Tenta em instantes.');
+    } else {
+      appendMsg('assistant', 'Ops, não consegui gerar o plano agora. Tenta de novo em instantes.');
+    }
+  } catch(e) {
+    document.getElementById('typing-consultor')?.remove();
+    appendMsg('assistant', 'Erro de conexão ao gerar o plano. Verifica sua internet.');
+  } finally {
+    _planoGerando = false;
+    const cardEl = document.getElementById('card-plano-ia');
+    const ctaTxt = document.getElementById('card-plano-cta-txt');
+    if(cardEl){ cardEl.style.opacity='1'; cardEl.style.pointerEvents=''; }
+    if(ctaTxt) ctaTxt.textContent = 'Atualizar plano';
+  }
+}
+
 
 function obNext(step){
   if(step===1){
@@ -554,8 +1235,8 @@ async function obFim(){
     META_DIARIA=obMeta;
     NOME=nome;
     document.getElementById('onboarding').style.display='none';
-    document.getElementById('user-nome').textContent=NOME.split(' ')[0];
-    document.getElementById('user-av').textContent=NOME[0].toUpperCase();
+    const _nEl=document.getElementById('user-nome'); if(_nEl) _nEl.textContent=NOME.split(' ')[0];
+    const _aEl=document.getElementById('user-av'); if(_aEl) _aEl.textContent=NOME[0].toUpperCase();
     loadDash();
   }catch(e){alert('Erro ao cadastrar. Servidor online?');document.getElementById('ob-btn-fim').disabled=false;}
 }
@@ -565,11 +1246,12 @@ function goPage(el,pg){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('page-'+pg).classList.add('active');
-  if(pg==='dashboard'){loadDash();loadContasDash();loadDashIA();};
-  if(pg==='historico')loadHist('todos');
-  if(pg==='calendario')renderCal();
-  if(pg==='corrida')loadCorrida();
-  if(pg==='assistente'){ loadAssistente(); };
+  if(pg==='dashboard'){try{loadDash();loadContasDash();}catch(e){console.warn('loadDash err',e);}};
+  if(pg==='historico'){try{loadHist('todos');}catch(e){}};
+  if(pg==='fechamento'){try{document.getElementById('fech-data').value=hojeStr();calcFechamentoDiario();}catch(e){}};
+  if(pg==='calendario'){try{renderCal();}catch(e){}};
+  if(pg==='corrida'){try{loadCorrida();}catch(e){}};
+  if(pg==='assistente'){try{loadAssistente();}catch(e){}};
 }
 
 function setType(t){
@@ -593,7 +1275,7 @@ function buildCatGrid(){
 
 async function salvar(){
   if(!MID&&!window.MID){toast('Faça o cadastro primeiro',false);return}
-  let body={motorista_id:MID,tipo:tipoAtual,data:new Date().toISOString().slice(0,10)};
+  let body={motorista_id:MID,tipo:tipoAtual,data:hojeStr()};
   if(tipoAtual==='ganho'){
     body.valor=parseFloat(document.getElementById('f-val').value)||0;
     body.plataforma=document.getElementById('f-plat').value;
@@ -628,49 +1310,415 @@ async function deletar(id){
   }catch(e){toast('Sem conexão',false)}
 }
 
+// TURNO
+let turnoAtivo = null;
+// RESUMO SEMANAL
+async function resumoSemanal(){
+  if(!MID) return;
+  const hoje = new Date(Date.now()-3*3600000);
+  if(hoje.getDay()!==1) return; // só segunda
+  const chave='resumo_sem_'+hoje.toISOString().slice(0,10);
+  if(localStorage.getItem(chave)) return;
+  localStorage.setItem(chave,'1');
+  // Calcular semana passada
+  const fim = new Date(hoje); fim.setDate(fim.getDate()-1); // domingo
+  const ini = new Date(hoje); ini.setDate(ini.getDate()-7); // segunda passada
+  const fimStr = fim.toISOString().slice(0,10);
+  const iniStr = ini.toISOString().slice(0,10);
+  try {
+    const r = await fetch(API+'/resumo/'+MID);
+    const d = await r.json();
+    const lanc = d.lancamentos||[];
+    const semLanc = lanc.filter(l=>l.data>=iniStr&&l.data<=fimStr);
+    const ganhos = semLanc.filter(l=>l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
+    const despesas = semLanc.filter(l=>l.tipo==='despesa').reduce((a,l)=>a+parseFloat(l.valor),0);
+    const lucro = ganhos - despesas;
+    const dias = new Set(semLanc.filter(l=>l.tipo==='ganho').map(l=>l.data)).size;
+    if(ganhos===0) return;
+    const msg = `📊 Resumo da semana passada (${ini.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})} a ${fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})}):
+
+💰 Ganhos: ${fmt(ganhos)}
+💸 Despesas: ${fmt(despesas)}
+✅ Lucro: ${fmt(lucro)}
+📅 Dias trabalhados: ${dias}
+💡 Média por dia: ${fmt(dias>0?ganhos/dias:0)}
+
+${lucro>0?'Boa semana! Continue assim 🚀':'Semana difícil, mas você está no caminho! 💪'}`;
+    appendDashMsg('assistant', msg);
+  } catch(e){}
+}
+
+// CELEBRAÇÃO META
+let metaCelebrada = false;
+function celebrarMeta(ganhoHoje){
+  const chave = 'meta_cel_'+new Date().toISOString().slice(0,10);
+  if(localStorage.getItem(chave)) return;
+  localStorage.setItem(chave,'1');
+  const cel = document.getElementById('celebracao');
+  const msg = document.getElementById('cel-msg');
+  const sub = document.getElementById('cel-sub');
+  if(!cel||!msg) return;
+  sub.textContent = 'Você fez '+fmt(ganhoHoje)+' hoje! 🚀';
+  cel.style.display='block';
+  msg.classList.add('show');
+  // confetti
+  const cores=['#F5A623','#FFD166','#2ECC8F','#5B9CF6','#FF4D6A','#fff'];
+  for(let i=0;i<60;i++){
+    const c=document.createElement('div');
+    c.className='confete';
+    c.style.cssText=`left:${Math.random()*100}%;top:-10px;background:${cores[Math.floor(Math.random()*cores.length)]};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*0.5}s;width:${6+Math.random()*8}px;height:${6+Math.random()*8}px`;
+    cel.appendChild(c);
+  }
+  setTimeout(()=>{msg.classList.remove('show');setTimeout(()=>{cel.style.display='none';cel.innerHTML='';},400);},4000);
+}
+
+async function toggleTurno(){
+  const btn = document.getElementById('btn-turno');
+  if(!turnoAtivo){
+    turnoAtivo = {inicio: new Date().toTimeString().slice(0,5), data: hojeStr()};
+    btn.textContent = '⏹ Encerrar turno';
+    btn.style.background = 'rgba(255,77,106,.12)';
+    btn.style.borderColor = 'rgba(255,77,106,.3)';
+    btn.style.color = '#FF4D6A';
+    toast('Turno iniciado! ▶');
+  } else {
+    const fim = new Date().toTimeString().slice(0,5);
+    const [h1,m1] = turnoAtivo.inicio.split(':').map(Number);
+    const [h2,m2] = fim.split(':').map(Number);
+    const horas = Math.round(((h2*60+m2)-(h1*60+m1))/60*10)/10;
+    try {
+      await fetch(API+'/turno',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({motorista_id:MID,data:turnoAtivo.data,inicio:turnoAtivo.inicio,fim,horas})});
+      toast('Turno encerrado! '+horas+'h registradas ✓');
+    } catch(e){ toast('Erro ao salvar turno',false); }
+    turnoAtivo = null;
+    btn.textContent = '▶ Iniciar turno';
+    btn.style.background = 'rgba(46,204,143,.12)';
+    btn.style.borderColor = 'rgba(46,204,143,.3)';
+    btn.style.color = '#2ECC8F';
+    loadDash();
+  }
+}
+
+async function atualizarMeta(novaMeta){
+  const m = parseFloat(novaMeta);
+  if(!m || m <= 0) return false;
+  META_DIARIA = m;
+  localStorage.setItem('meta', m);
+  try{
+    await fetch(API+'/meta-diaria/'+MID,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({meta:m})});
+  }catch(e){}
+  loadDash();
+  return true;
+}
+
 async function loadDash(){
   if(!MID && window.MID) MID = window.MID;
   if(!MID)return;
+  // Verifica contas vencendo
+  fetch(API+'/contas/'+MID).then(r=>r.json()).then(c=>alertaContasVencendo(c)).catch(()=>{});
   try{
     const r=await fetch(API+'/resumo/'+MID);
     const d=await r.json();
     todosLanc=d.lancamentos||[];
+    // Busca renda extra prevista no próximo mês
+    let rendaExtraPrevista = 0;
+    let lancFuturos = [];
+    try {
+      const rf = await fetch(API+'/lancamentos-futuros/'+MID);
+      const df = await rf.json();
+      rendaExtraPrevista = df.total_renda_extra_prevista || 0;
+      lancFuturos = df.lancamentos || [];
+    } catch(e) {}
     document.getElementById('c-ganhos').textContent=fmt(d.ganhos);
     document.getElementById('c-despesas').textContent=fmt(d.despesas);
     document.getElementById('c-lucro').textContent=fmt(d.lucro);
-    // c-hora removido
-    const hoje=new Date().toISOString().slice(0,10);
+    const heroLucro=document.getElementById('hero-lucro');
+    if(heroLucro){heroLucro.textContent=fmt(d.lucro);heroLucro.style.color=d.lucro>=0?'var(--am)':'var(--rd)';}
+    // Ganho por hora - busca da tabela turnos (horas corretas por dia)
+    const ganhoMes = todosLanc.filter(l=>l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
+    const cHora = document.getElementById('c-hora');
+    try {
+      const rt = await fetch(API+'/turnos/'+MID);
+      if(rt.ok){
+        const turnos = await rt.json();
+        const hTotais = (turnos||[]).reduce((a,t)=>a+parseFloat(t.horas||0),0);
+        if(cHora) cHora.textContent = hTotais > 0 ? 'R$ '+(ganhoMes/hTotais).toFixed(2).replace('.',',') : '—';
+      } else { if(cHora) cHora.textContent = '—'; }
+    } catch(e){ if(cHora) cHora.textContent = '—'; }
+    const hoje=hojeStr();
     const ganhoHoje=todosLanc.filter(l=>l.data===hoje&&l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
     const pct=Math.min(100,Math.round(ganhoHoje/META_DIARIA*100));
     document.getElementById('meta-fill').style.width=pct+'%';
     document.getElementById('meta-pct').textContent=pct+'%';
+    if(pct>=100) celebrarMeta(ganhoHoje);
     const dashSub=document.getElementById('dash-sub'); if(dashSub) dashSub.textContent='Hoje: '+fmt(ganhoHoje)+' de '+fmt(META_DIARIA)+' de meta';
+    // Resultado do dia
+    const despHoje=todosLanc.filter(l=>l.data===hoje&&l.tipo==='despesa').reduce((a,l)=>a+parseFloat(l.valor),0);
+    const horasHoje=0; // calculado via turnos separadamente
+    // Se hoje não tem dados, tenta ontem (pode ter sido salvo com UTC anterior ao fix)
+    const ontem=new Date(Date.now()-3*60*60*1000-86400000).toISOString().slice(0,10);
+    const diaRef = ganhoHoje===0 && despHoje===0 && todosLanc.some(l=>l.data===ontem) ? ontem : hoje;
+    const ganhoRef = todosLanc.filter(l=>l.data===diaRef&&l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
+    const despRef = todosLanc.filter(l=>l.data===diaRef&&l.tipo==='despesa').reduce((a,l)=>a+parseFloat(l.valor),0);
+    const horasRef = 0; // calculado via turnos separadamente
+    const labelDia = diaRef===hoje ? 'hoje' : 'ontem';
+    const elHoje=document.getElementById('resumo-hoje');
+    if(elHoje){
+      const hLabel = document.getElementById('label-resultado-dia');
+      if(hLabel) hLabel.textContent = `📅 Resultado de ${labelDia}`;
+      elHoje.innerHTML=`
+        <div class="rh-item"><span class="rh-label">💰 Faturado</span><span class="rh-val gn">${fmt(ganhoRef)}</span></div>
+        <div class="rh-item"><span class="rh-label">💸 Gastos</span><span class="rh-val rd">${fmt(despRef)}</span></div>
+        <div class="rh-item"><span class="rh-label">✅ Líquido</span><span class="rh-val am">${fmt(ganhoRef-despRef)}</span></div>
+        <div class="rh-item"><span class="rh-label">⏱ Horas</span><span class="rh-val">${horasRef>0?horasRef.toFixed(1)+'h — R$ '+(ganhoRef/horasRef).toFixed(2).replace('.',',')+'/h':'—'}</span></div>
+      `;
+    }
     const pctDesp=d.ganhos>0?Math.min(100,d.despesas/d.ganhos*100):0;
     const pctLucro=100-pctDesp;
     if(gPizza)gPizza.destroy();
     gPizza=new Chart(document.getElementById('g-pizza'),{type:'doughnut',data:{labels:['Lucro','Despesas'],datasets:[{data:[pctLucro,pctDesp],backgroundColor:['#2ECC8F','#FF4D6A'],borderWidth:0,hoverOffset:4}]},options:{cutout:'72%',plugins:{legend:{labels:{color:'#888',font:{size:11}}},datalabels:{color:'#fff',font:{size:13,weight:'bold'},formatter:(v)=>v>3?v.toFixed(0)+'%':''}},animation:{animateRotate:true}}});
     const hoje14=new Date();
     const ultDias=[];
-    for(let i=13;i>=0;i--){const dd=new Date(hoje14);dd.setDate(dd.getDate()-i);ultDias.push(dd.toISOString().slice(0,10));}
+    for(let i=13;i>=0;i--){const dd=new Date(hoje14);dd.setDate(dd.getDate()-i);ultDias.push(new Date(dd.getTime()-3*60*60*1000).toISOString().slice(0,10));}
     const pd={};ultDias.forEach(d=>pd[d]=0);
     todosLanc.forEach(l=>{if(l.tipo==='ganho'&&pd[l.data]!==undefined)pd[l.data]+=parseFloat(l.valor);});
     if(gLinha)gLinha.destroy();
     gLinha=new Chart(document.getElementById('g-linha'),{type:'bar',data:{labels:ultDias.map(x=>x.slice(8)+'/'+x.slice(5,7)),datasets:[{label:'Ganhos',data:ultDias.map(x=>pd[x]),backgroundColor:ultDias.map(x=>pd[x]>0?'rgba(245,166,35,.7)':'rgba(255,255,255,.05)'),borderColor:ultDias.map(x=>pd[x]>0?'#F5A623':'rgba(255,255,255,.08)'),borderWidth:1,borderRadius:4}]},options:{plugins:{legend:{display:false},datalabels:{display:false}},scales:{x:{ticks:{color:'#555',maxRotation:0,font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#555'},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
 
     // Gráfico faturamento por plataforma
-    const plat={uber:0,'99':0,indrive:0,outros:0};
+    const RENDA_EXTRA_KEYS=['seguro_desemprego','freelance','aluguel_recebido','venda','emprestimo_recebido','bonus','renda_extra'];
+    const RENDA_EXTRA_LABELS={seguro_desemprego:'Seguro-desemprego',freelance:'Freelance/Bico',aluguel_recebido:'Aluguel recebido',venda:'Venda de item',emprestimo_recebido:'Empréstimo recebido',bonus:'Bônus/Premiação',renda_extra:'Renda extra'};
+    const platMap={uber:0,'99':0,indrive:0,outro:0};
+    const rendaExtraMap={};
     todosLanc.filter(l=>l.tipo==='ganho').forEach(l=>{
-      const p=(l.plataforma||'').toLowerCase();
-      if(p==='uber')plat.uber+=parseFloat(l.valor);
-      else if(p==='99')plat['99']+=parseFloat(l.valor);
-      else if(p==='indrive')plat.indrive+=parseFloat(l.valor);
-      else plat.outros+=parseFloat(l.valor);
+      const p=(l.plataforma||'outro').toLowerCase().trim().replace(/[^a-z0-9_]/g,'');
+      if(RENDA_EXTRA_KEYS.includes(p)){rendaExtraMap[p]=(rendaExtraMap[p]||0)+parseFloat(l.valor);}
+      else if(p==='uber')platMap.uber+=parseFloat(l.valor);
+      else if(p==='99'||p.includes('99'))platMap['99']+=parseFloat(l.valor);
+      else if(p==='indrive'||p.includes('drive'))platMap.indrive+=parseFloat(l.valor);
+      else platMap.outro+=parseFloat(l.valor);
     });
-    const platLabels=['Uber','99','inDrive','Outros'];
-    const platVals=[plat.uber,plat['99'],plat.indrive,plat.outros];
-    const platColors=['rgba(0,180,120,.8)','rgba(255,77,106,.8)','rgba(99,102,241,.8)','rgba(245,166,35,.8)'];
+    // Card fontes de renda
+    const totalPlat=Object.values(platMap).reduce((a,v)=>a+v,0);
+    const totalRenda=Object.values(rendaExtraMap).reduce((a,v)=>a+v,0);
+    const totalFontes=totalPlat+totalRenda;
+    const cardFontes=document.getElementById('card-fontes');
+    if(cardFontes&&totalFontes>0){
+      cardFontes.style.display='block';
+      document.getElementById('fontes-total').textContent=fmt(totalFontes);
+      const lista=document.getElementById('fontes-lista');lista.innerHTML='';
+      const fontes=[];
+      if(platMap.uber>0)fontes.push({e:'🖤',n:'Uber',v:platMap.uber,c:'rgba(0,200,130,.7)'});
+      if(platMap['99']>0)fontes.push({e:'🟡',n:'99',v:platMap['99'],c:'rgba(255,200,0,.7)'});
+      if(platMap.indrive>0)fontes.push({e:'🚗',n:'InDrive',v:platMap.indrive,c:'rgba(99,102,241,.7)'});
+      if(platMap.outro>0)fontes.push({e:'🚕',n:'Outra plat.',v:platMap.outro,c:'rgba(245,166,35,.7)'});
+      RENDA_EXTRA_KEYS.forEach(k=>{if(rendaExtraMap[k])fontes.push({e:'💼',n:RENDA_EXTRA_LABELS[k]||k,v:rendaExtraMap[k],c:'rgba(78,158,255,.7)'});});
+      fontes.sort((a,b)=>b.v-a.v);
+      const maxV=fontes[0]?.v||1;
+      fontes.forEach(f=>{
+        const pct=(f.v/totalFontes*100).toFixed(0);
+        lista.innerHTML+=`<div style="display:flex;flex-direction:column;gap:3px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--tx)">${f.e} ${f.n}</span><span style="font-size:12px;font-weight:700;color:var(--tx)">${fmt(f.v)} <span style="color:var(--mt);font-weight:400">${pct}%</span></span></div><div style="background:rgba(255,255,255,.06);border-radius:999px;height:5px;overflow:hidden"><div style="height:5px;border-radius:999px;background:${f.c};width:${(f.v/maxV*100).toFixed(1)}%;transition:width .8s"></div></div></div>`;
+      });
+    } else if(cardFontes){cardFontes.style.display='none';}
+    // Card "Quanto falta faturar" — baseado em CONTAS A PAGAR (não despesas lançadas)
+    const cardFalta = document.getElementById('card-falta');
+    // Busca contas em aberto (window._contas já carregado pelo loadContasDash)
+    const contasPend = (window._contas || []).filter(c => !c.pago);
+    const totalContasAberto = contasPend.reduce((s,c) => s + Math.max(0, parseFloat(c.valor) - parseFloat(c.valor_pago||0)), 0);
+    // Saldo líquido disponível = ganhos do mês - despesas lançadas (combustível etc.) - renda extra já contada separado
+    // d.lucro = ganhos - despesas lançadas; mas lucro inclui renda extra. Separamos:
+    // saldo disponível para quitar contas = lucro total do mês (ganhos - despesas operacionais)
+    const saldoLiquido = Math.max(0, (d.lucro || 0) + totalRenda); // lucro já inclui totalRenda, então subtraímos para não contar duas vezes abaixo
+    // Falta = contas em aberto - saldo líquido disponível (o que sobrou após despesas operacionais)
+    // Saldo real disponível = lucro das plataformas (sem renda extra, pois renda extra é abatida separado)
+    // Líquido em caixa = d.lucro (ganhos totais - despesas operacionais lançadas)
+    // d.lucro já desconta combustível, alimentação etc.
+    const liquidoCaixa = Math.max(0, d.lucro || 0);
+    // Falta faturar = contas em aberto - o que já tem líquido no caixa
+    const faltaValor = Math.max(0, totalContasAberto - liquidoCaixa);
+    const lucroPlat = liquidoCaixa; // usado para exibir no card
+    const temBase = totalContasAberto > 0 || totalPlat > 0;
+    if(cardFalta && temBase){
+      cardFalta.style.display = 'block';
+      // Líquido em caixa
+      const elPlat = document.getElementById('falta-plat');
+      if(elPlat) elPlat.textContent = fmt(liquidoCaixa);
+      // Renda extra recebida
+      const rendaRow = document.getElementById('falta-renda-row');
+      if(rendaRow) rendaRow.style.display = totalRenda > 0 ? 'flex' : 'none';
+      if(totalRenda > 0) document.getElementById('falta-renda').textContent = '+ ' + fmt(totalRenda);
+      // Renda extra PREVISTA (próximo mês)
+      const previstoRow = document.getElementById('falta-previsto-row');
+      if(rendaExtraPrevista > 0 && previstoRow){
+        previstoRow.style.display = 'flex';
+        document.getElementById('falta-previsto').textContent = fmt(rendaExtraPrevista);
+      } else if(previstoRow){ previstoRow.style.display = 'none'; }
+
+      // ── PLANEJADOR INTELIGENTE DE FATURAMENTO ──
+      const hojeD = new Date(); hojeD.setHours(0,0,0,0);
+      const agora = new Date(Date.now() - 3*60*60*1000);
+      const ultimoDia = new Date(agora.getFullYear(), agora.getMonth()+1, 0).getDate();
+      const diasRestMes = Math.max(1, ultimoDia - agora.getDate() + 1);
+
+      // Combustível diário estimado (média dos dias trabalhados — ignora dias sem despesa)
+      const diasPassados = Math.max(1, agora.getDate() - 1);
+      // Filtra só despesas de combustível se possível, senão usa média total
+      const despCombRaw = (d.lancamentos||[]).filter(l => {
+        const dl = new Date(l.data+'T12:00:00');
+        return l.tipo==='despesa' && dl.getMonth()===agora.getMonth() && dl.getFullYear()===agora.getFullYear()
+          && (l.descricao||'').toLowerCase().includes('combustivel');
+      }).reduce((s,l)=>s+parseFloat(l.valor||0), 0);
+      const combDiario = despCombRaw > 0 ? despCombRaw / diasPassados : (d.despesas||0) / diasPassados;
+
+      // Monta lista de contas com dias até vencimento
+      const agoraHora = new Date(Date.now() - 3*60*60*1000); // horário BRT
+      const horaAtual = agoraHora.getHours();
+      // Se já passou das 17h hoje, hoje não conta como dia útil para trabalhar
+      const diaHojeContaComoUtil = horaAtual < 17;
+
+      const contasComDias = contasPend.map(c => {
+        const v = new Date(c.vencimento+'T12:00:00');
+        const diasAteVenc = Math.ceil((v - hojeD)/(1000*60*60*24));
+        // Dias úteis para trabalhar = hoje + todos os dias até o vencimento (inclusive)
+        // Ex: vence sexta, hoje quinta → diasAteVenc=1 → dias úteis = 1+1 = 2 (quinta + sexta)
+        // Ex: vence hoje → diasAteVenc=0 → dias úteis = 1 (só hoje)
+        const diasUteis = Math.max(1, diasAteVenc + 1);
+        const saldo = Math.max(0, parseFloat(c.valor) - parseFloat(c.valor_pago||0));
+        return {...c, diasAte: Math.max(1, diasAteVenc), diasUteis, saldo};
+      }).sort((a,b) => a.diasAte - b.diasAte);
+
+      // Distribui SOMENTE o caixa real (lucro já realizado hoje) nas contas mais urgentes
+      let caixaDisp = liquidoCaixa;
+      const plano = contasComDias.map(c => {
+        const abatido = Math.min(caixaDisp, c.saldo);
+        caixaDisp = Math.max(0, caixaDisp - abatido);
+        const falta = Math.max(0, c.saldo - abatido);
+        // porDia = líquido necessário por DIA ÚTIL (sem combustível — combustível é exibido separado)
+        const porDia = c.diasUteis > 0 ? falta / c.diasUteis : falta;
+        // brutoPorDia = o que precisa faturar BRUTO por dia útil (líquido + combustível proporcional)
+        // taxa_comb = combDiario / metaDiaria (ou usa 0 se não configurado)
+        const taxaComb = window.COMB_DIARIO > 0 && window.META_DIARIA > 0
+          ? window.COMB_DIARIO / window.META_DIARIA
+          : (combDiario > 0 ? 0.25 : 0);
+        const brutoPorDia = taxaComb > 0 && taxaComb < 1
+          ? porDia / (1 - taxaComb)  // ex: líquido 352 / (1 - 0.35) = 541 bruto
+          : porDia; // sem combustível configurado, mostra só o líquido
+        return {...c, falta, abatido, porDia, brutoPorDia, taxaComb};
+      });
+
+      // Blocos por grupo de prazo
+      const blocosEl = document.getElementById('falta-blocos');
+      blocosEl.innerHTML = '';
+
+      const grupos = [
+        { key: 'vencida',  label: '⛔ Vencida',      limDias: 0,  cor: 'rgba(255,69,96,.18)',   borda: 'rgba(255,69,96,.5)',   corTxt: '#ff4560' },
+        { key: 'urgente',  label: '🚨 Urgente',       limDias: 3,  cor: 'rgba(255,69,96,.10)',   borda: 'rgba(255,69,96,.35)', corTxt: '#ff4560' },
+        { key: 'semana',   label: '⚠️ Esta semana',   limDias: 7,  cor: 'rgba(245,166,35,.10)',  borda: 'rgba(245,166,35,.35)',corTxt: '#f5a623' },
+        { key: 'mes',      label: '📅 Este mês',      limDias: 999,cor: 'rgba(74,222,128,.07)',  borda: 'rgba(74,222,128,.25)',corTxt: '#4ade80' },
+      ];
+
+      grupos.forEach(g => {
+        const itens = plano.filter(c => {
+          if(g.key==='vencida') return c.diasAte <= 0;
+          if(g.key==='urgente') return c.diasAte > 0 && c.diasAte <= 3;
+          if(g.key==='semana')  return c.diasAte > 3 && c.diasAte <= 7;
+          return c.diasAte > 7;
+        });
+        if(!itens.length) return;
+        const totalFaltaGrupo = itens.reduce((s,c)=>s+c.falta,0);
+        const minDias = Math.max(1, Math.min(...itens.map(c=>c.diasAte)));
+        // Combustível para os dias até o prazo mais curto desse grupo
+        const combGrupo = combDiario * minDias;
+
+        blocosEl.innerHTML += `<div style="padding:11px 13px;border-radius:12px;background:${g.cor};border:1px solid ${g.borda};display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:12px;font-weight:700;color:${g.corTxt}">${g.label}</span>
+            <span style="font-size:11px;color:var(--mt)">${minDias} dia${minDias>1?'s':''} para vencer</span>
+          </div>
+          ${itens.map(c=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+              <div>
+                <div style="font-size:12px;font-weight:600;color:var(--tx)">${c.descricao}</div>
+                <div style="font-size:10px;color:var(--mt)">${c.falta>0?'Falta '+fmt(c.falta):'✅ coberto pelo caixa'}</div>
+              </div>
+              <div style="text-align:right">
+                ${c.falta>0
+                  ? `<div style="font-size:13px;font-weight:700;color:var(--am)">${fmt(c.brutoPorDia)}<span style="font-size:10px;color:var(--mt)">/dia bruto</span></div>
+                     ${c.taxaComb > 0 ? `<div style="font-size:10px;color:var(--mt)">⛽ -${fmt(c.brutoPorDia - c.porDia)} comb → líq ${fmt(c.porDia)}</div>` : ''}
+                     ${!diaHojeContaComoUtil && c.diasAte !== c.diasUteis ? `<div style="font-size:10px;color:rgba(245,166,35,.8)">só ${c.diasUteis} dia${c.diasUteis>1?'s':''} útil${c.diasUteis>1?'s':''}</div>` : ''}`
+                  : `<div style="font-size:12px;color:var(--gn)">✅</div>`}
+              </div>
+            </div>`).join('')}
+          ${totalFaltaGrupo > 0 ? `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:3px">
+            <span style="font-size:11px;color:var(--mt)">${minDias} dia${minDias>1?'s':''} p/ pagar</span>
+            <span style="font-size:12px;font-weight:700;color:var(--tx)">Falta R$ ${totalFaltaGrupo.toFixed(0)} líquido</span>
+          </div>` : ''}
+        </div>`;
+      });
+
+      // ── META DO DIA DE HOJE ──
+      // Usa diasUteis para calcular meta correta
+      const metaContasHoje = plano.reduce((s,c) => s + (c.falta > 0 ? c.falta / c.diasUteis : 0), 0);
+      const metaBrutoHoje = metaContasHoje + combDiario;
+
+      // Total geral
+      document.getElementById('falta-valor').textContent = faltaValor > 0 ? fmt(faltaValor) : '✅ Quitado!';
+      const corValor = faltaValor <= 0 ? 'var(--gn)' : faltaValor < totalContasAberto*0.3 ? 'var(--am)' : 'var(--rd)';
+      document.getElementById('falta-valor').style.color = corValor;
+
+      // Sugestão inteligente do dia
+      const sugestao = document.getElementById('falta-sugestao');
+      if(faltaValor > 0){
+        // Quebra detalhada: quanto vai para cada destino hoje
+        const linhasDestino = plano.filter(c=>c.falta>0).slice(0,3).map(c =>
+          `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0">
+            <span style="color:var(--mt)">└ ${c.descricao}</span>
+            <span style="color:var(--tx);font-weight:600">${fmt(c.porDia)}</span>
+          </div>`
+        ).join('');
+        sugestao.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:12px;font-weight:700;color:var(--tx)">🎯 Meta de hoje</span>
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--am)">${fmt(metaBrutoHoje)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:4px">
+            <span style="color:var(--mt)">⛽ Combustível (reservar primeiro)</span>
+            <span style="color:#f5a623;font-weight:600">${fmt(combDiario)}</span>
+          </div>
+          ${linhasDestino}
+          <div style="margin-top:5px;font-size:10px;color:var(--mt)">Sobrou do faturamento? Guarda para a próxima conta urgente 💡</div>`;
+      } else {
+        sugestao.innerHTML = '<div style="font-size:13px;color:var(--gn);font-weight:600;text-align:center">🎉 Todas as contas estão cobertas!</div>';
+      }
+    } else if(cardFalta){ cardFalta.style.display='none'; }
+    // Card lançamentos futuros
+    const cardFuturos = document.getElementById('card-futuros');
+    const RENDA_EXTRA_LABELS2={seguro_desemprego:'Seguro-desemprego',freelance:'Freelance/Bico',aluguel_recebido:'Aluguel recebido',venda:'Venda de item',emprestimo_recebido:'Empréstimo recebido',bonus:'Bônus/Premiação',renda_extra:'Renda extra'};
+    if(cardFuturos && lancFuturos.length > 0){
+      cardFuturos.style.display = 'block';
+      const lista = document.getElementById('futuros-lista');
+      lista.innerHTML = '';
+      lancFuturos.forEach(l => {
+        const label = l.tipo === 'ganho' ? (RENDA_EXTRA_LABELS2[l.plataforma] || l.plataforma || 'Ganho') : (l.descricao || 'Despesa');
+        const emoji = l.tipo === 'ganho' ? '💼' : '💸';
+        const cor = l.tipo === 'ganho' ? 'var(--gn)' : 'var(--rd)';
+        const sinal = l.tipo === 'ganho' ? '+' : '-';
+        const dataFmt = l.data ? l.data.split('-').reverse().join('/') : '';
+        lista.innerHTML += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04)"><span style="font-size:13px">' + emoji + ' ' + label + '<span style="color:var(--mt);font-size:11px;margin-left:6px">· ' + dataFmt + '</span></span><span style="font-weight:700;color:' + cor + '">' + sinal + fmt(parseFloat(l.valor)) + '</span></div>';
+      });
+    } else if(cardFuturos){
+      cardFuturos.style.display = 'none';
+    }
+    const platAll=[{l:'Uber',v:platMap.uber,c:'rgba(0,180,120,.85)'},{l:'99',v:platMap['99'],c:'rgba(255,200,0,.85)'},{l:'inDrive',v:platMap.indrive,c:'rgba(99,102,241,.85)'},{l:'Outras',v:platMap.outro,c:'rgba(245,166,35,.85)'}];
+    RENDA_EXTRA_KEYS.forEach(k=>{if(rendaExtraMap[k])platAll.push({l:RENDA_EXTRA_LABELS[k]||k,v:rendaExtraMap[k],c:'rgba(78,158,255,.85)'});});
+    const platFilt=platAll.filter(p=>p.v>0);
+    const platLabels=platFilt.map(p=>p.l);
+    const platVals=platFilt.map(p=>p.v);
+    const platColors=platFilt.map(p=>p.c);
     if(window.gPlat)window.gPlat.destroy();
-    window.gPlat=new Chart(document.getElementById('g-plataforma'),{type:'bar',data:{labels:platLabels,datasets:[{data:platVals,backgroundColor:platColors,borderWidth:0,borderRadius:6}]},options:{indexAxis:'y',plugins:{legend:{display:false},datalabels:{display:false}},scales:{x:{ticks:{color:'#555',callback:(v)=>'R$'+v.toLocaleString('pt-BR')},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true},y:{ticks:{color:'#aaa',font:{size:12}},grid:{display:false}}}}});
+    window.gPlat=new Chart(document.getElementById('g-plataforma'),{type:'bar',data:{labels:platLabels,datasets:[{data:platVals,backgroundColor:platColors,borderWidth:0,borderRadius:6,label:'Faturamento'}]},options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>'R$ '+c.raw.toLocaleString('pt-BR',{minimumFractionDigits:2})}}},scales:{x:{ticks:{color:'rgba(255,255,255,.4)',callback:(v)=>'R$'+v.toLocaleString('pt-BR'),font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true},y:{ticks:{color:'rgba(255,255,255,.8)',font:{size:13,weight:'600'}},grid:{display:false}}}}});
     const ct={};todosLanc.filter(l=>l.tipo==='despesa').forEach(l=>{const k=l.descricao||'outros';ct[k]=(ct[k]||0)+parseFloat(l.valor)});
     const mx=Math.max(...Object.values(ct),1);
     const el=document.getElementById('barras-cat');el.innerHTML='';
@@ -735,9 +1783,9 @@ async function renderCal(){
       grid.appendChild(el);
     }
     document.getElementById('cal-stats').innerHTML=
-      '<div class="sc ta" style="padding:14px"><div class="sc-l">Dias trabalhados</div><div class="sc-v am">'+diasTrab+'</div></div>'+
-      '<div class="sc tg" style="padding:14px"><div class="sc-l">Metas batidas</div><div class="sc-v gn">'+diasMeta+'</div></div>'+
-      '<div class="sc tb" style="padding:14px"><div class="sc-l">Média diária</div><div class="sc-v bl">'+fmt(diasTrab>0?(d.ganhos||0)/diasTrab:0)+'</div></div>';
+      '<div class="sc ta" style="padding:12px 10px"><div class="sc-l" style="white-space:normal;font-size:9px">Dias trabalhados</div><div class="sc-v am" style="font-size:16px">'+diasTrab+'</div></div>'+
+      '<div class="sc tg" style="padding:12px 10px"><div class="sc-l" style="white-space:normal;font-size:9px">Metas batidas</div><div class="sc-v gn" style="font-size:16px">'+diasMeta+'</div></div>'+
+      '<div class="sc tb" style="padding:12px 10px"><div class="sc-l" style="white-space:normal;font-size:9px">Média diária</div><div class="sc-v bl" style="font-size:13px;letter-spacing:-.3px">'+fmt(diasTrab>0?(d.ganhos||0)/diasTrab:0)+'</div></div>';
   }catch(e){}
 }
 
@@ -786,20 +1834,120 @@ async function loadCorrida(){
   }catch(e){}
 }
 
+let _initRodando = false;
 async function init(){
-  dashChatHistory=(()=>{try{const s=localStorage.getItem(getDashHistoryKey());return s?JSON.parse(s):[]}catch{return[]}})();
-  (()=>{dashChatHistory.forEach(m=>{if(m.role&&m.content)appendDashMsg(m.role,m.content)})})();
-  const metaSalva=localStorage.getItem('meta');
-  if(metaSalva)META_DIARIA=parseFloat(metaSalva);
+  // Garante que MID está sincronizado
+  if(!MID && window.MID) MID = window.MID;
+
   if(!MID){
-    document.getElementById('tela-login').style.display='flex';
+    const tl = document.getElementById('tela-login');
+    if(tl) tl.style.display='flex';
     return;
   }
-  document.getElementById('user-nome').textContent=NOME.split(' ')[0];
-  document.getElementById('user-av').textContent=NOME[0].toUpperCase();
+
+  // Evita execução paralela simultânea (não bloqueia reentrada após MID chegar)
+  if(_initRodando) return;
+  _initRodando = true;
+
+  const metaSalva=localStorage.getItem('meta');
+  if(metaSalva)META_DIARIA=parseFloat(metaSalva);
+
+  // Atualiza UI com nome do usuário
+  try{
+    const nEl=document.getElementById('user-nome');
+    const aEl=document.getElementById('user-av');
+    if(nEl&&NOME) nEl.textContent=NOME.split(' ')[0];
+    if(aEl&&NOME) aEl.textContent=NOME[0].toUpperCase();
+  }catch(e){}
+
+  // Carrega histórico do chat unificado
+  try{
+    const midAtual = MID || window.MID || 'anon';
+    const hKeyReal = 'dashHistory_' + midAtual;
+    const hKeyAnon = 'dashHistory_anon';
+
+    // Migra histórico salvo como 'anon' para a chave real (acontece quando MID não estava disponível ao salvar)
+    if(midAtual !== 'anon'){
+      const histAnon = localStorage.getItem(hKeyAnon);
+      const histReal = localStorage.getItem(hKeyReal);
+      if(histAnon && !histReal){
+        // Tem histórico anon mas não tem real — migra
+        localStorage.setItem(hKeyReal, histAnon);
+        localStorage.removeItem(hKeyAnon);
+      } else if(histAnon && histReal){
+        // Tem os dois — mescla, evitando duplicatas por conteúdo
+        try{
+          const arrAnon = JSON.parse(histAnon);
+          const arrReal = JSON.parse(histReal);
+          if(arrAnon.length > arrReal.length){
+            localStorage.setItem(hKeyReal, histAnon);
+          }
+          localStorage.removeItem(hKeyAnon);
+        }catch{}
+      }
+    }
+
+    const hs = localStorage.getItem(hKeyReal);
+    const hist = hs ? JSON.parse(hs) : [];
+    window.chatHistory = hist;
+    window.dashChatHistory = hist;
+
+    if(hist.length){
+      _lastMsgDate = null;
+      // Filtra mensagens de onboarding antigas (pergunta de capacidade) e deduplica por conteúdo+data
+      const MSGS_FILTRAR = [
+        'quanto você consegue faturar num dia bom',
+        'num dia normal de trabalho, quanto você costuma',
+        'Não entendi bem. Me manda só o número',
+        'Vou te ajudar a montar um plano.
+
+Primeiro:',
+        'Vou te ajudar a montar um plano.\n\nPrimeiro:',
+        'conta vencendo em breve:',
+      ];
+      const vistas = new Set();
+      const histFiltrado = hist.filter(h => {
+        if(MSGS_FILTRAR.some(f => (h.content||'').includes(f))) return false;
+        const chave = (h.role||'') + '|' + (h.content||'').slice(0,60) + '|' + (h.date||'');
+        if(vistas.has(chave)) return false;
+        vistas.add(chave);
+        return true;
+      });
+      window.chatHistory = histFiltrado;
+      // Se filtramos mensagens, salva o histórico limpo de volta no localStorage
+      if(histFiltrado.length < hist.length){
+        try{ localStorage.setItem(hKeyReal, JSON.stringify(histFiltrado)); }catch{}
+      }
+      histFiltrado.forEach(h=>{
+        try{
+          if(h.date && h.date !== _lastMsgDate) _lastMsgDate = null;
+          appendMsg(h.role, h.content, true, h.date);
+        }catch(e){}
+      });
+      setTimeout(()=>{ const b=document.getElementById('chat-msgs'); if(b) b.scrollTop=b.scrollHeight; },150);
+    } else {
+      iniciarMsgBoasVindas();
+    }
+  }catch{
+    window.chatHistory=[];
+    window.dashChatHistory=[];
+    iniciarMsgBoasVindas();
+  }
+
   buildCatGrid();
-  loadDash();
-  loadContasDash();
+  try{ await loadDash(); }catch(e){ console.warn('loadDash erro init',e); }
+  try{ await loadContasDash(); }catch(e){}
+  // Pré-carrega histórico por dia da semana (usado no plano da IA)
+  try{
+    const _mid = window.MID || localStorage.getItem('mid');
+    if(_mid){ const _rh = await fetch(API+'/historico-semana/'+_mid); window._historicoSemana = await _rh.json(); }
+  }catch(e){}
+  // Re-checa alertas após tudo carregar
+  setTimeout(()=>{ try{ alertaContasVencendo(window._contas||[]); }catch(e){} }, 1200);
+  try{ loadCompromissos(); }catch(e){}
+  setTimeout(mostrarBannerTurno, 800);
+
+  _initRodando = false;
 }
 // init() chamado após todos os scripts
 </script>
@@ -811,12 +1959,82 @@ function filtroConta(el, f){
   el.classList.add('active'); contasFiltro = f; renderContas();
 }
 
+async function loadCompromissos(){
+  if(!MID) return;
+  try {
+    const r = await fetch(API + '/plano-compromisso/' + MID);
+    const d = await r.json();
+    const lista = d.compromissos || [];
+    const card = document.getElementById('card-compromissos');
+    const listaEl = document.getElementById('comp-lista');
+    const resumoEl = document.getElementById('comp-resumo-txt');
+    if(!card || !listaEl) return;
+
+    // Só mostra o card se tiver compromissos ativos (pendentes, hoje ou dos últimos 2 dias)
+    const relevantes = lista.filter(c => c.status !== 'perdido' || c.data >= new Date(Date.now()-2*86400000).toISOString().slice(0,10));
+    if(!relevantes.length){ card.style.display='none'; return; }
+    card.style.display='block';
+
+    const pendentes = lista.filter(c=>c.status==='pendente').length;
+    const batidos = lista.filter(c=>c.status==='batido').length;
+    const hoje = lista.find(c=>c.status==='hoje');
+    if(hoje) resumoEl.textContent = `Meta de hoje: R$${hoje.meta_bruta.toFixed(0)} — acompanhando em tempo real`;
+    else if(pendentes > 0) resumoEl.textContent = `${pendentes} meta${pendentes>1?'s':''} pendente${pendentes>1?'s':''}${batidos>0?' · '+batidos+' já cumprida'+(batidos>1?'s':''):''}`;
+    else resumoEl.textContent = `${batidos} meta${batidos>1?'s':''} cumprida${batidos>1?'s':''}! 🎉`;
+
+    // Renderiza cada compromisso
+    const NOMES_DIA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    listaEl.innerHTML = lista.map(c => {
+      const dt = new Date(c.data+'T12:00:00');
+      const nomeDia = NOMES_DIA[dt.getDay()] + ' ' + dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+      const meta = c.meta_bruta;
+      const fat = c.faturado;
+      const pct = c.pct;
+
+      // Cores e ícones por status
+      const cfg = {
+        batido:  {cor:'rgba(34,197,94,.15)', borda:'rgba(34,197,94,.4)', ic:'✅', label:'Batido!'},
+        perdido: {cor:'rgba(255,77,106,.08)', borda:'rgba(255,77,106,.3)', ic:'❌', label:'Não cumprido'},
+        hoje:    {cor:'rgba(245,166,35,.1)',  borda:'rgba(245,166,35,.5)', ic:'🎯', label:'Hoje'},
+        pendente:{cor:'rgba(99,102,241,.08)', borda:'rgba(99,102,241,.3)', ic:'📅', label:'Aguardando'},
+      }[c.status] || {cor:'rgba(255,255,255,.05)',borda:'rgba(255,255,255,.1)',ic:'📅',label:''};
+
+      const barraLargura = Math.min(100, pct) + '%';
+      const barCor = c.status==='batido' ? '#22c55e' : c.status==='perdido' ? '#ff4d6a' : '#f5a623';
+
+      const fatTexto = fat !== null
+        ? `R$${fat.toFixed(0)} faturado`
+        : (c.status==='pendente' ? 'Ainda não chegou' : 'Nada registrado');
+
+      return `<div style="background:${cfg.cor};border:1px solid ${cfg.borda};border-radius:10px;padding:10px 12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span>${cfg.ic}</span>
+            <span style="font-size:12px;font-weight:600;color:var(--tx)">${nomeDia}</span>
+            ${c.nota ? `<span style="font-size:10px;color:var(--mt)">${c.nota}</span>` : ''}
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:13px;font-weight:700;color:var(--tx)">R$${meta.toFixed(0)}</div>
+            <div style="font-size:10px;color:var(--mt)">${fatTexto}</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.08);border-radius:4px;height:4px">
+          <div style="background:${barCor};width:${barraLargura};height:4px;border-radius:4px;transition:width .5s"></div>
+        </div>
+        ${pct>0 ? `<div style="font-size:10px;color:var(--mt);margin-top:4px">${pct}% da meta${c.status==='batido'?' — meta superada! 🔥':c.status==='hoje'?' — keep going!':''}</div>` : ''}
+      </div>`;
+    }).join('');
+
+  } catch(e){ console.warn('loadCompromissos err',e); }
+}
+
 async function loadContas(){
   if(!MID) return;
   const r = await fetch(API+'/contas/'+MID);
   window._contas = await r.json();
   renderContas();
   renderResumoContas();
+  alertaContasVencendo(window._contas||[]);
 }
 
 function renderContas(){
@@ -847,17 +2065,20 @@ function renderContas(){
           </div>
         </div>
         <div style="text-align:right">
-          <div style="font-weight:700;font-size:16px">${parseFloat(c.valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
+          <div style="font-weight:700;font-size:16px">${(parseFloat(c.valor_original||c.valor)+parseFloat(c.valor_pago||0)).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
           <div style="font-size:11px;color:var(--mt)">pago: ${valorPago.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
         </div>
       </div>
       <div style="background:var(--b);border-radius:4px;height:6px;margin-bottom:8px">
         <div style="background:${pct>=100?'var(--gn)':'var(--am)'};width:${pct}%;height:6px;border-radius:4px;transition:.3s"></div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input id="ab-${c.id}" type="number" placeholder="Abater R$" style="flex:1;min-width:80px;padding:8px;border-radius:8px;border:1px solid var(--b);background:var(--bg);color:var(--tx);font-size:13px">
-        <button onclick="abaterConta('${c.id}',${parseFloat(c.valor_pago||0)})" style="padding:8px 14px;border-radius:8px;background:var(--am);color:#000;border:none;cursor:pointer;font-weight:600;font-size:13px">Abater</button>
-        <div style="font-weight:700;color:${saldo<=0?'var(--gn)':'var(--rd)'};font-size:14px">Saldo: ${saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;gap:8px;align-items:center"><input id="ab-${c.id}" type="number" placeholder="Valor a abater (R$)" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--b);background:var(--bg);color:var(--tx);font-size:14px;min-width:0">
+        <button onclick="abaterConta('${c.id}',${parseFloat(c.valor_pago||0)})" style="padding:10px 18px;border-radius:10px;background:var(--am);color:#000;border:none;cursor:pointer;font-weight:700;font-size:14px;white-space:nowrap">Abater</button></div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700;color:${saldo<=0?'var(--gn)':'var(--rd)'};font-size:15px">Saldo: ${saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
+          <button onclick="delConta('${c.id}')" style="background:rgba(255,77,106,.12);border:1px solid rgba(255,77,106,.2);border-radius:8px;color:var(--rd);cursor:pointer;font-size:13px;padding:5px 10px">🗑 Apagar</button>
+        </div>
         <button onclick="delConta('${c.id}')" style="background:none;border:none;color:var(--mt);cursor:pointer;font-size:16px">🗑</button>
       </div>
     </div>`;
@@ -867,6 +2088,10 @@ function renderContas(){
 function renderResumoContas(){
   const el = document.getElementById('contas-resumo');
   const calc = document.getElementById('calc-meta-box');
+  _renderResumoContasAsync(el, calc);
+}
+
+async function _renderResumoContasAsync(el, calc){
   const linhas = document.getElementById('calc-linhas');
   if(!window._contas) return;
   const pendentes = window._contas.filter(c=>!c.pago);
@@ -876,28 +2101,107 @@ function renderResumoContas(){
   el.innerHTML = `
     <div class="gc" style="text-align:center"><div style="font-size:11px;color:var(--mt);margin-bottom:4px">A PAGAR</div><div style="font-size:20px;font-weight:700;color:var(--rd)">${totalPend.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div>
     <div class="gc" style="text-align:center"><div style="font-size:11px;color:var(--mt);margin-bottom:4px">JÁ PAGO</div><div style="font-size:20px;font-weight:700;color:var(--gn)">${totalPago.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div>
-    <div class="gc" style="text-align:center"><div style="font-size:11px;color:var(--mt);margin-bottom:4px">TOTAL</div><div style="font-size:20px;font-weight:700">${(totalPend+totalPago).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div>
+    <div class="gc" style="text-align:center;grid-column:1/-1"><div style="font-size:11px;color:var(--mt);margin-bottom:4px">TOTAL</div><div style="font-size:20px;font-weight:700">${(totalPend+totalPago).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div>
   `;
   if(!pendentes.length){ calc.style.display='none'; return; }
   calc.style.display='block';
   const hoje = new Date(); hoje.setHours(0,0,0,0);
+
+  // Busca faturamento e renda extra do mês — MESMA LÓGICA DO DASHBOARD
+  let totalFaturadoPlat = 0;
+  let totalRendaExtraMes = 0;
+  let d = { lucro: 0, lancamentos: [] };  // default seguro
+  const RENDA_EXTRA_KEYS_CALC=['seguro_desemprego','freelance','aluguel_recebido','venda','emprestimo_recebido','bonus','renda_extra'];
+  try{
+    const r = await fetch(API+'/resumo/'+MID);
+    d = await r.json();
+    const agora2 = new Date();
+    const mesAtual = agora2.getMonth();
+    const anoAtual = agora2.getFullYear();
+    (d.lancamentos||[]).filter(l=>{
+      const dl = new Date(l.data+'T12:00:00');
+      return l.tipo==='ganho' && dl.getMonth()===mesAtual && dl.getFullYear()===anoAtual;
+    }).forEach(l=>{
+      const plat = (l.plataforma||'').toLowerCase();
+      if(RENDA_EXTRA_KEYS_CALC.includes(plat)) totalRendaExtraMes += parseFloat(l.valor||0);
+      else totalFaturadoPlat += parseFloat(l.valor||0);
+    });
+  }catch(e){}
+
+  // LÓGICA UNIFICADA COM O DASHBOARD:
+  // faltaTotal = contas em aberto − líquido em caixa (faturado − despesas operacionais)
+  // d.lucro = ganhos - despesas (combustível etc.) = o que realmente sobrou
+  const liquidoCaixaContas = Math.max(0, (d.lucro || 0));
+  const faltaTotal = Math.max(0, totalPend - liquidoCaixaContas);
+  const agora3 = new Date(Date.now() - 3*60*60*1000);
+  const hojeRef = new Date(); hojeRef.setHours(0,0,0,0);
+
+  // Usa o vencimento mais próximo (não vencido) como referência de urgência
+  // Se todas vencidas, usa 1 dia. Se nenhuma urgente, usa dias restantes do mês.
+  const vencimentosOrdenados = pendentes
+    .map(c => { const v = new Date(c.vencimento+'T12:00:00'); return Math.ceil((v - hojeRef)/(1000*60*60*24)); })
+    .sort((a,b)=>a-b);
+  const diasAteProxVenc = vencimentosOrdenados[0]; // menor vencimento
+  const ultimoDiaMes = new Date(agora3.getFullYear(), agora3.getMonth()+1, 0).getDate();
+  const diasRestantesMes_raw = ultimoDiaMes - agora3.getDate() + 1;
+
+  // Se a conta mais próxima vence em até 7 dias, usa esse prazo; senão usa o mês
+  let diasRestantesMes, labelDias;
+  if(diasAteProxVenc <= 0){
+    diasRestantesMes = 1;
+    labelDias = '⚠️ Conta(s) VENCIDA(S) — urgente!';
+  } else if(diasAteProxVenc <= 7){
+    diasRestantesMes = diasAteProxVenc;
+    labelDias = `🚨 ${diasRestantesMes} dia${diasRestantesMes>1?'s':''} para o próximo vencimento`;
+  } else {
+    diasRestantesMes = Math.max(1, diasRestantesMes_raw);
+    labelDias = `📅 ${diasRestantesMes} dias restantes no mês`;
+  }
+  const faltaPorDia = faltaTotal / diasRestantesMes;
+
+  // Cada conta mostra seu peso proporcional no total que falta
   linhas.innerHTML = pendentes.map(c=>{
     const venc = new Date(c.vencimento+'T12:00:00');
-    const dias = Math.max(1, Math.ceil((venc-hoje)/(1000*60*60*24)));
-    const saldoDevido = parseFloat(c.valor) - parseFloat(c.valor_pago||0); const porDia = saldoDevido/dias;
-    const atrasado = dias < 1;
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:10px;background:var(--s);border:1px solid var(--b)">
-      <span style="font-size:13px">${c.descricao} <span style="color:var(--mt);font-size:11px">· vence ${venc.toLocaleDateString('pt-BR')}</span></span>
-      <span style="font-weight:700;color:var(--am)">R$ ${porDia.toFixed(2)}<span style="font-weight:400;color:var(--mt);font-size:11px">/dia</span></span>
+    const saldoDevido = Math.max(0, parseFloat(c.valor) - parseFloat(c.valor_pago||0));
+    const pct = totalPend > 0 ? saldoDevido / totalPend : 0;
+    const contaPorDia = faltaPorDia * pct;
+    const diasAteVenc = Math.ceil((venc-hoje)/(1000*60*60*24));
+    const vencida = diasAteVenc < 0;
+    const urgente = diasAteVenc >= 0 && diasAteVenc <= 3;
+    const corBorda = vencida ? 'rgba(255,69,96,.35)' : urgente ? 'rgba(245,166,35,.35)' : 'var(--b)';
+    const corFundo = vencida ? 'rgba(255,69,96,.06)' : urgente ? 'rgba(245,166,35,.06)' : 'var(--s)';
+    const labelVenc = vencida ? `⚠️ venceu há ${Math.abs(diasAteVenc)}d` : `vence ${venc.toLocaleDateString('pt-BR')}`;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:10px;background:${corFundo};border:1px solid ${corBorda}">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <span style="font-size:13px;font-weight:600">${c.descricao}</span>
+        <span style="color:var(--mt);font-size:11px">${labelVenc} · R$ ${saldoDevido.toFixed(2)} em aberto</span>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:700;color:var(--am);font-size:15px">R$ ${contaPorDia.toFixed(2)}<span style="font-weight:400;color:var(--mt);font-size:11px">/dia</span></div>
+        <div style="font-size:10px;color:var(--mt)">${(pct*100).toFixed(0)}% do total</div>
+      </div>
     </div>`;
   }).join('');
-  const totalDia = pendentes.reduce((s,c)=>{
-    const venc = new Date(c.vencimento+'T12:00:00');
-    const dias = Math.max(1, Math.ceil((venc-hoje)/(1000*60*60*24)));
-    return s + parseFloat(c.valor)/dias;
-  },0);
-  linhas.innerHTML += `<div style="padding:10px 14px;border-radius:10px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.3);display:flex;justify-content:space-between"><span style="font-weight:600">Total necessário</span><span style="font-weight:700;color:var(--am);font-size:18px">R$ ${totalDia.toFixed(2)}/dia</span></div>`;
+
+  // Rodapé — mesmos números exatos do dashboard
+  linhas.innerHTML += `
+    <div style="margin-top:4px;display:flex;flex-direction:column;gap:6px">
+      <div style="padding:6px 14px;border-radius:10px;background:rgba(255,255,255,.04);display:flex;justify-content:space-between;font-size:12px">
+        <span style="color:var(--mt)">💵 Líquido em caixa</span>
+        <span style="color:var(--gn);font-weight:600">R$ ${liquidoCaixaContas.toFixed(2)}</span>
+      </div>
+      ${totalRendaExtraMes>0?`<div style="padding:6px 14px;border-radius:10px;background:rgba(78,158,255,.06);display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--mt)">💼 Renda extra recebida</span><span style="color:#4e9eff;font-weight:600">− R$ ${totalRendaExtraMes.toFixed(2)}</span></div>`:''}
+      <div style="padding:12px 14px;border-radius:10px;background:${faltaTotal<=0?'rgba(74,222,128,.08)':'rgba(245,166,35,.08)'};border:1px solid ${faltaTotal<=0?'rgba(74,222,128,.3)':'rgba(245,166,35,.3)'};display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-weight:700;font-size:13px">${faltaTotal<=0?'✅ Tudo coberto!':'Falta faturar no total'}</div>
+          ${faltaTotal>0?`<div style="font-size:11px;color:var(--mt)">${labelDias}</div>`:''}
+        </div>
+        ${faltaTotal>0?`<span style="font-weight:700;color:var(--am);font-size:20px;font-family:'Barlow Condensed',sans-serif">R$ ${faltaPorDia.toFixed(2)}<span style="font-size:13px;font-weight:400;color:var(--mt)">/dia</span></span>`:''}
+      </div>
+    </div>
+  `;
 }
+
 
 async function addConta(){
   const desc = document.getElementById('c-desc').value.trim();
@@ -924,8 +2228,15 @@ async function abaterConta(id, valorJaPago){
   const novoValorPago = valorJaPago + abate;
   const conta = window._contas.find(c=>c.id===id);
   const pago = novoValorPago >= parseFloat(conta.valor);
+  // 1. Atualiza a conta
   await fetch(API+'/contas/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor_pago:novoValorPago,pago})});
+  // 2. Registra como despesa real nos lançamentos
+  await fetch(API+'/lancamentos',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({motorista_id:MID,tipo:'despesa',valor:abate,descricao:conta.descricao,plataforma:'conta',data:hojeStr()})});
+  input.value='';
   loadContas();
+  loadDash(); // atualiza dashboard com a despesa
+  toast('Abatimento de '+abate.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' registrado como despesa ✓');
 }
 async function delConta(id){
   if(!confirm('Remover esta conta?')) return;
@@ -942,56 +2253,185 @@ function goContas(el){
 }
 
 let chatHistory = [];
+let _lastMsgDate = null; // controla separador de dia no chat
 
-function appendMsg(role, text) {
+function _horaAgora() {
+  const n = new Date();
+  return n.getHours().toString().padStart(2,'0') + ':' + n.getMinutes().toString().padStart(2,'0');
+}
+
+// Detecta tipo da mensagem para estilo visual
+function _tipoMensagem(text) {
+  const t = text.toLowerCase();
+  if (t.includes('já registrei') || t.includes('já tem') || t.includes('confirmo:') || t.includes('é um novo') || t.includes('é outro')) return 'alerta';
+  if (t.includes('responde \'sim\'') || t.includes('responda sim') || t.includes('certo?') || t.includes('confirma?')) return 'confirmacao';
+  if (t.includes('✅') || t.includes('registrado') || t.includes('atualizado') || t.includes('anotado')) return 'sucesso';
+  return '';
+}
+
+function _mdToHtml(text) {
+  // Converte markdown básico para HTML limpo e compacto
+  let h = text;
+  // ### Título → seção em destaque
+  h = h.replace(/^###\s+(.+)$/gm, '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:rgba(99,102,241,.9);margin:10px 0 4px">$1</div>');
+  // ## Título
+  h = h.replace(/^##\s+(.+)$/gm, '<div style="font-weight:700;font-size:13px;color:var(--tx);margin:8px 0 3px">$1</div>');
+  // # Título
+  h = h.replace(/^#\s+(.+)$/gm, '<div style="font-weight:800;font-size:14px;color:var(--tx);margin:6px 0 3px">$1</div>');
+  // **bold**
+  h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // *italic*
+  h = h.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // `code`
+  h = h.replace(/`(.+?)`/g, '<code style="background:rgba(99,102,241,.15);padding:1px 5px;border-radius:4px;font-size:12px">$1</code>');
+  // --- separador
+  h = h.replace(/^---+$/gm, '<div style="border-top:1px solid rgba(255,255,255,.08);margin:8px 0"></div>');
+  // Listas com - ou *
+  h = h.replace(/^[-*]\s+(.+)$/gm, '<div style="display:flex;gap:6px;padding:2px 0"><span style="color:rgba(99,102,241,.7);flex-shrink:0">▸</span><span>$1</span></div>');
+  // Listas numeradas
+  h = h.replace(/^\d+\.\s+(.+)$/gm, '<div style="display:flex;gap:6px;padding:2px 0"><span style="color:rgba(99,102,241,.7);flex-shrink:0">•</span><span>$1</span></div>');
+  // Quebras de linha
+  h = h.replace(/\n/g, '<br>');
+  // Limpa <br> após divs
+  h = h.replace(/<\/div><br>/g, '</div>');
+  h = h.replace(/<br><div/g, '<div');
+  return h;
+}
+
+function appendMsg(role, text, skipScroll, dateOverride) {
   const box = document.getElementById('chat-msgs');
-  const d = document.createElement('div');
-  const isUser = role === 'user';
-  d.style.cssText = 'max-width:85%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.5;' +
-    (isUser
-      ? 'background:var(--pp);color:#fff;align-self:flex-end;border-bottom-right-radius:4px'
-      : 'background:var(--s);color:var(--tx);align-self:flex-start;border-bottom-left-radius:4px');
-  d.textContent = text;
-  box.appendChild(d);
-  box.scrollTop = box.scrollHeight;
+  const hora = _horaAgora();
+
+  // ── Separador de data estilo WhatsApp ─────────────────────────────────
+  const hoje = dateOverride || hojeStr(); // YYYY-MM-DD no horário de Brasília
+  if (_lastMsgDate !== hoje) {
+    _lastMsgDate = hoje;
+    const sep = document.createElement('div');
+    sep.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 0;margin:4px 0';
+    const dataFmt = new Date(hoje + 'T12:00:00').toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
+    // Capitaliza primeira letra
+    const label = dataFmt.charAt(0).toUpperCase() + dataFmt.slice(1);
+    sep.innerHTML = `
+      <div style="flex:1;height:1px;background:rgba(255,255,255,.08)"></div>
+      <span style="font-size:11px;color:rgba(255,255,255,.35);white-space:nowrap;padding:3px 10px;background:rgba(255,255,255,.05);border-radius:20px">${label}</span>
+      <div style="flex:1;height:1px;background:rgba(255,255,255,.08)"></div>
+    `;
+    box.appendChild(sep);
+  }
+
+  if (role === 'user') {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;align-items:flex-end';
+    wrap.innerHTML = `<div class="msg-base msg-user">
+      ${text.replace(/\n/g,'<br>')}
+      <span class="msg-time" style="text-align:right">${hora}</span>
+    </div>`;
+    box.appendChild(wrap);
+  } else {
+    const tipo = _tipoMensagem(text);
+    // Detecta se tem pergunta de confirmação → adiciona botões Sim/Não
+    const temConfirmacao = text.toLowerCase().includes("responde 'sim'") || text.toLowerCase().includes('responda sim') || text.toLowerCase().includes('confirma?') || text.toLowerCase().includes('confirmas?') || (text.includes('?') && (text.toLowerCase().includes('foi isso') || text.toLowerCase().includes('tá certo') || text.toLowerCase().includes('é isso')));
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;align-items:flex-start;gap:8px';
+
+    let botoesHtml = '';
+    if (temConfirmacao) {
+      botoesHtml = `<div class="confirm-btns">
+        <button class="btn-sim" onclick="quickChat('sim, pode registrar')">✓ Sim, registra</button>
+        <button class="btn-nao" onclick="quickChat('não, cancela')">✕ Não, cancela</button>
+      </div>`;
+    }
+
+    wrap.innerHTML = `
+      <div class="msg-avatar">${tipo === 'sucesso' ? '✅' : tipo === 'alerta' ? '⚠️' : '🧠'}</div>
+      <div style="flex:1;min-width:0">
+        <div class="msg-base msg-gestor ${tipo}">
+          <div style="font-size:10px;font-weight:600;color:rgba(99,102,241,.8);margin-bottom:4px;letter-spacing:.3px">GESTOR</div>
+          ${_mdToHtml(text)}
+          ${botoesHtml}
+          <span class="msg-time">${hora}</span>
+        </div>
+      </div>`;
+    box.appendChild(wrap);
+  }
+  if (!skipScroll) box.scrollTop = box.scrollHeight;
+}
+
+function limparChat() {
+  chatHistory = [];
+  const box = document.getElementById('chat-msgs');
+  box.innerHTML = '';
+  // Mensagem de boas-vindas
+  appendMsg('assistant', 'Histórico limpo! Pode começar. 😊');
 }
 
 let _chatSending = false;
-
 async function sendChat() {
   if (_chatSending) return;
+  // Se estiver em modo setup, redireciona para o chat de setup
+  if (_setupMode) {
+    const setupInp = document.getElementById('setup-inp');
+    const mainInp = document.getElementById('chat-input');
+    if (setupInp && mainInp) { setupInp.value = mainInp.value; mainInp.value = ''; }
+    enviarSetup();
+    return;
+  }
   const inp = document.getElementById('chat-input');
+  const btn = document.getElementById('chat-send-btn');
   const msg = inp.value.trim();
   if (!msg) return;
-
   _chatSending = true;
   inp.value = '';
-  inp.disabled = true;
   appendMsg('user', msg);
-  chatHistory.push({role:'user', content: msg});
+  chatHistory.push({role:'user', content: msg, date: hojeStr()});
 
+  // === INTERCEPTA RESPOSTA DE CAPACIDADE (etapa 1 do plano) ===
+  if(_planoEtapa === 1){
+    _planoEtapa = 0;
+    await _responderPerguntaCapacidade(msg);
+    return;
+  }
+
+  // Indicador de digitação com avatar
+  const box = document.getElementById('chat-msgs');
   const typing = document.createElement('div');
   typing.id = 'typing-indicator';
-  typing.style.cssText = 'background:var(--s);color:var(--mt);padding:10px 14px;border-radius:16px;font-size:13px;align-self:flex-start';
-  typing.textContent = '...';
-  document.getElementById('chat-msgs').appendChild(typing);
+  typing.style.cssText = 'display:flex;align-items:flex-start;gap:8px';
+  typing.innerHTML = `<div class="msg-avatar">🧠</div>
+    <div class="msg-base msg-gestor" style="padding:10px 14px">
+      <div style="display:flex;gap:5px;align-items:center;height:18px">
+        <span style="width:7px;height:7px;background:#6366f1;border-radius:50%;animation:typing-b 1.2s .0s infinite"></span>
+        <span style="width:7px;height:7px;background:#6366f1;border-radius:50%;animation:typing-b 1.2s .2s infinite"></span>
+        <span style="width:7px;height:7px;background:#6366f1;border-radius:50%;animation:typing-b 1.2s .4s infinite"></span>
+      </div>
+    </div>`;
+  box.appendChild(typing);
+  box.scrollTop = box.scrollHeight;
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+  inp.disabled = true;
 
   try {
     const res = await fetch(API + '/chat', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({mid: MID||window.MID, mensagem: msg, historico: chatHistory.slice(-10)})
+      body: JSON.stringify({mid: MID||window.MID, mensagem: msg, historico: chatHistory.slice(-24)})
     });
     const data = await res.json();
     document.getElementById('typing-indicator')?.remove();
     const reply = data.resposta || data.message || JSON.stringify(data);
     appendMsg('assistant', reply);
-    chatHistory.push({role:'assistant', content: reply});
+    chatHistory.push({role:'assistant', content: reply, date: hojeStr()});
+    try{localStorage.setItem(getDashHistoryKey(),JSON.stringify(chatHistory.slice(-20)))}catch{}
+    falarIA(reply);
+    try{loadDash();}catch(e){} try{loadCompromissos();}catch(e){};
+    const metaMatch = msg.match(/meta[^\d]*?(?:de\s+)?(?:r\$\s*)?([\d.,]+)/i) || msg.match(/(?:quero\s+)?(?:ganhar|faturar)\s+(?:r\$\s*)?([\d.,]+)/i);
+    if(metaMatch){ const nv=parseFloat(metaMatch[1].replace(',','.')); if(nv>0) await atualizarMeta(nv); }
   } catch(e) {
     document.getElementById('typing-indicator')?.remove();
-    appendMsg('assistant', 'Erro ao conectar com o assistente. Tente novamente.');
+    appendMsg('assistant', 'Erro ao conectar. Tente novamente.');
   } finally {
     _chatSending = false;
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
     inp.disabled = false;
     inp.focus();
   }
@@ -1002,13 +2442,280 @@ function quickChat(txt) {
   sendChat();
 }
 
-function loadDashIA() {
-  // Painel já inicializado com mensagem de boas-vindas no HTML
-}
+function loadDashIA() {}
 
 function loadAssistente() {
-  // já carregado, só foca o input
-  setTimeout(()=>{ const i=document.getElementById('chat-input'); if(i) i.focus(); }, 100);
+  // redireciona para dashboard (o chat agora está lá)
+  goPage(document.getElementById('ni-dashboard'), 'dashboard');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// SETUP CONVERSACIONAL — onboarding guiado pelo Gestor IA
+// ══════════════════════════════════════════════════════════════════════════
+
+function ativarSetupMode() {
+  if (_setupIniciado) return;
+  _setupIniciado = true;
+  _setupMode = true;
+
+  // Bloqueia o app — mostra overlay de setup
+  const overlay = document.getElementById('setup-overlay');
+  if (overlay) overlay.style.display = 'flex';
+
+  // Bloqueia nav (mostra aviso se tentar navegar)
+  document.querySelectorAll('.ni').forEach(el => {
+    el.style.opacity = '0.3';
+    el.style.pointerEvents = 'none';
+  });
+
+  // Inicia conversa de setup
+  iniciarChatSetup();
+}
+
+function finalizarSetupMode() {
+  _setupMode = false;
+
+  // Remove overlay
+  const overlay = document.getElementById('setup-overlay');
+  if (overlay) {
+    overlay.style.transition = 'opacity .5s';
+    overlay.style.opacity = '0';
+    setTimeout(() => { overlay.style.display = 'none'; overlay.style.opacity = '1'; }, 500);
+  }
+
+  // Reativa nav
+  document.querySelectorAll('.ni').forEach(el => {
+    el.style.opacity = '';
+    el.style.pointerEvents = '';
+  });
+
+  // Toast de boas-vindas
+  toast('Tudo pronto! Bem-vindo ao Painel.IA 🚀');
+
+  // Carrega o dashboard
+  setTimeout(() => {
+    try { loadDash(); loadContasDash(); } catch(e) {}
+  }, 600);
+}
+
+async function iniciarChatSetup() {
+  // Primeira mensagem do Gestor sem input do usuário
+  const overlay = document.getElementById('setup-overlay');
+  if (!overlay) return;
+
+  // Mostra typing
+  document.getElementById('setup-typing').style.display = 'block';
+
+  try {
+    const r = await fetch(API + '/chat-setup', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        id: MID,
+        nome: NOME.split(' ')[0],
+        mensagem: '',  // vazio = primeira mensagem
+        historico: []
+      })
+    });
+    const data = await r.json();
+    document.getElementById('setup-typing').style.display = 'none';
+
+    if (data.resposta) {
+      appendSetupMsg('assistant', data.resposta);
+      _setupHistorico.push({role: 'assistant', content: data.resposta});
+    }
+
+    if (data.setup_completo) {
+      setTimeout(() => finalizarSetupMode(), 2000);
+    }
+  } catch(e) {
+    document.getElementById('setup-typing').style.display = 'none';
+    appendSetupMsg('assistant', 'Oi! Sou seu Gestor Financeiro 👋 Antes de começar, me conta: você trabalha na Uber, 99, InDrive ou em qual plataforma?');
+    _setupHistorico.push({role: 'assistant', content: 'Oi! Sou seu Gestor Financeiro 👋 Antes de começar, me conta: você trabalha na Uber, 99, InDrive ou em qual plataforma?'});
+  }
+
+  // Foca no input
+  setTimeout(() => { document.getElementById('setup-inp')?.focus(); }, 300);
+}
+
+async function enviarSetup() {
+  const inp = document.getElementById('setup-inp');
+  const msg = (inp?.value || '').trim();
+  if (!msg) return;
+
+  inp.value = '';
+  appendSetupMsg('user', msg);
+  _setupHistorico.push({role: 'user', content: msg});
+
+  // Mostra typing
+  document.getElementById('setup-typing').style.display = 'block';
+
+  try {
+    const r = await fetch(API + '/chat-setup', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        id: MID,
+        nome: NOME.split(' ')[0],
+        mensagem: msg,
+        historico: _setupHistorico.slice(-20)
+      })
+    });
+    const data = await r.json();
+    document.getElementById('setup-typing').style.display = 'none';
+
+    if (data.resposta) {
+      appendSetupMsg('assistant', data.resposta);
+      _setupHistorico.push({role: 'assistant', content: data.resposta});
+    }
+
+    if (data.setup_completo) {
+      // Salva meta diária localmente
+      if (data.setup_dados?.meta_diaria) {
+        META_DIARIA = parseFloat(data.setup_dados.meta_diaria);
+        localStorage.setItem('meta', META_DIARIA);
+      }
+      // Aguarda uns segundos para o usuário ler a mensagem final
+      setTimeout(() => finalizarSetupMode(), 3000);
+    }
+  } catch(e) {
+    document.getElementById('setup-typing').style.display = 'none';
+    appendSetupMsg('assistant', 'Tive um problema aqui. Tenta mandar de novo 😅');
+  }
+}
+
+function appendSetupMsg(role, text) {
+  const box = document.getElementById('setup-msgs');
+  if (!box) return;
+
+  const isUser = role === 'user';
+  const div = document.createElement('div');
+  div.style.cssText = `display:flex;justify-content:${isUser?'flex-end':'flex-start'};`;
+
+  const bubble = document.createElement('div');
+  bubble.style.cssText = `
+    max-width:82%;
+    padding:11px 14px;
+    border-radius:${isUser?'18px 18px 4px 18px':'18px 18px 18px 4px'};
+    background:${isUser?'linear-gradient(135deg,#7c3aed,#6d28d9)':'rgba(255,255,255,.09)'};
+    color:#fff;
+    font-size:14px;
+    line-height:1.5;
+    white-space:pre-wrap;
+    word-break:break-word;
+  `;
+  bubble.textContent = text;
+
+  if (!isUser) {
+    // Avatar do Gestor
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;align-items:flex-end;gap:8px;';
+    const av = document.createElement('div');
+    av.style.cssText = 'width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;';
+    av.textContent = '🧠';
+    wrap.appendChild(av);
+    wrap.appendChild(bubble);
+    div.appendChild(wrap);
+  } else {
+    div.appendChild(bubble);
+  }
+
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+
+function iniciarMsgBoasVindas() {
+  const box = document.getElementById('chat-msgs');
+  if (box && !box.children.length) {
+    const primeiroNome = (window.NOME||'').split(' ')[0] || 'motorista';
+    appendMsg('assistant', 'Oi, ' + primeiroNome + '! 👋 Sou seu Gestor Financeiro, tô por dentro de tudo aqui.\n\nPode falar como se fosse no WhatsApp:\n💰 "fiz 350 na Uber"\n💸 "paguei 80 de combustível"\n📋 "tenho conta de aluguel de R$800, vence dia 5"\n❓ "quanto tô ganhando esse mês?"\n\nMe manda sua primeira informação! 🚀');
+  }
+}
+
+function alertaContasVencendo(contas) {
+  const el = document.getElementById('alerta-contas');
+  if (!el) return;
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const urgentes = (contas || []).filter(c => {
+    if (c.pago) return false;
+    const v = new Date(c.vencimento+'T12:00:00');
+    const diff = Math.ceil((v - hoje)/(1000*60*60*24));
+    return diff <= 3;
+  });
+  if (!urgentes.length) {
+    el.style.display = 'none';
+    // Card gestor normal
+    const cardGestor = document.getElementById('card-plano-ia');
+    const badge = document.getElementById('card-gestor-urgencia');
+    const titulo = document.getElementById('card-gestor-titulo');
+    const sub = document.getElementById('card-gestor-sub');
+    if(badge) badge.style.display = 'none';
+    if(titulo) titulo.innerHTML = 'Qual é a saída<br>nos próximos dias?';
+    if(sub) sub.innerHTML = 'A IA analisa suas contas, seu caixa e o que você consegue faturar — e entrega <strong style="color:#e2d9f3">o que pagar primeiro</strong>, <strong style="color:#e2d9f3">texto pronto pra negociar prazo</strong> e <strong style="color:#e2d9f3">a meta exata de hoje</strong>.';
+    if(cardGestor) cardGestor.style.borderColor = 'rgba(139,92,246,.5)';
+    return;
+  }
+  el.style.display = 'flex';
+  el.innerHTML = '⚠️ <strong>Contas urgentes:</strong> ' + urgentes.map(c => {
+    const v = new Date(c.vencimento+'T12:00:00');
+    const diff = Math.ceil((v - hoje)/(1000*60*60*24));
+    const label = diff < 0 ? `${Math.abs(diff)}d atrasada` : diff === 0 ? 'hoje' : `${diff}d`;
+    const saldo = parseFloat(c.valor) - parseFloat(c.valor_pago||0);
+    return `<span style="background:rgba(255,77,106,.15);border-radius:6px;padding:2px 8px;margin:2px">${c.descricao} — ${saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} (${label})</span>`;
+  }).join('');
+
+  // Card gestor muda para modo urgência
+  const badge = document.getElementById('card-gestor-urgencia');
+  const titulo = document.getElementById('card-gestor-titulo');
+  const sub = document.getElementById('card-gestor-sub');
+  const cardGestor = document.getElementById('card-plano-ia');
+  if(badge){
+    const nomePrincipal = urgentes[0].descricao;
+    const diasPrincipal = Math.ceil((new Date(urgentes[0].vencimento+'T12:00:00') - hoje)/(1000*60*60*24));
+    const labelDias = diasPrincipal < 0 ? 'VENCIDA' : diasPrincipal === 0 ? 'vence HOJE' : `vence em ${diasPrincipal} dia${diasPrincipal>1?'s':''}`;
+    document.getElementById('card-gestor-urgencia-txt').textContent = `${nomePrincipal} ${labelDias} — o Gestor tem um plano pra você`;
+    badge.style.display = 'flex';
+  }
+  if(titulo) titulo.innerHTML = urgentes.length > 1 ? `${urgentes.length} contas<br>vencendo agora` : `Como pagar<br>${urgentes[0].descricao}?`;
+  if(sub) sub.innerHTML = 'Toca aqui e eu monto um plano com o que você consegue faturar nos próximos dias. <strong style="color:#e2d9f3">Sem enrolação.</strong>';
+  if(cardGestor) cardGestor.style.borderColor = 'rgba(220,38,38,.6)';
+
+  // Aparece automaticamente no chat se ainda não apareceu hoje (máx 1x por dia)
+  // Usa chave global (sem MID) para evitar duplicar quando MID carrega depois
+  const _autoKey = 'gestor_auto_' + hojeStr();
+  const jaApareceuHoje = localStorage.getItem(_autoKey) === '1';
+  if(!jaApareceuHoje && urgentes.length > 0){
+    localStorage.setItem(_autoKey, '1');
+    // Espera 3s para o dashboard carregar, depois aparece a mensagem no chat
+    setTimeout(() => {
+      const box = document.getElementById('chat-msgs');
+      if(!box) return;
+      const nomesUrg = urgentes.map(c=>`${c.descricao} (R$${parseFloat(c.valor).toFixed(0)})`).join(' e ');
+      // Se já tem histórico, mostra que o sistema conhece a rotina
+      const _hs = window._historicoSemana;
+      let autoMsg;
+      if(_hs && _hs.tem_historico && _hs.media_geral > 0){
+        const hoje_dow = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+        const mediaHoje = _hs.media_por_dia && _hs.media_por_dia[hoje_dow];
+        const diaComentario = mediaHoje
+          ? (_hs.dias_fracos && _hs.dias_fracos.includes(mediaHoje.nome)
+              ? ` Hoje (${mediaHoje.nome}) costuma ser mais lento pra você — mas o plano já leva isso em conta.`
+              : _hs.dias_fortes && _hs.dias_fortes.includes(mediaHoje.nome)
+                ? ` Hoje (${mediaHoje.nome}) é um dos seus dias fortes — bora aproveitar! 🚀`
+                : '')
+          : '';
+        autoMsg = `⚠️ ${nomesUrg} vence${urgentes.length>1?'m':''} em breve.${diaComentario}\n\nToca em "Gerar plano" — já sei seu histórico e monto tudo sem perguntar nada.`;
+      } else {
+        autoMsg = `Ei! Vi que você tem conta${urgentes.length>1?'s':''} vencendo: ${nomesUrg}. Posso te ajudar a traçar um plano? Toca em "Gerar meu plano agora" ali em baixo 👇`;
+      }
+      appendMsg('assistant', autoMsg);
+      chatHistory.push({role:'assistant', content: autoMsg, date: hojeStr()});
+      try{localStorage.setItem(getDashHistoryKey(),JSON.stringify(chatHistory.slice(-20)))}catch{}
+      box.scrollTop = box.scrollHeight;
+    }, 3000);
+  }
 }
 
 async function loadContasDash() {
@@ -1016,92 +2723,476 @@ async function loadContasDash() {
   try {
     const r = await fetch(API + '/contas/' + MID);
     const data = await r.json();
+    window._contas = data.contas || data || [];
     const el = document.getElementById('contas-dash-lista');
     if (!el) return;
-    const pendentes = (data.contas||data||[]).filter(c=>!c.pago);
+    const pendentes = window._contas.filter(c=>!c.pago);
     const totalPend = pendentes.reduce((s,c)=>s+(parseFloat(c.valor)-parseFloat(c.valor_pago||0)),0);
     const cardPend = document.getElementById('c-contas-pend');
     if(cardPend) cardPend.textContent = 'R$ '+totalPend.toFixed(2).replace('.',',');
     const pendentes4 = pendentes.slice(0,4);
-    if (!pendentes4.length) { el.innerHTML='<span style="color:var(--mt)">Nenhuma conta pendente ✅</span>'; return; }
-    el.innerHTML = pendentes4.map(c=>{
+    if (!pendentes4.length) { el.innerHTML='<span style="color:var(--mt)">Nenhuma conta pendente ✅</span>'; }
+    else { el.innerHTML = pendentes4.map(c=>{
       const dias = Math.ceil((new Date(c.vencimento)-new Date())/(1000*60*60*24));
       const cor = dias<0?'#e74c3c':dias<=3?'#f39c12':'var(--tx)';
       return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--b)">'
         +'<span>'+c.descricao+'</span>'
         +'<span style="color:'+cor+';font-weight:600">R$ '+parseFloat(c.valor).toFixed(2)+'</span>'
         +'</div>';
-    }).join('');
+    }).join(''); }
+    // Atualiza seção "Quanto preciso faturar" no dashboard também
+    renderResumoContas();
+    // Dispara alerta de urgência e badge do Gestor
+    alertaContasVencendo(window._contas);
+    // Recarrega card-falta pois _contas acabou de ser atualizado
+    loadDash();
   } catch(e) {}
 }
 </script>
 
 <script>
-function getDashHistoryKey(){return 'dashHistory_'+(MID||'anon');}
-let dashChatHistory = [];
-(()=>{dashChatHistory.forEach(m=>{if(m.role&&m.content)appendDashMsg(m.role,m.content)})})();
+function getDashHistoryKey(){const mid = MID||window.MID||localStorage.getItem('mid')||'anon'; if(mid!=='anon'&&MID!==mid) MID=mid; return 'dashHistory_'+mid;}
+// appendDashMsg agora é alias de appendMsg — chat unificado
+function appendDashMsg(role, text){ appendMsg(role, text); }
 
-function appendDashMsg(role, text) {
-  const box = document.getElementById('dash-chat-msgs');
-  const d = document.createElement('div');
-  const isUser = role === 'user';
-  d.style.cssText = 'padding:7px 10px;border-radius:10px;font-size:12px;line-height:1.5;max-width:95%;' +
-    (isUser
-      ? 'background:rgba(245,166,35,.15);color:var(--am);align-self:flex-end;border-bottom-right-radius:3px'
-      : 'background:rgba(255,255,255,.05);color:var(--tx);align-self:flex-start;border-bottom-left-radius:3px');
-  d.textContent = text;
-  box.appendChild(d);
-  box.scrollTop = box.scrollHeight;
+function mudarVisaoHist(el, visao) {
+  document.querySelectorAll('#page-historico .fp').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('visao-lancamentos').style.display = visao==='lancamentos' ? '' : 'none';
+  document.getElementById('visao-semanal').style.display = visao==='semanal' ? '' : 'none';
+  document.getElementById('visao-mensal').style.display = visao==='mensal' ? '' : 'none';
+  if(visao==='semanal') renderComparativoSemanal();
+  if(visao==='mensal') renderComparativoMensal();
 }
 
-let _dashChatSending = false; // LOCK: previne envios simultâneos e loops
+function semanaStr(data) {
+  const d = new Date(data+'T12:00:00');
+  const day = d.getDay();
+  const seg = new Date(d); seg.setDate(d.getDate() - (day===0?6:day-1));
+  const sab = new Date(seg); sab.setDate(seg.getDate()+6);
+  return seg.toISOString().slice(0,10);
+}
 
-async function sendDashChat() {
-  if (_dashChatSending) return; // bloqueia se já está enviando
-  const inp = document.getElementById('dash-chat-input');
-  const msg = inp.value.trim();
-  if (!msg || !MID && !window.MID) return;
+function renderComparativoSemanal() {
+  const el = document.getElementById('visao-semanal');
+  if(!todosLanc.length){el.innerHTML='<div class="gc"><p style="color:var(--mt);text-align:center;padding:20px">Nenhum lançamento ainda</p></div>';return;}
+  const semanas = {};
+  todosLanc.forEach(l => {
+    const s = semanaStr(l.data);
+    if(!semanas[s]) semanas[s] = {ganhos:0, despesas:0, horas:0, dias:new Set()};
+    if(l.tipo==='ganho') { semanas[s].ganhos += parseFloat(l.valor); semanas[s].horas += parseFloat(l.horas_rodadas||0); }
+    if(l.tipo==='despesa') semanas[s].despesas += parseFloat(l.valor);
+    semanas[s].dias.add(l.data);
+  });
+  const keys = Object.keys(semanas).sort().reverse();
+  let html = '';
+  keys.forEach((k, i) => {
+    const s = semanas[k];
+    const lucro = s.ganhos - s.despesas;
+    const anterior = semanas[keys[i+1]];
+    const delta = anterior ? ((s.ganhos - anterior.ganhos) / anterior.ganhos * 100) : null;
+    const sAbr = new Date(k+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+    const cor = lucro >= 0 ? 'var(--gn)' : 'var(--rd)';
+    const deltaHtml = delta !== null ? `<span style="font-size:11px;color:${delta>=0?'var(--gn)':'var(--rd)'};">${delta>=0?'▲':'▼'} ${Math.abs(delta).toFixed(0)}% vs semana anterior</span>` : '<span style="font-size:11px;color:var(--mt)">Primeira semana</span>';
+    html += `<div class="gc" style="margin-bottom:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-weight:700;color:var(--tx)">Semana de ${sAbr}</span>
+        ${deltaHtml}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="rh-item"><span class="rh-label">💰 Ganhos</span><span class="rh-val gn">${fmt(s.ganhos)}</span></div>
+        <div class="rh-item"><span class="rh-label">💸 Despesas</span><span class="rh-val rd">${fmt(s.despesas)}</span></div>
+        <div class="rh-item"><span class="rh-label">✅ Lucro</span><span class="rh-val" style="color:${cor}">${fmt(lucro)}</span></div>
+        <div class="rh-item"><span class="rh-label">📅 Dias</span><span class="rh-val">${s.dias.size}</span></div>
+        <div class="rh-item"><span class="rh-label">⏱ Horas</span><span class="rh-val">${s.horas>0?s.horas.toFixed(1)+'h':'—'}</span></div>
+        <div class="rh-item"><span class="rh-label">💵 Média/dia</span><span class="rh-val am">${fmt(s.ganhos/Math.max(s.dias.size,1))}</span></div>
+      </div>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
 
-  _dashChatSending = true;
-  inp.value = '';
-  inp.disabled = true;
-  appendDashMsg('user', msg);
-  dashChatHistory.push({role:'user', content: msg});
+function renderComparativoMensal() {
+  const el = document.getElementById('visao-mensal');
+  if(!todosLanc.length){el.innerHTML='<div class="gc"><p style="color:var(--mt);text-align:center;padding:20px">Nenhum lançamento ainda</p></div>';return;}
+  const meses = {};
+  todosLanc.forEach(l => {
+    const m = l.data.slice(0,7);
+    if(!meses[m]) meses[m] = {ganhos:0, despesas:0, horas:0, dias:new Set()};
+    if(l.tipo==='ganho') { meses[m].ganhos += parseFloat(l.valor); meses[m].horas += parseFloat(l.horas_rodadas||0); }
+    if(l.tipo==='despesa') meses[m].despesas += parseFloat(l.valor);
+    meses[m].dias.add(l.data);
+  });
+  const keys = Object.keys(meses).sort().reverse();
+  let html = '';
+  keys.forEach((k, i) => {
+    const m = meses[k];
+    const lucro = m.ganhos - m.despesas;
+    const anterior = meses[keys[i+1]];
+    const delta = anterior ? ((m.ganhos - anterior.ganhos) / anterior.ganhos * 100) : null;
+    const mesNome = new Date(k+'-15').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    const cor = lucro >= 0 ? 'var(--gn)' : 'var(--rd)';
+    const deltaHtml = delta !== null ? `<span style="font-size:11px;color:${delta>=0?'var(--gn)':'var(--rd)'};">${delta>=0?'▲':'▼'} ${Math.abs(delta).toFixed(0)}% vs mês anterior</span>` : '<span style="font-size:11px;color:var(--mt)">Primeiro mês</span>';
+    html += `<div class="gc" style="margin-bottom:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-weight:700;color:var(--tx);text-transform:capitalize">${mesNome}</span>
+        ${deltaHtml}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="rh-item"><span class="rh-label">💰 Ganhos</span><span class="rh-val gn">${fmt(m.ganhos)}</span></div>
+        <div class="rh-item"><span class="rh-label">💸 Despesas</span><span class="rh-val rd">${fmt(m.despesas)}</span></div>
+        <div class="rh-item"><span class="rh-label">✅ Lucro</span><span class="rh-val" style="color:${cor}">${fmt(lucro)}</span></div>
+        <div class="rh-item"><span class="rh-label">📅 Dias trab.</span><span class="rh-val">${m.dias.size}</span></div>
+        <div class="rh-item"><span class="rh-label">⏱ Horas</span><span class="rh-val">${m.horas>0?m.horas.toFixed(1)+'h':'—'}</span></div>
+        <div class="rh-item"><span class="rh-label">💵 Média/dia</span><span class="rh-val am">${fmt(m.ganhos/Math.max(m.dias.size,1))}</span></div>
+      </div>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
 
-  const typing = document.createElement('div');
-  typing.id = 'dash-typing';
-  typing.style.cssText = 'color:var(--mt);font-size:12px;padding:4px 2px';
-  typing.textContent = '🤖 pensando...';
-  document.getElementById('dash-chat-msgs').appendChild(typing);
+function mudarFechamento(el, visao) {
+  document.querySelectorAll('#page-fechamento .fp').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  ['diario','semanal','mensal'].forEach(v=>document.getElementById('fech-'+v).style.display=v===visao?'':'none');
+  if(visao==='diario'){document.getElementById('fech-data').value=hojeStr();calcFechamentoDiario();}
+  if(visao==='semanal') calcFechamentoSemanal();
+  if(visao==='mensal'){const m=hojeStr().slice(0,7);document.getElementById('fech-mes').value=m;calcFechamentoMensal();}
+}
 
-  try {
-    const res = await fetch(API + '/chat', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({mid: MID||window.MID, mensagem: msg, historico: dashChatHistory.slice(-10)})
-    });
-    const data = await res.json();
-    document.getElementById('dash-typing')?.remove();
-    const reply = data.resposta || 'Sem resposta';
-    appendDashMsg('assistant', reply);
-    dashChatHistory.push({role:'assistant', content: reply});
-    try{localStorage.setItem(getDashHistoryKey(),JSON.stringify(dashChatHistory.slice(-20)))}catch{}
-    // Recarrega dados silenciosamente SEM re-disparar alertas de contas
-    try{ await loadDash(); }catch(e){}
-  } catch(e) {
-    document.getElementById('dash-typing')?.remove();
-    appendDashMsg('assistant', 'Erro de conexão. Tente novamente.');
-  } finally {
-    _dashChatSending = false; // SEMPRE libera o lock, mesmo com erro
-    inp.disabled = false;
-    inp.focus();
+function fmtFech(ganhos, despesas, horas, dias) {
+  const lucro = ganhos - despesas;
+  const phora = horas > 0 ? (ganhos/horas).toFixed(2).replace('.',',') : '—';
+  const pdia = dias > 0 ? (ganhos/dias).toFixed(2).replace('.',',') : '—';
+  const cor = lucro >= 0 ? 'var(--gn)' : 'var(--rd)';
+  return `
+    <div class="gc" style="margin-top:0">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="rh-item"><span class="rh-label">💰 Ganhos</span><span class="rh-val gn">${fmt(ganhos)}</span></div>
+        <div class="rh-item"><span class="rh-label">💸 Despesas</span><span class="rh-val rd">${fmt(despesas)}</span></div>
+        <div class="rh-item" style="grid-column:1/-1"><span class="rh-label">✅ Lucro líquido</span><span class="rh-val" style="color:${cor};font-size:20px">${fmt(lucro)}</span></div>
+        ${horas>0?`<div class="rh-item"><span class="rh-label">⏱ Horas trabalhadas</span><span class="rh-val">${horas.toFixed(1)}h</span></div>`:''}
+        ${horas>0?`<div class="rh-item"><span class="rh-label">💵 Por hora</span><span class="rh-val am">R$ ${phora}/h</span></div>`:''}
+        ${dias>1?`<div class="rh-item"><span class="rh-label">📅 Dias trabalhados</span><span class="rh-val">${dias}</span></div>`:''}
+        ${dias>1?`<div class="rh-item"><span class="rh-label">📊 Média por dia</span><span class="rh-val am">R$ ${pdia}</span></div>`:''}
+      </div>
+    </div>
+    <div class="gc" style="margin-top:0">
+      <h3 style="margin:0 0 10px;font-size:13px;color:var(--mt2)">✅ Como conferir com o banco/app</h3>
+      <div style="font-size:13px;color:var(--tx);line-height:1.8">
+        <div style="padding:8px 0;border-bottom:1px solid var(--b)">1. Abra o extrato do período no app da Uber/99/inDrive</div>
+        <div style="padding:8px 0;border-bottom:1px solid var(--b)">2. Some todos os repasses recebidos</div>
+        <div style="padding:8px 0;border-bottom:1px solid var(--b)">3. Compare com <strong style="color:var(--am)">${fmt(ganhos)}</strong> registrado aqui</div>
+        <div style="padding:8px 0">4. Diferença deve ser R$ 0,00 — se não for, registre o ajuste no chat</div>
+      </div>
+    </div>`;
+}
+
+function calcFechamentoDiario() {
+  const data = document.getElementById('fech-data').value;
+  if(!data || !todosLanc.length) return;
+  const lanc = todosLanc.filter(l=>l.data===data);
+  const ganhos = lanc.filter(l=>l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
+  const despesas = lanc.filter(l=>l.tipo==='despesa').reduce((a,l)=>a+parseFloat(l.valor),0);
+  // Horas do turno do dia - busca da API
+  fetch(API+'/turnos/'+(MID||window.MID)).then(r=>r.json()).then(turnos=>{
+    const turno = turnos.find(t=>t.data===data);
+    const horas = turno ? parseFloat(turno.horas||0) : 0;
+    const titulo = new Date(data+'T12:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+    document.getElementById('fech-diario-result').innerHTML =
+      `<div class="gc"><h3 style="margin:0 0 12px;text-transform:capitalize">${titulo}</h3>${
+        ganhos===0&&despesas===0 ? '<p style="color:var(--mt);text-align:center;padding:12px">Nenhum lançamento neste dia</p>' : fmtFech(ganhos,despesas,horas,1)
+      }</div>`;
+  }).catch(()=>{
+    const titulo = new Date(data+'T12:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+    document.getElementById('fech-diario-result').innerHTML = `<div class="gc"><h3>${titulo}</h3>${fmtFech(ganhos,despesas,0,1)}</div>`;
+  });
+}
+
+function calcFechamentoSemanal() {
+  const inp = document.getElementById('fech-semana');
+  if(!inp.value) { const d=new Date(Date.now()-3*60*60*1000); inp.value=d.toISOString().slice(0,4)+'-W'+String(getWeek(d)).padStart(2,'0'); }
+  // Parse week
+  const [yr,wk] = inp.value.split('-W').map(Number);
+  const jan4 = new Date(yr,0,4);
+  const start = new Date(jan4.getTime() + ((wk-1)*7 - (jan4.getDay()||7) + 1)*86400000);
+  const end = new Date(start.getTime()+6*86400000);
+  const startStr = start.toISOString().slice(0,10);
+  const endStr = end.toISOString().slice(0,10);
+  const lanc = todosLanc.filter(l=>l.data>=startStr&&l.data<=endStr);
+  const ganhos = lanc.filter(l=>l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
+  const despesas = lanc.filter(l=>l.tipo==='despesa').reduce((a,l)=>a+parseFloat(l.valor),0);
+  const dias = new Set(lanc.map(l=>l.data)).size;
+  fetch(API+'/turnos/'+(MID||window.MID)).then(r=>r.json()).then(turnos=>{
+    const horas = turnos.filter(t=>t.data>=startStr&&t.data<=endStr).reduce((a,t)=>a+parseFloat(t.horas||0),0);
+    const ini = new Date(startStr+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+    const fim2 = new Date(endStr+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+    document.getElementById('fech-semanal-result').innerHTML = `<div class="gc"><h3 style="margin:0 0 12px">Semana de ${ini} a ${fim2}</h3>${fmtFech(ganhos,despesas,horas,dias)}</div>`;
+  });
+}
+
+function getWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));t.setUTCDate(t.getUTCDate()+4-(t.getUTCDay()||7));const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/86400000+1)/7);}
+
+function calcFechamentoMensal() {
+  const val = document.getElementById('fech-mes').value;
+  if(!val) return;
+  const [yr,mo] = val.split('-').map(Number);
+  const startStr = `${yr}-${String(mo).padStart(2,'0')}-01`;
+  const endStr = new Date(yr,mo,0).toISOString().slice(0,10);
+  const lanc = todosLanc.filter(l=>l.data>=startStr&&l.data<=endStr);
+  const ganhos = lanc.filter(l=>l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
+  const despesas = lanc.filter(l=>l.tipo==='despesa').reduce((a,l)=>a+parseFloat(l.valor),0);
+  const dias = new Set(lanc.map(l=>l.data)).size;
+  fetch(API+'/turnos/'+(MID||window.MID)).then(r=>r.json()).then(turnos=>{
+    const horas = turnos.filter(t=>t.data>=startStr&&t.data<=endStr).reduce((a,t)=>a+parseFloat(t.horas||0),0);
+    const mesNome = new Date(startStr+'T12:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    document.getElementById('fech-mensal-result').innerHTML = `<div class="gc"><h3 style="margin:0 0 12px;text-transform:capitalize">${mesNome}</h3>${fmtFech(ganhos,despesas,horas,dias)}</div>`;
+  });
+}
+
+function mostrarGanhoPorHora() {
+  const val = document.getElementById('c-hora')?.textContent || '—';
+  if(val === '—') {
+    appendDashMsg('assistant', '⏱ Ainda não tenho horas registradas este mês. Após registrar um ganho, diga quantas horas rodou e eu calculo automaticamente!');
+  } else {
+    appendDashMsg('assistant', `⏱ Sua média de ganho por hora este mês é ${val}/hora 🚀`);
   }
 }
 
-function quickDashChat(txt) {
-  document.getElementById('dash-chat-input').value = txt;
-  sendDashChat();
+function mostrarResumoMes() {
+  const ganhos = parseFloat(document.getElementById('c-ganhos')?.textContent?.replace(/[^0-9,]/g,'').replace(',','.')) || 0;
+  const despesas = parseFloat(document.getElementById('c-despesas')?.textContent?.replace(/[^0-9,]/g,'').replace(',','.')) || 0;
+  const lucro = parseFloat(document.getElementById('c-lucro')?.textContent?.replace(/[^0-9,]/g,'').replace(',','.')) || 0;
+  const hoje = new Date();
+  const mes = hoje.toLocaleString('pt-BR', {month: 'long'});
+  const msg = `📊 Resumo de ${mes}:\n💰 Ganhos: R$ ${ganhos.toFixed(2).replace('.',',')}\n💸 Despesas: R$ ${despesas.toFixed(2).replace('.',',')}\n✅ Lucro líquido: R$ ${lucro.toFixed(2).replace('.',',')}`;
+  appendDashMsg('assistant', msg);
 }
+
+// === VOZ DA IA (fix iOS/Android) ===
+let voiceOn = false;
+let _vozesPt = null;
+let _vozDesbloqueada = false;
+let _melhorVoz = null;
+
+// Carrega lista de vozes — mobile pode demorar
+function _carregarVozes(){
+  return new Promise(resolve => {
+    const s = window.speechSynthesis;
+    if(!s){ resolve([]); return; }
+    const v = s.getVoices();
+    if(v.length > 0){ resolve(v); return; }
+    s.onvoiceschanged = () => resolve(s.getVoices());
+    setTimeout(() => resolve(s.getVoices()), 2000);
+  });
+}
+
+// Rank de vozes preferidas por qualidade (mais natural primeiro)
+const _vozRank = [
+  // iOS — vozes premium (Enhanced/Premium)
+  'luciana','fernanda','joana',
+  // Android Google
+  'google português','google brazil',
+  // Fallback PT genérico
+  'pt-br','pt_br','portuguese'
+];
+
+function _rankVoz(v){
+  const n = (v.name || '').toLowerCase();
+  const l = (v.lang || '').toLowerCase();
+  if(!l.startsWith('pt')) return -1;
+  // Prioriza vozes "enhanced" ou "premium" do iOS
+  if(n.includes('premium')) return 100;
+  if(n.includes('enhanced')) return 90;
+  for(let i=0; i<_vozRank.length; i++){
+    if(n.includes(_vozRank[i])) return 80 - i*5;
+  }
+  if(l==='pt-br') return 30;
+  if(l.startsWith('pt')) return 20;
+  return 10;
+}
+
+function _getVozPt(){
+  if(_melhorVoz) return _melhorVoz;
+  const lista = _vozesPt && _vozesPt.length ? _vozesPt : (window.speechSynthesis ? window.speechSynthesis.getVoices() : []);
+  const ptVoices = lista.filter(v => (v.lang||'').toLowerCase().startsWith('pt'));
+  if(!ptVoices.length) return lista[0] || null;
+  ptVoices.sort((a,b) => _rankVoz(b) - _rankVoz(a));
+  _melhorVoz = ptVoices[0];
+  return _melhorVoz;
+}
+
+// Pré-carregar vozes ao iniciar (pode falhar no mobile, mas tenta)
+if(window.speechSynthesis){
+  window.speechSynthesis.onvoiceschanged = () => {
+    _vozesPt = window.speechSynthesis.getVoices();
+    _melhorVoz = null; // reseta cache para reanalisar
+    _getVozPt();       // já calcula a melhor
+  };
+  _vozesPt = window.speechSynthesis.getVoices();
+}
+
+function toggleVoice(){
+  voiceOn = !voiceOn;
+  const btn = document.getElementById('voice-toggle');
+  if(btn){ btn.textContent = voiceOn ? '🔊' : '🔇'; btn.classList.toggle('on', voiceOn); }
+  if(voiceOn){
+    toast('Voz ativada 🔊');
+    // iOS EXIGE que speak() seja chamado dentro de um gesto de toque.
+    // Aproveitamos o clique no botão para desbloquear o áudio:
+    try{
+      const u = new SpeechSynthesisUtterance(' ');
+      u.volume = 0;
+      const voz = _getVozPt();
+      if(voz) u.voice = voz;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+      _vozDesbloqueada = true;
+    } catch(e){}
+  } else {
+    window.speechSynthesis && window.speechSynthesis.cancel();
+  }
+}
+
+function falarIA(texto){
+  if(!voiceOn) return;
+  const synth = window.speechSynthesis;
+  if(!synth) return;
+  synth.cancel();
+  let limpo = texto
+    .replace(/[#*_`~>!\[\]()]/g,'')
+    .replace(/https?:\/\/\S+/g,'')
+    .replace(/R\$\s*([\d.,]+)/g, (_, v) => v + ' reais')
+    .replace(/(\d+)%/g, '$1 por cento')
+    .replace(/\n+/g, '. ')
+    .replace(/\.{2,}/g, '.')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+    .slice(0, 400);
+  if(!limpo) return;
+  const u = new SpeechSynthesisUtterance(limpo);
+  u.lang = 'pt-BR';
+  u.rate = 1.08;
+  u.pitch = 1.05;
+  u.volume = 1;
+  const voz = _getVozPt();
+  if(voz) u.voice = voz;
+  synth.speak(u);
+}
+
+// === MODAL BOAS-VINDAS ===
+let turnoFimPrevisto = null;
+
+function abrirModalDia(){
+  const h = new Date().getHours();
+  const emoji = h < 12 ? '☀️' : h < 18 ? '🌤️' : '🌙';
+  const saudacao = h < 12 ? 'Bom dia!' : h < 18 ? 'Boa tarde!' : 'Boa noite!';
+  document.getElementById('modal-emoji').textContent = emoji;
+  document.getElementById('modal-saudacao').textContent = saudacao;
+  const nomeEl = document.getElementById('modal-nome-sub');
+  if(nomeEl && NOME) nomeEl.textContent = NOME.split(' ')[0] + ', vamos registrar seu turno de hoje?';
+  // Sugerir horário baseado na hora atual
+  const agora = new Date();
+  const hh = String(agora.getHours()).padStart(2,'0');
+  const mm = String(agora.getMinutes()).padStart(2,'0');
+  document.getElementById('modal-inicio').value = hh + ':' + mm;
+  // Sugerir término 8h depois
+  const fim = new Date(agora.getTime() + 8*60*60000);
+  document.getElementById('modal-fim').value = String(fim.getHours()).padStart(2,'0') + ':' + String(fim.getMinutes()).padStart(2,'0');
+  document.getElementById('modal-dia').classList.remove('hidden');
+}
+
+function fecharModalDia(){
+  document.getElementById('modal-dia').classList.add('hidden');
+  // Marcar que já foi exibido hoje
+  localStorage.setItem('modal_dia_'+new Date().toISOString().slice(0,10), '1');
+}
+
+function confirmarModalDia(){
+  const inicio = document.getElementById('modal-inicio').value;
+  const fim = document.getElementById('modal-fim').value;
+  if(!inicio){ toast('Informe o horário de início'); return; }
+  fecharModalDia();
+  // Iniciar turno com horário informado
+  turnoAtivo = {inicio: inicio, data: hojeStr()};
+  turnoFimPrevisto = fim;
+  // Atualizar botão turno na UI
+  const btn = document.getElementById('btn-turno');
+  if(btn){
+    btn.textContent = '⏹ Encerrar';
+    btn.style.background = 'rgba(255,77,106,.12)';
+    btn.style.borderColor = 'rgba(255,77,106,.3)';
+    btn.style.color = '#FF4D6A';
+  }
+  // Mostrar mini banner com info
+  atualizarBannerAtivo();
+  toast('Turno iniciado às ' + inicio + ' ▶');
+}
+
+function atualizarBannerAtivo(){
+  const banner = document.getElementById('banner-turno');
+  const btn = document.getElementById('banner-turno-btn');
+  if(!banner) return;
+  if(turnoAtivo){
+    document.getElementById('bt-titulo').textContent = '🟢 Turno ativo desde ' + turnoAtivo.inicio;
+    document.getElementById('bt-sub').textContent = turnoFimPrevisto ? 'Previsão: ' + turnoFimPrevisto : '';
+    banner.classList.add('ativo');
+    banner.classList.remove('inativo');
+    if(btn){ btn.textContent = '⏹ Encerrar'; btn.style.cssText='background:rgba(255,77,106,.1);border:1px solid rgba(255,77,106,.25);border-radius:8px;padding:6px 12px;color:#FF4D6A;font-size:11px;font-weight:700;font-family:"Outfit",sans-serif;cursor:pointer'; }
+  } else {
+    // Sem turno ativo — mostra faixa amarela discreta
+    document.getElementById('bt-titulo').textContent = '⏸ Nenhum turno iniciado hoje';
+    document.getElementById('bt-sub').textContent = 'Toque em Iniciar para registrar seu horário';
+    banner.classList.add('inativo');
+    banner.classList.remove('ativo');
+    if(btn){ btn.textContent = '▶ Iniciar'; btn.style.cssText='background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.35);border-radius:8px;padding:6px 12px;color:var(--am);font-size:11px;font-weight:700;font-family:"Outfit",sans-serif;cursor:pointer'; }
+  }
+}
+
+function bannerTurnoBtnClick(){
+  if(turnoAtivo){
+    toggleTurno();
+    setTimeout(atualizarBannerAtivo, 400);
+  } else {
+    abrirModalDia();
+  }
+}
+
+function mostrarBannerTurno(){
+  // Sempre mostra o banner
+  atualizarBannerAtivo();
+  // Se não tem turno ativo E não mostrou modal hoje → abre modal
+  if(!turnoAtivo && MID){
+    const chaveHoje = 'modal_dia_'+new Date().toISOString().slice(0,10);
+    if(!localStorage.getItem(chaveHoje)){
+      setTimeout(abrirModalDia, 1000);
+    }
+  }
+}
+
+// Detector de retorno ao app (visibilitychange)
+// Se o app ficou em background por mais de 4h e não tem turno ativo → abre modal
+let _ultimaVisita = Date.now();
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible'){
+    const diff = Date.now() - _ultimaVisita;
+    const quatroHoras = 4 * 60 * 60 * 1000;
+    if(diff >= quatroHoras && !turnoAtivo && MID){
+      // Resetar chave do dia se mudou de dia
+      const chaveHoje = 'modal_dia_'+new Date().toISOString().slice(0,10);
+      // Abrir modal se ainda não mostrou hoje
+      if(!localStorage.getItem(chaveHoje)){
+        setTimeout(abrirModalDia, 600);
+      }
+    }
+  } else {
+    _ultimaVisita = Date.now();
+  }
+});
+
+// sendDashChat e quickDashChat agora são aliases do chat unificado
+function sendDashChat(){ sendChat(); }
+function quickDashChat(txt){ quickChat(txt); }
 </script>
 
 
@@ -1121,6 +3212,35 @@ async function loginGoogle(){
   });
 }
 
+async function fazerLogout(){
+  try {
+    await _supa.auth.signOut();
+  } catch(e) {
+    console.error('signOut error:', e);
+  }
+  location.href = location.origin + location.pathname;
+}
+
+function setUserUI(session){
+  const u = session.user;
+  const nome = u.user_metadata?.full_name || u.email?.split('@')[0] || 'Usuário';
+  const email = u.email || '';
+  const foto = u.user_metadata?.avatar_url || u.user_metadata?.picture || '';
+  const av = document.getElementById('user-av');
+  if(av){
+    if(foto){
+      av.innerHTML = '<img src="'+foto+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      av.title = email;
+    } else {
+      av.textContent = nome[0].toUpperCase();
+      av.title = email;
+    }
+  }
+  const el = document.getElementById('user-nome');
+  if(el){ el.textContent = nome.split(' ')[0]; el.title = email; }
+  return nome;
+}
+
 async function checkAuth(){
   console.log('checkAuth chamado');
   console.log('hash:', window.location.hash);
@@ -1130,13 +3250,12 @@ async function checkAuth(){
   if(session && session.user){
     window.MID = session.user.id;
     MID = session.user.id;
-    const nome = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário';
-    const el = document.getElementById('user-nome');
-    if(el) el.textContent = nome;
+    setUserUI(session);
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.style.display='none';
-    console.log('MID definido:', window.MID);
     if(typeof init === 'function') init();
+    // Resumo semanal toda segunda
+    setTimeout(()=>resumoSemanal(), 3000);
   } else {
     console.log('sem sessao, mostrando login');
     const telaLogin = document.getElementById('tela-login');
@@ -1148,19 +3267,24 @@ _supa.auth.onAuthStateChange((event, session)=>{
   if(event === 'SIGNED_IN' && session){
     window.MID = session.user.id;
     MID = session.user.id;
-    const nome = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário';
-    NOME = nome;
-    const el = document.getElementById('user-nome');
-    if(el) el.textContent = nome;
-    fetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:nome})});
+    NOME = setUserUI(session);
+    fetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})})
+      .then(r=>r.json()).then(d=>{
+        if(d.meta_diaria){ META_DIARIA=d.meta_diaria; localStorage.setItem('meta',META_DIARIA); }
+        if(d.comb_diario){ window.COMB_DIARIO=d.comb_diario; localStorage.setItem('comb_diario',d.comb_diario); atualizarExibicaoMeta(META_DIARIA, d.comb_diario); }
+        // Detecta novo usuário ou setup incompleto
+        if(d.setup_completo === false || d.is_new === true){
+          setTimeout(() => ativarSetupMode(), 800);
+        }
+      });
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.remove();
     if(typeof init === 'function') init();
   }
   if(event === 'SIGNED_OUT'){
     window.MID = null;
-    const telaLogin = document.getElementById('tela-login');
-    if(telaLogin) telaLogin.style.display='flex';
+    MID = null;
+    location.reload();
   }
 });
 
@@ -1170,12 +3294,32 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const {data:{session}} = await _supa.auth.getSession();
   if(session && session.user){
     window.MID = session.user.id;
-    NOME = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuário';
-    const el = document.getElementById('user-nome');
-    if(el) el.textContent = NOME;
+    MID = session.user.id;
+    NOME = setUserUI(session);
+    const upRes = await fetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})});
+    const upData = await upRes.json();
+    if(upData.meta_diaria && upData.meta_diaria !== 150){
+      META_DIARIA=upData.meta_diaria; localStorage.setItem('meta',META_DIARIA);
+    } else {
+      // Tenta buscar direto do endpoint de meta
+      try{
+        const mr = await fetch(API+'/meta-diaria/'+MID);
+        const md = await mr.json();
+        if(md.meta_diaria && md.meta_diaria !== 150){ META_DIARIA=md.meta_diaria; localStorage.setItem('meta',META_DIARIA); }
+        else { const ls=parseFloat(localStorage.getItem('meta')); if(ls>0){ META_DIARIA=ls; } }
+        // Carrega combustível
+        if(md.comb_diario){ atualizarExibicaoMeta(META_DIARIA, md.comb_diario); }
+      }catch(e){ const ls=parseFloat(localStorage.getItem('meta')); if(ls>0) META_DIARIA=ls; }
+    }
+    // Carrega comb_diario do upsert se veio
+    if(upData.comb_diario){ atualizarExibicaoMeta(META_DIARIA, upData.comb_diario); }
     const tl = document.getElementById('tela-login');
     if(tl) tl.remove();
     if(typeof init === 'function') init();
+    // Detecta novo usuário ou setup incompleto (via DOMContentLoaded)
+    if(upData.setup_completo === false || upData.is_new === true){
+      setTimeout(() => ativarSetupMode(), 1000);
+    }
   } else {
     document.getElementById('tela-login').style.display='flex';
   }
