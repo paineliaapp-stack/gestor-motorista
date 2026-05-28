@@ -956,11 +956,17 @@ function appendMsg(role, text) {
   box.scrollTop = box.scrollHeight;
 }
 
+let _chatSending = false;
+
 async function sendChat() {
+  if (_chatSending) return;
   const inp = document.getElementById('chat-input');
   const msg = inp.value.trim();
   if (!msg) return;
+
+  _chatSending = true;
   inp.value = '';
+  inp.disabled = true;
   appendMsg('user', msg);
   chatHistory.push({role:'user', content: msg});
 
@@ -984,6 +990,10 @@ async function sendChat() {
   } catch(e) {
     document.getElementById('typing-indicator')?.remove();
     appendMsg('assistant', 'Erro ao conectar com o assistente. Tente novamente.');
+  } finally {
+    _chatSending = false;
+    inp.disabled = false;
+    inp.focus();
   }
 }
 
@@ -1044,11 +1054,17 @@ function appendDashMsg(role, text) {
   box.scrollTop = box.scrollHeight;
 }
 
+let _dashChatSending = false; // LOCK: previne envios simultâneos e loops
+
 async function sendDashChat() {
+  if (_dashChatSending) return; // bloqueia se já está enviando
   const inp = document.getElementById('dash-chat-input');
   const msg = inp.value.trim();
   if (!msg || !MID && !window.MID) return;
+
+  _dashChatSending = true;
   inp.value = '';
+  inp.disabled = true;
   appendDashMsg('user', msg);
   dashChatHistory.push({role:'user', content: msg});
 
@@ -1062,7 +1078,7 @@ async function sendDashChat() {
     const res = await fetch(API + '/chat', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({mid: MID||window.MID, mensagem: msg, historico: dashChatHistory.slice(-6)})
+      body: JSON.stringify({mid: MID||window.MID, mensagem: msg, historico: dashChatHistory.slice(-10)})
     });
     const data = await res.json();
     document.getElementById('dash-typing')?.remove();
@@ -1070,11 +1086,15 @@ async function sendDashChat() {
     appendDashMsg('assistant', reply);
     dashChatHistory.push({role:'assistant', content: reply});
     try{localStorage.setItem(getDashHistoryKey(),JSON.stringify(dashChatHistory.slice(-20)))}catch{}
-    // Sempre recarrega dados após resposta da IA
-    loadDash(); loadContasDash(); if(document.getElementById("page-contas").classList.contains("active")) loadContas();
+    // Recarrega dados silenciosamente SEM re-disparar alertas de contas
+    try{ await loadDash(); }catch(e){}
   } catch(e) {
     document.getElementById('dash-typing')?.remove();
     appendDashMsg('assistant', 'Erro de conexão. Tente novamente.');
+  } finally {
+    _dashChatSending = false; // SEMPRE libera o lock, mesmo com erro
+    inp.disabled = false;
+    inp.focus();
   }
 }
 
