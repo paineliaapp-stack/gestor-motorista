@@ -331,18 +331,30 @@ async def chat(dados: dict = Body(...)):
         "Dias restantes no mes: " + str(dias_restantes) + " (" + dia_semana_hoje + " hoje)\n"
         "Piso minimo diario para fechar o mes: R$" + str(piso_diario) + "/dia\n\n"
         "=== SUA PERSONALIDADE E RACIOCINIO ===\n"
-        "Voce e um consultor financeiro que pensa junto com o motorista, nao so lista informacoes.\n"
-        "Quando o usuario fizer perguntas de gestao (quais pagar, como estou, o que fazer hoje, analise, plano):\n"
+        "=== SUA PERSONALIDADE E RACIOCINIO ===\n"
+        "Voce e um consultor financeiro que CALCULA e RESOLVE — nao responde vago quando tem dados.\n"
+        "\n"
+        "REGRA CRITICA — QUANDO O MOTORISTA INFORMA VALORES FUTUROS (ex: 500 hoje, 600 amanha):\n"
+        "  - SOME os liquidos (bruto - ~R$70 combustivel/dia) e compare com as contas urgentes.\n"
+        "  - Diga diretamente se da para pagar e qual conta cobre com quantos dias.\n"
+        "  - NUNCA responda 'Entendi! Me fala mais detalhes' quando ja tem numeros suficientes.\n"
+        "\n"
+        "REGRA CRITICA — QUANDO PERGUNTAREM 'qual a solucao' ou 'o que fazer':\n"
+        "  - Releia o historico da conversa para pegar valores ja informados.\n"
+        "  - CALCULE: soma dos liquidos vs contas urgentes. Apresente o resultado concreto.\n"
+        "  - Se sobrar deficit, sugira 1 solucao pratica (pedir prazo, trabalhar 1 dia a mais).\n"
+        "\n"
+        "Quando o usuario fizer perguntas de gestao (quais pagar, como estou, analise, plano):\n"
         "1. CALCULE o que e possivel pagar com a capacidade real dos dias restantes.\n"
-        "2. SEPARE contas em: (a) nao negociaveis — carro, combustivel, multa; (b) negociaveis — pessoais, familiares.\n"
+        "2. SEPARE contas: (a) intocaveis — carro, combustivel, multa; (b) negociaveis — pessoais, familiares.\n"
         "3. SE o total superar a capacidade maxima realista, diga claramente e priorize.\n"
-        "4. SUGIRA prazo para contas negociaveis e PERGUNTE se faz sentido: 'Posso deixar [X] para proxima semana?'\n"
-        "5. MONTE um plano objetivo dia a dia: 'Hoje fatura R$X, reserva R$70 combustivel, paga Y. Amanha...'\n"
+        "4. SUGIRA prazo para negociaveis com frase pronta para o motorista mandar ao credor.\n"
+        "5. MONTE plano objetivo: 'Hoje fatura R$X, reserva combustivel, paga Y.'\n"
         "6. SEMPRE termine com o plano resumido por dia.\n"
-        "7. Se o deficit for grande, oferea dois caminhos: forcar mais no dia seguinte OU pedir prazo extra.\n\n"
+        "7. Se o deficit for grande, oferea dois caminhos: forcar mais OR pedir prazo extra.\n\n"
         "- Use linguagem de amigo, direta.\n"
         "- Responda curto para registros. Detalhado para perguntas de gestao.\n"
-        "- Quando detectar duplicata, explique antes de registrar.\n"
+        "- DUPLICATA: so questione se o mesmo valor ja existe nos lancamentos de HOJE. Se foi dia anterior, registre direto.\n"
         "- Quando confirmar valor acima de R$600, pergunte antes.\n\n"
         "=== FORMATO DA RESPOSTA ===\n"
         "Responda APENAS com JSON valido:\n"
@@ -407,23 +419,70 @@ async def chat(dados: dict = Body(...)):
     if not texto_raw:
         return {"resposta": "Nao recebi resposta da IA.", "acao": None}
 
-    # Parse seguro do JSON
+    # Parse robusto — nunca vaza JSON cru para o usuario
     texto_resposta = "OK"
     lista_acoes = []
-    try:
-        # Extrai JSON mesmo se vier com texto ao redor
-        inicio = texto_raw.find("{")
-        fim = texto_raw.rfind("}") + 1
-        if inicio >= 0 and fim > inicio:
-            parsed = json.loads(texto_raw[inicio:fim])
-        else:
-            parsed = json.loads(texto_raw.strip())
+    parsed = None
+
+    # Verifica se foi cortado pelo limite de tokens (MAX_TOKENS)
+    finish_reason = result.get("candidates", [{}])[0].get("finishReason", "")
+    if finish_reason == "MAX_TOKENS":
+        print(f"AVISO: resposta cortada por MAX_TOKENS | raw: {repr(texto_raw[:200])}")
+        # Tenta extrair o que deu para parsear
+        try:
+            inicio = texto_raw.find("{")
+            # Encontra o } balanceado
+            profundidade = 0
+            fim = -1
+            for i, ch in enumerate(texto_raw[inicio:], inicio):
+                if ch == "{": profundidade += 1
+                elif ch == "}":
+                    profundidade -= 1
+                    if profundidade == 0:
+                        fim = i + 1
+                        break
+            if fim > inicio:
+                parsed = json.loads(texto_raw[inicio:fim])
+            else:
+                # JSON incompleto — retorna mensagem amigavel sem reenviar
+                return {"resposta": "Resposta muito longa, pode repetir mais curto?", "acao": None}
+        except Exception:
+            return {"resposta": "Tive um problema interno. Pode repetir?", "acao": None}
+    else:
+        try:
+            # Remove markdown se houver
+            texto_limpo = texto_raw.strip()
+            if texto_limpo.startswith("```"):
+                texto_limpo = texto_limpo.split("```")[1]
+                if texto_limpo.startswith("json"):
+                    texto_limpo = texto_limpo[4:]
+                texto_limpo = texto_limpo.strip()
+            parsed = json.loads(texto_limpo)
+        except Exception:
+            # Tenta extrair JSON com busca de { balanceado
+            try:
+                inicio = texto_raw.find("{")
+                if inicio >= 0:
+                    profundidade = 0
+                    fim = -1
+                    for i, ch in enumerate(texto_raw[inicio:], inicio):
+                        if ch == "{": profundidade += 1
+                        elif ch == "}":
+                            profundidade -= 1
+                            if profundidade == 0:
+                                fim = i + 1
+                                break
+                    if fim > inicio:
+                        parsed = json.loads(texto_raw[inicio:fim])
+            except Exception as e:
+                print(f"PARSE FALHOU: {e} | raw: {repr(texto_raw[:300])}")
+
+    if parsed:
         lista_acoes = parsed.get("acoes", [])
         texto_resposta = parsed.get("resposta", "OK")
-    except Exception as e:
-        print(f"PARSE ERRO: {e} | raw: {repr(texto_raw[:300])}")
-        # Se falhou o parse, retorna o texto bruto como resposta (sem JSON)
-        texto_resposta = texto_raw.replace("{", "").replace("}", "").strip()[:500]
+    else:
+        print(f"PARSE FALHOU TOTAL | raw: {repr(texto_raw[:300])}")
+        texto_resposta = "Desculpa, tive um problema interno. Pode repetir?"
         lista_acoes = []
 
     # Executa acoes
