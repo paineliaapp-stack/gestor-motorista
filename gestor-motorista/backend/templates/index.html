@@ -1115,14 +1115,15 @@ async function _responderPerguntaCapacidade(valor){
   await _executarGeracaoPlano(mid, num, box);
 }
 
-async function _executarGeracaoPlano(mid, capMax, box){
-  if(_planoGerando) return;
+async function _executarGeracaoPlano(mid, capMax, box, _tentativa){
+  _tentativa = _tentativa || 1;
+  if(_planoGerando && _tentativa === 1) return;
   _planoGerando = true;
 
   const cardEl = document.getElementById('card-plano-ia');
   const ctaTxt = document.getElementById('card-plano-cta-txt');
   if(cardEl){ cardEl.style.opacity='0.6'; cardEl.style.pointerEvents='none'; }
-  if(ctaTxt) ctaTxt.textContent = 'Gerando plano...';
+  if(ctaTxt) ctaTxt.textContent = _tentativa > 1 ? `Tentando novamente (${_tentativa}/3)...` : 'Gerando plano...';
 
   const capMin = Math.round(capMax * 0.6);
 
@@ -1187,7 +1188,21 @@ async function _executarGeracaoPlano(mid, capMax, box){
       appendMsg('assistant', msgFim);
       // NÃO salva pergunta final do plano no histórico
     } else if(data.erro || data.ok === false) {
-      appendMsg('assistant', data.plano || data.mensagem || 'Não consegui gerar o plano agora. Tenta em instantes.');
+      const errMsg = data.plano || data.mensagem || '';
+      const isOverload = errMsg.includes('demanda') || errMsg.includes('instante') || errMsg.includes('minuto');
+      if(isOverload && _tentativa < 3){
+        // Retry automático com countdown
+        _planoGerando = false;
+        if(cardEl){ cardEl.style.opacity='1'; cardEl.style.pointerEvents=''; }
+        const delay = _tentativa === 1 ? 20 : 35;
+        appendMsg('assistant', `⏳ Gemini tá cheio agora. Tentando de novo em ${delay}s automaticamente...`);
+        if(ctaTxt) ctaTxt.textContent = `Aguardando ${delay}s...`;
+        if(cardEl){ cardEl.style.opacity='0.5'; cardEl.style.pointerEvents='none'; }
+        await new Promise(r => setTimeout(r, delay * 1000));
+        await _executarGeracaoPlano(mid, capMax, box, _tentativa + 1);
+        return;
+      }
+      appendMsg('assistant', errMsg || 'Não consegui gerar o plano agora. Tenta em instantes.');
     } else {
       appendMsg('assistant', data.plano || 'Ops, não consegui gerar o plano agora. Tenta de novo em instantes.');
     }

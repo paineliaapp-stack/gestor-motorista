@@ -1265,6 +1265,11 @@ async def chat(dados: dict = Body(...)):
     ganhos_hoje_detalhe = [(l.get("plataforma","?"), float(l.get("valor",0)), l.get("created_at","")) for l in lancamentos_hoje_lista if l["tipo"] == "ganho"]
     despesas_hoje_detalhe = [(l.get("descricao","?"), float(l.get("valor",0)), l.get("created_at","")) for l in lancamentos_hoje_lista if l["tipo"] == "despesa"]
 
+    # Lançamentos de ontem (para detecção de duplicata e referências)
+    ontem_str_ctx = ontem_str
+    lanc_ontem = [l for l in lancamentos_mes if l.get("data","") == ontem_str_ctx]
+    ganhos_ontem_detalhe = [(l.get("plataforma","?"), float(l.get("valor",0))) for l in lanc_ontem if l["tipo"] == "ganho"]
+
     # Pré-computa JSON de contas para evitar bug de f-string com dict
     contas_json = _json.dumps(
         [{"descricao": c.get("descricao"), "valor": c.get("valor"), "vencimento": c.get("vencimento"), "pago": c.get("pago"), "valor_pago": c.get("valor_pago")} for c in contas],
@@ -1284,6 +1289,7 @@ ESTILO — REGRAS RÍGIDAS:
 === SITUAÇÃO FINANCEIRA ===
 HOJE: Ganhos R${ganhos_hoje:.0f} | Despesas R${despesas_hoje:.0f} | Líquido R${(ganhos_hoje-despesas_hoje):.0f}
 Lançamentos hoje: {_json.dumps(ganhos_hoje_detalhe + despesas_hoje_detalhe, ensure_ascii=False)}
+Lançamentos ontem ({ontem_str_ctx}): {_json.dumps(ganhos_ontem_detalhe, ensure_ascii=False)}
 
 MÊS (desde {inicio_mes}):
 Ganhos R${ganhos_mes:.0f} | Despesas R${despesas_mes:.0f} | Lucro R${lucro_mes:.0f}
@@ -1299,7 +1305,12 @@ CONTAS:
 
 === REGRAS CRÍTICAS ===
 1. DADOS INCOMPLETOS: conta sem vencimento → PERGUNTE antes de registrar. Renda futura sem data → PERGUNTE a data.
-2. DUPLICATA: só questiona se mesmo valor+plataforma nos últimos 30min. Dia diferente = registra direto. Nunca pergunte 2x sobre o mesmo valor.
+2. DUPLICATA E REFERÊNCIAS — CRÍTICO:
+- "E os 400?", "e aquele de 400?", "e ontem?", "e o outro?" → são REFERÊNCIAS a registros anteriores, NÃO novos ganhos. Responda confirmando o que já foi registrado, não registre de novo.
+- Duplicata real: mesmo valor + mesma plataforma registrado nos ÚLTIMOS 30min no histórico → pergunte: "Já anotei R$X na [plataforma] às HH:MM. É outro ganho ou é o mesmo?"
+- Mesmo valor em dia diferente → registre direto, sem perguntar.
+- "Fiz 400 de novo" ou "mais 400" → aí SIM é novo registro, confirme e registre.
+- Nunca pergunte 2x sobre o mesmo valor na mesma conversa.
 3. RENDA EXTRA (seguro-desemprego, freela, bico, venda, bônus): registre como ganho plataforma="renda_extra". O plano financeiro inclui automaticamente.
 4. PLATAFORMA: se sua última msg perguntou plataforma → próxima resposta É a plataforma. "99"=99, "uber"=uber. Registra direto, não pergunta de novo.
 5. VALORES ALTOS (ganho>R$700 ou despesa>R$350): confirme levemente antes de registrar.
