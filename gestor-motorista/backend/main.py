@@ -1431,6 +1431,7 @@ Quando analisa situação geral:
             texto = "Entendi! Me fala mais detalhes."
     print(f"DEBUG lista_acoes: {repr(lista_acoes)}")
     linhas_json = lista_acoes  # já são dicts, não precisa serializar
+    acoes_executadas_count = 0
     for linha in linhas_json:
         try:
             acao = linha if isinstance(linha, dict) else json.loads(linha)
@@ -1682,8 +1683,11 @@ Quando analisa situação geral:
             traceback.print_exc()
     acao_executada = acoes_executadas[0] if acoes_executadas else None
     # texto já atualizado pelo JSON mode
+    # Se a IA disse que registrou mas nenhuma ação foi executada, avisa
+    if lista_acoes and not acoes_executadas:
+        print(f"AVISO: IA gerou {len(lista_acoes)} ações mas nenhuma foi executada. acoes={lista_acoes}")
 
-    return {"resposta": texto, "acao": acao_executada}
+    return {"resposta": texto, "acao": acao_executada, "acoes_count": len(acoes_executadas), "acoes_esperadas": len(lista_acoes)}
 
 
 

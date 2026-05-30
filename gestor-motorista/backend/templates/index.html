@@ -1847,6 +1847,7 @@ async function loadCorrida(){
 }
 
 let _initRodando = false;
+let _initConcluido = false;
 async function init(){
   // Garante que MID está sincronizado
   if(!MID && window.MID) MID = window.MID;
@@ -1857,8 +1858,8 @@ async function init(){
     return;
   }
 
-  // Evita execução paralela simultânea (não bloqueia reentrada após MID chegar)
-  if(_initRodando) return;
+  // Roda só uma vez por sessão — evita re-render do chat ao voltar para o dashboard
+  if(_initRodando || _initConcluido) return;
   _initRodando = true;
 
   const metaSalva=localStorage.getItem('meta');
@@ -1957,6 +1958,7 @@ async function init(){
   setTimeout(mostrarBannerTurno, 800);
 
   _initRodando = false;
+  _initConcluido = true;
 }
 // init() chamado após todos os scripts
 </script>
@@ -2429,6 +2431,10 @@ async function sendChat() {
     document.getElementById('typing-indicator')?.remove();
     const reply = data.resposta || data.message || JSON.stringify(data);
     appendMsg('assistant', reply);
+    // Avisa se a IA disse que registrou mas nenhuma ação foi executada
+    if(data.acoes_esperadas > 0 && data.acoes_count === 0){
+      appendMsg('assistant', '⚠️ Não consegui salvar. Tenta de novo ou reformula a mensagem.');
+    }
     chatHistory.push({role:'assistant', content: reply, date: hojeStr()});
     try{localStorage.setItem(getDashHistoryKey(),JSON.stringify(chatHistory.slice(-20)))}catch{}
     falarIA(reply);
