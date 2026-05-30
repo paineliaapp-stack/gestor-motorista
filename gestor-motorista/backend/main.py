@@ -952,7 +952,7 @@ NÚMEROS REAIS (use EXATAMENTE estes, não recalcule):
 {"- Padrão: dias mais fortes = " + ", ".join([NOMES_DOW_COMPLETO[d] for d,_ in sorted(media_dow.items(), key=lambda x: x[1], reverse=True)[:2]]) if tem_historico and media_dow else ""}
 
 CONTAS URGENTES (vence em até 3 dias):
-{chr(10).join(f"  • {c['nome']}: R${c['falta']:.0f} (vence em {c['dias']}d)" for c in pagar_urgente) if pagar_urgente else "  Nenhuma"}
+{chr(10).join(f"  • {c['nome']}: R${c['falta']:.0f} (vence em {c['dias_ate']}d)" for c in pagar_urgente) if pagar_urgente else "  Nenhuma"}
 
 CONTAS DA SEMANA (vence em 4-7 dias):
 {chr(10).join(f"  • {c['nome']}: R${c['falta']:.0f}" for c in pagar_semana) if pagar_semana else "  Nenhuma"}
@@ -1345,18 +1345,26 @@ Categorias de despesa: combustivel, manutencao, aluguel_carro, financiamento, se
 
 === PLANO FINANCEIRO ===
 DETECÇÃO DE COMPROMISSOS — CRÍTICO:
-Se a mensagem do motorista contém MÚLTIPLOS DIAS com valores (ex: "quinta 500 sexta 600 sabado 600 domingo 200", "sexta faço 600 e sábado 400", "quinta 500, sexta 600"), isso É uma resposta de compromissos de trabalho.
-Não peça mais detalhes. Calcule IMEDIATAMENTE e salve via salvar_compromissos.
+Se a mensagem contém dias/períodos COM valores numéricos, isso É um plano de trabalho. NUNCA peça mais detalhes. Responda calculando imediatamente.
 
-Quando motorista responde com compromissos (ex: "sexta 600, sábado 400"):
-- Calcule: valor × (1 - {taxa_comb_pct:.0f}/100) = líquido para cada dia
-- Mostre: "Sexta: R$600 → ⛽R$X → R$Y líquido. Total extra: R$Z. [cobre/não cobre] o buraco de R${deficit_chat:.0f}."
-- Salve via salvar_compromissos com datas reais (hoje = {hoje_str})
-- Prazo negociado → editar_conta campo=vencimento
+Padrões que DEVEM ser reconhecidos como compromissos:
+- "500 hoje 600 amanhã 600 sábado e 200 domingo" → hoje={hoje_str}, amanhã={ontem_str}, sábado e domingo = datas reais da semana
+- "quinta 500 sexta 600 sabado 600 domingo 200" → datas da semana atual
+- "hoje faço 500, amanhã 600" → datas reais
+- "posso fazer 600 sexta e sábado" → sexta e sábado dessa semana
+- Qualquer combinação de dia + valor numérico
+
+QUANDO RECEBER COMPROMISSOS:
+1. Mapeie cada dia para data real (hoje={hoje_str}, amanhã={ontem_str})
+2. Calcule líquido: valor × {(1-taxa_comb_pct/100):.2f} (descontando {taxa_comb_pct:.0f}% de combustível)
+3. Some os líquidos + caixa atual R${poder_chat:.0f}
+4. Compare com déficit R${deficit_chat:.0f}
+5. Responda em 3 linhas: total que vai entrar, se cobre as urgentes, e o que ainda precisa negociar
+6. Salve via salvar_compromissos com as datas reais
 
 Quando analisa situação geral:
 - Use os dados reais acima. Nunca invente números.
-- "Pelo seu histórico, você faz R${meta_dia_chat:.0f}/dia líquido. Em {dias_rest_chat} dias = R${poder_chat:.0f} total. Contas = R${total_pendente:.0f}. Déficit = R${deficit_chat:.0f}."
+- "Pelo seu histórico, você faz R${meta_dia_chat:.0f}/dia líquido. Em {dias_rest_chat} dias = R${projecao_liq_chat:.0f} total. Contas = R${total_pendente:.0f}. Déficit = R${deficit_chat:.0f}."
 - Para fechar precisaria de R${cap_esforco_chat:.0f}/dia. Pergunte em quais dias consegue fazer mais.
 - Nunca jogue tudo de uma vez — 1 pergunta por mensagem, construa o plano em conversa.
 """
