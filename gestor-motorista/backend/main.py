@@ -609,7 +609,8 @@ async def _plano_financeiro_impl(dados: dict):
     # Detecta outliers: dias com ganho acima de 1.5x o max_dia informado
     # Isso acontece quando o motorista lança histórico acumulado num único dia
     teto_outlier = max(capacidade_max_manual * 4, 2000)
-    ganhos_filtrados = {d: v for d, v in ganhos_por_data.items() if v <= teto_outlier}
+    # Filtra outliers acima E dias com ganho mínimo (<R$30 = dia de teste/inativo)
+    ganhos_filtrados = {d: v for d, v in ganhos_por_data.items() if v <= teto_outlier and v >= 30}
 
     # Só usa histórico por dia da semana se tem pelo menos 5 dias reais (não outliers)
     # e esses dias cobrem pelo menos 2 dias da semana diferentes
@@ -967,7 +968,7 @@ Tudo que vem depois (quais dias, quanto, quais contas pagar) será coletado na c
 
 ESCREVA APENAS ISSO (máximo 4 linhas):
 1. Situação com os números reais e a ORIGEM deles:
-   "Pelo seu histórico, você tem feito R${meta_hoje_liquido:.0f}/dia líquido (R${meta_hoje_bruto:.0f} bruto - R${comb_diario:.0f} combustível). Nos {dias_restantes} dias restantes, isso dá R${total_liquido_possivel:.0f} + R${caixa_atual:.0f} que tem no bolso = R${poder_total:.0f} disponível."
+   "Pelo seu histórico, você tem feito R${meta_hoje_bruto:.0f}/dia bruto. Descontando R${comb_diario:.0f} de combustível, sobra R${meta_hoje_liquido:.0f} líquido/dia. Nos {dias_restantes} dias restantes, isso dá R${total_liquido_possivel:.0f} + R${caixa_atual:.0f} que tem no bolso = R${poder_total:.0f} disponível."
 2. O problema:
    [se não fecha:] "Suas contas somam R${total_falta:.0f} — falta R${total_falta - poder_total:.0f} pra cobrir tudo."
    [se fecha:] "Suas contas somam R${total_falta:.0f} — dá pra cobrir tudo trabalhando normal."
