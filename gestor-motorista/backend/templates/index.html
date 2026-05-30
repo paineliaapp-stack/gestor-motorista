@@ -1186,10 +1186,10 @@ async function _executarGeracaoPlano(mid, capMax, box){
       const msgFim = 'Tem algum dia dessa semana que você consegue trabalhar mais? Me fala os dias e quanto acha que faz (ex: "sexta faço 500, sábado 400") e eu ajusto o plano.';
       appendMsg('assistant', msgFim);
       // NÃO salva pergunta final do plano no histórico
-    } else if(data.erro) {
-      appendMsg('assistant', data.mensagem || 'Não consegui gerar o plano agora. Tenta em instantes.');
+    } else if(data.erro || data.ok === false) {
+      appendMsg('assistant', data.plano || data.mensagem || 'Não consegui gerar o plano agora. Tenta em instantes.');
     } else {
-      appendMsg('assistant', 'Ops, não consegui gerar o plano agora. Tenta de novo em instantes.');
+      appendMsg('assistant', data.plano || 'Ops, não consegui gerar o plano agora. Tenta de novo em instantes.');
     }
   } catch(e) {
     document.getElementById('typing-consultor')?.remove();
@@ -1749,9 +1749,11 @@ function filtrar(el,tipo){
 async function loadHist(tipo){
   if(!MID)return;
   try{
-    const r=await fetch(API+'/resumo/'+MID);
+    // Sempre busca dados frescos do servidor — não usa todosLanc que pode estar desatualizado
+    const r=await fetch(API+'/resumo/'+MID+'?t='+Date.now());
     const d=await r.json();
-    let lancs=(d.lancamentos||[]).filter(l=>tipo==='todos'||l.tipo===tipo).reverse();
+    todosLanc = d.lancamentos||[]; // Atualiza o global também
+    let lancs=todosLanc.filter(l=>tipo==='todos'||l.tipo===tipo).reverse();
     const el=document.getElementById('lanc-list');el.innerHTML='';
     if(!lancs.length){el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><p>Nenhum lançamento</p></div>';return}
     lancs.forEach(l=>{
@@ -2438,7 +2440,13 @@ async function sendChat() {
     chatHistory.push({role:'assistant', content: reply, date: hojeStr()});
     try{localStorage.setItem(getDashHistoryKey(),JSON.stringify(chatHistory.slice(-20)))}catch{}
     falarIA(reply);
-    try{loadDash();}catch(e){} try{loadCompromissos();}catch(e){};
+    // Atualiza dashboard e histórico após qualquer registro
+    try{loadDash();}catch(e){}
+    try{loadCompromissos();}catch(e){};
+    // Se registrou algo, atualiza o histórico de lançamentos também
+    if(data.acoes_count > 0 || data.acao){
+      try{ if(document.getElementById('page-historico')?.classList.contains('active')) loadHist('todos'); }catch(e){}
+    }
     const metaMatch = msg.match(/meta[^\d]*?(?:de\s+)?(?:r\$\s*)?([\d.,]+)/i) || msg.match(/(?:quero\s+)?(?:ganhar|faturar)\s+(?:r\$\s*)?([\d.,]+)/i);
     if(metaMatch){ const nv=parseFloat(metaMatch[1].replace(',','.')); if(nv>0) await atualizarMeta(nv); }
   } catch(e) {
