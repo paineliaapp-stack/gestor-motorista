@@ -4,7 +4,7 @@
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#F5A623">
 <link rel="icon" type="image/png" href="/static/icon-192.png">
-<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
 <meta charset="UTF-8">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -12,6 +12,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
 <title>Painel.IA</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<script>
+// Limpa histórico de chat antigo — roda síncronamente antes de qualquer coisa
+try{
+  if(localStorage.getItem('chatHistVer') !== '8'){
+    Object.keys(localStorage).forEach(k=>{
+      if(k.startsWith('dashHistory_') || k.startsWith('gestor_auto_')) localStorage.removeItem(k);
+    });
+    localStorage.setItem('chatHistVer','8');
+  }
+}catch(e){}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <style>
@@ -1048,8 +1059,7 @@ async function abrirConsultorIA(){
     abertura += `\nDeixa eu montar o plano completo com base nisso...`;
 
     appendMsg('assistant', abertura);
-    chatHistory.push({role:'assistant', content: abertura, date: hojeStr()});
-    try{localStorage.setItem(getDashHistoryKey(),JSON.stringify(chatHistory.slice(-20)))}catch{}
+    // NÃO salva abertura do plano no histórico — evita loop ao recarregar
 
     await _executarGeracaoPlano(mid, hist.media_geral || capMaxConhecido, box);
     return;
@@ -1246,7 +1256,10 @@ function goPage(el,pg){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('page-'+pg).classList.add('active');
-  if(pg==='dashboard'){try{loadDash();loadContasDash();}catch(e){console.warn('loadDash err',e);}};
+  if(pg==='dashboard'){
+    try{loadDash();}catch(e){console.warn('loadDash err',e);}
+    if(!window._contasCarregadas) try{loadContasDash();}catch(e){};
+  };
   if(pg==='historico'){try{loadHist('todos');}catch(e){}};
   if(pg==='fechamento'){try{document.getElementById('fech-data').value=hojeStr();calcFechamentoDiario();}catch(e){}};
   if(pg==='calendario'){try{renderCal();}catch(e){}};
@@ -2062,7 +2075,7 @@ function renderContas(){
           </div>
         </div>
         <div style="text-align:right">
-          <div style="font-weight:700;font-size:16px">${(parseFloat(c.valor_original||c.valor)+parseFloat(c.valor_pago||0)).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
+          <div style="font-weight:700;font-size:16px">${parseFloat(c.valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
           <div style="font-size:11px;color:var(--mt)">pago: ${valorPago.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
         </div>
       </div>
@@ -2623,9 +2636,12 @@ function appendSetupMsg(role, text) {
 
 // ══════════════════════════════════════════════════════════════════════════
 
+let _boasVindasMostrada = false;
 function iniciarMsgBoasVindas() {
+  if(_boasVindasMostrada) return;
   const box = document.getElementById('chat-msgs');
   if (box && !box.children.length) {
+    _boasVindasMostrada = true;
     const primeiroNome = (window.NOME||'').split(' ')[0] || 'motorista';
     appendMsg('assistant', 'Oi, ' + primeiroNome + '! 👋 Sou seu Gestor Financeiro, tô por dentro de tudo aqui.\n\nPode falar como se fosse no WhatsApp:\n💰 "fiz 350 na Uber"\n💸 "paguei 80 de combustível"\n📋 "tenho conta de aluguel de R$800, vence dia 5"\n❓ "quanto tô ganhando esse mês?"\n\nMe manda sua primeira informação! 🚀');
   }
@@ -2721,6 +2737,7 @@ async function loadContasDash() {
     const r = await fetch(API + '/contas/' + MID);
     const data = await r.json();
     window._contas = data.contas || data || [];
+    window._contasCarregadas = true;
     const el = document.getElementById('contas-dash-lista');
     if (!el) return;
     const pendentes = window._contas.filter(c=>!c.pago);
