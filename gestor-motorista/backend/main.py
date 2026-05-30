@@ -1193,6 +1193,11 @@ async def chat(dados: dict = Body(...)):
     hoje = hoje_brasil()
     inicio_mes = hoje.replace(day=1).isoformat()
     hoje_str = hoje.isoformat()
+    import datetime as _dt2
+    ontem_str = (hoje - _dt2.timedelta(days=1)).isoformat()
+    # Sábado passado
+    dias_ate_sabado = (hoje.weekday() - 5) % 7  # 5 = sábado
+    sabado_str = (hoje - _dt2.timedelta(days=dias_ate_sabado if dias_ate_sabado > 0 else 7)).isoformat()
     try:
         c = supabase.table("contas").select("*").eq("motorista_id", motorista_id).execute()
         contas = c.data or []
@@ -1300,6 +1305,13 @@ CONTAS:
 5. VALORES ALTOS (ganho>R$700 ou despesa>R$350): confirme levemente antes de registrar.
 6. SIM/NÃO: "sim/pode/isso/confirma" → registre o pendente do histórico. "não/cancela" → pergunte o certo.
 7. CRUZAMENTO: ganho muito acima da média (>2x) → registre e comente. Valor baixo declarado explicitamente → registre direto.
+8. MÚLTIPLOS REGISTROS NUMA MENSAGEM — CRÍTICO:
+   Se o motorista informa vários ganhos/despesas de uma vez (ex: "hoje fiz 336, ontem 400, sábado 500" ou "fiz 300 na uber e paguei 80 de combustível"), REGISTRE TODOS de uma vez com múltiplas ações no JSON.
+   - "hoje fiz 336, ontem fiz 400" → duas ações registrar_lancamento com datas diferentes (hoje={hoje_str}, ontem={ontem_str})
+   - "sábado 500" em contexto de relato = data do sábado passado ({sabado_str})
+   - "fiz 300 na uber e paguei 80 de combustível" → 1 ganho + 1 despesa no mesmo JSON
+   - NÃO processe só o primeiro valor e esqueça os outros. NÃO pergunte "qual plataforma foi cada um?" se não é crítico — assuma a plataforma padrão do motorista ou a mais recente.
+   - Confirmação para múltiplos: "Anotei! Ontem R$400 + hoje R$336 na 99, e sábado R$500. ✅" — tudo numa linha só.
 
 === AÇÕES (responda SEMPRE em JSON puro) ===
 Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}
