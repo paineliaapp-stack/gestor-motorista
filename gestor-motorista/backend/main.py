@@ -937,49 +937,51 @@ INSTRUÇÃO: Na seção SITUAÇÃO, mostre o cenário de esforço (linha começa
     else:
         padrao_semana_txt = ""
 
-    prompt = f"""Você é um amigo que entende de finanças, sentado na frente do motorista para ajudá-lo a traçar um plano real para os próximos dias. Fale com naturalidade, como pessoa para pessoa — direto, honesto, sem enrolação, mas também sem ser robótico.
+    # Python já calculou tudo. A IA só escreve o texto — 3 mensagens separadas por |||
+    # Cada mensagem = uma bolha separada no chat (como WhatsApp)
+    prompt = f"""Você é um amigo próximo do motorista. Vai mandar 3 mensagens curtas no WhatsApp, separadas por |||.
 
-NÚMEROS CALCULADOS PELO SISTEMA (use APENAS estes — nunca invente nem recalcule):
-- Hoje: {hoje.strftime('%d/%m/%Y')} ({NOMES_DOW[hoje.weekday()]})
-- Caixa no bolso agora: R${caixa_atual:.0f}
-- Combustível por dia: R${comb_diario:.0f} ({taxa_comb*100:.0f}% do que você fatura — {fonte_comb})
-- Hoje ({NOMES_DOW[hoje_dow]}): faturar R${meta_hoje_bruto:.0f} → pagar R${comb_diario:.0f} de combustível → sobra R${meta_hoje_liquido:.0f} líquido
-- Projeção de {dias_restantes} dias trabalhando normalmente: R${total_liquido_possivel:.0f} líquido no total (R${meta_hoje_liquido:.0f}/dia × {dias_restantes} dias)
+NÚMEROS REAIS (use EXATAMENTE estes, não recalcule):
+- Caixa agora: R${caixa_atual:.0f}
+- Dias restantes no mês: {dias_restantes}
+- Faturamento médio por dia (histórico real): R${meta_hoje_bruto:.0f} bruto → R${comb_diario:.0f} combustível → R${meta_hoje_liquido:.0f} líquido
+- SE trabalhar normal {dias_restantes} dias: pode entrar mais R${total_liquido_possivel:.0f} (projeção — não é certeza)
 - Total de contas pendentes: R${total_falta:.0f}
-{diagnostico}
-{compromissos_txt}
-{padrao_semana_txt}
-{cenario_esforco_txt}
-{f"COMBUSTÍVEL JÁ PAGO: dos R${comb_projetado_contas:.0f} projetados para o mês, já foram pagos R${comb_ja_gasto:.0f}. Falta R${comb_restante_real:.0f}." if comb_projetado_contas > 0 else ""}
+- Situação: {"NÃO FECHA — mesmo faturando normal, falta R$" + f"{max(0, total_falta - (caixa_atual + total_liquido_possivel)):.0f}" if not cobre_tudo else "FECHA — trabalhando normal dá pra cobrir tudo"}
+{"- Para fechar precisaria de R$" + f"{cap_esforco:.0f}" + "/dia (R$" + f"{cap_esforco - cap_padrao:.0f}" + " a mais que o normal)" if not cobre_tudo and cap_esforco > cap_padrao else ""}
+{"- Padrão: dias mais fortes = " + ", ".join([NOMES_DOW_COMPLETO[d] for d,_ in sorted(media_dow.items(), key=lambda x: x[1], reverse=True)[:2]]) if tem_historico and media_dow else ""}
 
-CONTAS URGENTES — não pode deixar passar:
-{fmt_lista(pagar_urgente)}
+CONTAS URGENTES (vence em até 3 dias):
+{chr(10).join(f"  • {c['nome']}: R${c['falta']:.0f} (vence em {c['dias']}d)" for c in pagar_urgente) if pagar_urgente else "  Nenhuma"}
 
-CONTAS DESTA SEMANA — importante mas dá pra respirar um pouco:
-{fmt_lista(pagar_semana)}
+CONTAS DA SEMANA (vence em 4-7 dias):
+{chr(10).join(f"  • {c['nome']}: R${c['falta']:.0f}" for c in pagar_semana) if pagar_semana else "  Nenhuma"}
 
-CONTAS QUE DÁ PRA NEGOCIAR — pode pedir prazo:
-{fmt_lista(negociar, incluir_dias=False)}
+PODE NEGOCIAR PRAZO:
+{chr(10).join(f"  • {c['nome']}: R${c['falta']:.0f}" for c in negociar) if negociar else "  Nenhuma"}
 
-{f"JÁ COBERTO PELO CAIXA: {', '.join(c['nome'] for c in pagar_agora)}" if pagar_agora else ""}
+---
+ESCREVA EXATAMENTE 3 MENSAGENS SEPARADAS POR |||
 
-SUA TAREFA: escreva APENAS 2 frases + 1 pergunta. Nada mais.
+MENSAGEM 1 — A situação real (máx 3 linhas):
+Fale o que ele TEM agora (caixa), o que PODE entrar (projeção), e o total de contas.
+IMPORTANTE: deixe claro que a projeção é SE ele trabalhar normal — não é certeza.
+Ex: "Você tem R$X no bolso. Se trabalhar normal esses Y dias, pode entrar mais R$Z. Suas contas somam R$W."
 
-FRASE 1 (situação em números):
-"{dias_restantes} dias até o fim do mês. Você tem R${caixa_atual:.0f} no bolso e pode fazer mais R${total_liquido_possivel:.0f} trabalhando normal. Total: R${poder_total:.0f}."
+MENSAGEM 2 — O que pagar primeiro (máx 4 linhas):
+Liste SÓ as urgentes com prazo. Se não fecha, diga isso e quanto falta.
+Uma conta por linha, simples: "• [nome]: R$X — vence em Yd"
 
-FRASE 2 (o problema):
-{"Suas contas somam R$" + str(int(total_falta)) + " — falta R$" + str(int(total_falta - poder_total)) + " pra cobrir tudo." if total_falta > poder_total else "Suas contas somam R$" + str(int(total_falta)) + " — dá pra cobrir tudo se trabalhar normal."}
+MENSAGEM 3 — A pergunta do plano (1 linha só):
+Se não fecha: pergunte se consegue fazer mais em algum dia específico. Mencione o valor necessário (R${cap_esforco:.0f}/dia).
+Se fecha: pergunte se quer ver a ordem de pagamento.
 
-PERGUNTA (só se não fecha):
-"Pra fechar, precisaria de R${cap_esforco:.0f}/dia. Consegue fazer isso em algum dia?"
-
-REGRAS ABSOLUTAS — punição: resposta descartada se violar:
-- MÁXIMO 3 linhas no total. Se passar, tá errado.
-- Zero listas. Zero bullets. Zero "Pagar primeiro". Zero emojis no meio de frase.
-- Combustível = R${comb_diario:.0f}/dia — use EXATO, não invente.
-- Sem markdown (sem **, sem #).
-- Tom direto: "você tem", "falta", "consegue?" — sem "E aí meu amigo", sem rodeios."""
+REGRAS ABSOLUTAS:
+- Os 3 blocos separados por ||| exatamente
+- Combustível = R${comb_diario:.0f}/dia — nunca invente outro valor
+- Sem markdown (sem **, sem #)
+- Sem "E aí meu amigo" ou rodeios — vai direto
+- Linguagem simples, como WhatsApp mesmo"""
 
     GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
     print(f"DEBUG plano v5: mid={motorista_id} max_manual={capacidade_max_manual:.0f} caixa={caixa_atual:.0f} tem_historico={tem_historico} cap_padrao={cap_padrao:.0f} dias_rest={dias_restantes} total_liq_possivel={total_liquido_possivel:.0f} poder={poder_total:.0f} urgente={total_urgente:.0f} semana={total_semana:.0f} negociar={total_negociar:.0f} media_dow={media_dow}")
@@ -1025,20 +1027,15 @@ REGRAS ABSOLUTAS — punição: resposta descartada se violar:
     if not texto:
         return {"ok": False, "plano": "Não consegui gerar o plano agora. Tente em instantes."}
 
-    # Divide o plano em partes pelas seções (cada seção = uma mensagem separada no chat)
-    SEPARADORES = ["✅ PAGAR PRIMEIRO", "⏳ PEDIR PRAZO", "🎯 HOJE"]
-    partes = []
-    resto = texto.strip()
-    for sep in SEPARADORES:
-        idx = resto.find(sep)
-        if idx > 0:
-            parte_anterior = resto[:idx].strip()
-            if parte_anterior:
-                partes.append(parte_anterior)
-            resto = resto[idx:].strip()
-    if resto:
-        partes.append(resto)
-    # Se não conseguiu dividir, retorna como uma parte só
+    # Divide o texto em 3 mensagens pelo separador |||
+    partes = [p.strip() for p in texto.split("|||") if p.strip()]
+    # Se a IA não usou |||, divide por linha em branco como fallback
+    if len(partes) == 1 and len(partes[0]) > 200:
+        blocos = [b.strip() for b in texto.split("\n\n") if b.strip()]
+        if len(blocos) >= 2:
+            partes = blocos[:3]
+    # Garante no máximo 3 partes
+    partes = partes[:3]
     if not partes:
         partes = [texto]
 
