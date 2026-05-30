@@ -15,7 +15,7 @@
 <script>
 // Limpa histórico de chat antigo — roda síncronamente antes de qualquer coisa
 try{
-  if(localStorage.getItem('chatHistVer') !== '8'){
+  if(localStorage.getItem('chatHistVer') !== '9'){
     Object.keys(localStorage).forEach(k=>{
       if(k.startsWith('dashHistory_') || k.startsWith('gestor_auto_')) localStorage.removeItem(k);
     });
@@ -1110,7 +1110,7 @@ async function _responderPerguntaCapacidade(valor){
   const box = document.getElementById('chat-msgs');
 
   appendMsg('assistant', `Ok, R$${num.toFixed(0)}/dia. Deixa eu analisar tudo e montar seu plano...`);
-  chatHistory.push({role:'assistant', content:`Ok, R$${num}/dia — analisando...`});
+  // NÃO salva msg de transição do plano no histórico
 
   await _executarGeracaoPlano(mid, num, box);
 }
@@ -1172,7 +1172,7 @@ async function _executarGeracaoPlano(mid, capMax, box){
           document.getElementById('typing-parte-' + i)?.remove();
         }
         appendMsg('assistant', parte);
-        chatHistory.push({role:'assistant', content: parte, date: hojeStr()});
+        // NÃO salva partes do plano no histórico — evita loop
         if(box) box.scrollTop = box.scrollHeight;
       }
       // Pergunta sobre dias de esforço extra
@@ -1185,8 +1185,7 @@ async function _executarGeracaoPlano(mid, capMax, box){
       t3.remove();
       const msgFim = 'Tem algum dia dessa semana que você consegue trabalhar mais? Me fala os dias e quanto acha que faz (ex: "sexta faço 500, sábado 400") e eu ajusto o plano.';
       appendMsg('assistant', msgFim);
-      chatHistory.push({role:'assistant', content: msgFim, date: hojeStr()});
-      try{localStorage.setItem(getDashHistoryKey(),JSON.stringify(chatHistory.slice(-20)))}catch{}
+      // NÃO salva pergunta final do plano no histórico
     } else if(data.erro) {
       appendMsg('assistant', data.mensagem || 'Não consegui gerar o plano agora. Tenta em instantes.');
     } else {
@@ -2695,40 +2694,8 @@ function alertaContasVencendo(contas) {
   if(sub) sub.innerHTML = 'Toca aqui e eu monto um plano com o que você consegue faturar nos próximos dias. <strong style="color:#e2d9f3">Sem enrolação.</strong>';
   if(cardGestor) cardGestor.style.borderColor = 'rgba(220,38,38,.6)';
 
-  // Aparece automaticamente no chat se ainda não apareceu hoje (máx 1x por dia)
-  // Usa chave global (sem MID) para evitar duplicar quando MID carrega depois
-  const _autoKey = 'gestor_auto_' + hojeStr();
-  const jaApareceuHoje = localStorage.getItem(_autoKey) === '1';
-  if(!jaApareceuHoje && urgentes.length > 0){
-    localStorage.setItem(_autoKey, '1');
-    // Espera 3s para o dashboard carregar, depois aparece a mensagem no chat
-    setTimeout(() => {
-      const box = document.getElementById('chat-msgs');
-      if(!box) return;
-      const nomesUrg = urgentes.map(c=>`${c.descricao} (R$${parseFloat(c.valor).toFixed(0)})`).join(' e ');
-      // Se já tem histórico, mostra que o sistema conhece a rotina
-      const _hs = window._historicoSemana;
-      let autoMsg;
-      if(_hs && _hs.tem_historico && _hs.media_geral > 0){
-        const hoje_dow = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
-        const mediaHoje = _hs.media_por_dia && _hs.media_por_dia[hoje_dow];
-        const diaComentario = mediaHoje
-          ? (_hs.dias_fracos && _hs.dias_fracos.includes(mediaHoje.nome)
-              ? ` Hoje (${mediaHoje.nome}) costuma ser mais lento pra você — mas o plano já leva isso em conta.`
-              : _hs.dias_fortes && _hs.dias_fortes.includes(mediaHoje.nome)
-                ? ` Hoje (${mediaHoje.nome}) é um dos seus dias fortes — bora aproveitar! 🚀`
-                : '')
-          : '';
-        autoMsg = `⚠️ ${nomesUrg} vence${urgentes.length>1?'m':''} em breve.${diaComentario}\n\nToca em "Gerar plano" — já sei seu histórico e monto tudo sem perguntar nada.`;
-      } else {
-        autoMsg = `Ei! Vi que você tem conta${urgentes.length>1?'s':''} vencendo: ${nomesUrg}. Posso te ajudar a traçar um plano? Toca em "Gerar meu plano agora" ali em baixo 👇`;
-      }
-      appendMsg('assistant', autoMsg);
-      chatHistory.push({role:'assistant', content: autoMsg, date: hojeStr()});
-      try{localStorage.setItem(getDashHistoryKey(),JSON.stringify(chatHistory.slice(-20)))}catch{}
-      box.scrollTop = box.scrollHeight;
-    }, 3000);
-  }
+  // O card fica vermelho quando há urgência — o usuário clica quando quiser
+  // SEM mensagem automática no chat (causava loop)
 }
 
 async function loadContasDash() {

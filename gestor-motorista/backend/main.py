@@ -963,24 +963,23 @@ CONTAS QUE DÁ PRA NEGOCIAR — pode pedir prazo:
 
 {f"JÁ COBERTO PELO CAIXA: {', '.join(c['nome'] for c in pagar_agora)}" if pagar_agora else ""}
 
-SUA TAREFA: dar o PONTAPÉ INICIAL da conversa — apenas a situação e UMA pergunta.
-Tudo que vem depois (quais dias, quanto, quais contas pagar) será coletado na conversa, não agora.
+SUA TAREFA: escreva APENAS 2 frases + 1 pergunta. Nada mais.
 
-ESCREVA APENAS ISSO (máximo 4 linhas):
-1. Situação com os números reais e a ORIGEM deles:
-   "Pelo seu histórico, você tem feito R${meta_hoje_bruto:.0f}/dia bruto. Descontando R${comb_diario:.0f} de combustível, sobra R${meta_hoje_liquido:.0f} líquido/dia. Nos {dias_restantes} dias restantes, isso dá R${total_liquido_possivel:.0f} + R${caixa_atual:.0f} que tem no bolso = R${poder_total:.0f} disponível."
-2. O problema:
-   [se não fecha:] "Suas contas somam R${total_falta:.0f} — falta R${total_falta - poder_total:.0f} pra cobrir tudo."
-   [se fecha:] "Suas contas somam R${total_falta:.0f} — dá pra cobrir tudo trabalhando normal."
-3. O que seria necessário (só se não fecha):
-   "Para fechar, você precisaria de R${cap_esforco:.0f}/dia. Consegue?"
-   [se fecha:] "Quer ver a ordem certa de pagamento?"
+FRASE 1 (situação em números):
+"{dias_restantes} dias até o fim do mês. Você tem R${caixa_atual:.0f} no bolso e pode fazer mais R${total_liquido_possivel:.0f} trabalhando normal. Total: R${poder_total:.0f}."
 
-REGRAS ABSOLUTAS:
-- Sem listas de contas, sem "pagar primeiro", sem frases de negociação — tudo isso vem depois
-- UMA pergunta no final, fechada (sim/não ou número)
-- Combustível = R${comb_diario:.0f}/dia. Exato.
-- Sem # ou ** ou markdown."""
+FRASE 2 (o problema):
+{"Suas contas somam R$" + str(int(total_falta)) + " — falta R$" + str(int(total_falta - poder_total)) + " pra cobrir tudo." if total_falta > poder_total else "Suas contas somam R$" + str(int(total_falta)) + " — dá pra cobrir tudo se trabalhar normal."}
+
+PERGUNTA (só se não fecha):
+"Pra fechar, precisaria de R${cap_esforco:.0f}/dia. Consegue fazer isso em algum dia?"
+
+REGRAS ABSOLUTAS — punição: resposta descartada se violar:
+- MÁXIMO 3 linhas no total. Se passar, tá errado.
+- Zero listas. Zero bullets. Zero "Pagar primeiro". Zero emojis no meio de frase.
+- Combustível = R${comb_diario:.0f}/dia — use EXATO, não invente.
+- Sem markdown (sem **, sem #).
+- Tom direto: "você tem", "falta", "consegue?" — sem "E aí meu amigo", sem rodeios."""
 
     GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
     print(f"DEBUG plano v5: mid={motorista_id} max_manual={capacidade_max_manual:.0f} caixa={caixa_atual:.0f} tem_historico={tem_historico} cap_padrao={cap_padrao:.0f} dias_rest={dias_restantes} total_liq_possivel={total_liquido_possivel:.0f} poder={poder_total:.0f} urgente={total_urgente:.0f} semana={total_semana:.0f} negociar={total_negociar:.0f} media_dow={media_dow}")
@@ -1272,8 +1271,13 @@ async def chat(dados: dict = Body(...)):
 
     contexto = f"""Você é o GESTOR FINANCEIRO do motorista no Painel.IA. Hoje: {hoje_str}.
 
-ESTILO: sem markdown, sem headers. Emojis sim. Fale como amigo. Respostas curtas.
-Pergunta de clarificação = 1 linha só. Nunca liste contas ao perguntar plataforma.
+ESTILO — REGRAS RÍGIDAS:
+- Máximo 2 frases por resposta. Se precisar de mais, mande em 2 mensagens separadas.
+- Confirmação de registro: 1 linha só. Ex: "Anotei! R$350 na Uber hoje. ✅"
+- Pergunta de plataforma: "Foi Uber, 99 ou inDrive?" — nada mais.
+- Análise financeira: 2 frases + 1 pergunta. Sem listas, sem bullets.
+- Nunca liste contas numa resposta de confirmação.
+- Zero markdown (sem **, sem #). Emojis só no início ou fim da frase.
 
 === SITUAÇÃO FINANCEIRA ===
 HOJE: Ganhos R${ganhos_hoje:.0f} | Despesas R${despesas_hoje:.0f} | Líquido R${(ganhos_hoje-despesas_hoje):.0f}
