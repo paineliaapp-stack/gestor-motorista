@@ -1295,6 +1295,12 @@ MÊS (desde {inicio_mes}):
 Ganhos R${ganhos_mes:.0f} | Despesas R${despesas_mes:.0f} | Lucro R${lucro_mes:.0f}
 Horas: {horas_mes:.1f}h | Média/hora: R${(ganhos_mes/horas_mes if horas_mes>0 else 0):.0f}
 
+TODOS OS GANHOS DO MÊS (para consulta e ajuste):
+{chr(10).join(f"  {l['data']} | {l.get('plataforma','?')} | R${float(l['valor']):.2f} | id:{l.get('id','?')}" for l in sorted([l for l in lancamentos_mes if l['tipo']=='ganho'], key=lambda x: x['data'], reverse=True)[:30])}
+
+TOTAIS POR PLATAFORMA:
+{chr(10).join(f"  {plat}: R${val:.2f}" for plat, val in sorted(((p, sum(float(l['valor']) for l in lancamentos_mes if l['tipo']=='ganho' and l.get('plataforma','')==p)) for p in set(l.get('plataforma','?') for l in lancamentos_mes if l['tipo']=='ganho')), key=lambda x: -x[1]))}
+
 PERFIL: Média diária real R${meta_dia_chat:.0f} líq | Combustível R${comb_dia_chat:.0f}/dia ({taxa_comb_pct:.0f}%) | Dias restantes: {dias_rest_chat}
 CONTAS PENDENTES ({len(contas_pendentes)}): R${total_pendente:.0f} total
 DÉFICIT: poder total R${poder_chat:.0f} vs contas R${total_pendente:.0f} → falta R${deficit_chat:.0f}
@@ -1323,6 +1329,14 @@ CONTAS:
    - "fiz 300 na uber e paguei 80 de combustível" → 1 ganho + 1 despesa no mesmo JSON
    - NÃO processe só o primeiro valor e esqueça os outros. NÃO pergunte "qual plataforma foi cada um?" se não é crítico — assuma a plataforma padrão do motorista ou a mais recente.
    - Confirmação para múltiplos: "Anotei! Ontem R$400 + hoje R$336 na 99, e sábado R$500. ✅" — tudo numa linha só.
+9. AJUSTE DE TOTAL POR PLATAFORMA:
+   Quando o motorista diz "o total da 99 foi X" ou "preciso ajustar para X":
+   - Consulte TODOS OS GANHOS DO MÊS no contexto acima (tem id de cada lançamento)
+   - Calcule: total atual da plataforma - total correto = diferença
+   - Identifique o lançamento mais suspeito (geralmente o maior ou um valor redondo)
+   - Pergunte: "Vi que dia 23/05 tem R$2502,59 na 99. Esse valor é R$X a menos, quer que eu ajuste ele para R$Y?"
+   - Com confirmação: use editar_lancamento_por_id com o id correto
+   - Se pedir para cancelar/desfazer um registro que acabou de fazer: use deletar_lancamento_por_id com o id mais recente da plataforma
 
 === AÇÕES (responda SEMPRE em JSON puro) ===
 Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}
@@ -1336,6 +1350,8 @@ Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}
 - Apagar conta: {{"acao":"deletar_conta","descricao":"nome"}}
 - Desfazer último: {{"acao":"deletar_ultimo_lancamento","tipo":"ganho"}}
 - Corrigir valor: {{"acao":"editar_ultimo_lancamento","tipo":"despesa","campo":"valor","novo_valor":N}}
+- Deletar por ID específico: {{"acao":"deletar_lancamento_por_id","id":"uuid-do-lancamento"}} — use quando o motorista pedir para remover lançamento específico
+- Editar valor por ID: {{"acao":"editar_lancamento_por_id","id":"uuid-do-lancamento","valor":N}} — use para corrigir valor de lançamento específico pelo ID que aparece no histórico
 - Turno: {{"acao":"registrar_turno","inicio":"HH:MM","fim":"HH:MM"}}
 - Salvar perfil: {{"acao":"salvar_perfil","plataformas":["uber","99"],"cap_diaria":N,"setup_completo":true}}
 - Compromissos: {{"acao":"salvar_compromissos","compromissos":[{{"data":"YYYY-MM-DD","meta_bruta":N,"nota":"sexta"}}]}}
@@ -1507,6 +1523,19 @@ Quando analisa situação geral:
                 if r.data:
                     supabase.table("lancamentos").delete().eq("id", r.data[0]["id"]).execute()
                     acoes_executadas.append("lancamento_deletado")
+
+            elif acao.get("acao") == "deletar_lancamento_por_id":
+                lid = acao.get("id")
+                if lid:
+                    supabase.table("lancamentos").delete().eq("id", lid).eq("motorista_id", motorista_id).execute()
+                    acoes_executadas.append("lancamento_deletado")
+
+            elif acao.get("acao") == "editar_lancamento_por_id":
+                lid = acao.get("id")
+                novo_valor = acao.get("valor")
+                if lid and novo_valor is not None:
+                    supabase.table("lancamentos").update({"valor": float(novo_valor)}).eq("id", lid).eq("motorista_id", motorista_id).execute()
+                    acoes_executadas.append("lancamento_editado")
             elif acao.get("acao") == "registrar_turno":
                 turno_data = {
                     "motorista_id": motorista_id,
