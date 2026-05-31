@@ -16,7 +16,7 @@
 <script>
 // Limpa histórico de chat antigo — roda síncronamente antes de qualquer coisa
 try{
-  if(localStorage.getItem('chatHistVer') !== '9'){
+  if(localStorage.getItem('chatHistVer') !== '10'){
     Object.keys(localStorage).forEach(k=>{
       if(k.startsWith('dashHistory_') || k.startsWith('gestor_auto_')) localStorage.removeItem(k);
     });
