@@ -1895,6 +1895,42 @@ def salvar_plano_ativo(dados: dict = Body(...)):
     except Exception as e:
         return {"ok": False, "erro": str(e)}
 
+@app.post("/admin/limpar-duplicatas")
+async def limpar_duplicatas(dados: dict = Body(...)):
+    """Endpoint temporário para limpeza de duplicatas via chat."""
+    mid = dados.get("motorista_id")
+    if not mid:
+        return {"erro": "motorista_id obrigatório"}
+    
+    # Busca todos os ganhos da 99 em maio
+    r = supabase.table("lancamentos").select("id,data,valor,created_at").eq("motorista_id", mid).eq("tipo", "ganho").eq("plataforma", "99").gte("data", "2026-05-01").order("data", desc=False).order("created_at", desc=False).execute()
+    lancs = r.data or []
+    
+    removidos = []
+    
+    # 1. Remove duplicatas por data+valor (mantém o mais antigo)
+    vistos = {}
+    for l in sorted(lancs, key=lambda x: x.get("created_at","")):
+        chave = f"{l['data']}_{float(l['valor']):.2f}"
+        if chave in vistos:
+            # É duplicata — remove o mais recente
+            supabase.table("lancamentos").delete().eq("id", l["id"]).execute()
+            removidos.append({"id": l["id"], "data": l["data"], "valor": float(l["valor"]), "motivo": "duplicata"})
+        else:
+            vistos[chave] = l["id"]
+    
+    # Recalcula total após limpeza
+    r2 = supabase.table("lancamentos").select("valor").eq("motorista_id", mid).eq("tipo", "ganho").eq("plataforma", "99").gte("data", "2026-05-01").execute()
+    novo_total = sum(float(l["valor"]) for l in (r2.data or []))
+    
+    return {
+        "ok": True,
+        "removidos": len(removidos),
+        "detalhes": removidos,
+        "novo_total_99": round(novo_total, 2)
+    }
+
+
 @app.get("/plano-ativo/{mid}")
 def buscar_plano_ativo(mid: str):
     """Retorna o plano ativo + progresso real dos compromissos."""
