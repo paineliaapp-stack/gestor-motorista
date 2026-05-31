@@ -2188,25 +2188,28 @@ async function _renderResumoContasAsync(el, calc){
   }
   const faltaPorDia = faltaTotal / diasRestantesMes;
 
-  // Cada conta mostra seu peso proporcional no total que falta
+  // Cada conta mostra seu prazo real — não divide vencidas por proporção
   linhas.innerHTML = pendentes.map(c=>{
     const venc = new Date(c.vencimento+'T12:00:00');
     const saldoDevido = Math.max(0, parseFloat(c.valor) - parseFloat(c.valor_pago||0));
     const pct = totalPend > 0 ? saldoDevido / totalPend : 0;
-    const contaPorDia = faltaPorDia * pct;
     const diasAteVenc = Math.ceil((venc-hoje)/(1000*60*60*24));
     const vencida = diasAteVenc < 0;
     const urgente = diasAteVenc >= 0 && diasAteVenc <= 3;
     const corBorda = vencida ? 'rgba(255,69,96,.35)' : urgente ? 'rgba(245,166,35,.35)' : 'var(--b)';
     const corFundo = vencida ? 'rgba(255,69,96,.06)' : urgente ? 'rgba(245,166,35,.06)' : 'var(--s)';
     const labelVenc = vencida ? `⚠️ venceu há ${Math.abs(diasAteVenc)}d` : `vence ${venc.toLocaleDateString('pt-BR')}`;
+    // Para contas vencidas: pagar hoje inteiro. Para pendentes: divide pelo prazo real dela.
+    const diasEfetivos = vencida ? 1 : Math.max(1, diasAteVenc + 1);
+    const contaPorDia = saldoDevido / diasEfetivos;
+    const labelPorDia = vencida ? 'pagar hoje' : `R$ ${contaPorDia.toFixed(2)}/dia`;
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:10px;background:${corFundo};border:1px solid ${corBorda}">
       <div style="display:flex;flex-direction:column;gap:2px">
         <span style="font-size:13px;font-weight:600">${c.descricao}</span>
         <span style="color:var(--mt);font-size:11px">${labelVenc} · R$ ${saldoDevido.toFixed(2)} em aberto</span>
       </div>
       <div style="text-align:right">
-        <div style="font-weight:700;color:var(--am);font-size:15px">R$ ${contaPorDia.toFixed(2)}<span style="font-weight:400;color:var(--mt);font-size:11px">/dia</span></div>
+        <div style="font-weight:700;color:${vencida?'var(--rd)':'var(--am)'};font-size:15px">${vencida ? saldoDevido.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'R$ '+contaPorDia.toFixed(2)}<span style="font-weight:400;color:var(--mt);font-size:11px"> ${labelPorDia}</span></div>
         <div style="font-size:10px;color:var(--mt)">${(pct*100).toFixed(0)}% do total</div>
       </div>
     </div>`;
