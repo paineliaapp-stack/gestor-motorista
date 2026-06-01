@@ -650,7 +650,16 @@ async def _plano_financeiro_impl(dados: dict):
         fim_mes = _dt.date(hoje.year + 1, 1, 1) - _dt.timedelta(days=1)
     else:
         fim_mes = _dt.date(hoje.year, hoje.month + 1, 1) - _dt.timedelta(days=1)
-    dias_restantes = max(1, (fim_mes - hoje).days + 1)
+    dias_restantes_mes = max(1, (fim_mes - hoje).days + 1)
+    # Se faltam menos de 3 dias no mês mas há contas com vencimento em junho,
+    # expande o horizonte para 7 dias para o plano não parecer impossível
+    tem_contas_proximo_mes = any(
+        c.get("vencimento","") > fim_mes.isoformat()
+        for c in contas if not c.get("pago")
+    )
+    dias_restantes = dias_restantes_mes if dias_restantes_mes >= 5 else (
+        max(7, dias_restantes_mes) if tem_contas_proximo_mes else dias_restantes_mes
+    )
 
     # Para cada dia restante: qual a capacidade bruta realista
     dias_projecao = []
@@ -1243,10 +1252,31 @@ async def chat(dados: dict = Body(...)):
         comb_dia_chat = round(comb_total / dias_mes_ate_hoje, 0) if comb_total > 10 else round(meta_dia_chat * 0.25, 0)
     liq_dia_chat = max(0, meta_dia_chat - comb_dia_chat)
     taxa_comb_pct = round((comb_dia_chat / meta_dia_chat * 100), 1) if meta_dia_chat > 0 else 25.0
-    fim_mes_chat = hoje.replace(day=28) + _dt.timedelta(days=4)
-    fim_mes_chat = (fim_mes_chat - _dt.timedelta(days=fim_mes_chat.day)).replace(day=1) + _dt.timedelta(days=31)
-    fim_mes_chat = fim_mes_chat - _dt.timedelta(days=fim_mes_chat.day)
-    dias_rest_chat = max(1, (fim_mes_chat - hoje).days + 1)
+
+    # Calcula janela de dias relevante:
+    # Usa o vencimento mais próximo das contas pendentes como horizonte (máx 10 dias)
+    # Isso evita que no último dia do mês o sistema projete só 1 dia
+    import calendar as _cal
+    fim_mes_chat = hoje.replace(day=_cal.monthrange(hoje.year, hoje.month)[1])
+    
+    # Busca vencimento mais próximo entre as contas pendentes
+    contas_pend_chat = [c for c in contas if not c.get("pago") and not any(k in (c.get("descricao","") or "").lower() for k in ["combustivel","gasolina","etanol"])]
+    vencimentos_pend = []
+    for c in contas_pend_chat:
+        try:
+            import datetime as _dt3
+            v = _dt3.date.fromisoformat(c["vencimento"])
+            if v >= hoje.date():
+                vencimentos_pend.append((v - hoje.date()).days)
+        except:
+            pass
+    
+    # Horizonte: próximo vencimento ou 7 dias (o que for maior), máx 10 dias
+    proximo_venc_dias = min(vencimentos_pend) if vencimentos_pend else 7
+    horizonte_dias = max(7, min(proximo_venc_dias + 2, 10))
+    
+    # Para o cálculo do déficit, usa os dias restantes do mês OU horizonte (o maior)
+    dias_rest_chat = max(horizonte_dias, (fim_mes_chat - hoje.date()).days + 1)
     projecao_liq_chat = liq_dia_chat * dias_rest_chat
     poder_chat = lucro_mes + projecao_liq_chat  # caixa atual + projeção
     deficit_chat = max(0, total_pendente - poder_chat)
