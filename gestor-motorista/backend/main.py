@@ -961,7 +961,7 @@ NÚMEROS REAIS (use EXATAMENTE estes, não recalcule):
 {"- Padrão: dias mais fortes = " + ", ".join([NOMES_DOW_COMPLETO[d] for d,_ in sorted(media_dow.items(), key=lambda x: x[1], reverse=True)[:2]]) if tem_historico and media_dow else ""}
 
 CONTAS URGENTES (vence em até 3 dias):
-{chr(10).join(f"  • {c['nome']}: R${c['falta']:.0f} (vence em {c['dias_ate']}d)" for c in pagar_urgente) if pagar_urgente else "  Nenhuma"}
+{chr(10).join(f"  • {c['nome']}: R${c['falta']:.0f} ({'VENCIDA há ' + str(abs(c['dias_ate'])) + 'd' if c['dias_ate'] < 0 else 'vence HOJE' if c['dias_ate'] == 0 else 'vence em ' + str(c['dias_ate']) + 'd'})" for c in pagar_urgente) if pagar_urgente else "  Nenhuma"}
 
 CONTAS DA SEMANA (vence em 4-7 dias):
 {chr(10).join(f"  • {c['nome']}: R${c['falta']:.0f}" for c in pagar_semana) if pagar_semana else "  Nenhuma"}
@@ -1240,16 +1240,27 @@ async def chat(dados: dict = Body(...)):
     import datetime as _dt
     try:
         perf_chat = supabase.table("motoristas").select("meta_diaria,comb_diario").eq("id", motorista_id).execute()
-        meta_dia_chat = float((perf_chat.data or [{}])[0].get("meta_diaria") or 300)
+        meta_dia_config = float((perf_chat.data or [{}])[0].get("meta_diaria") or 300)
         comb_dia_chat = float((perf_chat.data or [{}])[0].get("comb_diario") or 0)
     except:
-        meta_dia_chat = 300
+        meta_dia_config = 300
         comb_dia_chat = 0
-    # Combustível: configurado > histórico > estimativa 25%
+    # Usa média real do histórico quando disponível (mais preciso que a meta configurada)
+    ganhos_dias_trabalhados = [l for l in lancamentos_mes if l["tipo"] == "ganho"]
+    dias_com_ganho = len(set(l["data"] for l in ganhos_dias_trabalhados))
+    if dias_com_ganho >= 3:
+        media_bruta_real = ganhos_mes / dias_com_ganho
+        # Limita a variação: no máximo 2x a meta configurada para evitar distorções por dias atípicos
+        meta_dia_chat = min(media_bruta_real, meta_dia_config * 2)
+    else:
+        meta_dia_chat = meta_dia_config
+    # Combustível: configurado > histórico > cap de 40%
     if comb_dia_chat <= 0:
         comb_total = sum(float(l["valor"]) for l in lancamentos_mes if l["tipo"] == "despesa" and "combustivel" in (l.get("descricao") or "").lower())
         dias_mes_ate_hoje = max(1, hoje.day)
-        comb_dia_chat = round(comb_total / dias_mes_ate_hoje, 0) if comb_total > 10 else round(meta_dia_chat * 0.25, 0)
+        comb_diario_hist = round(comb_total / dias_mes_ate_hoje, 0) if comb_total > 10 else 0
+        comb_pct_hist = comb_diario_hist / meta_dia_chat if meta_dia_chat > 0 else 0
+        comb_dia_chat = round(comb_diario_hist if comb_pct_hist <= 0.40 else meta_dia_chat * 0.30, 0)
     liq_dia_chat = max(0, meta_dia_chat - comb_dia_chat)
     taxa_comb_pct = round((comb_dia_chat / meta_dia_chat * 100), 1) if meta_dia_chat > 0 else 25.0
 

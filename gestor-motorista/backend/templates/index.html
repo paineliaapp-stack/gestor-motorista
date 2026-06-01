@@ -20,7 +20,7 @@ try{
     Object.keys(localStorage).forEach(k=>{
       if(k.startsWith('dashHistory_') || k.startsWith('gestor_auto_')) localStorage.removeItem(k);
     });
-    localStorage.setItem('chatHistVer','8');
+    localStorage.setItem('chatHistVer','10');
   }
 }catch(e){}
 </script>
@@ -1932,6 +1932,19 @@ async function init(){
         'Não entendi bem. Me manda só o número',
         'Vou te ajudar a montar um plano.',
         'conta vencendo em breve:',
+        'vencem em breve — precisa de atenção',
+        'vence em breve — precisa de atenção',
+        'Vi seu histórico dos últimos dias',
+        'Deixa eu montar o plano completo',
+        'Tem algum dia dessa semana que você consegue',
+        'Consegue fazer R$',
+        'E aí, meu camarada',
+        'E aí, meu amigo',
+        'E aí, meu parceiro',
+        'pode entrar mais R$',
+        'Não fecha, faltam R$',
+        'Se trabalhar normal',
+        'Deixa eu montar o plano',
       ];
       const vistas = new Set();
       const histFiltrado = hist.filter(h => {
