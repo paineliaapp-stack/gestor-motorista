@@ -1204,6 +1204,7 @@ async def chat(dados: dict = Body(...)):
     hoje_str = hoje.isoformat()
     import datetime as _dt2
     ontem_str = (hoje - _dt2.timedelta(days=1)).isoformat()
+    amanha_str = (hoje + _dt2.timedelta(days=1)).isoformat()
     # Sábado passado
     dias_ate_sabado = (hoje.weekday() - 5) % 7  # 5 = sábado
     sabado_str = (hoje - _dt2.timedelta(days=dias_ate_sabado if dias_ate_sabado > 0 else 7)).isoformat()
@@ -1212,7 +1213,7 @@ async def chat(dados: dict = Body(...)):
         contas = c.data or []
     except: pass
     try:
-        lr = supabase.table("lancamentos").select("tipo,valor,descricao,plataforma,data,horas_rodadas,km_rodados,created_at").eq("motorista_id", motorista_id).gte("data", inicio_mes).order("data", desc=True).execute()
+        lr = supabase.table("lancamentos").select("id,tipo,valor,descricao,plataforma,data,horas_rodadas,km_rodados,created_at").eq("motorista_id", motorista_id).gte("data", inicio_mes).order("data", desc=True).execute()
         lancamentos_mes = lr.data or []
         print(f"DEBUG chat context: motorista_id={motorista_id} inicio_mes={inicio_mes} lancamentos={len(lancamentos_mes)}")
     except Exception as e:
@@ -1277,8 +1278,8 @@ async def chat(dados: dict = Body(...)):
         try:
             import datetime as _dt3
             v = _dt3.date.fromisoformat(c["vencimento"])
-            if v >= hoje.date():
-                vencimentos_pend.append((v - hoje.date()).days)
+            if v >= hoje:
+                vencimentos_pend.append((v - hoje).days)
         except:
             pass
     
@@ -1287,7 +1288,7 @@ async def chat(dados: dict = Body(...)):
     horizonte_dias = max(7, min(proximo_venc_dias + 2, 10))
     
     # Para o cálculo do déficit, usa os dias restantes do mês OU horizonte (o maior)
-    dias_rest_chat = max(horizonte_dias, (fim_mes_chat - hoje.date()).days + 1)
+    dias_rest_chat = max(horizonte_dias, (fim_mes_chat - hoje).days + 1)
     projecao_liq_chat = liq_dia_chat * dias_rest_chat
     poder_chat = lucro_mes + projecao_liq_chat  # caixa atual + projeção
     deficit_chat = max(0, total_pendente - poder_chat)
@@ -1337,10 +1338,10 @@ Ganhos R${ganhos_mes:.0f} | Despesas R${despesas_mes:.0f} | Lucro R${lucro_mes:.
 Horas: {horas_mes:.1f}h | Média/hora: R${(ganhos_mes/horas_mes if horas_mes>0 else 0):.0f}
 
 TODOS OS GANHOS DO MÊS (para consulta e ajuste):
-{chr(10).join(f"  {l['data']} | {l.get('plataforma','?')} | R${float(l['valor']):.2f} | id:{l.get('id','?')}" for l in sorted([l for l in lancamentos_mes if l['tipo']=='ganho'], key=lambda x: x['data'], reverse=True)[:30])}
+{chr(10).join(f"  {l['data']} | {l.get('plataforma','?')} | R${float(l['valor']):.2f} | id:{l.get('id','?')}" for l in sorted([l for l in lancamentos_mes if l['tipo']=='ganho'], key=lambda x: x['data'], reverse=True)[:30]) or "  Nenhum ganho registrado ainda."}
 
 TOTAIS POR PLATAFORMA:
-{chr(10).join(f"  {plat}: R${val:.2f}" for plat, val in sorted(((p, sum(float(l['valor']) for l in lancamentos_mes if l['tipo']=='ganho' and l.get('plataforma','')==p)) for p in set(l.get('plataforma','?') for l in lancamentos_mes if l['tipo']=='ganho')), key=lambda x: -x[1]))}
+{chr(10).join(f"  {plat}: R${val:.2f}" for plat, val in sorted(((p, sum(float(l['valor']) for l in lancamentos_mes if l['tipo']=='ganho' and l.get('plataforma','')==p)) for p in set(l.get('plataforma','?') for l in lancamentos_mes if l['tipo']=='ganho')), key=lambda x: -x[1])) or "  Nenhuma plataforma ainda."}
 
 PERFIL: Média diária real R${meta_dia_chat:.0f} líq | Combustível R${comb_dia_chat:.0f}/dia ({taxa_comb_pct:.0f}%) | Dias restantes: {dias_rest_chat}
 CONTAS PENDENTES ({len(contas_pendentes)}): R${total_pendente:.0f} total
@@ -1405,14 +1406,14 @@ DETECÇÃO DE COMPROMISSOS — CRÍTICO:
 Se a mensagem contém dias/períodos COM valores numéricos, isso É um plano de trabalho. NUNCA peça mais detalhes. Responda calculando imediatamente.
 
 Padrões que DEVEM ser reconhecidos como compromissos:
-- "500 hoje 600 amanhã 600 sábado e 200 domingo" → hoje={hoje_str}, amanhã={ontem_str}, sábado e domingo = datas reais da semana
+- "500 hoje 600 amanhã 600 sábado e 200 domingo" → hoje={hoje_str}, amanhã={amanha_str}, sábado e domingo = datas reais da semana
 - "quinta 500 sexta 600 sabado 600 domingo 200" → datas da semana atual
 - "hoje faço 500, amanhã 600" → datas reais
 - "posso fazer 600 sexta e sábado" → sexta e sábado dessa semana
 - Qualquer combinação de dia + valor numérico
 
 QUANDO RECEBER COMPROMISSOS:
-1. Mapeie cada dia para data real (hoje={hoje_str}, amanhã={ontem_str})
+1. Mapeie cada dia para data real (hoje={hoje_str}, amanhã={amanha_str})
 2. Calcule líquido: valor × {(1-taxa_comb_pct/100):.2f} (descontando {taxa_comb_pct:.0f}% de combustível)
 3. Some os líquidos + caixa atual R${poder_chat:.0f}
 4. Compare com déficit R${deficit_chat:.0f}
