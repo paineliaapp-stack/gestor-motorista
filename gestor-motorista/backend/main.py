@@ -1370,19 +1370,21 @@ CONTAS:
    - "sábado 500" em contexto de relato = data do sábado passado ({sabado_str})
    - "fiz 300 na uber e paguei 80 de combustível" → 1 ganho + 1 despesa no mesmo JSON
    - NÃO processe só o primeiro valor e esqueça os outros. NÃO pergunte "qual plataforma foi cada um?" se não é crítico — assuma a plataforma padrão do motorista ou a mais recente.
+   - "total na 99 hoje 326,17 e na uber 84,66" → 2 ações: ganho R$326,17 na 99 hoje + ganho R$84,66 na uber hoje. Registre AMBOS sem perguntar nada.
    - Confirmação para múltiplos: "Anotei! Ontem R$400 + hoje R$336 na 99, e sábado R$500. ✅" — tudo numa linha só.
 9. AJUSTE DE TOTAL POR PLATAFORMA:
-   Quando o motorista diz "o total da 99 foi X" ou "preciso ajustar para X":
-   - Consulte TODOS OS GANHOS DO MÊS no contexto acima (tem id de cada lançamento)
-   - Calcule: total atual da plataforma - total correto = diferença
-   - Identifique o lançamento mais suspeito (geralmente o maior ou um valor redondo)
-   - Pergunte: "Vi que dia 23/05 tem R$2502,59 na 99. Esse valor é R$X a menos, quer que eu ajuste ele para R$Y?"
+   Quando o motorista diz "o total da 99 foi X" ou "atualize para X" ou "total na 99 hoje X":
+   - Se já existe lançamento da plataforma HOJE: delete o(s) lançamento(s) de hoje dessa plataforma e registre o valor novo. NÃO pergunte — faça direto.
+   - Se não tem lançamento de hoje: registre o valor como novo lançamento direto.
+   - Se diz "total na 99 hoje 326,17 e na uber 84,66": registre AMBOS os valores como ganhos de hoje nas respectivas plataformas (ou atualize se já existirem). Isso NÃO é ajuste de histórico antigo — é o total do dia.
+   - Ajuste de total de MÊS (não de hoje): consulte TODOS OS GANHOS DO MÊS, calcule diferença, identifique lançamento suspeito, use editar_lancamento_por_id.
    - Com confirmação: use editar_lancamento_por_id com o id correto
    - Se pedir para cancelar/desfazer um registro que acabou de fazer: use deletar_lancamento_por_id com o id mais recente da plataforma
 
 === AÇÕES (responda SEMPRE em JSON puro) ===
 Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}
 - Ganho app: {{"acao":"registrar_lancamento","tipo":"ganho","valor":N,"plataforma":"uber","data":"YYYY-MM-DD"}}
+- Ganho substituindo total do dia: {{"acao":"registrar_lancamento","tipo":"ganho","valor":N,"plataforma":"uber","data":"YYYY-MM-DD","substituir":true}} — use quando motorista diz "total na X foi Y" ou "atualize para Y" (deleta lançamentos anteriores da plataforma nesse dia antes de inserir)
 - Renda extra: {{"acao":"registrar_lancamento","tipo":"ganho","valor":N,"plataforma":"renda_extra","descricao":"seguro-desemprego","data":"YYYY-MM-DD"}}
 - Despesa: {{"acao":"registrar_lancamento","tipo":"despesa","valor":N,"descricao":"categoria","data":"YYYY-MM-DD"}}
 - Conta futura: {{"acao":"registrar_conta","descricao":"nome","valor":N,"vencimento":"YYYY-MM-DD"}}
@@ -1533,6 +1535,11 @@ Quando analisa situação geral:
                 }
                 if acao.get("plataforma"): dados["plataforma"] = acao["plataforma"]
                 if acao.get("descricao"): dados["descricao"] = acao["descricao"]
+                # Se substituir=true ou tipo=ganho com plataforma+data=hoje, deleta antes de inserir (evita duplicata)
+                if acao.get("substituir") and dados.get("plataforma") and dados["tipo"] == "ganho":
+                    try:
+                        supabase.table("lancamentos").delete().eq("motorista_id", motorista_id).eq("tipo", "ganho").eq("plataforma", dados["plataforma"]).eq("data", data_final).execute()
+                    except: pass
                 supabase.table("lancamentos").insert(dados).execute()
                 acoes_executadas.append("lancamento_registrado")
 
