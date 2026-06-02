@@ -534,17 +534,44 @@ const _supa = supabase.createClient(
   <!-- CARD PLANO IA — DESTAQUE PRINCIPAL -->
   <!-- CARD GESTOR — muda visual quando há urgência -->
   <!-- PLANO DE FATURAMENTO — em desenvolvimento, desativado temporariamente -->
-  <div id="card-plano-ia" style="margin-bottom:18px;border-radius:18px;overflow:hidden;position:relative;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#1a1a2e 100%);border:1px solid rgba(255,255,255,.08);opacity:.7">
-    <div style="position:absolute;inset:0;backdrop-filter:blur(0px);pointer-events:none"></div>
-    <div style="position:relative;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🔒</div>
-        <div>
-          <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5)">Plano de faturamento</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.28);margin-top:2px">Em desenvolvimento — em breve disponível</div>
-        </div>
+  <div id="card-plano-ia" style="margin-bottom:18px;border-radius:18px;overflow:hidden;position:relative;background:linear-gradient(135deg,#0f0c29 0%,#1a1040 50%,#24243e 100%);border:1px solid rgba(139,92,246,.25);cursor:default">
+    <!-- Glow animado no topo -->
+    <div style="position:absolute;top:-30px;left:50%;transform:translateX(-50%);width:180px;height:60px;background:radial-gradient(ellipse,rgba(139,92,246,.35) 0%,transparent 70%);pointer-events:none"></div>
+    <!-- Linhas decorativas simulando dados bloqueados -->
+    <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:18px">
+      <div style="position:absolute;top:58px;left:18px;right:18px;height:1px;background:linear-gradient(90deg,transparent,rgba(139,92,246,.15),transparent)"></div>
+      <div style="position:absolute;bottom:0;left:0;right:0;height:50px;background:linear-gradient(to top,rgba(15,12,41,.9),transparent)"></div>
+    </div>
+    <!-- Preview borrado de dados -->
+    <div style="position:absolute;bottom:14px;left:18px;right:18px;filter:blur(4px);opacity:.25;pointer-events:none">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <div style="height:8px;width:40%;background:rgba(139,92,246,.6);border-radius:4px"></div>
+        <div style="height:8px;width:20%;background:rgba(255,255,255,.4);border-radius:4px"></div>
       </div>
-      <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:.4px;text-transform:uppercase;white-space:nowrap">Em breve</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <div style="height:8px;width:55%;background:rgba(99,202,183,.5);border-radius:4px"></div>
+        <div style="height:8px;width:18%;background:rgba(255,255,255,.3);border-radius:4px"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <div style="height:8px;width:35%;background:rgba(255,160,50,.5);border-radius:4px"></div>
+        <div style="height:8px;width:22%;background:rgba(255,255,255,.3);border-radius:4px"></div>
+      </div>
+    </div>
+    <!-- Conteúdo principal -->
+    <div style="position:relative;padding:18px 18px 22px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,rgba(139,92,246,.3),rgba(99,102,241,.2));border:1px solid rgba(139,92,246,.4);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🧠</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#fff;letter-spacing:.1px">Plano inteligente</div>
+            <div style="font-size:11px;color:rgba(139,92,246,.9);margin-top:1px;font-weight:600">Chegando em breve</div>
+          </div>
+        </div>
+        <div style="background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(99,102,241,.15));border:1px solid rgba(139,92,246,.35);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;color:rgba(139,92,246,.9);letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;flex-shrink:0">✦ Novo</div>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:rgba(255,255,255,.55);line-height:1.5">
+        O Gestor vai calcular <span style="color:rgba(139,92,246,.9);font-weight:600">quanto você precisa faturar por dia</span> para pagar cada conta no prazo — com combustível já descontado.
+      </div>
     </div>
   </div>
 
