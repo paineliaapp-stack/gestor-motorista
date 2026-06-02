@@ -386,7 +386,7 @@ Extraia as informações e responda APENAS com JSON válido, sem texto extra, se
   "resposta": mensagem amigável de confirmação em português
 }}
 
-Categorias válidas para despesa: combustivel, manutencao, aluguel_carro, financiamento, seguro, ipva, multa, lavagem, mercado, restaurante, farmacia, saude, celular, internet, streaming, aluguel_casa, condominio, luz_agua, roupa, lazer, educacao, investimento, emprestimo, outros
+Categorias válidas para despesa: combustivel, manutencao, aluguel_carro, financiamento, seguro, ipva, multa, lavagem, mercado, restaurante, farmacia, saude, celular, internet, streaming, aluguel_casa, condominio, luz_agua, roupa, lazer, educacao, investimento, emprestimo, outros, desconhecido
 
 Se não entender, responda: {{"erro": true, "resposta": "mensagem pedindo para reformular"}}"""
 
@@ -1360,6 +1360,8 @@ CONTAS:
 - "Fiz 400 de novo" ou "mais 400" → aí SIM é novo registro, confirme e registre.
 - Nunca pergunte 2x sobre o mesmo valor na mesma conversa.
 3. RENDA EXTRA (seguro-desemprego, freela, bico, venda, bônus): registre como ganho plataforma="renda_extra". O plano financeiro inclui automaticamente.
+3b. GASTO SEM IDENTIFICAÇÃO: "não sei onde foi", "custo desconhecido", "sumiram X reais", "não lembro" → registre como despesa descricao="desconhecido". Nunca use "outros" para isso.
+3c. AUTO-ABATE DE CONTAS: quando registrar despesa de mercado, combustível, aluguel, etc. — o sistema já abate automaticamente a conta pendente correspondente. Você NÃO precisa gerar ação abater_conta separada. Apenas confirme o registro normalmente.
 4. PLATAFORMA: se sua última msg perguntou plataforma → próxima resposta É a plataforma. "99"=99, "uber"=uber. Registra direto, não pergunta de novo.
 5. VALORES ALTOS (ganho>R$700 ou despesa>R$350): confirme levemente antes de registrar.
 6. SIM/NÃO: "sim/pode/isso/confirma" → registre o pendente do histórico. "não/cancela" → pergunte o certo.
@@ -1401,7 +1403,7 @@ Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}
 - Compromissos: {{"acao":"salvar_compromissos","compromissos":[{{"data":"YYYY-MM-DD","meta_bruta":N,"nota":"sexta"}}]}}
 - Zerar despesas: {{"acao":"zerar_despesas_hoje"}}
 
-Categorias de despesa: combustivel, manutencao, aluguel_carro, financiamento, seguro, ipva, multa, lavagem, mercado, restaurante, farmacia, saude, celular, internet, streaming, aluguel_casa, condominio, luz_agua, roupa, lazer, educacao, investimento, emprestimo, outros
+Categorias de despesa: combustivel, manutencao, aluguel_carro, financiamento, seguro, ipva, multa, lavagem, mercado, restaurante, farmacia, saude, celular, internet, streaming, aluguel_casa, condominio, luz_agua, roupa, lazer, educacao, investimento, emprestimo, outros, desconhecido
 
 === PLANO FINANCEIRO ===
 DETECÇÃO DE COMPROMISSOS — CRÍTICO:
@@ -1542,6 +1544,26 @@ Quando analisa situação geral:
                     except: pass
                 supabase.table("lancamentos").insert(dados).execute()
                 acoes_executadas.append("lancamento_registrado")
+                # AUTO-ABATE: se for despesa, verifica se existe conta pendente com nome similar e abate
+                if dados["tipo"] == "despesa" and dados.get("descricao"):
+                    try:
+                        desc_desp = dados["descricao"].lower().strip()
+                        contas_pend = supabase.table("contas").select("id,descricao,valor,valor_pago").eq("motorista_id", motorista_id).eq("pago", False).execute()
+                        for cp in (contas_pend.data or []):
+                            nome_conta = cp["descricao"].lower()
+                            # Verifica se a descrição da despesa está contida no nome da conta ou vice-versa
+                            if desc_desp in nome_conta or nome_conta.split()[0] in desc_desp:
+                                valor_despesa = float(dados["valor"])
+                                ja_pago = float(cp.get("valor_pago") or 0)
+                                valor_total_conta = float(cp["valor"])
+                                novo_pago = ja_pago + valor_despesa
+                                if novo_pago >= valor_total_conta - 0.01:
+                                    supabase.table("contas").update({"pago": True, "valor_pago": valor_total_conta}).eq("id", cp["id"]).execute()
+                                else:
+                                    supabase.table("contas").update({"valor_pago": novo_pago}).eq("id", cp["id"]).execute()
+                                acoes_executadas.append("conta_abatida_auto")
+                                break
+                    except: pass
 
             elif acao.get("acao") == "deletar_conta":
                 # Remove uma conta a pagar pelo nome
