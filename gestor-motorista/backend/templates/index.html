@@ -533,25 +533,18 @@ const _supa = supabase.createClient(
 
   <!-- CARD PLANO IA — DESTAQUE PRINCIPAL -->
   <!-- CARD GESTOR — muda visual quando há urgência -->
-  <div id="card-plano-ia" onclick="abrirConsultorIA()" style="cursor:pointer;margin-bottom:18px;border-radius:18px;overflow:hidden;position:relative;background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#1e1b4b 100%);border:1px solid rgba(139,92,246,.5);box-shadow:0 0 28px rgba(99,102,241,.25);transition:opacity .2s,filter .2s">
-    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(139,92,246,.18) 0%,transparent 65%),radial-gradient(ellipse at 80% 30%,rgba(99,102,241,.12) 0%,transparent 55%);pointer-events:none"></div>
-    <!-- Badge de urgência — aparece quando tem conta vencendo em ≤3 dias -->
-    <div id="card-gestor-urgencia" style="display:none;background:linear-gradient(90deg,#dc2626,#ef4444);padding:8px 18px;font-size:11px;font-weight:700;color:#fff;align-items:center;gap:6px">
-      <span style="animation:pulse-ring 1.2s infinite">🔴</span>
-      <span id="card-gestor-urgencia-txt">Conta vencendo — o Gestor tem um plano pra você</span>
-    </div>
-    <div style="position:relative;padding:18px 18px 14px">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
-        <div style="background:rgba(139,92,246,.3);border:1px solid rgba(139,92,246,.5);border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700;color:#c4b5fd;letter-spacing:.4px;text-transform:uppercase">✦ IA Financeira</div>
-        <div style="font-size:10px;color:rgba(196,181,253,.6)">personalizado para você</div>
+  <!-- PLANO DE FATURAMENTO — em desenvolvimento, desativado temporariamente -->
+  <div id="card-plano-ia" style="margin-bottom:18px;border-radius:18px;overflow:hidden;position:relative;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#1a1a2e 100%);border:1px solid rgba(255,255,255,.08);opacity:.7">
+    <div style="position:absolute;inset:0;backdrop-filter:blur(0px);pointer-events:none"></div>
+    <div style="position:relative;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🔒</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5)">Plano de faturamento</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.28);margin-top:2px">Em desenvolvimento — em breve disponível</div>
+        </div>
       </div>
-      <div id="card-gestor-titulo" style="font-size:19px;font-weight:800;color:#fff;font-family:Syne,sans-serif;line-height:1.2;margin-bottom:8px">Qual é a saída<br>nos próximos dias?</div>
-      <div id="card-gestor-sub" style="font-size:12px;color:rgba(196,181,253,.8);line-height:1.6;margin-bottom:14px">
-        A IA analisa suas contas, seu caixa e o que você consegue faturar — e entrega <strong style="color:#e2d9f3">o que pagar primeiro</strong>, <strong style="color:#e2d9f3">texto pronto pra negociar prazo</strong> e <strong style="color:#e2d9f3">a meta exata de hoje</strong>.
-      </div>
-      <div id="card-plano-cta" style="background:linear-gradient(135deg,#7c3aed,#6366f1);border-radius:12px;padding:13px;text-align:center;font-size:14px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px">
-        <span>🧠</span> <span id="card-plano-cta-txt">Gerar meu plano agora</span> <span style="font-size:16px">→</span>
-      </div>
+      <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:.4px;text-transform:uppercase;white-space:nowrap">Em breve</div>
     </div>
   </div>
 
@@ -1455,6 +1448,11 @@ async function atualizarMeta(novaMeta){
 async function loadDash(){
   if(!MID && window.MID) MID = window.MID;
   if(!MID)return;
+  // Plano de faturamento desativado temporariamente — oculta cards relacionados
+  ['card-falta','card-compromissos'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.style.display='none';
+  });
   // Verifica contas vencendo
   fetch(API+'/contas/'+MID).then(r=>r.json()).then(c=>alertaContasVencendo(c)).catch(()=>{});
   try{
