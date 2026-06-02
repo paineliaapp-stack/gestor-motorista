@@ -1724,8 +1724,16 @@ async function loadDash(){
       });
 
       // ── META DO DIA DE HOJE ──
-      // Usa diasUteis para calcular meta correta
-      const metaContasHoje = plano.reduce((s,c) => s + (c.falta > 0 ? c.falta / c.diasUteis : 0), 0);
+      // Soma somente as contas que vencem HOJE ou AMANHÃ (urgente real)
+      // Para as demais, usa porDia individual (já distribuído pelos dias reais de cada conta)
+      const metaContasHoje = plano
+        .filter(c => c.falta > 0)
+        .reduce((s, c) => {
+          // Vencidas ou vencem hoje/amanhã: paga hoje inteiro
+          if (c.diasAte <= 1) return s + c.falta;
+          // Demais: contribui só a parcela do dia
+          return s + c.porDia;
+        }, 0);
       const metaBrutoHoje = metaContasHoje + combDiario;
 
       // Total geral
@@ -2389,24 +2397,35 @@ async function _renderResumoContasAsync(el, calc){
   }
   const faltaPorDia = faltaTotal / diasRestantesMes;
 
-  // Cada conta mostra seu prazo real — não divide vencidas por proporção
-  linhas.innerHTML = pendentes.map(c=>{
-    const venc = new Date(c.vencimento+'T12:00:00');
-    const saldoDevido = Math.max(0, parseFloat(c.valor) - parseFloat(c.valor_pago||0));
-    const pct = totalPend > 0 ? saldoDevido / totalPend : 0;
+  // Agrupar por nome — mostrar só a próxima parcela de cada grupo
+  const grupos = {};
+  pendentes.forEach(c => {
+    const key = c.descricao.trim().toLowerCase();
+    if (!grupos[key]) grupos[key] = [];
+    grupos[key].push(c);
+  });
+  Object.values(grupos).forEach(g => g.sort((a,b) => new Date(a.vencimento) - new Date(b.vencimento)));
+  const gruposOrdenados = Object.values(grupos).sort((a,b) => new Date(a[0].vencimento) - new Date(b[0].vencimento));
+
+  linhas.innerHTML = gruposOrdenados.map(grupo => {
+    const proxima = grupo[0];
+    const totalGrupo = grupo.reduce((s,c) => s + Math.max(0, parseFloat(c.valor) - parseFloat(c.valor_pago||0)), 0);
+    const saldoDevido = Math.max(0, parseFloat(proxima.valor) - parseFloat(proxima.valor_pago||0));
+    const pct = totalPend > 0 ? totalGrupo / totalPend : 0;
+    const venc = new Date(proxima.vencimento+'T12:00:00');
     const diasAteVenc = Math.ceil((venc-hoje)/(1000*60*60*24));
     const vencida = diasAteVenc < 0;
     const urgente = diasAteVenc >= 0 && diasAteVenc <= 3;
     const corBorda = vencida ? 'rgba(255,69,96,.35)' : urgente ? 'rgba(245,166,35,.35)' : 'var(--b)';
     const corFundo = vencida ? 'rgba(255,69,96,.06)' : urgente ? 'rgba(245,166,35,.06)' : 'var(--s)';
     const labelVenc = vencida ? `⚠️ venceu há ${Math.abs(diasAteVenc)}d` : `vence ${venc.toLocaleDateString('pt-BR')}`;
-    // Para contas vencidas: pagar hoje inteiro. Para pendentes: divide pelo prazo real dela.
     const diasEfetivos = vencida ? 1 : Math.max(1, diasAteVenc + 1);
     const contaPorDia = saldoDevido / diasEfetivos;
     const labelPorDia = vencida ? 'pagar hoje' : `R$ ${contaPorDia.toFixed(2)}/dia`;
+    const extraTag = grupo.length > 1 ? ` <span style="color:var(--mt);font-size:10px">+${grupo.length-1} parcela${grupo.length>2?'s':''}</span>` : '';
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:10px;background:${corFundo};border:1px solid ${corBorda}">
       <div style="display:flex;flex-direction:column;gap:2px">
-        <span style="font-size:13px;font-weight:600">${c.descricao}</span>
+        <span style="font-size:13px;font-weight:600">${proxima.descricao}${extraTag}</span>
         <span style="color:var(--mt);font-size:11px">${labelVenc} · R$ ${saldoDevido.toFixed(2)} em aberto</span>
       </div>
       <div style="text-align:right">

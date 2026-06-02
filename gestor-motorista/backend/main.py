@@ -1374,6 +1374,11 @@ CONTAS:
    - NÃO processe só o primeiro valor e esqueça os outros. NÃO pergunte "qual plataforma foi cada um?" se não é crítico — assuma a plataforma padrão do motorista ou a mais recente.
    - "total na 99 hoje 326,17 e na uber 84,66" → 2 ações: ganho R$326,17 na 99 hoje + ganho R$84,66 na uber hoje. Registre AMBOS sem perguntar nada.
    - Confirmação para múltiplos: "Anotei! Ontem R$400 + hoje R$336 na 99, e sábado R$500. ✅" — tudo numa linha só.
+10. EDIÇÃO DE CONTAS — CRÍTICO:
+   - "coloque o vencimento do tênis para amanhã" → editar_conta com campo="vencimento" e novo_valor=amanha_str
+   - "divida a Elaine em parcelas de 160/dia" ou "quero pagar 160 por dia para Elaine" → significa que o motorista quer ABATER R$160 hoje: use abater_conta com descricao="Elaine", valor_pago=160. Responda: "Certo! Vou registrar R$160 abatidos da Elaine hoje. Me avisa quando pagar mais."
+   - "divida X em N dias" → calcule valor/N e use abater_conta com o valor de hoje. Não crie múltiplas contas.
+   - NUNCA pergunte mais detalhes quando o motorista diz "vencimento para amanhã/dia X" ou "parcelas de R$X" — execute direto.
 9. AJUSTE DE TOTAL POR PLATAFORMA:
    Quando o motorista diz "o total da 99 foi X" ou "atualize para X" ou "total na 99 hoje X":
    - Se já existe lançamento da plataforma HOJE: delete o(s) lançamento(s) de hoje dessa plataforma e registre o valor novo. NÃO pergunte — faça direto.
