@@ -1605,7 +1605,8 @@ async function loadDash(){
     const lucroPlat = liquidoCaixa; // usado para exibir no card
     const temBase = totalContasAberto > 0 || totalPlat > 0;
     if(cardFalta && temBase){
-      cardFalta.style.display = 'block';
+      cardFalta.style.display = 'none'; // desativado temporariamente
+      if(false){ // bloco mantido para não quebrar referências abaixo
       // Líquido em caixa
       const elPlat = document.getElementById('falta-plat');
       if(elPlat) elPlat.textContent = fmt(liquidoCaixa);
@@ -1765,7 +1766,8 @@ async function loadDash(){
       } else {
         sugestao.innerHTML = '<div style="font-size:13px;color:var(--gn);font-weight:600;text-align:center">🎉 Todas as contas estão cobertas!</div>';
       }
-    } else if(cardFalta){ cardFalta.style.display='none'; }
+    } // fim if(false)
+    } // fim if(cardFalta && temBase)
     // Card lançamentos futuros
     const cardFuturos = document.getElementById('card-futuros');
     const RENDA_EXTRA_LABELS2={seguro_desemprego:'Seguro-desemprego',freelance:'Freelance/Bico',aluguel_recebido:'Aluguel recebido',venda:'Venda de item',emprestimo_recebido:'Empréstimo recebido',bonus:'Bônus/Premiação',renda_extra:'Renda extra'};
