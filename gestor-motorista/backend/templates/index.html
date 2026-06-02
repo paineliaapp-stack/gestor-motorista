@@ -2142,6 +2142,50 @@ async function loadContas(){
   alertaContasVencendo(window._contas||[]);
 }
 
+function _cardConta(c) {
+  const venc = new Date(c.vencimento+'T12:00:00');
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const diff = Math.ceil((venc-hoje)/(1000*60*60*24));
+  const atrasado = !c.pago && diff < 0;
+  const urgente = !c.pago && diff >= 0 && diff <= 3;
+  const cor = c.pago ? 'var(--gn)' : atrasado ? 'var(--rd)' : urgente ? 'var(--am)' : 'var(--mt)';
+  const badge = c.pago ? '✅ Pago' : atrasado ? `⚠️ ${Math.abs(diff)}d atrasado` : diff===0 ? '🔴 Vence hoje' : `📅 ${diff}d`;
+  const valorPago = parseFloat(c.valor_pago||0);
+  const saldo = parseFloat(c.valor) - valorPago;
+  const pct = Math.min(100, Math.round(valorPago/parseFloat(c.valor)*100));
+  return `<div style="padding:14px;border-radius:12px;background:var(--s);border:1px solid var(--b);margin-bottom:8px;${c.pago?'opacity:.55':''}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <input type="checkbox" ${c.pago?'checked':''} onchange="togglePago('${c.id}',this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:var(--gn)">
+        <div>
+          <div style="font-weight:600;${c.pago?'text-decoration:line-through;color:var(--mt)':''}">${c.descricao}</div>
+          <div style="font-size:11px;color:${cor};margin-top:2px">${badge} · vence ${venc.toLocaleDateString('pt-BR')}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:700;font-size:16px">${parseFloat(c.valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
+        <div style="font-size:11px;color:var(--mt)">pago: ${valorPago.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
+      </div>
+    </div>
+    <div style="background:var(--b);border-radius:4px;height:6px;margin-bottom:8px">
+      <div style="background:${pct>=100?'var(--gn)':'var(--am)'};width:${pct}%;height:6px;border-radius:4px;transition:.3s"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="ab-${c.id}" type="number" placeholder="Valor a abater (R$)" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--b);background:var(--bg);color:var(--tx);font-size:14px;min-width:0">
+        <button onclick="abaterConta('${c.id}',${parseFloat(c.valor_pago||0)})" style="padding:10px 18px;border-radius:10px;background:var(--am);color:#000;border:none;cursor:pointer;font-weight:700;font-size:14px;white-space:nowrap">Abater</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:700;color:${saldo<=0?'var(--gn)':'var(--rd)'};font-size:15px">Saldo: ${saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
+        <button onclick="delConta('${c.id}')" style="background:rgba(255,77,106,.12);border:1px solid rgba(255,77,106,.2);border-radius:8px;color:var(--rd);cursor:pointer;font-size:13px;padding:5px 10px">🗑 Apagar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Controla quais grupos estão expandidos
+const _gruposExpandidos = new Set();
+
 function renderContas(){
   const el = document.getElementById('lista-contas');
   if(!window._contas) return;
@@ -2149,45 +2193,101 @@ function renderContas(){
   if(contasFiltro==='pendente') lista = lista.filter(c=>!c.pago);
   if(contasFiltro==='pago') lista = lista.filter(c=>c.pago);
   if(!lista.length){ el.innerHTML='<p style="color:var(--mt);text-align:center;padding:20px">Nenhuma conta aqui.</p>'; return; }
-  el.innerHTML = lista.map(c=>{
-    const venc = new Date(c.vencimento+'T12:00:00');
+
+  // Agrupa por nome normalizado (lowercase, sem espaços extras)
+  const grupos = {};
+  const ordem = []; // mantém ordem de primeiro aparecimento
+  lista.forEach(c => {
+    const chave = c.descricao.trim().toLowerCase();
+    if(!grupos[chave]) { grupos[chave] = []; ordem.push(chave); }
+    grupos[chave].push(c);
+  });
+
+  let html = '';
+  ordem.forEach(chave => {
+    const grupo = grupos[chave];
+    // Ordena: vencidas primeiro, depois por data
+    grupo.sort((a,b) => new Date(a.vencimento) - new Date(b.vencimento));
+
+    if(grupo.length === 1) {
+      // Sem agrupamento — renderiza normalmente
+      html += _cardConta(grupo[0]);
+      return;
+    }
+
+    // Grupo com múltiplas parcelas
+    const principal = grupo[0]; // a mais próxima
+    const extras = grupo.slice(1);
+    const expandido = _gruposExpandidos.has(chave);
     const hoje = new Date(); hoje.setHours(0,0,0,0);
-    const diff = Math.ceil((venc-hoje)/(1000*60*60*24));
-    const atrasado = !c.pago && diff < 0;
-    const urgente = !c.pago && diff >= 0 && diff <= 3;
-    const cor = c.pago ? 'var(--gn)' : atrasado ? 'var(--rd)' : urgente ? 'var(--am)' : 'var(--mt)';
-    const badge = c.pago ? '✅ Pago' : atrasado ? `⚠️ ${Math.abs(diff)}d atrasado` : diff===0 ? '🔴 Vence hoje' : `📅 ${diff}d`;
-    const valorPago = parseFloat(c.valor_pago||0);
-    const saldo = parseFloat(c.valor) - valorPago;
-    const pct = Math.min(100, Math.round(valorPago/parseFloat(c.valor)*100));
-    return `<div style="padding:14px;border-radius:12px;background:var(--s);border:1px solid var(--b);margin-bottom:8px;${c.pago?'opacity:.55':''}">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+
+    // Resumo do grupo: total pendente e próximo vencimento
+    const totalGrupo = grupo.reduce((s,c) => s + Math.max(0, parseFloat(c.valor) - parseFloat(c.valor_pago||0)), 0);
+    const vencPrinc = new Date(principal.vencimento+'T12:00:00');
+    const diffPrinc = Math.ceil((vencPrinc-hoje)/(1000*60*60*24));
+    const atrasadoPrinc = !principal.pago && diffPrinc < 0;
+
+    // Badge do grupo
+    const pago_count = grupo.filter(c=>c.pago).length;
+    const badge_grupo = pago_count === grupo.length
+      ? `✅ todas pagas`
+      : atrasadoPrinc
+        ? `⚠️ próxima venceu há ${Math.abs(diffPrinc)}d`
+        : diffPrinc === 0 ? `🔴 próxima vence hoje` : `📅 próxima em ${diffPrinc}d`;
+    const cor_badge = atrasadoPrinc ? 'var(--rd)' : diffPrinc <= 3 && !principal.pago ? 'var(--am)' : 'var(--mt)';
+
+    html += `<div style="border-radius:14px;border:1px solid var(--b);overflow:hidden;margin-bottom:8px">
+      <!-- Cabeçalho do grupo -->
+      <div style="padding:12px 14px;background:var(--s);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleGrupoContas('${chave.replace(/'/g,"\'")}')">
         <div style="display:flex;align-items:center;gap:10px">
-          <input type="checkbox" ${c.pago?'checked':''} onchange="togglePago('${c.id}',this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:var(--gn)">
+          <div style="width:8px;height:8px;border-radius:50%;background:${atrasadoPrinc?'var(--rd)':diffPrinc<=3&&!principal.pago?'var(--am)':'rgba(255,255,255,.2)'}"></div>
           <div>
-            <div style="font-weight:600;${c.pago?'text-decoration:line-through;color:var(--mt)':''}">${c.descricao}</div>
-            <div style="font-size:11px;color:${cor};margin-top:2px">${badge} · vence ${venc.toLocaleDateString('pt-BR')}</div>
+            <div style="font-weight:700;font-size:14px">${principal.descricao}</div>
+            <div style="font-size:11px;color:${cor_badge};margin-top:1px">${badge_grupo} · ${grupo.length} parcelas</div>
           </div>
         </div>
-        <div style="text-align:right">
-          <div style="font-weight:700;font-size:16px">${parseFloat(c.valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
-          <div style="font-size:11px;color:var(--mt)">pago: ${valorPago.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="text-align:right">
+            <div style="font-weight:700;font-size:15px;color:var(--rd)">${totalGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
+            <div style="font-size:10px;color:var(--mt)">total pendente</div>
+          </div>
+          <span style="font-size:18px;color:var(--mt);transition:transform .2s;display:inline-block;transform:rotate(${expandido?'180':'0'}deg)" id="chevron-${chave.replace(/[^a-z0-9]/g,'_')}">›</span>
         </div>
       </div>
-      <div style="background:var(--b);border-radius:4px;height:6px;margin-bottom:8px">
-        <div style="background:${pct>=100?'var(--gn)':'var(--am)'};width:${pct}%;height:6px;border-radius:4px;transition:.3s"></div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <div style="display:flex;gap:8px;align-items:center"><input id="ab-${c.id}" type="number" placeholder="Valor a abater (R$)" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--b);background:var(--bg);color:var(--tx);font-size:14px;min-width:0">
-        <button onclick="abaterConta('${c.id}',${parseFloat(c.valor_pago||0)})" style="padding:10px 18px;border-radius:10px;background:var(--am);color:#000;border:none;cursor:pointer;font-weight:700;font-size:14px;white-space:nowrap">Abater</button></div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-weight:700;color:${saldo<=0?'var(--gn)':'var(--rd)'};font-size:15px">Saldo: ${saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
-          <button onclick="delConta('${c.id}')" style="background:rgba(255,77,106,.12);border:1px solid rgba(255,77,106,.2);border-radius:8px;color:var(--rd);cursor:pointer;font-size:13px;padding:5px 10px">🗑 Apagar</button>
+      <!-- Próxima parcela sempre visível -->
+      <div style="padding:0 10px 10px;background:var(--bg)">
+        ${_cardConta(principal)}
+        <!-- Parcelas extras colapsáveis -->
+        <div id="extras-${chave.replace(/[^a-z0-9]/g,'_')}" style="display:${expandido?'block':'none'}">
+          ${extras.map(c=>_cardConta(c)).join('')}
         </div>
-        <button onclick="delConta('${c.id}')" style="background:none;border:none;color:var(--mt);cursor:pointer;font-size:16px">🗑</button>
+        ${extras.length > 0 ? `<button onclick="toggleGrupoContas('${chave.replace(/'/g,"\'")}');event.stopPropagation()" style="width:100%;padding:8px;border-radius:10px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.12);color:var(--mt);cursor:pointer;font-size:12px;margin-top:2px" id="btn-ver-${chave.replace(/[^a-z0-9]/g,'_')}">
+          ${expandido ? '▲ Ocultar parcelas futuras' : `▼ Ver mais ${extras.length} parcela${extras.length>1?'s':''} (${extras.filter(c=>!c.pago).length} pendente${extras.filter(c=>!c.pago).length!==1?'s':''})`}
+        </button>` : ''}
       </div>
     </div>`;
-  }).join('');
+  });
+  el.innerHTML = html;
+}
+
+function toggleGrupoContas(chave) {
+  const key = chave.replace(/[^a-z0-9]/g,'_');
+  const extras = document.getElementById('extras-'+key);
+  const btn = document.getElementById('btn-ver-'+key);
+  const chevron = document.getElementById('chevron-'+key);
+  if(!extras) return;
+  const aberto = extras.style.display !== 'none';
+  if(aberto) {
+    extras.style.display = 'none';
+    _gruposExpandidos.delete(chave);
+    if(btn) btn.textContent = `▼ Ver mais ${extras.querySelectorAll('[id^=ab-]').length} parcela${extras.querySelectorAll('[id^=ab-]').length>1?'s':''} futuras`;
+    if(chevron) chevron.style.transform = 'rotate(0deg)';
+  } else {
+    extras.style.display = 'block';
+    _gruposExpandidos.add(chave);
+    if(btn) btn.textContent = '▲ Ocultar parcelas futuras';
+    if(chevron) chevron.style.transform = 'rotate(180deg)';
+  }
 }
 
 function renderResumoContas(){
