@@ -739,11 +739,19 @@ const _supa = supabase.createClient(
   </div>
   <div id="visao-lancamentos">
     <div class="gc">
-      <div class="hf">
-        <button class="fp active" onclick="filtrar(this,'todos')">Todos</button>
-        <button class="fp" onclick="filtrar(this,'ganho')">💰 Ganhos</button>
-        <button class="fp" onclick="filtrar(this,'despesa')">💸 Despesas</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="display:flex;gap:6px">
+          <button class="fp active" onclick="filtrar(this,'todos')">Todos</button>
+          <button class="fp" onclick="filtrar(this,'ganho')">💰 Ganhos</button>
+          <button class="fp" onclick="filtrar(this,'despesa')">💸 Despesas</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button onclick="navMesHist(-1)" style="background:var(--b2);border:1px solid var(--b);color:var(--tx);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px">‹</button>
+          <span id="hist-mes-label" style="font-size:13px;font-weight:600;color:var(--am);min-width:80px;text-align:center"></span>
+          <button onclick="navMesHist(1)" id="hist-mes-next" style="background:var(--b2);border:1px solid var(--b);color:var(--tx);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px">›</button>
+        </div>
       </div>
+      <div id="hist-resumo-mes" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px"></div>
       <div class="ll" id="lanc-list"><div class="empty"><div class="empty-icon">📭</div><p>Nenhum lançamento ainda</p></div></div>
     </div>
   </div>
@@ -1758,18 +1766,55 @@ async function loadDash(){
   }catch(e){console.error(e)}
 }
 
+// Mês selecionado no histórico (offset: 0 = atual, -1 = anterior)
+let _histMesOffset = 0;
+let _histFiltroTipo = 'todos';
+
+function navMesHist(delta) {
+  const novoOffset = _histMesOffset + delta;
+  if (novoOffset > 0) return;
+  _histMesOffset = novoOffset;
+  loadHist(_histFiltroTipo);
+}
+
 function filtrar(el,tipo){
-  document.querySelectorAll('.fp').forEach(x=>x.classList.remove('active'));el.classList.add('active');loadHist(tipo);
+  document.querySelectorAll('#visao-lancamentos .fp').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  _histFiltroTipo = tipo;
+  loadHist(tipo);
 }
 
 async function loadHist(tipo){
   if(!MID)return;
+  _histFiltroTipo = tipo || _histFiltroTipo;
   try{
-    // Sempre busca dados frescos do servidor — não usa todosLanc que pode estar desatualizado
-    const r=await fetch(API+'/resumo/'+MID+'?t='+Date.now());
+    const hoje = new Date();
+    const alvo = new Date(hoje.getFullYear(), hoje.getMonth() + _histMesOffset, 1);
+    const mes = alvo.getMonth() + 1;
+    const ano = alvo.getFullYear();
+    const mesLabel = alvo.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'});
+    const labelEl = document.getElementById('hist-mes-label');
+    if(labelEl) labelEl.textContent = mesLabel.charAt(0).toUpperCase()+mesLabel.slice(1).replace(".","'");
+    const nextBtn = document.getElementById('hist-mes-next');
+    if(nextBtn) nextBtn.disabled = _histMesOffset >= 0;
+
+    const r=await fetch(API+'/resumo/'+MID+'?mes='+mes+'&ano='+ano+'&t='+Date.now());
     const d=await r.json();
-    todosLanc = d.lancamentos||[]; // Atualiza o global também
-    let lancs=todosLanc.filter(l=>tipo==='todos'||l.tipo===tipo).reverse();
+    const allLancs = d.lancamentos||[];
+    if(_histMesOffset === 0) todosLanc = allLancs;
+
+    const ganhosMes = d.ganhos||0, despMes = d.despesas||0, lucroMes = d.lucro||0;
+    const diasTrab = new Set(allLancs.filter(l=>l.tipo==='ganho').map(l=>l.data)).size;
+    const resumoEl = document.getElementById('hist-resumo-mes');
+    if(resumoEl) resumoEl.innerHTML =
+      `<div class="rh-item"><span class="rh-label">💰 Ganhos</span><span class="rh-val gn">${fmt(ganhosMes)}</span></div>`+
+      `<div class="rh-item"><span class="rh-label">💸 Despesas</span><span class="rh-val rd">${fmt(despMes)}</span></div>`+
+      `<div class="rh-item"><span class="rh-label">✅ Lucro</span><span class="rh-val" style="color:${lucroMes>=0?'var(--gn)':'var(--rd)'}">${fmt(lucroMes)}</span></div>`+
+      `<div class="rh-item"><span class="rh-label">📅 Dias trab.</span><span class="rh-val">${diasTrab}</span></div>`+
+      `<div class="rh-item"><span class="rh-label">⏱ Horas</span><span class="rh-val">${(d.horas_rodadas||0)>0?Number(d.horas_rodadas).toFixed(1)+'h':'—'}</span></div>`+
+      `<div class="rh-item"><span class="rh-label">💵 Média/dia</span><span class="rh-val am">${fmt(diasTrab>0?ganhosMes/diasTrab:0)}</span></div>`;
+
+    let lancs=allLancs.filter(l=>_histFiltroTipo==='todos'||l.tipo===_histFiltroTipo).reverse();
     const el=document.getElementById('lanc-list');el.innerHTML='';
     if(!lancs.length){el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><p>Nenhum lançamento</p></div>';return}
     lancs.forEach(l=>{
@@ -1781,6 +1826,20 @@ async function loadHist(tipo){
       const data=l.data?l.data.split('-').reverse().join('/'):'';
       const div=document.createElement('div');div.className='li';div.innerHTML='<div class="li-icon" style="background:'+bg+'">'+c.e+'</div><div class="li-info"><div class="li-cat">'+c.n+'</div><div class="li-meta">'+data+(plat?' · '+plat:'')+'</div></div><div class="li-val" style="color:'+cor+'">'+sinal+fmt(l.valor)+'</div>';const btn=document.createElement('button');btn.textContent='🗑';btn.style='margin-left:12px;background:none;border:none;color:rgba(255,77,106,.5);cursor:pointer;font-size:16px;padding:4px';btn.onclick=()=>deletar(l.id);div.appendChild(btn);el.appendChild(div);
     });
+  }catch(e){}
+}
+
+async function loadHistTodosParaComparativo(){
+  if(!MID)return;
+  try{
+    const hoje = new Date();
+    const promises = [];
+    for(let i=0;i<6;i++){
+      const alvo = new Date(hoje.getFullYear(), hoje.getMonth()-i, 1);
+      promises.push(fetch(API+'/resumo/'+MID+'?mes='+(alvo.getMonth()+1)+'&ano='+alvo.getFullYear()).then(r=>r.json()));
+    }
+    const results = await Promise.all(promises);
+    todosLanc = results.flatMap(d=>d.lancamentos||[]);
   }catch(e){}
 }
 
@@ -2788,8 +2847,8 @@ function mudarVisaoHist(el, visao) {
   document.getElementById('visao-lancamentos').style.display = visao==='lancamentos' ? '' : 'none';
   document.getElementById('visao-semanal').style.display = visao==='semanal' ? '' : 'none';
   document.getElementById('visao-mensal').style.display = visao==='mensal' ? '' : 'none';
-  if(visao==='semanal') renderComparativoSemanal();
-  if(visao==='mensal') renderComparativoMensal();
+  if(visao==='semanal') loadHistTodosParaComparativo().then(()=>renderComparativoSemanal());
+  if(visao==='mensal') loadHistTodosParaComparativo().then(()=>renderComparativoMensal());
 }
 
 function semanaStr(data) {
