@@ -665,7 +665,10 @@ const _supa = supabase.createClient(
   </div>
 
   <div class="gc" style="margin-top:0">
-    <h3 id="label-resultado-dia" style="margin:0 0 10px;font-size:13px;color:var(--mt2);text-transform:uppercase;letter-spacing:.5px">📅 Resultado de hoje</h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <h3 id="label-resultado-dia" style="margin:0;font-size:13px;color:var(--mt2);text-transform:uppercase;letter-spacing:.5px">📅 Resultado de hoje</h3>
+      <button onclick="atualizarFaturamentoDia()" style="display:flex;align-items:center;gap:5px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.35);color:rgba(99,102,241,1);border-radius:10px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;transition:background .2s" onmouseover="this.style.background='rgba(99,102,241,.28)'" onmouseout="this.style.background='rgba(99,102,241,.15)'">✏️ Atualizar</button>
+    </div>
     <div id="resumo-hoje" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div class="rh-item"><span class="rh-label">💰 Faturado</span><span class="rh-val gn">—</span></div>
       <div class="rh-item"><span class="rh-label">💸 Gastos</span><span class="rh-val rd">—</span></div>
@@ -2555,6 +2558,30 @@ async function sendChat() {
 function quickChat(txt) {
   document.getElementById('chat-input').value = txt;
   sendChat();
+}
+
+function atualizarFaturamentoDia() {
+  // Garante que está no dashboard (onde o chat fica)
+  const dashBtn = document.getElementById('ni-dashboard');
+  if(!document.getElementById('page-dashboard').classList.contains('active')) {
+    goPage(dashBtn, 'dashboard');
+  }
+  // Pequeno delay para a página terminar de renderizar se mudou de aba
+  setTimeout(() => {
+    // Monta mensagem com o faturamento atual para o gestor saber o contexto
+    const fatEl = document.querySelector('#resumo-hoje .rh-val.gn');
+    const fatAtual = fatEl ? fatEl.textContent.trim() : '';
+    const inp = document.getElementById('chat-input');
+    if(inp) {
+      inp.value = fatAtual && fatAtual !== '—'
+        ? `quero atualizar o total faturado de hoje, atualmente está ${fatAtual}`
+        : 'quero registrar o faturamento de hoje, quanto fiz em cada plataforma';
+      inp.focus();
+      inp.setSelectionRange(inp.value.length, inp.value.length);
+      // Rola suavemente até o chat
+      inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 150);
 }
 
 function loadDashIA() {}
