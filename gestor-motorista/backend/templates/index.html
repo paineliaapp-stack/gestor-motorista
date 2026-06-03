@@ -2688,6 +2688,7 @@ async function sendChat() {
     falarIA(reply);
     // Atualiza dashboard e histórico após qualquer registro
     try{loadDash();}catch(e){}
+    try{loadContasDash();}catch(e){}
     try{loadCompromissos();}catch(e){};
     // Se registrou algo, atualiza o histórico de lançamentos também
     if(data.acoes_count > 0 || data.acao){
