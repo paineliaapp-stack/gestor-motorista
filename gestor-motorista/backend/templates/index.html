@@ -256,6 +256,7 @@ select option{background:#141820}
   .chip{max-width:75px;overflow:hidden}
   .ni .tip{display:block!important;position:static;background:none;border:none;padding:0;font-size:9px;line-height:1;opacity:1!important;color:var(--mt);white-space:nowrap;pointer-events:none;transition:none;font-family:'Outfit',sans-serif;text-align:center;width:100%}
   .ni.active .tip{color:var(--am)}
+  .ni-icon{font-size:18px;line-height:1;display:block}
   .meta-wrap>span:first-child{display:none}
   .ph h1{font-size:24px}
   .ndiv{display:none}
@@ -443,15 +444,15 @@ const _supa = supabase.createClient(
   </div>
 </header>
 <nav class="sidenav">
-  <button id="ni-dashboard" class="ni active" onclick="goPage(this,'dashboard')">📊<span class="tip">Dashboard</span></button>
-  <button id="ni-registrar" class="ni" onclick="goPage(this,'registrar')">➕<span class="tip">Registrar</span></button>
-  <button id="ni-historico" class="ni" onclick="goPage(this,'historico')">📋<span class="tip">Histórico</span></button>
+  <button id="ni-dashboard" class="ni active" onclick="goPage(this,'dashboard')"><span class="ni-icon">📊</span><span class="tip">Dashboard</span></button>
+  <button id="ni-registrar" class="ni" onclick="goPage(this,'registrar')"><span class="ni-icon">➕</span><span class="tip">Registrar</span></button>
+  <button id="ni-historico" class="ni" onclick="goPage(this,'historico')"><span class="ni-icon">📋</span><span class="tip">Histórico</span></button>
   <div class="ndiv"></div>
-  <button id="ni-calendario" class="ni" onclick="goPage(this,'calendario')">📅<span class="tip">Calendário</span></button>
-  <button id="ni-corrida" class="ni" onclick="goPage(this,'corrida')">🏆<span class="tip">Corrida</span></button>
-  <button id="ni-contas" class="ni" onclick="goContas(this)">💳<span class="tip">Contas</span></button>
+  <button id="ni-calendario" class="ni" onclick="goPage(this,'calendario')"><span class="ni-icon">📅</span><span class="tip">Calendário</span></button>
+  <button id="ni-corrida" class="ni" onclick="goPage(this,'corrida')"><span class="ni-icon">🏆</span><span class="tip">Corrida</span></button>
+  <button id="ni-contas" class="ni" onclick="goContas(this)"><span class="ni-icon">💳</span><span class="tip">Contas</span></button>
 
-  <button id="ni-fechamento" class="ni" onclick="goPage(this,'fechamento')">🔒<span class="tip">Fechamento</span></button>
+  <button id="ni-fechamento" class="ni" onclick="goPage(this,'fechamento')"><span class="ni-icon">🔒</span><span class="tip">Fechamento</span></button>
 </nav>
 <main class="main">
 <div class="page active" id="page-dashboard">
