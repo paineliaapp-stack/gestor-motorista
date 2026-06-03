@@ -2250,20 +2250,25 @@ function renderContas(){
       return;
     }
 
-    // Grupo com múltiplas parcelas
-    const principal = grupo[0]; // a mais próxima
-    const extras = grupo.slice(1);
+    // Principal = primeira pendente; se todas pagas, usa a primeira mesmo
+    const principal = pendentesGrupo.length > 0 ? pendentesGrupo[0] : grupo[0];
+    const extras = grupo.filter(c => c !== principal);
     const expandido = _gruposExpandidos.has(chave);
     const hoje = new Date(); hoje.setHours(0,0,0,0);
 
-    // Resumo do grupo: total pendente e próximo vencimento
-    const totalGrupo = grupo.reduce((s,c) => s + Math.max(0, parseFloat(c.valor) - parseFloat(c.valor_pago||0)), 0);
+    // Resumo do grupo: total pendente (só contas não pagas)
+    const pendentesGrupo = grupo.filter(c => !c.pago);
+    const totalGrupo = pendentesGrupo.reduce((s,c) => s + Math.max(0, parseFloat(c.valor) - parseFloat(c.valor_pago||0)), 0);
     const vencPrinc = new Date(principal.vencimento+'T12:00:00');
     const diffPrinc = Math.ceil((vencPrinc-hoje)/(1000*60*60*24));
     const atrasadoPrinc = !principal.pago && diffPrinc < 0;
 
-    // Badge do grupo
-    const pago_count = grupo.filter(c=>c.pago).length;
+    // Se todas pagas, não mostrar no filtro "Pendentes" — mas no "Todas" mostra normalmente
+    if(contasFiltro === 'pendente' && pago_count === grupo.length) return;
+
+    const label_parcelas = pago_count > 0
+      ? `${pago_count} paga${pago_count>1?'s':''} · ${pendentesGrupo.length} pendente${pendentesGrupo.length!==1?'s':''}`
+      : `${grupo.length} parcelas`;
     const badge_grupo = pago_count === grupo.length
       ? `✅ todas pagas`
       : atrasadoPrinc
@@ -2278,7 +2283,7 @@ function renderContas(){
           <div style="width:8px;height:8px;border-radius:50%;background:${atrasadoPrinc?'var(--rd)':diffPrinc<=3&&!principal.pago?'var(--am)':'rgba(255,255,255,.2)'}"></div>
           <div>
             <div style="font-weight:700;font-size:14px">${principal.descricao}</div>
-            <div style="font-size:11px;color:${cor_badge};margin-top:1px">${badge_grupo} · ${grupo.length} parcelas</div>
+            <div style="font-size:11px;color:${cor_badge};margin-top:1px">${badge_grupo} · ${label_parcelas}</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
