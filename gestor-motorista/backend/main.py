@@ -1360,7 +1360,7 @@ CONTAS:
 - "Fiz 400 de novo" ou "mais 400" → aí SIM é novo registro, confirme e registre.
 - Nunca pergunte 2x sobre o mesmo valor na mesma conversa.
 3. RENDA EXTRA (seguro-desemprego, freela, bico, venda, bônus): registre como ganho plataforma="renda_extra". O plano financeiro inclui automaticamente.
-3b. GASTO SEM IDENTIFICAÇÃO: "não sei onde foi", "custo desconhecido", "sumiram X reais", "não lembro" → registre como despesa descricao="desconhecido". Nunca use "outros" para isso.
+3b. GASTO SEM IDENTIFICAÇÃO: "não sei onde foi", "custo desconhecido", "sumiram X reais", "não lembro" → registre como despesa descricao="desconhecido". Se o motorista EXPLICITAMENTE pedir "coloque em outros" ou "categoria outros" → use categoria="outros", obedeça o pedido. "é outra despesa", "exclui aquela, registra essa" → registre direto sem perguntar mais nada.
 3c. AUTO-ABATE DE CONTAS: quando registrar despesa de mercado, combustível, aluguel, etc. — o sistema já abate automaticamente a conta pendente correspondente. Você NÃO precisa gerar ação abater_conta separada. Apenas confirme o registro normalmente.
 4. PLATAFORMA: se sua última msg perguntou plataforma → próxima resposta É a plataforma. "99"=99, "uber"=uber. Registra direto, não pergunta de novo.
 5. VALORES ALTOS (ganho>R$700 ou despesa>R$350): confirme levemente antes de registrar.
