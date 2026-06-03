@@ -22,6 +22,23 @@ app = FastAPI(title="Painel.IA API")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+
+def _match_conta(descricao_busca: str, contas: list) -> dict | None:
+    """Encontra a melhor conta pelo nome — prefere match exato, depois prefixo mais longo."""
+    import os.path
+    descricao_busca = descricao_busca.lower().strip()
+    melhor = None
+    melhor_score = 0
+    for c in contas:
+        nome = c.get("descricao", "").lower().strip()
+        if nome == descricao_busca:
+            return c  # match exato
+        score = len(os.path.commonprefix([descricao_busca, nome]))
+        if score > melhor_score and score >= 4:
+            melhor_score = score
+            melhor = c
+    return melhor
+
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     return FileResponse("static/favicon.png")
@@ -1575,7 +1592,7 @@ Quando analisa situação geral:
                 descricao = acao.get("descricao", "").lower()
                 contas_res = supabase.table("contas").select("id,descricao").eq("motorista_id", motorista_id).execute()
                 for c in (contas_res.data or []):
-                    if descricao and descricao[:6] in c["descricao"].lower():
+                    if descricao and (descricao.lower() in c["descricao"].lower() or c["descricao"].lower() in descricao.lower() or len(__import__("os.path", fromlist=["commonprefix"]).commonprefix([descricao.lower(), c["descricao"].lower()])) >= 5):
                         supabase.table("contas").delete().eq("id", c["id"]).execute()
                         acoes_executadas.append("conta_deletada")
                         break
@@ -1586,7 +1603,7 @@ Quando analisa situação geral:
                 novo_valor = acao.get("novo_valor")
                 contas_res = supabase.table("contas").select("id,descricao").eq("motorista_id", motorista_id).execute()
                 for c in (contas_res.data or []):
-                    if descricao and descricao[:6] in c["descricao"].lower():
+                    if descricao and (descricao.lower() in c["descricao"].lower() or c["descricao"].lower() in descricao.lower() or len(__import__("os.path", fromlist=["commonprefix"]).commonprefix([descricao.lower(), c["descricao"].lower()])) >= 5):
                         if campo == "valor":
                             supabase.table("contas").update({"valor": float(novo_valor)}).eq("id", c["id"]).execute()
                         elif campo == "vencimento":
@@ -1689,7 +1706,7 @@ Quando analisa situação geral:
                 descricao = acao.get("descricao", "").lower()
                 contas_res = supabase.table("contas").select("id,descricao,valor,valor_pago").eq("motorista_id", motorista_id).eq("pago", False).execute()
                 for c in (contas_res.data or []):
-                    if descricao and descricao[:6] in c["descricao"].lower():
+                    if descricao and (descricao.lower() in c["descricao"].lower() or c["descricao"].lower() in descricao.lower() or len(__import__("os.path", fromlist=["commonprefix"]).commonprefix([descricao.lower(), c["descricao"].lower()])) >= 5):
                         valor_total = float(c["valor"])
                         ja_pago = float(c.get("valor_pago") or 0)
                         saldo_restante = max(0, valor_total - ja_pago)
@@ -1711,7 +1728,7 @@ Quando analisa situação geral:
                 valor_pago = float(acao.get("valor_pago", 0))
                 contas_res = supabase.table("contas").select("id,descricao,valor,valor_pago").eq("motorista_id", motorista_id).eq("pago", False).execute()
                 for c in (contas_res.data or []):
-                    if descricao and descricao[:6] in c["descricao"].lower():
+                    if descricao and (descricao.lower() in c["descricao"].lower() or c["descricao"].lower() in descricao.lower() or len(__import__("os.path", fromlist=["commonprefix"]).commonprefix([descricao.lower(), c["descricao"].lower()])) >= 5):
                         valor_original = float(c["valor"])
                         ja_pago = float(c.get("valor_pago") or 0)
                         total_pago = ja_pago + valor_pago
@@ -1744,7 +1761,7 @@ Quando analisa situação geral:
                 descricao = acao.get("descricao", "").lower()
                 contas_res = supabase.table("contas").select("id,descricao").eq("motorista_id", motorista_id).execute()
                 for c in (contas_res.data or []):
-                    if descricao and descricao[:6] in c["descricao"].lower():
+                    if descricao and (descricao.lower() in c["descricao"].lower() or c["descricao"].lower() in descricao.lower() or len(__import__("os.path", fromlist=["commonprefix"]).commonprefix([descricao.lower(), c["descricao"].lower()])) >= 5):
                         supabase.table("contas").delete().eq("id", c["id"]).execute()
                         acoes_executadas.append("conta_deletada")
                         break
@@ -1755,7 +1772,7 @@ Quando analisa situação geral:
                 novo_valor = acao.get("novo_valor")
                 contas_res = supabase.table("contas").select("id,descricao").eq("motorista_id", motorista_id).execute()
                 for c in (contas_res.data or []):
-                    if descricao and descricao[:6] in c["descricao"].lower():
+                    if descricao and (descricao.lower() in c["descricao"].lower() or c["descricao"].lower() in descricao.lower() or len(__import__("os.path", fromlist=["commonprefix"]).commonprefix([descricao.lower(), c["descricao"].lower()])) >= 5):
                         if campo == "valor":
                             supabase.table("contas").update({"valor": float(novo_valor)}).eq("id", c["id"]).execute()
                         elif campo == "vencimento":
