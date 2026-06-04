@@ -2454,12 +2454,12 @@ async function _renderResumoContasAsync(el, calc){
         <span style="color:var(--gn);font-weight:600">R$ ${liquidoCaixaContas.toFixed(2)}</span>
       </div>
       ${totalRendaExtraMes>0?`<div style="padding:6px 14px;border-radius:10px;background:rgba(78,158,255,.06);display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--mt)">💼 Renda extra recebida</span><span style="color:#4e9eff;font-weight:600">− R$ ${totalRendaExtraMes.toFixed(2)}</span></div>`:''}
-      <div style="padding:12px 14px;border-radius:10px;background:${faltaTotal<=0?'rgba(74,222,128,.08)':'rgba(245,166,35,.08)'};border:1px solid ${faltaTotal<=0?'rgba(74,222,128,.3)':'rgba(245,166,35,.3)'};display:flex;justify-content:space-between;align-items:center">
+      <div style="padding:12px 14px;border-radius:10px;background:${faltaTotal<=0?'rgba(74,222,128,.08)':'rgba(99,102,241,.08)'};border:1px solid ${faltaTotal<=0?'rgba(74,222,128,.3)':'rgba(99,102,241,.3)'};display:flex;justify-content:space-between;align-items:center">
         <div>
-          <div style="font-weight:700;font-size:13px">${faltaTotal<=0?'✅ Tudo coberto!':'Falta faturar no total'}</div>
-          ${faltaTotal>0?`<div style="font-size:11px;color:var(--mt)">${labelDias}</div>`:''}
+          <div style="font-weight:700;font-size:13px">${faltaTotal<=0?'✅ Tudo coberto!':'🎯 Meta de hoje'}</div>
+          ${faltaTotal>0?`<div style="font-size:11px;color:var(--mt)">soma das parcelas de cada conta</div>`:''}
         </div>
-        ${faltaTotal>0?`<span style="font-weight:700;color:var(--am);font-size:20px;font-family:'Barlow Condensed',sans-serif">R$ ${faltaPorDia.toFixed(2)}<span style="font-size:13px;font-weight:400;color:var(--mt)">/dia</span></span>`:''}
+        ${faltaTotal>0?`<span style="font-weight:700;color:#818cf8;font-size:20px;font-family:'Barlow Condensed',sans-serif">R$ ${(pendentes.filter(c=>c.falta>0).reduce((s,c)=>s+(c.diasAte<=1?c.falta:c.porDia),0)+combDiario).toFixed(2)}<span style="font-size:13px;font-weight:400;color:var(--mt)">/dia</span></span>`:''}
       </div>
     </div>
   `;
