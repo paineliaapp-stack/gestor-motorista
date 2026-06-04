@@ -2240,11 +2240,12 @@ function renderContas(){
   if(contasFiltro==='pago') lista = lista.filter(c=>c.pago);
   if(!lista.length){ el.innerHTML='<p style="color:var(--mt);text-align:center;padding:20px">Nenhuma conta aqui.</p>'; return; }
 
-  // Agrupa por nome normalizado (lowercase, sem espaços extras)
+  // Agrupa por nome normalizado (lowercase, sem acentos, sem espaços extras)
+  function _normGrp(s){ return (s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' '); }
   const grupos = {};
   const ordem = []; // mantém ordem de primeiro aparecimento
   lista.forEach(c => {
-    const chave = c.descricao.trim().toLowerCase();
+    const chave = _normGrp(c.descricao);
     if(!grupos[chave]) { grupos[chave] = []; ordem.push(chave); }
     grupos[chave].push(c);
   });
@@ -2417,10 +2418,11 @@ async function _renderResumoContasAsync(el, calc){
   }
   const faltaPorDia = faltaTotal / diasRestantesMes;
 
-  // Agrupar por nome — mostrar só a próxima parcela de cada grupo
+  // Agrupar por nome — normaliza para evitar duplicatas por capitalização
+  function _normKey(s){ return (s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' '); }
   const grupos = {};
   pendentes.forEach(c => {
-    const key = c.descricao.trim().toLowerCase();
+    const key = _normKey(c.descricao);
     if (!grupos[key]) grupos[key] = [];
     grupos[key].push(c);
   });
@@ -2452,7 +2454,7 @@ async function _renderResumoContasAsync(el, calc){
     const _brtNow = new Date(Date.now() - 3*60*60*1000);
     const _hojeRef = new Date(_brtNow.getUTCFullYear(), _brtNow.getUTCMonth(), _brtNow.getUTCDate());
     // dias = 0 se vence hoje, 1 se amanhã, negativo se vencida
-    const dias = Math.round((venc - _hojeRef)/(1000*60*60*24));
+    const dias = Math.floor((venc - _hojeRef)/(1000*60*60*24) + 0.01); // floor com tolerância: hoje=0, amanhã=1
     const vencida = dias < 0;
     // diasEfetivos = quantos dias tenho para faturar (inclui hoje)
     // vence hoje (dias=0) → 1 dia | vence amanhã (dias=1) → 2 dias | etc.
@@ -2472,7 +2474,10 @@ async function _renderResumoContasAsync(el, calc){
   // Combustível: percentual configurável (padrão 25%)
   let pctComb = 25;
   try {
+    // Lê direto do input se estiver visível (garante valor mais recente)
+    const inpPct = document.getElementById('inp-pct-comb');
     if(window._pctCombOverride) pctComb = window._pctCombOverride;
+    else if(inpPct && inpPct.value) pctComb = parseFloat(inpPct.value)||25;
     else pctComb = parseFloat(localStorage.getItem('pct_comb_'+(MID||window.MID))||'25');
   } catch(e){}
   const faturadoMes = totalFaturadoPlat + totalRendaExtraMes;
