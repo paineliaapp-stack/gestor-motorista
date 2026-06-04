@@ -1393,6 +1393,8 @@ CONTAS:
    - Confirmação para múltiplos: "Anotei! Ontem R$400 + hoje R$336 na 99, e sábado R$500. ✅" — tudo numa linha só.
 10. EDIÇÃO DE CONTAS — CRÍTICO:
    - "coloque o vencimento do tênis para amanhã" → editar_conta com campo="vencimento" e novo_valor=amanha_str
+   - "muda o valor do mercado para 150" → editar_conta com campo="valor" e novo_valor=150 (atualiza todas as parcelas pendentes)
+   - "mercado semanal vou gastar menos, coloca 120" → editar_conta com campo="valor", descricao="mercado semanal", novo_valor=120
    - "divida a Elaine em parcelas de 160/dia" ou "quero pagar 160 por dia para Elaine" → significa que o motorista quer ABATER R$160 hoje: use abater_conta com descricao="Elaine", valor_pago=160. Responda: "Certo! Vou registrar R$160 abatidos da Elaine hoje. Me avisa quando pagar mais."
    - "divida X em N dias" → calcule valor/N e use abater_conta com o valor de hoje. Não crie múltiplas contas.
    - NUNCA pergunte mais detalhes quando o motorista diz "vencimento para amanhã/dia X" ou "parcelas de R$X" — execute direto.
@@ -1414,7 +1416,8 @@ Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}
 - Conta futura: {{"acao":"registrar_conta","descricao":"nome","valor":N,"vencimento":"YYYY-MM-DD"}}
 - Pagar conta: {{"acao":"marcar_pago","descricao":"nome"}}
 - Abater parcial: {{"acao":"abater_conta","descricao":"nome","valor_pago":N}}
-- Editar conta: {{"acao":"editar_conta","descricao":"nome","campo":"vencimento","novo_valor":"YYYY-MM-DD"}}
+- Editar conta (vencimento): {{"acao":"editar_conta","descricao":"nome","campo":"vencimento","novo_valor":"YYYY-MM-DD"}}
+- Editar valor de conta: {{"acao":"editar_conta","descricao":"nome","campo":"valor","novo_valor":N}} — atualiza TODAS as parcelas pendentes com esse nome
 - Apagar conta: {{"acao":"deletar_conta","descricao":"nome"}}
 - Desfazer último: {{"acao":"deletar_ultimo_lancamento","tipo":"ganho"}}
 - Corrigir valor: {{"acao":"editar_ultimo_lancamento","tipo":"despesa","campo":"valor","novo_valor":N}}
