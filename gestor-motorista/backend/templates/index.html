@@ -2566,12 +2566,14 @@ async function delConta(id){
 }
 
 async function editarVencimento(id, vencimentoAtual){
-  const nova = prompt('Nova data de vencimento (negociou prazo):', vencimentoAtual);
-  if(!nova || nova === vencimentoAtual) return;
-  // Valida formato YYYY-MM-DD
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(nova)){ toast('Use o formato AAAA-MM-DD (ex: 2026-06-15)', false); return; }
-  await fetch(API+'/contas/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({vencimento: nova})});
-  toast('Prazo atualizado para ' + nova.split('-').reverse().join('/') + ' ✓');
+  const nova = prompt('Nova data de vencimento (negociou prazo):\n(formato: DD/MM/AAAA)', vencimentoAtual.split('-').reverse().join('/'));
+  if(!nova) return;
+  let dataNorm = nova.trim();
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(dataNorm)){ const [d,m,a]=dataNorm.split('/'); dataNorm=a+'-'+m+'-'+d; }
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(dataNorm)){ toast('Data inválida. Use DD/MM/AAAA', false); return; }
+  if(dataNorm === vencimentoAtual) return;
+  await fetch(API+'/contas/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({vencimento:dataNorm})});
+  toast('Prazo atualizado para '+dataNorm.split('-').reverse().join('/')+' ✓');
   loadContas();
 }
 
@@ -2588,8 +2590,8 @@ function mudarVisaoContas(visao){
 
 function _inicioSemana(date){
   const d = new Date(date); d.setHours(0,0,0,0);
-  const dia = d.getDay(); // 0=dom
-  const diff = dia === 0 ? -6 : 1 - dia; // segunda
+  const dia = d.getDay();
+  const diff = dia === 0 ? -6 : 1 - dia;
   d.setDate(d.getDate() + diff);
   return d;
 }
@@ -2602,13 +2604,11 @@ function _semanaKey(date){
 function renderVisaoSemana(){
   const el = document.getElementById('semana-contas');
   if(!window._contas){ el.innerHTML='<p style="color:var(--mt)">Carregando...</p>'; return; }
-
-  const pendentes = window._contas.filter(c => !c.pago);
+  const pendentes = window._contas.filter(function(c){ return !c.pago; });
   if(!pendentes.length){ el.innerHTML='<div class="empty"><div class="empty-icon">✅</div><p>Sem contas pendentes!</p></div>'; return; }
 
-  // Agrupa por semana
   const semanas = {};
-  pendentes.forEach(c => {
+  pendentes.forEach(function(c){
     const key = _semanaKey(c.vencimento);
     if(!semanas[key]) semanas[key] = [];
     semanas[key].push(c);
@@ -2616,117 +2616,94 @@ function renderVisaoSemana(){
 
   const brtNow = new Date(Date.now() - 3*60*60*1000);
   const hojeRef = new Date(brtNow.getUTCFullYear(), brtNow.getUTCMonth(), brtNow.getUTCDate());
+  const midKey = MID||window.MID||'anon';
 
   let html = '';
-  Object.keys(semanas).sort().forEach(key => {
-    const contas = semanas[key].sort((a,b) => new Date(a.vencimento) - new Date(b.vencimento));
+  Object.keys(semanas).sort().forEach(function(key){
+    const contas = semanas[key].sort(function(a,b){ return new Date(a.vencimento)-new Date(b.vencimento); });
     const seg = new Date(key+'T12:00:00');
     const sab = new Date(seg); sab.setDate(sab.getDate()+6);
     const labelSeg = seg.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
     const labelSab = sab.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
 
-    // Total da semana
-    const totalSemana = contas.reduce((s,c) => s + Math.max(0, parseFloat(c.valor) - parseFloat(c.valor_pago||0)), 0);
-
-    // Dias úteis restantes nessa semana para trabalhar
+    const totalSemana = contas.reduce(function(s,c){ return s + Math.max(0, parseFloat(c.valor)-parseFloat(c.valor_pago||0)); }, 0);
     const fimSemana = new Date(sab); fimSemana.setHours(23,59,59);
-    const diasRestSemana = Math.max(1, Math.ceil((fimSemana - hojeRef) / (1000*60*60*24)));
-
-    // Capacidade salva no localStorage
-    const capKey = 'cap_semana_' + (MID||window.MID) + '_' + key;
-    const capSalva = parseFloat(localStorage.getItem(capKey) || '0');
-
+    const diasRest = Math.max(1, Math.ceil((fimSemana - hojeRef)/(1000*60*60*24)));
+    const capKey = 'cap_semana_'+midKey+'_'+key;
+    const capSalva = parseFloat(localStorage.getItem(capKey)||'0');
     const cobre = capSalva > 0 && capSalva >= totalSemana;
     const falta = Math.max(0, totalSemana - capSalva);
-    const corSemana = capSalva <= 0 ? 'rgba(255,255,255,.1)' : cobre ? 'rgba(34,197,94,.3)' : 'rgba(255,69,96,.3)';
-
-    // É a semana atual?
     const isAtual = key === _semanaKey(brtNow.toISOString().slice(0,10));
+    const corBorda = capSalva <= 0 ? 'rgba(255,255,255,.12)' : cobre ? 'rgba(34,197,94,.35)' : 'rgba(255,69,96,.35)';
+    const keyId = key.replace(/-/g,'');
 
-    html += \`<div style="border:1px solid \${corSemana};border-radius:14px;overflow:hidden;margin-bottom:14px">
-      <!-- Header da semana -->
-      <div style="padding:12px 14px;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.06)">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-          <div>
-            <div style="font-weight:700;font-size:14px">\${isAtual?'📍 Esta semana':'📆 Semana'} · \${labelSeg} a \${labelSab}</div>
-            <div style="font-size:11px;color:var(--mt);margin-top:2px">\${diasRestSemana} dia\${diasRestSemana!==1?'s':''} restante\${diasRestSemana!==1?'s':''} · \${contas.length} conta\${contas.length!==1?'s':''}</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:18px;font-weight:700;color:var(--rd)">\${totalSemana.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
-            <div style="font-size:10px;color:var(--mt)">total a pagar</div>
-          </div>
-        </div>
-        <!-- Capacidade de faturamento da semana -->
-        <div style="margin-top:10px;padding:10px 12px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:10px">
-          <div style="font-size:11px;color:rgba(99,102,241,.9);font-weight:600;margin-bottom:6px">💰 Quanto você consegue faturar essa semana?</div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <span style="font-size:13px;color:var(--mt)">R$</span>
-            <input id="cap-\${key}" type="number" min="0" step="50" value="\${capSalva||''}" placeholder="ex: 1500"
-              style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(99,102,241,.3);border-radius:8px;padding:8px 10px;color:var(--tx);font-size:15px;font-weight:700;outline:none;min-width:0">
-            <button onclick="salvarCapSemana('\${key}')" style="background:#6366f1;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer;white-space:nowrap">✓ Ok</button>
-          </div>
-          \${capSalva > 0 ? \`<div style="margin-top:8px;font-size:12px;color:\${cobre?'var(--gn)':'var(--rd)'};">
-            \${cobre
-              ? \`✅ Cobre! Sobram \${(capSalva-totalSemana).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} na semana\`
-              : \`⚠️ Faltam \${falta.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} — mova contas ou negocie prazo\`}
-            <span style="color:var(--mt);margin-left:8px">· R$ \${(totalSemana/diasRestSemana).toFixed(0)}/dia necessário</span>
-          </div>\` : ''}
-        </div>
-      </div>
-      <!-- Contas da semana -->
-      <div style="padding:10px">
-        \${contas.map(c => {
-          const venc = new Date(c.vencimento+'T12:00:00');
-          const diff = Math.ceil((venc - hojeRef)/(1000*60*60*24));
-          const saldo = Math.max(0, parseFloat(c.valor) - parseFloat(c.valor_pago||0));
-          const atrasada = diff < 0;
-          const hoje2 = diff === 0;
-          const cor = atrasada ? 'var(--rd)' : diff <= 2 ? 'var(--am)' : 'var(--tx)';
-          const badge = atrasada ? \`⚠️ venceu há \${Math.abs(diff)}d\` : hoje2 ? '🔴 vence hoje' : \`📅 \${venc.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'})}\`;
-          return \`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:var(--s);margin-bottom:6px">
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:600">\${c.descricao}</div>
-              <div style="font-size:11px;color:\${cor};margin-top:2px">\${badge}</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-              <div style="font-size:14px;font-weight:700;color:var(--rd)">\${saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
-              <button onclick="editarVencimentoPrompt('\${c.id}','\${c.vencimento}')" title="Negociar prazo"
-                style="background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.25);border-radius:8px;color:var(--am);font-size:12px;padding:5px 9px;cursor:pointer;white-space:nowrap">📅</button>
-            </div>
-          </div>\`;
-        }).join('')}
-      </div>
-    </div>\`;
+    // Header da semana
+    html += '<div style="border:1px solid '+corBorda+';border-radius:14px;overflow:hidden;margin-bottom:14px">';
+    html += '<div style="padding:12px 14px;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.06)">';
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">';
+    html += '<div>';
+    html += '<div style="font-weight:700;font-size:14px">'+(isAtual?'📍 Esta semana':'📆 Semana')+' · '+labelSeg+' a '+labelSab+'</div>';
+    html += '<div style="font-size:11px;color:var(--mt);margin-top:2px">'+diasRest+' dia'+(diasRest!==1?'s':'')+' restante'+(diasRest!==1?'s':'')+' · '+contas.length+' conta'+(contas.length!==1?'s':'')+'</div>';
+    html += '</div>';
+    html += '<div style="text-align:right">';
+    html += '<div style="font-size:18px;font-weight:700;color:var(--rd)">'+totalSemana.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+'</div>';
+    html += '<div style="font-size:10px;color:var(--mt)">total a pagar</div>';
+    html += '</div></div>';
+
+    // Capacidade
+    html += '<div style="margin-top:10px;padding:10px 12px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:10px">';
+    html += '<div style="font-size:11px;color:rgba(99,102,241,.9);font-weight:600;margin-bottom:6px">💰 Quanto você consegue faturar essa semana?</div>';
+    html += '<div style="display:flex;gap:8px;align-items:center">';
+    html += '<span style="font-size:13px;color:var(--mt)">R$</span>';
+    html += '<input id="cap-'+keyId+'" type="number" min="0" step="50" value="'+(capSalva||'')+'" placeholder="ex: 1500"';
+    html += ' style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(99,102,241,.3);border-radius:8px;padding:8px 10px;color:var(--tx);font-size:15px;font-weight:700;outline:none;min-width:0">';
+    html += '<button onclick="salvarCapSemana(\''+key+'\',\''+keyId+'\')" style="background:#6366f1;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer;white-space:nowrap">✓ Ok</button>';
+    html += '</div>';
+    if(capSalva > 0){
+      const corStatus = cobre ? 'var(--gn)' : 'var(--rd)';
+      const txtStatus = cobre
+        ? '✅ Cobre! Sobram '+(capSalva-totalSemana).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' na semana'
+        : '⚠️ Faltam '+falta.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' — mova contas ou negocie prazo';
+      html += '<div style="margin-top:8px;font-size:12px;color:'+corStatus+'">'+txtStatus;
+      html += ' <span style="color:var(--mt)">· R$ '+(totalSemana/diasRest).toFixed(0)+'/dia necessário</span></div>';
+    }
+    html += '</div></div>';
+
+    // Lista de contas da semana
+    html += '<div style="padding:10px">';
+    contas.forEach(function(c){
+      const venc = new Date(c.vencimento+'T12:00:00');
+      const diff = Math.ceil((venc - hojeRef)/(1000*60*60*24));
+      const saldo = Math.max(0, parseFloat(c.valor)-parseFloat(c.valor_pago||0));
+      const atrasada = diff < 0;
+      const hojeExato = diff === 0;
+      const cor = atrasada ? 'var(--rd)' : diff <= 2 ? 'var(--am)' : 'var(--tx)';
+      const badge = atrasada ? ('⚠️ venceu há '+Math.abs(diff)+'d') : hojeExato ? '🔴 vence hoje' : ('📅 '+venc.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}));
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:var(--s);margin-bottom:6px">';
+      html += '<div style="flex:1;min-width:0">';
+      html += '<div style="font-size:13px;font-weight:600">'+c.descricao+'</div>';
+      html += '<div style="font-size:11px;color:'+cor+';margin-top:2px">'+badge+'</div>';
+      html += '</div>';
+      html += '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">';
+      html += '<div style="font-size:14px;font-weight:700;color:var(--rd)">'+saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+'</div>';
+      html += '<button onclick="editarVencimento(\''+c.id+'\',\''+c.vencimento+'\')" title="Negociar prazo"';
+      html += ' style="background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.25);border-radius:8px;color:var(--am);font-size:12px;padding:5px 9px;cursor:pointer">📅</button>';
+      html += '</div></div>';
+    });
+    html += '</div></div>';
   });
 
   el.innerHTML = html;
 }
 
-function salvarCapSemana(key){
-  const v = parseFloat(document.getElementById('cap-'+key)?.value || 0);
-  const capKey = 'cap_semana_' + (MID||window.MID) + '_' + key;
+function salvarCapSemana(key, keyId){
+  const v = parseFloat(document.getElementById('cap-'+keyId).value||'0');
+  const capKey = 'cap_semana_'+(MID||window.MID||'anon')+'_'+key;
   localStorage.setItem(capKey, v);
   toast('Capacidade salva ✓');
   renderVisaoSemana();
 }
 
-function editarVencimentoPrompt(id, vencimentoAtual){
-  // Mostra picker de data inline mais amigável
-  const novaData = prompt(
-    'Negociou prazo? Informe a nova data de vencimento:\n(formato: DD/MM/AAAA ou AAAA-MM-DD)',
-    vencimentoAtual.split('-').reverse().join('/')
-  );
-  if(!novaData) return;
-  // Aceita DD/MM/AAAA ou AAAA-MM-DD
-  let dataNorm = novaData.trim();
-  if(/^\d{2}\/\d{2}\/\d{4}$/.test(dataNorm)){
-    const [d,m,a] = dataNorm.split('/');
-    dataNorm = \`\${a}-\${m}-\${d}\`;
-  }
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(dataNorm)){ toast('Data inválida. Use DD/MM/AAAA', false); return; }
-  fetch(API+'/contas/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({vencimento: dataNorm})})
-    .then(()=>{ toast('Prazo atualizado ✓'); loadContas(); });
-}
 
 function goContas(el){
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
