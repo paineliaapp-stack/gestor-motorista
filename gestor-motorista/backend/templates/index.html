@@ -2463,7 +2463,6 @@ async function _renderResumoContasAsync(el, calc){
   // Meta mensal
   let metaMensalConfig = 0;
   try { metaMensalConfig = parseFloat(localStorage.getItem('meta_diaria_'+MID)||0) * diasMes; } catch(e){}
-  const faturadoMes = totalFaturadoPlat + totalRendaExtraMes;
   const faltaParaMeta = Math.max(0, metaMensalConfig - faturadoMes);
   const taxaCombEst = combMes > 0 && metaMensalConfig > 0 ? Math.min(combMes/metaMensalConfig, 0.45) : 0.25;
   const faturarParaContas = totalPend / (1 - taxaCombEst);
