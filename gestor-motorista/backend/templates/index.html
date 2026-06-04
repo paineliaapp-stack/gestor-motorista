@@ -2254,20 +2254,22 @@ function renderContas(){
       return;
     }
 
+    // Resumo do grupo — declarado ANTES de tudo para evitar bug de hoisting
+    const pendentesGrupo = grupo.filter(c => !c.pago);
+    const pago_count = grupo.length - pendentesGrupo.length;
+    const totalGrupo = pendentesGrupo.reduce((s,c) => s + Math.max(0, parseFloat(c.valor) - parseFloat(c.valor_pago||0)), 0);
+
     // Principal = primeira pendente; se todas pagas, usa a primeira mesmo
     const principal = pendentesGrupo.length > 0 ? pendentesGrupo[0] : grupo[0];
     const extras = grupo.filter(c => c !== principal);
     const expandido = _gruposExpandidos.has(chave);
     const hoje = new Date(); hoje.setHours(0,0,0,0);
 
-    // Resumo do grupo: total pendente (só contas não pagas)
-    const pendentesGrupo = grupo.filter(c => !c.pago);
-    const totalGrupo = pendentesGrupo.reduce((s,c) => s + Math.max(0, parseFloat(c.valor) - parseFloat(c.valor_pago||0)), 0);
     const vencPrinc = new Date(principal.vencimento+'T12:00:00');
     const diffPrinc = Math.ceil((vencPrinc-hoje)/(1000*60*60*24));
     const atrasadoPrinc = !principal.pago && diffPrinc < 0;
 
-    // Se todas pagas, não mostrar no filtro "Pendentes" — mas no "Todas" mostra normalmente
+    // Se todas pagas, não mostrar no filtro "Pendentes"
     if(contasFiltro === 'pendente' && pago_count === grupo.length) return;
 
     const label_parcelas = pago_count > 0
@@ -2439,8 +2441,13 @@ async function _renderResumoContasAsync(el, calc){
     const proxima = grupo[0];
     const saldo = Math.max(0, parseFloat(proxima.valor) - parseFloat(proxima.valor_pago||0));
     const venc = new Date(proxima.vencimento+'T12:00:00');
-    const dias = Math.ceil((venc - hojeContas)/(1000*60*60*24));
+    // dias = quantos dias faltam até o vencimento (0 = hoje, negativo = vencida)
+    // Usamos _agora2 (UTC-3) para calcular hojeRef consistente
+    const _hojeRef = new Date(_agora2.getUTCFullYear(), _agora2.getUTCMonth(), _agora2.getUTCDate());
+    const dias = Math.ceil((venc - _hojeRef)/(1000*60*60*24));
     const vencida = dias < 0;
+    // diasEfetivos = hoje + dias até vencimento (inclui hoje e o dia do vencimento)
+    // Ex: hoje dia 3, vence dia 6 → dias=3 → diasEfetivos=4 (dias 3,4,5,6)
     const diasEfetivos = vencida ? 1 : Math.max(1, dias + 1);
     const porDia = saldo / diasEfetivos;
     totalPorDiaContas += porDia;
@@ -2483,7 +2490,7 @@ async function _renderResumoContasAsync(el, calc){
         <div style="display:flex;align-items:center;gap:6px">
           <input id="inp-pct-comb" type="number" min="5" max="60" value="${pctComb}" style="width:48px;text-align:center;background:var(--p);border:1px solid var(--b);border-radius:8px;color:var(--tx);font-size:14px;font-weight:700;padding:4px 6px">
           <span style="color:var(--mt);font-size:13px">%</span>
-          <button onclick="(()=>{const v=parseFloat(document.getElementById('inp-pct-comb').value)||25;localStorage.setItem('pct_comb_'+MID,v);loadContas();})()" style="background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);border-radius:8px;color:#818cf8;font-size:11px;padding:4px 8px;cursor:pointer">✓</button>
+          <button onclick="(async()=>{const v=parseFloat(document.getElementById('inp-pct-comb').value)||25;localStorage.setItem('pct_comb_'+MID,v);await loadContas();})()" style="background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);border-radius:8px;color:#818cf8;font-size:11px;padding:4px 8px;cursor:pointer">✓</button>
         </div>
       </div>
       ${linhaPainel('⛽','Combustível estimado no mês', fmt2(combMes), 'var(--mt)', `${pctComb}% de R$ ${fmt2(faturadoMes)} faturado`)}
