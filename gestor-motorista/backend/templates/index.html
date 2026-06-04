@@ -2467,11 +2467,33 @@ async function _renderResumoContasAsync(el, calc){
     totalPorDiaLiq += porDia;
     const urgente = !vencida && dias <= 3;
     const cor = vencida ? 'var(--rd)' : urgente ? 'var(--am)' : 'var(--tx)';
-    const extraTag = grupo.length > 1 ? ` <span style="color:var(--mt);font-size:10px">(+${grupo.length-1})</span>` : '';
+    const popoverId = 'ppv-'+proxima.id;
+    let extraTag = '';
+    let popoverHtml = '';
+    if (grupo.length > 1) {
+      const outrasHtml = grupo.slice(1).map(c => {
+        const cv = new Date(c.vencimento+'T12:00:00');
+        const csaldo = Math.max(0, parseFloat(c.valor) - parseFloat(c.valor_pago||0));
+        const cpago = parseFloat(c.valor_pago||0) > 0;
+        const statusIcon = cpago ? '✅' : '📅';
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:11px">
+          <span style="color:var(--mt)">${statusIcon} vence ${cv.toLocaleDateString('pt-BR')}</span>
+          <span style="font-weight:600;color:${cpago?'var(--mt)':'var(--tx)'}">R$ ${csaldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+        </div>`;
+      }).join('');
+      extraTag = ` <span onclick="(function(e){e.stopPropagation();var p=document.getElementById('${popoverId}');p.style.display=p.style.display==='none'?'block':'none';})(event)" style="color:#818cf8;font-size:10px;cursor:pointer;text-decoration:underline dotted;font-weight:600">(+${grupo.length-1})</span>`;
+      popoverHtml = `<div id="${popoverId}" style="display:none;margin-top:4px;padding:8px 10px;background:var(--p);border:1px solid rgba(99,102,241,.3);border-radius:8px;font-size:11px">
+        <div style="font-size:10px;font-weight:700;color:var(--mt);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">Próximas parcelas</div>
+        ${outrasHtml}
+      </div>`;
+    }
     const labelVenc = vencida ? `vencida há ${Math.abs(dias)}d` : `vence ${venc.toLocaleDateString('pt-BR')}`;
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:8px;background:var(--s)">
-      <div><div style="font-size:12px;font-weight:600">${proxima.descricao}${extraTag}</div><div style="font-size:10px;color:var(--mt)">${labelVenc}</div></div>
-      <div style="font-weight:700;color:${cor};font-size:13px">R$ ${porDia.toFixed(2)}<span style="font-size:10px;font-weight:400;color:var(--mt)">/dia</span></div>
+    return `<div style="border-radius:8px;background:var(--s)">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px">
+        <div><div style="font-size:12px;font-weight:600">${proxima.descricao}${extraTag}</div><div style="font-size:10px;color:var(--mt)">${labelVenc}</div></div>
+        <div style="font-weight:700;color:${cor};font-size:13px">R$ ${porDia.toFixed(2)}<span style="font-size:10px;font-weight:400;color:var(--mt)">/dia</span></div>
+      </div>
+      ${popoverHtml}
     </div>`;
   }).join('');
   // Bruto necessário por dia = líquido / (1 - %comb) — o que você precisa faturar para cobrir contas + combustível
