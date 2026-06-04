@@ -2251,10 +2251,24 @@ function renderContas(){
     grupos[chave].push(c);
   });
 
+  // Ordena grupos: pendentes (por vencimento) primeiro, depois pagas (por vencimento)
+  ordem.sort((chavA, chavB) => {
+    const gA = grupos[chavA];
+    const gB = grupos[chavB];
+    const aPendente = gA.some(c => !c.pago);
+    const bPendente = gB.some(c => !c.pago);
+    if (aPendente && !bPendente) return -1;  // A pendente, B paga → A primeiro
+    if (!aPendente && bPendente) return 1;   // B pendente, A paga → B primeiro
+    // Ambos no mesmo status: ordena pelo vencimento mais próximo do grupo
+    const vencA = Math.min(...gA.map(c => new Date(c.vencimento).getTime()));
+    const vencB = Math.min(...gB.map(c => new Date(c.vencimento).getTime()));
+    return vencA - vencB;
+  });
+
   let html = '';
   ordem.forEach(chave => {
     const grupo = grupos[chave];
-    // Ordena: vencidas primeiro, depois por data
+    // Ordena dentro do grupo: vencidas primeiro, depois por data
     grupo.sort((a,b) => new Date(a.vencimento) - new Date(b.vencimento));
 
     if(grupo.length === 1) {
