@@ -87,7 +87,7 @@ input,textarea,select{font-size:16px!important;}
 .av{width:26px;height:26px;background:linear-gradient(135deg,var(--am),#C47A0A);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000}
 .dot-on{width:6px;height:6px;background:var(--gn);border-radius:50%}
 .sidenav{background:rgba(7,9,13,.7);border-right:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:2px;position:sticky;top:58px;height:calc(100dvh - 58px);overflow:hidden}
-.ni{width:42px;height:42px;border:none;border-radius:10px;background:transparent;color:var(--mt);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;position:relative}
+.ni{width:42px;height:42px;border:none;border-radius:10px;background:transparent;color:var(--mt);font-size:20px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .2s;position:relative}
 .ni:hover{background:var(--s2);color:var(--tx)}
 .ni.active{background:var(--am-d);color:var(--am);box-shadow:inset 0 0 0 1px rgba(245,166,35,.25)}
 .ni .tip{position:absolute;left:calc(100% + 10px);background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:4px 10px;font-size:11px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;color:var(--tx);font-family:'Outfit',sans-serif}
@@ -1624,7 +1624,9 @@ async function loadDash(){
       } else if(previstoRow){ previstoRow.style.display = 'none'; }
 
       // ── PLANEJADOR INTELIGENTE DE FATURAMENTO ──
-      const hojeD = new Date(); hojeD.setHours(0,0,0,0);
+      // Data de hoje em BRT (UTC-3)
+      const _agora = new Date(Date.now() - 3*60*60*1000);
+      const hojeD = new Date(_agora.getUTCFullYear(), _agora.getUTCMonth(), _agora.getUTCDate());
       const agora = new Date(Date.now() - 3*60*60*1000);
       const ultimoDia = new Date(agora.getFullYear(), agora.getMonth()+1, 0).getDate();
       const diasRestMes = Math.max(1, ultimoDia - agora.getDate() + 1);
