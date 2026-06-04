@@ -2424,6 +2424,15 @@ async function _renderResumoContasAsync(el, calc){
   const hojeContas = new Date(_agora2.getUTCFullYear(), _agora2.getUTCMonth(), _agora2.getUTCDate());
   const diasMes = new Date(_agora2.getUTCFullYear(), _agora2.getUTCMonth()+1, 0).getDate();
 
+  // Calcula combDiario localmente a partir dos lançamentos do mês
+  const lancMes = (d.lancamentos||[]).filter(l => {
+    const dl = new Date(l.data+'T12:00:00');
+    return dl.getMonth() === _agora2.getUTCMonth() && dl.getFullYear() === _agora2.getUTCFullYear();
+  });
+  const despCombLocal = lancMes.filter(l=>l.tipo==='despesa'&&(l.plataforma||'').toLowerCase()==='combustivel').reduce((s,l)=>s+parseFloat(l.valor||0),0);
+  const diasPassadosLocal = Math.max(1, _agora2.getUTCDate());
+  const combDiario = despCombLocal > 0 ? despCombLocal / diasPassadosLocal : 0;
+
   // Por conta por dia
   let totalPorDiaContas = 0;
   const linhasContas = gruposOrdenados.map(grupo => {
@@ -2445,8 +2454,11 @@ async function _renderResumoContasAsync(el, calc){
     </div>`;
   }).join('');
 
-  // Combustível mensal
-  const combMes = combDiario * diasMes;
+  // Combustível: percentual configurável (padrão 25%)
+  let pctComb = 25;
+  try { pctComb = parseFloat(localStorage.getItem('pct_comb_'+MID)||'25'); } catch(e){}
+  const faturadoMes = totalFaturadoPlat + totalRendaExtraMes;
+  const combMes = faturadoMes * (pctComb/100);
 
   // Meta mensal
   let metaMensalConfig = 0;
@@ -2467,7 +2479,20 @@ async function _renderResumoContasAsync(el, calc){
   painel.innerHTML = `
     <div style="font-size:11px;font-weight:700;color:var(--mt);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">📊 Resumo financeiro</div>
     <div style="display:flex;flex-direction:column;gap:6px">
-      ${linhaPainel('⛽','Combustível estimado no mês', fmt2(combMes), 'var(--mt)', 'baseado nos dias trabalhados')}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:10px;background:var(--s);border:1px solid var(--b)">
+        <div><div style="font-size:12px;font-weight:600">⛽ % de combustível do bruto</div><div style="font-size:10px;color:var(--mt)">padrão 25% — ajuste conforme seu carro</div></div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input id="inp-pct-comb" type="number" min="5" max="60" value="${pctComb}" style="width:48px;text-align:center;background:var(--p);border:1px solid var(--b);border-radius:8px;color:var(--tx);font-size:14px;font-weight:700;padding:4px 6px">
+          <span style="color:var(--mt);font-size:13px">%</span>
+          <button onclick="(()=>{const v=parseFloat(document.getElementById('inp-pct-comb').value)||25;localStorage.setItem('pct_comb_'+MID,v);loadContas();})()" style="background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);border-radius:8px;color:#818cf8;font-size:11px;padding:4px 8px;cursor:pointer">✓</button>
+        </div>
+      </div>
+      ${linhaPainel('⛽','Combustível estimado no mês', fmt2(combMes), 'var(--mt)', `${pctComb}% de R$ ${fmt2(faturadoMes)} faturado`)}
+      ${metaMensalConfig > 0 ? linhaPainel('🎯','Meta mensal (bruto)', fmt2(metaMensalConfig), 'var(--am)') : ''}
+      ${metaMensalConfig > 0 ? linhaPainel('📈','Falta para bater a meta', fmt2(faltaParaMeta), faltaParaMeta<=0?'var(--gn)':'var(--am)', faltaParaMeta<=0?'meta batida! 🎉':'ainda não bateu') : ''}
+      ${linhaPainel('💳','Faturar para pagar todas as contas', fmt2(faturarParaContas), 'var(--rd)', 'bruto — inclui combustível estimado')}
+      ${linhaPainel(sobraLiquida>=0?'✅':'⚠️','Sobra líquida estimada', fmt2(sobraLiquida), sobraLiquida>=0?'var(--gn)':'var(--rd)', sobraLiquida>=0?'se bater a meta':'no vermelho')}
+    </div>
       ${metaMensalConfig > 0 ? linhaPainel('🎯','Meta mensal (bruto)', fmt2(metaMensalConfig), 'var(--am)') : ''}
       ${metaMensalConfig > 0 ? linhaPainel('📈','Falta para bater a meta', fmt2(faltaParaMeta), faltaParaMeta<=0?'var(--gn)':'var(--am)', faltaParaMeta<=0?'meta batida! 🎉':'ainda não bateu') : ''}
       ${linhaPainel('💳','Faturar para pagar todas as contas', fmt2(faturarParaContas), 'var(--rd)', 'bruto — inclui combustível estimado')}
