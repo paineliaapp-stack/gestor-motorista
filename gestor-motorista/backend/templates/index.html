@@ -2441,13 +2441,14 @@ async function _renderResumoContasAsync(el, calc){
     const proxima = grupo[0];
     const saldo = Math.max(0, parseFloat(proxima.valor) - parseFloat(proxima.valor_pago||0));
     const venc = new Date(proxima.vencimento+'T12:00:00');
-    // dias = quantos dias faltam até o vencimento (0 = hoje, negativo = vencida)
-    // Usamos _agora2 (UTC-3) para calcular hojeRef consistente
-    const _hojeRef = new Date(_agora2.getUTCFullYear(), _agora2.getUTCMonth(), _agora2.getUTCDate());
-    const dias = Math.ceil((venc - _hojeRef)/(1000*60*60*24));
+    // Hoje em BRT (UTC-3) — mesma referência usada em todo o app
+    const _brtNow = new Date(Date.now() - 3*60*60*1000);
+    const _hojeRef = new Date(_brtNow.getUTCFullYear(), _brtNow.getUTCMonth(), _brtNow.getUTCDate());
+    // dias = 0 se vence hoje, 1 se amanhã, negativo se vencida
+    const dias = Math.round((venc - _hojeRef)/(1000*60*60*24));
     const vencida = dias < 0;
-    // diasEfetivos = hoje + dias até vencimento (inclui hoje e o dia do vencimento)
-    // Ex: hoje dia 3, vence dia 6 → dias=3 → diasEfetivos=4 (dias 3,4,5,6)
+    // diasEfetivos = quantos dias tenho para faturar (inclui hoje)
+    // vence hoje (dias=0) → 1 dia | vence amanhã (dias=1) → 2 dias | etc.
     const diasEfetivos = vencida ? 1 : Math.max(1, dias + 1);
     const porDia = saldo / diasEfetivos;
     totalPorDiaContas += porDia;
@@ -2463,7 +2464,10 @@ async function _renderResumoContasAsync(el, calc){
 
   // Combustível: percentual configurável (padrão 25%)
   let pctComb = 25;
-  try { pctComb = parseFloat(localStorage.getItem('pct_comb_'+MID)||'25'); } catch(e){}
+  try {
+    if(window._pctCombOverride) pctComb = window._pctCombOverride;
+    else pctComb = parseFloat(localStorage.getItem('pct_comb_'+(MID||window.MID))||'25');
+  } catch(e){}
   const faturadoMes = totalFaturadoPlat + totalRendaExtraMes;
   const combMes = faturadoMes * (pctComb/100);
 
@@ -2490,7 +2494,7 @@ async function _renderResumoContasAsync(el, calc){
         <div style="display:flex;align-items:center;gap:6px">
           <input id="inp-pct-comb" type="number" min="5" max="60" value="${pctComb}" style="width:48px;text-align:center;background:var(--p);border:1px solid var(--b);border-radius:8px;color:var(--tx);font-size:14px;font-weight:700;padding:4px 6px">
           <span style="color:var(--mt);font-size:13px">%</span>
-          <button onclick="(async()=>{const v=parseFloat(document.getElementById('inp-pct-comb').value)||25;localStorage.setItem('pct_comb_'+MID,v);await loadContas();})()" style="background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);border-radius:8px;color:#818cf8;font-size:11px;padding:4px 8px;cursor:pointer">✓</button>
+          <button onclick="(async()=>{const v=parseFloat(document.getElementById('inp-pct-comb').value)||25;localStorage.setItem('pct_comb_'+(MID||window.MID),v);window._pctCombOverride=v;await loadContas();window._pctCombOverride=null;})()" style="background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);border-radius:8px;color:#818cf8;font-size:11px;padding:4px 8px;cursor:pointer">✓</button>
         </div>
       </div>
       ${linhaPainel('⛽','Combustível estimado no mês', fmt2(combMes), 'var(--mt)', `${pctComb}% de R$ ${fmt2(faturadoMes)} faturado`)}
