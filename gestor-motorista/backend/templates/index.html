@@ -2493,11 +2493,6 @@ async function _renderResumoContasAsync(el, calc){
       ${linhaPainel('💳','Faturar para pagar todas as contas', fmt2(faturarParaContas), 'var(--rd)', 'bruto — inclui combustível estimado')}
       ${linhaPainel(sobraLiquida>=0?'✅':'⚠️','Sobra líquida estimada', fmt2(sobraLiquida), sobraLiquida>=0?'var(--gn)':'var(--rd)', sobraLiquida>=0?'se bater a meta':'no vermelho')}
     </div>
-      ${metaMensalConfig > 0 ? linhaPainel('🎯','Meta mensal (bruto)', fmt2(metaMensalConfig), 'var(--am)') : ''}
-      ${metaMensalConfig > 0 ? linhaPainel('📈','Falta para bater a meta', fmt2(faltaParaMeta), faltaParaMeta<=0?'var(--gn)':'var(--am)', faltaParaMeta<=0?'meta batida! 🎉':'ainda não bateu') : ''}
-      ${linhaPainel('💳','Faturar para pagar todas as contas', fmt2(faturarParaContas), 'var(--rd)', 'bruto — inclui combustível estimado')}
-      ${linhaPainel(sobraLiquida>=0?'✅':'⚠️','Sobra líquida estimada', fmt2(sobraLiquida), sobraLiquida>=0?'var(--gn)':'var(--rd)', sobraLiquida>=0?'se bater a meta':'no vermelho')}
-    </div>
     <div style="font-size:11px;font-weight:700;color:var(--mt);letter-spacing:.5px;text-transform:uppercase;margin:12px 0 6px">📅 Por conta por dia</div>
     <div style="display:flex;flex-direction:column;gap:6px">
       ${linhasContas}
