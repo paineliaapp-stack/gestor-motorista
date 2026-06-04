@@ -1597,19 +1597,48 @@ Quando analisa situação geral:
                         acoes_executadas.append("conta_deletada")
                         break
             elif acao.get("acao") == "editar_conta":
-                # Edita valor ou vencimento de uma conta pelo nome
+                # Edita valor ou vencimento — atualiza TODAS as parcelas pendentes com nome similar
                 descricao = acao.get("descricao", "").lower()
                 campo = acao.get("campo")
                 novo_valor = acao.get("novo_valor")
-                contas_res = supabase.table("contas").select("id,descricao").eq("motorista_id", motorista_id).execute()
+                apenas_proxima = acao.get("apenas_proxima", False)  # default: atualiza todas pendentes
+                contas_res = supabase.table("contas").select("id,descricao,pago,vencimento").eq("motorista_id", motorista_id).execute()
+                import unicodedata as _ud
+                def _norm_desc(s):
+                    s = (s or '').lower().strip()
+                    s = _ud.normalize('NFD', s)
+                    s = ''.join(c for c in s if _ud.category(c) != 'Mn')
+                    return s
+                desc_norm = _norm_desc(descricao)
+                matches = []
                 for c in (contas_res.data or []):
-                    if descricao and (descricao.lower() in c["descricao"].lower() or c["descricao"].lower() in descricao.lower() or len(__import__("os.path", fromlist=["commonprefix"]).commonprefix([descricao.lower(), c["descricao"].lower()])) >= 5):
-                        if campo == "valor":
-                            supabase.table("contas").update({"valor": float(novo_valor)}).eq("id", c["id"]).execute()
-                        elif campo == "vencimento":
-                            supabase.table("contas").update({"vencimento": str(novo_valor)}).eq("id", c["id"]).execute()
+                    c_norm = _norm_desc(c["descricao"])
+                    if desc_norm and (desc_norm in c_norm or c_norm in desc_norm or len(_ud.normalize('NFC', desc_norm[:5])) >= 4 and c_norm.startswith(desc_norm[:5])):
+                        matches.append(c)
+                # Se não achou, tenta prefixo comum de 4+ chars
+                if not matches:
+                    for c in (contas_res.data or []):
+                        c_norm = _norm_desc(c["descricao"])
+                        prefix = ''
+                        for a, b in zip(desc_norm, c_norm):
+                            if a == b: prefix += a
+                            else: break
+                        if len(prefix) >= 4:
+                            matches.append(c)
+                # Filtra só pendentes (a não ser que seja campo=valor, aí edita todas)
+                if campo == "vencimento":
+                    # Para vencimento: só altera a PRÓXIMA parcela (não pagas, vencimento mais próximo)
+                    pendentes_match = [c for c in matches if not c.get("pago")]
+                    if pendentes_match:
+                        pendentes_match.sort(key=lambda c: c.get("vencimento",""))
+                        alvo = pendentes_match[0]  # só a mais próxima
+                        supabase.table("contas").update({"vencimento": str(novo_valor)}).eq("id", alvo["id"]).execute()
                         acoes_executadas.append("conta_editada")
-                        break
+                elif campo == "valor":
+                    for c in matches:
+                        supabase.table("contas").update({"valor": float(novo_valor)}).eq("id", c["id"]).execute()
+                    if matches:
+                        acoes_executadas.append("conta_editada")
             elif acao.get("acao") == "deletar_ultimo_lancamento":
                 tipo = acao.get("tipo", "ganho")
                 r = supabase.table("lancamentos").select("id").eq("motorista_id", motorista_id).eq("tipo", tipo).order("created_at", desc=True).limit(1).execute()
