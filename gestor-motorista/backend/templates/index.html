@@ -913,7 +913,7 @@ const _supa = supabase.createClient(
       <h3>Suas contas</h3>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="fp active" id="btn-visao-lista" onclick="mudarVisaoContas('lista')">📋 Lista</button>
-        <button class="fp" id="btn-visao-semana" onclick="mudarVisaoContas('semana')">📆 Por semana</button>
+        <button class="fp" id="btn-visao-calendario" onclick="mudarVisaoContas('calendario')">📆 Calendário</button>
       </div>
     </div>
     <!-- Filtros (só na visão lista) -->
@@ -923,7 +923,7 @@ const _supa = supabase.createClient(
       <button class="fp" onclick="filtroConta(this,'pago')">Pagas</button>
     </div>
     <div id="lista-contas"></div>
-    <div id="semana-contas" style="display:none"></div>
+    <div id="calendario-contas" style="display:none"></div>
   </div>
 </div>
 </main></div>
@@ -2185,6 +2185,7 @@ async function loadContas(){
   renderContas();
   renderResumoContas();
   alertaContasVencendo(window._contas||[]);
+  if(_visaoContas==='calendario') renderCalendarioContas();
 }
 
 function _cardConta(c) {
@@ -2628,127 +2629,188 @@ let _visaoContas = 'lista';
 function mudarVisaoContas(visao){
   _visaoContas = visao;
   document.getElementById('btn-visao-lista').classList.toggle('active', visao==='lista');
-  document.getElementById('btn-visao-semana').classList.toggle('active', visao==='semana');
+  document.getElementById('btn-visao-calendario').classList.toggle('active', visao==='calendario');
   document.getElementById('filtros-contas').style.display = visao==='lista' ? 'flex' : 'none';
   document.getElementById('lista-contas').style.display = visao==='lista' ? '' : 'none';
-  document.getElementById('semana-contas').style.display = visao==='semana' ? '' : 'none';
-  if(visao==='semana') renderVisaoSemana();
+  document.getElementById('calendario-contas').style.display = visao==='calendario' ? '' : 'none';
+  if(visao==='calendario') renderCalendarioContas();
 }
 
-function _inicioSemana(date){
-  const d = new Date(date); d.setHours(0,0,0,0);
-  const dia = d.getDay();
-  const diff = dia === 0 ? -6 : 1 - dia;
-  d.setDate(d.getDate() + diff);
-  return d;
+// ── Calendário de contas com drag & drop ─────────────────────────────────────
+let _calMes = null; // {year, month} do mês exibido
+let _dragContaId = null;
+
+function _brtHoje(){
+  const brt = new Date(Date.now() - 3*60*60*1000);
+  return { y: brt.getUTCFullYear(), m: brt.getUTCMonth(), d: brt.getUTCDate() };
 }
 
-function _semanaKey(date){
-  const seg = _inicioSemana(new Date(date+'T12:00:00'));
-  return seg.toISOString().slice(0,10);
-}
+function renderCalendarioContas(){
+  const el = document.getElementById('calendario-contas');
+  if(!window._contas){ el.innerHTML='<p style="color:var(--mt);padding:16px">Carregando...</p>'; return; }
 
-function renderVisaoSemana(){
-  const el = document.getElementById('semana-contas');
-  if(!window._contas){ el.innerHTML='<p style="color:var(--mt)">Carregando...</p>'; return; }
-  const pendentes = window._contas.filter(function(c){ return !c.pago; });
-  if(!pendentes.length){ el.innerHTML='<div class="empty"><div class="empty-icon">✅</div><p>Sem contas pendentes!</p></div>'; return; }
+  const hoje = _brtHoje();
+  if(!_calMes) _calMes = { year: hoje.y, month: hoje.m };
+  const { year, month } = _calMes;
 
-  const semanas = {};
-  pendentes.forEach(function(c){
-    const key = _semanaKey(c.vencimento);
-    if(!semanas[key]) semanas[key] = [];
-    semanas[key].push(c);
+  // Agrupar contas por data de vencimento (YYYY-MM-DD)
+  const porDia = {};
+  window._contas.forEach(function(c){
+    const k = c.vencimento ? c.vencimento.slice(0,10) : null;
+    if(!k) return;
+    if(!porDia[k]) porDia[k] = [];
+    porDia[k].push(c);
   });
 
-  const brtNow = new Date(Date.now() - 3*60*60*1000);
-  const hojeRef = new Date(brtNow.getUTCFullYear(), brtNow.getUTCMonth(), brtNow.getUTCDate());
-  const midKey = MID||window.MID||'anon';
+  // Totais por semana
+  const primeiroDia = new Date(year, month, 1);
+  const ultimoDia = new Date(year, month+1, 0);
+  const diasNoMes = ultimoDia.getDate();
+  // Início: segunda-feira da semana que contém o dia 1
+  const diaSemana1 = primeiroDia.getDay(); // 0=dom
+  const offsetInicio = diaSemana1 === 0 ? 6 : diaSemana1 - 1;
+
+  const diasLabel = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const nomeMes = primeiroDia.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+
+  // Calcula total pendente do mês para o header
+  const totalMes = window._contas.reduce(function(s,c){
+    const k = c.vencimento ? c.vencimento.slice(0,10) : '';
+    const anoMes = k.slice(0,7);
+    const alvo = String(year)+'-'+String(month+1).padStart(2,'0');
+    if(anoMes !== alvo) return s;
+    const saldo = Math.max(0, parseFloat(c.valor||0) - parseFloat(c.valor_pago||0));
+    return s + saldo;
+  }, 0);
 
   let html = '';
-  Object.keys(semanas).sort().forEach(function(key){
-    const contas = semanas[key].sort(function(a,b){ return new Date(a.vencimento)-new Date(b.vencimento); });
-    const seg = new Date(key+'T12:00:00');
-    const sab = new Date(seg); sab.setDate(sab.getDate()+6);
-    const labelSeg = seg.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
-    const labelSab = sab.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
 
-    const totalSemana = contas.reduce(function(s,c){ return s + Math.max(0, parseFloat(c.valor)-parseFloat(c.valor_pago||0)); }, 0);
-    const fimSemana = new Date(sab); fimSemana.setHours(23,59,59);
-    const diasRest = Math.max(1, Math.ceil((fimSemana - hojeRef)/(1000*60*60*24)));
-    const capKey = 'cap_semana_'+midKey+'_'+key;
-    const capSalva = parseFloat(localStorage.getItem(capKey)||'0');
-    const cobre = capSalva > 0 && capSalva >= totalSemana;
-    const falta = Math.max(0, totalSemana - capSalva);
-    const isAtual = key === _semanaKey(brtNow.toISOString().slice(0,10));
-    const corBorda = capSalva <= 0 ? 'rgba(255,255,255,.12)' : cobre ? 'rgba(34,197,94,.35)' : 'rgba(255,69,96,.35)';
-    const keyId = key.replace(/-/g,'');
+  // Header: nav mês + total
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px">';
+  html += '<button onclick="_calNav(-1)" style="background:rgba(255,255,255,.06);border:1px solid var(--b);border-radius:10px;color:var(--tx);font-size:18px;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>';
+  html += '<div style="text-align:center">';
+  html += '<div style="font-weight:700;font-size:15px;text-transform:capitalize">'+nomeMes+'</div>';
+  if(totalMes > 0) html += '<div style="font-size:11px;color:var(--rd);margin-top:2px">'+totalMes.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' pendente</div>';
+  html += '</div>';
+  html += '<button onclick="_calNav(1)" style="background:rgba(255,255,255,.06);border:1px solid var(--b);border-radius:10px;color:var(--tx);font-size:18px;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>';
+  html += '</div>';
 
-    // Header da semana
-    html += '<div style="border:1px solid '+corBorda+';border-radius:14px;overflow:hidden;margin-bottom:14px">';
-    html += '<div style="padding:12px 14px;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.06)">';
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">';
-    html += '<div>';
-    html += '<div style="font-weight:700;font-size:14px">'+(isAtual?'📍 Esta semana':'📆 Semana')+' · '+labelSeg+' a '+labelSab+'</div>';
-    html += '<div style="font-size:11px;color:var(--mt);margin-top:2px">'+diasRest+' dia'+(diasRest!==1?'s':'')+' restante'+(diasRest!==1?'s':'')+' · '+contas.length+' conta'+(contas.length!==1?'s':'')+'</div>';
-    html += '</div>';
-    html += '<div style="text-align:right">';
-    html += '<div style="font-size:18px;font-weight:700;color:var(--rd)">'+totalSemana.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+'</div>';
-    html += '<div style="font-size:10px;color:var(--mt)">total a pagar</div>';
-    html += '</div></div>';
-
-    // Capacidade
-    html += '<div style="margin-top:10px;padding:10px 12px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:10px">';
-    html += '<div style="font-size:11px;color:rgba(99,102,241,.9);font-weight:600;margin-bottom:6px">💰 Quanto você consegue faturar essa semana?</div>';
-    html += '<div style="display:flex;gap:8px;align-items:center">';
-    html += '<span style="font-size:13px;color:var(--mt)">R$</span>';
-    html += '<input id="cap-'+keyId+'" type="number" min="0" step="50" value="'+(capSalva||'')+'" placeholder="ex: 1500"';
-    html += ' style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(99,102,241,.3);border-radius:8px;padding:8px 10px;color:var(--tx);font-size:15px;font-weight:700;outline:none;min-width:0">';
-    html += '<button onclick="salvarCapSemana(\''+key+'\',\''+keyId+'\')" style="background:#6366f1;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer;white-space:nowrap">✓ Ok</button>';
-    html += '</div>';
-    if(capSalva > 0){
-      const corStatus = cobre ? 'var(--gn)' : 'var(--rd)';
-      const txtStatus = cobre
-        ? '✅ Cobre! Sobram '+(capSalva-totalSemana).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' na semana'
-        : '⚠️ Faltam '+falta.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' — mova contas ou negocie prazo';
-      html += '<div style="margin-top:8px;font-size:12px;color:'+corStatus+'">'+txtStatus;
-      html += ' <span style="color:var(--mt)">· R$ '+(totalSemana/diasRest).toFixed(0)+'/dia necessário</span></div>';
-    }
-    html += '</div></div>';
-
-    // Lista de contas da semana
-    html += '<div style="padding:10px">';
-    contas.forEach(function(c){
-      const venc = new Date(c.vencimento+'T12:00:00');
-      const diff = Math.ceil((venc - hojeRef)/(1000*60*60*24));
-      const saldo = Math.max(0, parseFloat(c.valor)-parseFloat(c.valor_pago||0));
-      const atrasada = diff < 0;
-      const hojeExato = diff === 0;
-      const cor = atrasada ? 'var(--rd)' : diff <= 2 ? 'var(--am)' : 'var(--tx)';
-      const badge = atrasada ? ('⚠️ venceu há '+Math.abs(diff)+'d') : hojeExato ? '🔴 vence hoje' : ('📅 '+venc.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}));
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:var(--s);margin-bottom:6px">';
-      html += '<div style="flex:1;min-width:0">';
-      html += '<div style="font-size:13px;font-weight:600">'+c.descricao+'</div>';
-      html += '<div style="font-size:11px;color:'+cor+';margin-top:2px">'+badge+'</div>';
-      html += '</div>';
-      html += '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">';
-      html += '<div style="font-size:14px;font-weight:700;color:var(--rd)">'+saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+'</div>';
-      html += '<button onclick="editarVencimento(\''+c.id+'\',\''+c.vencimento+'\')" title="Negociar prazo"';
-      html += ' style="background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.25);border-radius:8px;color:var(--am);font-size:12px;padding:5px 9px;cursor:pointer">📅</button>';
-      html += '</div></div>';
-    });
-    html += '</div></div>';
+  // Grade: cabeçalho dias
+  html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px">';
+  diasLabel.forEach(function(d,i){
+    const cor = i >= 5 ? 'var(--mt)' : 'rgba(238,233,224,.6)';
+    html += '<div style="text-align:center;font-size:10px;font-weight:700;color:'+cor+';padding:4px 0">'+d+'</div>';
   });
+  html += '</div>';
+
+  // Células
+  html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px" id="cal-grid">';
+
+  const totalCells = Math.ceil((offsetInicio + diasNoMes) / 7) * 7;
+  for(let i = 0; i < totalCells; i++){
+    const diaNum = i - offsetInicio + 1;
+    const isNoMes = diaNum >= 1 && diaNum <= diasNoMes;
+    const dateStr = isNoMes
+      ? String(year)+'-'+String(month+1).padStart(2,'0')+'-'+String(diaNum).padStart(2,'0')
+      : null;
+    const isHoje = isNoMes && diaNum===hoje.d && month===hoje.m && year===hoje.y;
+    const isFds = (i % 7) >= 5;
+
+    const contas = dateStr ? (porDia[dateStr]||[]) : [];
+    const totalDia = contas.reduce(function(s,c){ return s + Math.max(0, parseFloat(c.valor||0)-parseFloat(c.valor_pago||0)); }, 0);
+    const temPendente = contas.some(function(c){ return !c.pago; });
+    const temPago = contas.some(function(c){ return c.pago; });
+
+    let bgCell = isNoMes ? 'rgba(255,255,255,.03)' : 'transparent';
+    let borderCell = isNoMes ? '1px solid rgba(255,255,255,.06)' : '1px solid transparent';
+    if(isHoje){ bgCell='rgba(99,102,241,.12)'; borderCell='1px solid rgba(99,102,241,.4)'; }
+
+    html += '<div class="cal-cell" data-date="'+(dateStr||'')+'"';
+    if(isNoMes){
+      html += ' ondragover="event.preventDefault();this.style.background=\'rgba(99,102,241,.2)\'"';
+      html += ' ondragleave="this.style.background=\''+bgCell+'\'"';
+      html += ' ondrop="_calDrop(event,this,\''+dateStr+'\')"';
+    }
+    html += ' style="min-height:72px;border-radius:8px;padding:4px;background:'+bgCell+';border:'+borderCell+';position:relative;transition:background .15s">';
+
+    if(isNoMes){
+      // Número do dia
+      html += '<div style="font-size:11px;font-weight:700;color:'+(isHoje?'#6366f1':isFds?'var(--mt)':'rgba(238,233,224,.5)')+';margin-bottom:3px;text-align:right;line-height:1">'+diaNum+'</div>';
+
+      // Chips de conta
+      contas.forEach(function(c){
+        const saldo = Math.max(0, parseFloat(c.valor||0)-parseFloat(c.valor_pago||0));
+        const pago = c.pago || saldo === 0;
+        const chipBg = pago ? 'rgba(0,216,151,.15)' : 'rgba(255,69,96,.15)';
+        const chipBorder = pago ? 'rgba(0,216,151,.35)' : 'rgba(255,69,96,.35)';
+        const chipColor = pago ? 'var(--gn)' : 'var(--rd)';
+        const nome = c.descricao.length > 9 ? c.descricao.slice(0,9)+'…' : c.descricao;
+        html += '<div draggable="true"';
+        html += ' ondragstart="_calDragStart(event,\''+c.id+'\')"';
+        html += ' ondragend="_calDragEnd(event)"';
+        html += ' title="'+c.descricao+' · '+saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+'"';
+        html += ' style="background:'+chipBg+';border:1px solid '+chipBorder+';border-radius:5px;padding:2px 5px;margin-bottom:2px;cursor:grab;font-size:10px;font-weight:600;color:'+chipColor+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none">';
+        html += nome;
+        html += '</div>';
+      });
+
+      // Total do dia (só se pendente)
+      if(totalDia > 0){
+        html += '<div style="position:absolute;bottom:3px;right:4px;font-size:9px;font-weight:700;color:var(--rd);line-height:1">'+
+          totalDia.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0}).replace('R$','')+'</div>';
+      }
+    }
+
+    html += '</div>';
+  }
+
+  html += '</div>';
+
+  // Legenda
+  html += '<div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap">';
+  html += '<div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--mt)"><span style="width:10px;height:10px;border-radius:3px;background:rgba(255,69,96,.15);border:1px solid rgba(255,69,96,.35);display:inline-block"></span>Pendente</div>';
+  html += '<div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--mt)"><span style="width:10px;height:10px;border-radius:3px;background:rgba(0,216,151,.15);border:1px solid rgba(0,216,151,.35);display:inline-block"></span>Pago</div>';
+  html += '<div style="font-size:10px;color:var(--mt)">Arraste para mudar o vencimento</div>';
+  html += '</div>';
 
   el.innerHTML = html;
 }
 
-function salvarCapSemana(key, keyId){
-  const v = parseFloat(document.getElementById('cap-'+keyId).value||'0');
-  const capKey = 'cap_semana_'+(MID||window.MID||'anon')+'_'+key;
-  localStorage.setItem(capKey, v);
-  toast('Capacidade salva ✓');
-  renderVisaoSemana();
+function _calNav(delta){
+  if(!_calMes) _calMes = (function(){ const h=_brtHoje(); return {year:h.y,month:h.m}; })();
+  _calMes.month += delta;
+  if(_calMes.month > 11){ _calMes.month = 0; _calMes.year++; }
+  if(_calMes.month < 0){ _calMes.month = 11; _calMes.year--; }
+  renderCalendarioContas();
+}
+
+function _calDragStart(event, contaId){
+  _dragContaId = contaId;
+  event.dataTransfer.effectAllowed = 'move';
+  event.currentTarget.style.opacity = '0.5';
+  event.currentTarget.style.cursor = 'grabbing';
+}
+
+function _calDragEnd(event){
+  event.currentTarget.style.opacity = '';
+  event.currentTarget.style.cursor = 'grab';
+}
+
+async function _calDrop(event, cell, dateStr){
+  event.preventDefault();
+  cell.style.background = '';
+  if(!_dragContaId || !dateStr) return;
+  const conta = window._contas && window._contas.find(function(c){ return String(c.id)===String(_dragContaId); });
+  if(!conta) return;
+  if(conta.vencimento === dateStr){ _dragContaId=null; return; }
+  try{
+    await fetch(API+'/contas/'+_dragContaId,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({vencimento:dateStr})});
+    conta.vencimento = dateStr;
+    const nova = new Date(dateStr+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
+    toast('📅 '+conta.descricao+' → '+nova+' ✓');
+    renderCalendarioContas();
+  } catch(e){ toast('Erro ao salvar ✗', false); }
+  _dragContaId = null;
 }
 
 
