@@ -284,11 +284,7 @@ select option{background:#141820}
 .modal-dia-field input:focus{outline:none;border-color:rgba(245,166,35,.5);background:rgba(245,166,35,.04)}
 .modal-dia-btn{width:100%;padding:16px;background:linear-gradient(135deg,#F0B429,#C47A0A);border:none;border-radius:14px;color:#000;font-size:16px;font-weight:700;font-family:'Barlow Condensed',sans-serif;cursor:pointer;letter-spacing:.3px}
 .modal-dia-skip{width:100%;padding:10px;background:transparent;border:none;color:var(--mt);font-size:13px;font-family:'Outfit',sans-serif;cursor:pointer;margin-top:8px}
-/* Banner mini no topo do dashboard quando turno ativo */
-.banner-turno{display:none;background:rgba(0,216,151,.06);border:1px solid rgba(0,216,151,.2);border-radius:12px;padding:10px 14px;margin-bottom:14px;align-items:center;justify-content:space-between;gap:10px}
-.banner-turno.ativo{display:flex!important}
-.banner-turno.inativo{display:flex!important;background:rgba(245,166,35,.06);border-color:rgba(245,166,35,.2)}
-.banner-turno.inativo .bt-titulo{color:var(--am)}
+
 .bt-info{flex:1;min-width:0}
 .bt-titulo{font-size:12px;font-weight:700;color:var(--gn);margin-bottom:1px}
 .bt-sub{font-size:11px;color:var(--mt)}
@@ -466,11 +462,6 @@ const _supa = supabase.createClient(
       <div class="live">Ao vivo</div>
     </div>
   </div>
-
-  <!-- BANNER TURNO ATIVO (mini, aparece após iniciar turno) -->
-  <div class="banner-turno" id="banner-turno">
-    <div class="bt-info">
-      <div class="bt-titulo" id="bt-titulo">🟢 Turno ativo</div>
       <div class="bt-sub" id="bt-sub"></div>
     </div>
     <button id="banner-turno-btn" onclick="bannerTurnoBtnClick()" style="background:rgba(255,77,106,.1);border:1px solid rgba(255,77,106,.25);border-radius:8px;padding:6px 12px;color:#FF4D6A;font-size:11px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer">⏹ Encerrar</button>
@@ -527,7 +518,6 @@ const _supa = supabase.createClient(
     <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
       <button onclick="mostrarResumoMes()" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(99,102,241,.2);background:rgba(99,102,241,.07);color:#a5b4fc;font-size:11px;cursor:pointer;font-family:inherit">💰 Mês?</button>
       <button onclick="quickChat('Tenho contas pendentes?')" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(99,102,241,.2);background:rgba(99,102,241,.07);color:#a5b4fc;font-size:11px;cursor:pointer;font-family:inherit">📅 Contas?</button>
-      <button onclick="mostrarGanhoPorHora()" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(99,102,241,.2);background:rgba(99,102,241,.07);color:#a5b4fc;font-size:11px;cursor:pointer;font-family:inherit">⏱ Por hora?</button>
       <button onclick="quickChat('Como estou hoje?')" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(99,102,241,.2);background:rgba(99,102,241,.07);color:#a5b4fc;font-size:11px;cursor:pointer;font-family:inherit">📊 Status</button>
       <button onclick="quickChat('Me dá uma dica financeira')" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(99,102,241,.2);background:rgba(99,102,241,.07);color:#a5b4fc;font-size:11px;cursor:pointer;font-family:inherit">💡 Dica</button>
     </div>
@@ -719,7 +709,7 @@ const _supa = supabase.createClient(
       <div class="rh-item"><span class="rh-label">💰 Faturado</span><span class="rh-val gn">—</span></div>
       <div class="rh-item"><span class="rh-label">💸 Gastos</span><span class="rh-val rd">—</span></div>
       <div class="rh-item"><span class="rh-label">✅ Líquido</span><span class="rh-val am">—</span></div>
-      <div class="rh-item"><span class="rh-label">⏱ Horas</span><span class="rh-val">—</span></div>
+      
     </div>
   </div>
 
@@ -775,7 +765,6 @@ const _supa = supabase.createClient(
         <div class="fg"><label>Valor (R$)</label><input type="number" id="f-val" placeholder="0,00" step="0.01" min="0" onkeydown="if(event.key==='Enter'){salvar()}"></div>
       </div>
       <div class="fr">
-        <div class="fg"><label>Horas rodadas</label><input type="number" id="f-hrs" placeholder="Ex: 6" step="0.5" min="0"></div>
         <div class="fg"><label>Km rodados</label><input type="number" id="f-km" placeholder="Ex: 120" min="0"></div>
       </div>
     </div>
@@ -1656,7 +1645,7 @@ async function salvar(){
   if(tipoAtual==='ganho'){
     body.valor=parseFloat(document.getElementById('f-val').value)||0;
     body.plataforma=document.getElementById('f-plat').value;
-    body.horas_rodadas=parseFloat(document.getElementById('f-hrs').value)||null;
+    
     body.km_rodados=parseFloat(document.getElementById('f-km').value)||null;
   }else{
     body.valor=parseFloat(document.getElementById('f-val-d').value)||0;
@@ -1830,13 +1819,6 @@ async function loadDash(){
     if(heroLucro){heroLucro.textContent=fmt(d.lucro);heroLucro.style.color=d.lucro>=0?'var(--am)':'var(--rd)';}
     // Ganho por hora - busca da tabela turnos (horas corretas por dia)
     const ganhoMes = todosLanc.filter(l=>l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
-    const cHora = document.getElementById('c-hora');
-    try {
-      const rt = await fetch(API+'/turnos/'+MID);
-      if(rt.ok){
-        const turnos = await rt.json();
-        const hTotais = (turnos||[]).reduce((a,t)=>a+parseFloat(t.horas||0),0);
-        if(cHora) cHora.textContent = hTotais > 0 ? 'R$ '+(ganhoMes/hTotais).toFixed(2).replace('.',',') : '—';
       } else { if(cHora) cHora.textContent = '—'; }
     } catch(e){ if(cHora) cHora.textContent = '—'; }
     const hoje=hojeStr();
@@ -1864,7 +1846,7 @@ async function loadDash(){
         <div class="rh-item"><span class="rh-label">💰 Faturado</span><span class="rh-val gn">${fmt(ganhoRef)}</span></div>
         <div class="rh-item"><span class="rh-label">💸 Gastos</span><span class="rh-val rd">${fmt(despRef)}</span></div>
         <div class="rh-item"><span class="rh-label">✅ Líquido</span><span class="rh-val am">${fmt(ganhoRef-despRef)}</span></div>
-        <div class="rh-item"><span class="rh-label">⏱ Horas</span><span class="rh-val">${horasRef>0?horasRef.toFixed(1)+'h — R$ '+(ganhoRef/horasRef).toFixed(2).replace('.',',')+'/h':'—'}</span></div>
+
       `;
     }
     const pctDesp=d.ganhos>0?Math.min(100,d.despesas/d.ganhos*100):0;
@@ -2193,7 +2175,7 @@ async function loadHist(tipo){
       `<div class="rh-item"><span class="rh-label">💸 Despesas</span><span class="rh-val rd">${fmt(despMes)}</span></div>`+
       `<div class="rh-item"><span class="rh-label">✅ Lucro</span><span class="rh-val" style="color:${lucroMes>=0?'var(--gn)':'var(--rd)'}">${fmt(lucroMes)}</span></div>`+
       `<div class="rh-item"><span class="rh-label">📅 Dias trab.</span><span class="rh-val">${diasTrab}</span></div>`+
-      `<div class="rh-item"><span class="rh-label">⏱ Horas</span><span class="rh-val">${(d.horas_rodadas||0)>0?Number(d.horas_rodadas).toFixed(1)+'h':'—'}</span></div>`+
+      
       `<div class="rh-item"><span class="rh-label">💵 Média/dia</span><span class="rh-val am">${fmt(diasTrab>0?ganhosMes/diasTrab:0)}</span></div>`;
 
     let lancs=allLancs.filter(l=>_histFiltroTipo==='todos'||l.tipo===_histFiltroTipo).reverse();
@@ -2430,7 +2412,6 @@ async function init(){
   // Re-checa alertas após tudo carregar
   setTimeout(()=>{ try{ alertaContasVencendo(window._contas||[]); }catch(e){} }, 1200);
   try{ loadCompromissos(); }catch(e){}
-  setTimeout(mostrarBannerTurno, 800);
 
   _initRodando = false;
   _initConcluido = true;
@@ -3758,7 +3739,6 @@ function renderComparativoSemanal() {
         <div class="rh-item"><span class="rh-label">💸 Despesas</span><span class="rh-val rd">${fmt(s.despesas)}</span></div>
         <div class="rh-item"><span class="rh-label">✅ Lucro</span><span class="rh-val" style="color:${cor}">${fmt(lucro)}</span></div>
         <div class="rh-item"><span class="rh-label">📅 Dias</span><span class="rh-val">${s.dias.size}</span></div>
-        <div class="rh-item"><span class="rh-label">⏱ Horas</span><span class="rh-val">${s.horas>0?s.horas.toFixed(1)+'h':'—'}</span></div>
         <div class="rh-item"><span class="rh-label">💵 Média/dia</span><span class="rh-val am">${fmt(s.ganhos/Math.max(s.dias.size,1))}</span></div>
       </div>
     </div>`;
@@ -3797,7 +3777,6 @@ function renderComparativoMensal() {
         <div class="rh-item"><span class="rh-label">💸 Despesas</span><span class="rh-val rd">${fmt(m.despesas)}</span></div>
         <div class="rh-item"><span class="rh-label">✅ Lucro</span><span class="rh-val" style="color:${cor}">${fmt(lucro)}</span></div>
         <div class="rh-item"><span class="rh-label">📅 Dias trab.</span><span class="rh-val">${m.dias.size}</span></div>
-        <div class="rh-item"><span class="rh-label">⏱ Horas</span><span class="rh-val">${m.horas>0?m.horas.toFixed(1)+'h':'—'}</span></div>
         <div class="rh-item"><span class="rh-label">💵 Média/dia</span><span class="rh-val am">${fmt(m.ganhos/Math.max(m.dias.size,1))}</span></div>
       </div>
     </div>`;
@@ -3825,8 +3804,6 @@ function fmtFech(ganhos, despesas, horas, dias) {
         <div class="rh-item"><span class="rh-label">💰 Ganhos</span><span class="rh-val gn">${fmt(ganhos)}</span></div>
         <div class="rh-item"><span class="rh-label">💸 Despesas</span><span class="rh-val rd">${fmt(despesas)}</span></div>
         <div class="rh-item" style="grid-column:1/-1"><span class="rh-label">✅ Lucro líquido</span><span class="rh-val" style="color:${cor};font-size:20px">${fmt(lucro)}</span></div>
-        ${horas>0?`<div class="rh-item"><span class="rh-label">⏱ Horas trabalhadas</span><span class="rh-val">${horas.toFixed(1)}h</span></div>`:''}
-        ${horas>0?`<div class="rh-item"><span class="rh-label">💵 Por hora</span><span class="rh-val am">R$ ${phora}/h</span></div>`:''}
         ${dias>1?`<div class="rh-item"><span class="rh-label">📅 Dias trabalhados</span><span class="rh-val">${dias}</span></div>`:''}
         ${dias>1?`<div class="rh-item"><span class="rh-label">📊 Média por dia</span><span class="rh-val am">R$ ${pdia}</span></div>`:''}
       </div>
@@ -3904,14 +3881,6 @@ function calcFechamentoMensal() {
   });
 }
 
-function mostrarGanhoPorHora() {
-  const val = document.getElementById('c-hora')?.textContent || '—';
-  if(val === '—') {
-    appendDashMsg('assistant', '⏱ Ainda não tenho horas registradas este mês. Após registrar um ganho, diga quantas horas rodou e eu calculo automaticamente!');
-  } else {
-    appendDashMsg('assistant', `⏱ Sua média de ganho por hora este mês é ${val}/hora 🚀`);
-  }
-}
 
 function mostrarResumoMes() {
   const ganhos = parseFloat(document.getElementById('c-ganhos')?.textContent?.replace(/[^0-9,]/g,'').replace(',','.')) || 0;
