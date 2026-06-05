@@ -3385,6 +3385,38 @@ async function sendChat() {
   const btn = document.getElementById('chat-send-btn');
   const msg = inp.value.trim();
   if (!msg) return;
+
+  // === INTERCEPTA CANCELAMENTO DE DISTRIBUIÇÃO SEM PASSAR PELO GEMINI ===
+  const _cancelRegex = /cancela|cancele|cancel|desfaz|desfazer|desfez|apaga|apague|remov|volta|voltar|undone|undo|delete/i;
+  if (_cancelRegex.test(msg) && window._ultimaDistribuicaoIds && window._ultimaDistribuicaoIds.length > 0) {
+    inp.value = '';
+    appendMsg('user', msg);
+    chatHistory.push({role:'user', content: msg, date: hojeStr()});
+    appendMsg('assistant', '<div class="typing-dots">↩ Desfazendo...</div>', true);
+    try {
+      await Promise.all(window._ultimaDistribuicaoIds.map(id =>
+        fetch(API + '/lancamentos/' + id, {method: 'DELETE'})
+      ));
+      document.querySelector('.typing-dots')?.closest('.msg.assistant')?.remove();
+      // Remove também o botão desfazer se ainda estiver visível
+      document.querySelectorAll('.msg.assistant').forEach(el => {
+        if (el.querySelector('button')?.textContent.includes('Desfazer')) el.remove();
+      });
+      appendMsg('assistant', '↩ Distribuição desfeita! Os lançamentos foram removidos.');
+      chatHistory.push({role:'assistant', content:'↩ Distribuição desfeita!'});
+      window._ultimaDistribuicaoIds = [];
+      try{loadDash();}catch(e){}
+      try{loadContasDash();}catch(e){}
+    } catch(e) {
+      document.querySelector('.typing-dots')?.closest('.msg.assistant')?.remove();
+      appendMsg('assistant', '❌ Erro ao desfazer. Tenta de novo.');
+    }
+    _chatSending = false;
+    inp.disabled = false;
+    return;
+  }
+  // === FIM INTERCEPTAÇÃO ===
+
   _chatSending = true;
   inp.value = '';
   appendMsg('user', msg);
