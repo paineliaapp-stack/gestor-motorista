@@ -601,6 +601,30 @@ const _supa = supabase.createClient(
 
   </div>
 
+  <!-- CARD META MENSAL — sempre visível no dashboard -->
+  <div id="card-meta-mensal" style="background:rgba(0,216,151,.08);border:1px solid rgba(0,216,151,.25);border-radius:16px;padding:16px 18px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div>
+        <div style="font-size:10px;color:rgba(0,216,151,.9);font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-bottom:2px">💰 Meta Mensal</div>
+        <div style="font-size:11px;color:var(--mt)">Quanto quer ter no bolso esse mês</div>
+      </div>
+      <button onclick="editarMetaMensal()" style="background:rgba(0,216,151,.15);border:1px solid rgba(0,216,151,.3);border-radius:8px;padding:6px 12px;color:var(--gn);font-size:12px;font-weight:600;cursor:pointer">✏️ Editar</button>
+    </div>
+    <div id="mm-form" style="display:none;margin-bottom:10px;padding:10px;background:rgba(0,216,151,.05);border:1px solid rgba(0,216,151,.2);border-radius:10px">
+      <div style="font-size:11px;color:var(--mt);margin-bottom:8px">💰 Quanto quer faturar líquido esse mês?</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span style="color:var(--mt);font-size:13px">R$</span>
+        <input id="mm-input" type="number" min="0" step="100" placeholder="ex: 10000"
+          style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(0,216,151,.4);border-radius:8px;padding:10px 12px;color:var(--tx);font-size:18px;font-weight:700;outline:none">
+        <button onclick="salvarMetaMensal()" style="background:#00D897;border:none;border-radius:8px;color:#000;font-size:14px;font-weight:700;padding:10px 16px;cursor:pointer">✓</button>
+        <button onclick="document.getElementById('mm-form').style.display='none'" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--mt);font-size:13px;padding:10px 12px;cursor:pointer">✕</button>
+      </div>
+    </div>
+    <div id="mm-display">
+      <div style="font-size:12px;color:var(--mt)">Toque em <b style="color:var(--gn)">✏️ Editar</b> para definir sua meta mensal</div>
+    </div>
+  </div>
+
   <!-- CARD FONTES DE RENDA -->
   <div id="card-fontes" style="background:var(--s);border:1px solid var(--b);border-radius:16px;padding:16px 18px;margin-bottom:0;display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -673,26 +697,6 @@ const _supa = supabase.createClient(
             <button onclick="salvarMetaCard()" style="flex:1;padding:8px;background:#6366f1;border:none;border-radius:8px;color:white;font-size:13px;font-weight:600;cursor:pointer">✅ Salvar</button>
             <button onclick="cancelarMeta()" style="padding:8px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--mt);font-size:13px;cursor:pointer">✕</button>
           </div>
-        </div>
-      </div>
-      <!-- Card Meta Mensal -->
-      <div id="card-meta-mensal" style="background:rgba(0,216,151,.08);border:1px solid rgba(0,216,151,.25);border-radius:12px;padding:12px 14px;margin-top:10px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div style="font-size:10px;color:rgba(0,216,151,.9);font-weight:700;letter-spacing:.3px;text-transform:uppercase">💰 Meta Mensal</div>
-          <button onclick="editarMetaMensal()" style="background:rgba(0,216,151,.15);border:1px solid rgba(0,216,151,.3);border-radius:8px;padding:4px 10px;color:var(--gn);font-size:11px;font-weight:600;cursor:pointer">✏️ Editar</button>
-        </div>
-        <div id="mm-form" style="display:none;margin-bottom:8px">
-          <div style="font-size:10px;color:var(--mt);margin-bottom:6px">Quanto quer faturar líquido esse mês?</div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <span style="color:var(--mt);font-size:13px">R$</span>
-            <input id="mm-input" type="number" min="0" step="100" placeholder="ex: 5000"
-              style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(0,216,151,.4);border-radius:8px;padding:8px 10px;color:var(--tx);font-size:16px;font-weight:700;outline:none">
-            <button onclick="salvarMetaMensal()" style="background:#00D897;border:none;border-radius:8px;color:#000;font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer">✓</button>
-            <button onclick="document.getElementById('mm-form').style.display='none'" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--mt);font-size:13px;padding:8px 10px;cursor:pointer">✕</button>
-          </div>
-        </div>
-        <div id="mm-display">
-          <div style="font-size:11px;color:var(--mt);margin-bottom:4px">Configure sua meta mensal para ver os cálculos</div>
         </div>
       </div>
     </div>
@@ -1045,38 +1049,78 @@ function renderMetaMensal(){
   const el = document.getElementById('mm-display');
   if(!el) return;
   if(!META_MENSAL || META_MENSAL <= 0){
-    el.innerHTML = '<div style="font-size:11px;color:var(--mt)">Configure sua meta mensal para ver os cálculos</div>';
+    el.innerHTML = '<div style="font-size:12px;color:var(--mt)">Toque em <b style="color:var(--gn)">✏️ Editar</b> para definir sua meta mensal</div>';
     return;
   }
   const agora = new Date(Date.now() - 3*60*60*1000);
   const diaAtual = agora.getUTCDate();
   const diasMes = new Date(agora.getUTCFullYear(), agora.getUTCMonth()+1, 0).getDate();
-  const diasRestantes = Math.max(1, diasMes - diaAtual + 1);
+  const diasRestantes = Math.max(1, diasMes - diaAtual);
   const metaPorDia = META_MENSAL / diasMes;
-  // Total de contas a pagar (pendentes)
+
+  // Faturamento do mês atual (usa todosLanc se disponível)
+  let faturadoAte = 0;
+  const mesAtual = agora.getUTCMonth();
+  const anoAtual = agora.getUTCFullYear();
+  (window.todosLanc||[]).forEach(l=>{
+    const dl = new Date(l.data+'T12:00:00');
+    if(l.tipo==='ganho' && dl.getMonth()===mesAtual && dl.getFullYear()===anoAtual)
+      faturadoAte += parseFloat(l.valor||0);
+  });
+
+  // Projeção: média diária × dias restantes
+  const mediaDia = diaAtual > 0 ? faturadoAte / diaAtual : 0;
+  const projecao = faturadoAte + mediaDia * diasRestantes;
+  const faltaMeta = Math.max(0, META_MENSAL - faturadoAte);
+  const necessarioPorDia = diasRestantes > 0 ? faltaMeta / diasRestantes : faltaMeta;
+  const bateuMeta = faturadoAte >= META_MENSAL;
+  const projecaoBate = projecao >= META_MENSAL;
+
+  // Total de contas a pagar
   const totalContas = window._contas
     ? window._contas.filter(c=>!c.pago).reduce((s,c)=>s+Math.max(0,parseFloat(c.valor)-parseFloat(c.valor_pago||0)),0)
     : 0;
+
   const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const pctProgresso = Math.min(100, Math.round(faturadoAte/META_MENSAL*100));
+
   el.innerHTML = `
-    <div style="font-size:22px;font-weight:700;color:var(--gn);margin-bottom:4px">${fmt(META_MENSAL)}</div>
-    <div style="display:flex;flex-direction:column;gap:5px;margin-top:6px">
-      <div style="display:flex;justify-content:space-between;font-size:12px">
-        <span style="color:var(--mt)">📆 Necessário por dia</span>
-        <span style="font-weight:700;color:var(--gn)">${fmt(metaPorDia)}/dia</span>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+      <div style="font-size:24px;font-weight:700;color:var(--gn)">${fmt(META_MENSAL)}</div>
+      <div style="font-size:11px;color:var(--mt)">objetivo do mês</div>
+    </div>
+    ${faturadoAte > 0 ? `
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mt);margin-bottom:4px">
+        <span>Faturado até agora: <b style="color:var(--tx)">${fmt(faturadoAte)}</b></span>
+        <span style="color:${bateuMeta?'var(--gn)':'var(--am)'}">${pctProgresso}%</span>
+      </div>
+      <div style="background:rgba(255,255,255,.08);border-radius:4px;height:6px">
+        <div style="background:${bateuMeta?'var(--gn)':'linear-gradient(90deg,#00D897,#00a36e)'};width:${pctProgresso}%;height:6px;border-radius:4px;transition:.4s"></div>
+      </div>
+    </div>` : ''}
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${faturadoAte > 0 && !bateuMeta ? `<div style="display:flex;justify-content:space-between;font-size:12px">
+        <span style="color:var(--mt)">🎯 Falta para a meta</span>
+        <span style="font-weight:700;color:var(--am)">${fmt(faltaMeta)}</span>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px">
-        <span style="color:var(--mt)">🗓 Dias restantes no mês</span>
-        <span style="font-weight:600">${diasRestantes} dias</span>
-      </div>
-      ${totalContas > 0 ? `<div style="height:1px;background:rgba(255,255,255,.07);margin:3px 0"></div>
+        <span style="color:var(--mt)">📆 Precisa fazer por dia</span>
+        <span style="font-weight:700;color:var(--am)">${fmt(necessarioPorDia)}/dia · ${diasRestantes}d restantes</span>
+      </div>` : ''}
+      ${bateuMeta ? `<div style="font-size:12px;font-weight:700;color:var(--gn)">🎉 Meta batida! Você está acima do objetivo.</div>` : ''}
+      ${faturadoAte > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px">
+        <span style="color:var(--mt)">📈 Projeção fim do mês</span>
+        <span style="font-weight:700;color:${projecaoBate?'var(--gn)':'var(--rd)'}">${fmt(projecao)} ${projecaoBate?'✅':'⚠️'}</span>
+      </div>` : ''}
+      ${totalContas > 0 ? `<div style="height:1px;background:rgba(255,255,255,.07);margin:2px 0"></div>
       <div style="display:flex;justify-content:space-between;font-size:12px">
         <span style="color:var(--mt)">💳 Total de contas a pagar</span>
         <span style="font-weight:700;color:var(--rd)">${fmt(totalContas)}</span>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px">
-        <span style="color:var(--mt)">✨ Meta líquida real</span>
-        <span style="font-weight:700;color:${META_MENSAL-totalContas>=0?'var(--gn)':'var(--rd)'}">${fmt(Math.max(0,META_MENSAL-totalContas))}</span>
+        <span style="color:var(--mt)">✨ Meta menos contas</span>
+        <span style="font-weight:700;color:${META_MENSAL-totalContas>=0?'var(--gn)':'var(--rd)'}">${fmt(META_MENSAL-totalContas)}</span>
       </div>` : ''}
     </div>
   `;
@@ -2615,13 +2659,28 @@ async function _renderResumoContasAsync(el, calc){
   // Meta mensal — lida do card de meta mensal (meta_mensal_obj)
   let metaMensalConfig = 0;
   try { metaMensalConfig = parseFloat(localStorage.getItem('meta_mensal_obj')||'0'); } catch(e){}
-  const faltaParaMeta = Math.max(0, metaMensalConfig - faturadoMes);
-  const taxaCombEst = combMes > 0 && metaMensalConfig > 0 ? Math.min(combMes/metaMensalConfig, 0.45) : 0.25;
+
+  const taxaCombEst = combMes > 0 && faturadoMes > 0 ? Math.min(combMes/faturadoMes, 0.45) : (pctComb/100);
   const faturarParaContas = totalPend / (1 - taxaCombEst);
-  // Sobra líquida = o que já faturou menos o que já foi pago e combustível
-  // (não subtrai pendentes futuros — seria comparar laranja com maçã)
+
+  // Projeção de faturamento até o fim do mês
+  const _brtAgora2 = new Date(Date.now() - 3*60*60*1000);
+  const _diaAtual2 = _brtAgora2.getUTCDate();
+  const _diasMes2 = new Date(_brtAgora2.getUTCFullYear(), _brtAgora2.getUTCMonth()+1, 0).getDate();
+  const _diasRestantes2 = Math.max(1, _diasMes2 - _diaAtual2);
+  const mediaDiaria = faturadoMes > 0 && _diaAtual2 > 0 ? faturadoMes / _diaAtual2 : 0;
+  const projecaoFimMes = faturadoMes + (mediaDiaria * _diasRestantes2);
+
+  // Sobra líquida = projeção fim do mês - combustível projetado - total de contas pendentes
+  const combProjetado = projecaoFimMes * taxaCombEst;
+  const sobraLiquida = projecaoFimMes - combProjetado - totalPend;
+  const sobraLabel = mediaDiaria > 0
+    ? `projeção se continuar na média de ${mediaDiaria.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}/dia`
+    : 'baseado no faturado até agora';
+
+  // Quanto falta para bater a meta mensal
+  const faltaParaMeta = metaMensalConfig > 0 ? Math.max(0, metaMensalConfig - faturadoMes) : 0;
   const totalPagoReal = pagas.reduce((s,c)=>s+parseFloat(c.valor),0);
-  const sobraLiquida = faturadoMes - combMes - totalPagoReal;
 
   const fmt2 = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const linhaPainel = (emoji, label, valor, cor='var(--tx)', sub='') =>
@@ -2645,7 +2704,7 @@ async function _renderResumoContasAsync(el, calc){
       ${metaMensalConfig > 0 ? linhaPainel('🎯','Meta mensal (bruto)', fmt2(metaMensalConfig), 'var(--am)') : ''}
       ${metaMensalConfig > 0 ? linhaPainel('📈','Falta para bater a meta', fmt2(faltaParaMeta), faltaParaMeta<=0?'var(--gn)':'var(--am)', faltaParaMeta<=0?'meta batida! 🎉':'ainda não bateu') : ''}
       ${linhaPainel('💳','Faturar para pagar todas as contas', fmt2(faturarParaContas), 'var(--rd)', 'bruto — inclui combustível estimado')}
-      ${linhaPainel(sobraLiquida>=0?'✅':'⚠️','Sobra líquida estimada', fmt2(sobraLiquida), sobraLiquida>=0?'var(--gn)':'var(--rd)', sobraLiquida>=0?'se bater a meta':'no vermelho')}
+      ${linhaPainel(sobraLiquida>=0?'✅':'⚠️','Sobra líquida estimada', fmt2(sobraLiquida), sobraLiquida>=0?'var(--gn)':'var(--rd)', sobraLabel)}
     </div>
     <div style="font-size:11px;font-weight:700;color:var(--mt);letter-spacing:.5px;text-transform:uppercase;margin:12px 0 6px">📅 Por conta por dia</div>
     <div style="display:flex;flex-direction:column;gap:6px">
