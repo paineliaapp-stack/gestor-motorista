@@ -723,6 +723,18 @@ const _supa = supabase.createClient(
     </div>
   </div>
 
+  <!-- CARD RESUMO SEMANAL -->
+  <div id="card-resumo-semanal" style="background:var(--s);border:1px solid var(--b);border-radius:16px;padding:16px 18px;display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--mt);font-weight:600">📊 Resumo da semana</div>
+        <div id="resumo-semanal-periodo" style="font-size:11px;color:var(--mt);margin-top:2px"></div>
+      </div>
+      <div id="resumo-semanal-badge" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px"></div>
+    </div>
+    <div id="resumo-semanal-corpo"></div>
+  </div>
+
   <!-- GRAFICOS -->
   <div class="cr">
     <div class="gc"><h3>Lucro vs Despesas</h3><canvas id="g-pizza" height="200"></canvas></div>
@@ -1146,6 +1158,158 @@ function renderMetaMensal(){
         <span style="font-weight:700;color:${liquidoReal>=0?'var(--gn)':'var(--rd)'};font-size:15px">${fmt(liquidoReal)}</span>
       </div>
     </div>
+  `;
+}
+
+function renderResumoSemanal(lancamentos) {
+  const card = document.getElementById('card-resumo-semanal');
+  if (!card) return;
+
+  // Calcula início e fim da semana atual (seg-dom, horário Brasil)
+  const agora = new Date(Date.now() - 3*60*60*1000);
+  const hoje = new Date(agora.toISOString().slice(0,10)+'T00:00:00');
+  const diaSemana = hoje.getDay(); // 0=dom, 1=seg...
+  const diffSeg = diaSemana === 0 ? 6 : diaSemana - 1;
+  const inicioSemana = new Date(hoje); inicioSemana.setDate(hoje.getDate() - diffSeg);
+  const fimSemana = new Date(inicioSemana); fimSemana.setDate(inicioSemana.getDate() + 6);
+
+  // Semana passada
+  const inicioSemPassada = new Date(inicioSemana); inicioSemPassada.setDate(inicioSemana.getDate() - 7);
+  const fimSemPassada = new Date(inicioSemana); fimSemPassada.setDate(inicioSemana.getDate() - 1);
+
+  const toStr = d => d.toISOString().slice(0,10);
+  const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const fmtDia = d => d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+
+  const emSemana = (data, ini, fim) => data >= toStr(ini) && data <= toStr(fim);
+
+  const lancSem = (lancamentos||[]).filter(l => emSemana(l.data, inicioSemana, fimSemana));
+  const lancSemPass = (lancamentos||[]).filter(l => emSemana(l.data, inicioSemPassada, fimSemPassada));
+
+  const ganhosSem = lancSem.filter(l=>l.tipo==='ganho').reduce((s,l)=>s+parseFloat(l.valor),0);
+  const despSem = lancSem.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+parseFloat(l.valor),0);
+  const lucroSem = ganhosSem - despSem;
+  const ganhosSemPass = lancSemPass.filter(l=>l.tipo==='ganho').reduce((s,l)=>s+parseFloat(l.valor),0);
+
+  if (ganhosSem === 0 && despSem === 0) { card.style.display='none'; return; }
+  card.style.display = '';
+
+  // Período label
+  document.getElementById('resumo-semanal-periodo').textContent =
+    `${fmtDia(inicioSemana)} a ${fmtDia(fimSemana)}`;
+
+  // Badge vs semana passada
+  const badge = document.getElementById('resumo-semanal-badge');
+  if (ganhosSemPass > 0) {
+    const diff = ganhosSem - ganhosSemPass;
+    const pct = Math.round(Math.abs(diff)/ganhosSemPass*100);
+    if (diff >= 0) {
+      badge.textContent = `+${pct}% vs sem. passada 📈`;
+      badge.style.cssText = 'font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(0,216,151,.15);color:#00D897';
+    } else {
+      badge.textContent = `-${pct}% vs sem. passada 📉`;
+      badge.style.cssText = 'font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,77,106,.12);color:#ff4d6a';
+    }
+  } else { badge.textContent=''; }
+
+  // Top categorias de despesa
+  const cats = {};
+  lancSem.filter(l=>l.tipo==='despesa').forEach(l => {
+    const k = l.descricao || 'outros';
+    cats[k] = (cats[k]||0) + parseFloat(l.valor);
+  });
+  const topCats = Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const maxCat = topCats[0]?.[1] || 1;
+
+  // Melhor e pior dia
+  const porDia = {};
+  lancSem.filter(l=>l.tipo==='ganho').forEach(l => {
+    porDia[l.data] = (porDia[l.data]||0) + parseFloat(l.valor);
+  });
+  const diasOrdenados = Object.entries(porDia).sort((a,b)=>b[1]-a[1]);
+  const melhorDia = diasOrdenados[0];
+  const piorDia = diasOrdenados[diasOrdenados.length-1];
+  const nomeDia = d => new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'});
+
+  // Diagnóstico
+  let diagnostico = '';
+  let diagCor = '#aaa';
+  const pctComb = ganhosSem > 0 ? (cats['Combustível']||cats['combustivel']||cats['combustível']||0)/ganhosSem*100 : 0;
+  const pctDesp = ganhosSem > 0 ? despSem/ganhosSem*100 : 0;
+  if (lucroSem < 0) {
+    diagnostico = '⚠️ Essa semana as despesas superaram os ganhos. Atenção ao próximo período.';
+    diagCor = '#ff4d6a';
+  } else if (pctDesp > 60) {
+    diagnostico = `⚠️ Você gastou ${Math.round(pctDesp)}% do que faturou essa semana. Tente reduzir despesas.`;
+    diagCor = '#f5a623';
+  } else if (ganhosSemPass > 0 && ganhosSem > ganhosSemPass * 1.1) {
+    diagnostico = `✅ Semana melhor que a passada! Faturamento subiu ${Math.round((ganhosSem/ganhosSemPass-1)*100)}%.`;
+    diagCor = '#00D897';
+  } else if (lucroSem > 0 && pctDesp <= 40) {
+    diagnostico = `✅ Semana equilibrada. Você ficou com ${Math.round(100-pctDesp)}% do que faturou.`;
+    diagCor = '#00D897';
+  } else {
+    diagnostico = `Semana dentro do normal. Fique de olho nas despesas.`;
+    diagCor = '#aaa';
+  }
+
+  document.getElementById('resumo-semanal-corpo').innerHTML = `
+    <!-- Números principais -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--mt);margin-bottom:4px">💰 Faturado</div>
+        <div style="font-size:15px;font-weight:700;color:var(--am)">${fmt(ganhosSem)}</div>
+      </div>
+      <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--mt);margin-bottom:4px">💸 Gasto</div>
+        <div style="font-size:15px;font-weight:700;color:var(--rd)">${fmt(despSem)}</div>
+      </div>
+      <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--mt);margin-bottom:4px">✅ Lucro</div>
+        <div style="font-size:15px;font-weight:700;color:${lucroSem>=0?'var(--gn)':'var(--rd)'}">${fmt(lucroSem)}</div>
+      </div>
+    </div>
+
+    <!-- Diagnóstico -->
+    <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:${diagCor};line-height:1.5">
+      ${diagnostico}
+    </div>
+
+    ${topCats.length ? `
+    <!-- Top gastos -->
+    <div style="margin-bottom:12px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--mt);font-weight:600;margin-bottom:8px">🔥 Onde foi mais gasto</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${topCats.map(([k,v],i)=>{
+          const pct = Math.round(v/maxCat*100);
+          const cores = ['#ff4d6a','#f5a623','#4e9eff'];
+          return `<div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+              <span style="color:var(--tx)">${k}</span>
+              <span style="color:${cores[i]};font-weight:600">${fmt(v)}</span>
+            </div>
+            <div style="background:rgba(255,255,255,.07);border-radius:4px;height:5px">
+              <div style="background:${cores[i]};width:${pct}%;height:5px;border-radius:4px;transition:.4s"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : ''}
+
+    ${melhorDia ? `
+    <!-- Melhor e pior dia -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="background:rgba(0,216,151,.07);border:1px solid rgba(0,216,151,.2);border-radius:10px;padding:10px">
+        <div style="font-size:10px;color:rgba(0,216,151,.8);font-weight:600;margin-bottom:4px">🏆 Melhor dia</div>
+        <div style="font-size:13px;font-weight:700;color:var(--gn)">${fmt(melhorDia[1])}</div>
+        <div style="font-size:11px;color:var(--mt);margin-top:2px">${nomeDia(melhorDia[0])}</div>
+      </div>
+      ${diasOrdenados.length > 1 ? `<div style="background:rgba(255,77,106,.07);border:1px solid rgba(255,77,106,.2);border-radius:10px;padding:10px">
+        <div style="font-size:10px;color:rgba(255,77,106,.8);font-weight:600;margin-bottom:4px">📉 Dia mais fraco</div>
+        <div style="font-size:13px;font-weight:700;color:var(--rd)">${fmt(piorDia[1])}</div>
+        <div style="font-size:11px;color:var(--mt);margin-top:2px">${nomeDia(piorDia[0])}</div>
+      </div>` : ''}
+    </div>` : ''}
   `;
 }
 
@@ -1649,6 +1813,7 @@ async function loadDash(){
       }).reduce((s,l)=>s+parseFloat(l.valor||0),0);
     }
     try{renderMetaMensal();}catch(e){}
+    try{renderResumoSemanal(todosLanc);}catch(e){}
     // Busca renda extra prevista no próximo mês
     let rendaExtraPrevista = 0;
     let lancFuturos = [];
