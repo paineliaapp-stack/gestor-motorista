@@ -1103,16 +1103,22 @@ function renderMetaMensal(){
         <div style="background:${bateuMeta?'var(--gn)':'linear-gradient(90deg,#00D897,#00a36e)'};width:${pctProgresso}%;height:6px;border-radius:4px;transition:.4s"></div>
       </div>
     </div>` : ''}
+    ${!bateuMeta ? `
+    <div style="background:rgba(240,180,41,.08);border:1px solid rgba(240,180,41,.25);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:10px;color:rgba(240,180,41,.8);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px">🎯 Meta/dia a partir de hoje</div>
+        <div style="font-size:10px;color:var(--mt)">${diasRestantes}d restantes · já fez ${fmt(faturadoAte)}</div>
+      </div>
+      <div style="font-size:22px;font-weight:700;color:var(--am);font-family:'Barlow Condensed',sans-serif">${fmt(necessarioPorDia)}</div>
+    </div>` : `
+    <div style="background:rgba(0,216,151,.08);border:1px solid rgba(0,216,151,.25);border-radius:10px;padding:10px 14px;margin-bottom:8px;text-align:center">
+      <div style="font-size:13px;font-weight:700;color:var(--gn)">🎉 Meta batida! Você está acima do objetivo.</div>
+    </div>`}
     <div style="display:flex;flex-direction:column;gap:6px">
       ${faturadoAte > 0 && !bateuMeta ? `<div style="display:flex;justify-content:space-between;font-size:12px">
         <span style="color:var(--mt)">🎯 Falta para a meta</span>
         <span style="font-weight:700;color:var(--am)">${fmt(faltaMeta)}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:12px">
-        <span style="color:var(--mt)">📆 Precisa fazer por dia</span>
-        <span style="font-weight:700;color:var(--am)">${fmt(necessarioPorDia)}/dia · ${diasRestantes}d restantes</span>
       </div>` : ''}
-      ${bateuMeta ? `<div style="font-size:12px;font-weight:700;color:var(--gn)">🎉 Meta batida! Você está acima do objetivo.</div>` : ''}
       ${faturadoAte > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px">
         <span style="color:var(--mt)">📈 Projeção fim do mês</span>
         <span style="font-weight:700;color:${projecaoBate?'var(--gn)':'var(--rd)'}">${fmt(projecao)} ${projecaoBate?'✅':'⚠️'}</span>
