@@ -3873,11 +3873,40 @@ function mudarFechamento(el, visao) {
   if(visao==='mensal'){const m=hojeStr().slice(0,7);document.getElementById('fech-mes').value=m;calcFechamentoMensal();}
 }
 
-function fmtFech(ganhos, despesas, horas, dias) {
+function fmtFech(ganhos, despesas, horas, dias, lancamentos) {
   const lucro = ganhos - despesas;
-  const phora = horas > 0 ? (ganhos/horas).toFixed(2).replace('.',',') : '—';
   const pdia = dias > 0 ? (ganhos/dias).toFixed(2).replace('.',',') : '—';
   const cor = lucro >= 0 ? 'var(--gn)' : 'var(--rd)';
+
+  // Separa fontes de ganho
+  const RENDA_EXTRA_KEYS = ['seguro_desemprego','freelance','aluguel_recebido','venda','emprestimo_recebido','bonus','renda_extra'];
+  const lancs = lancamentos || [];
+  const ganhosApp = lancs.filter(l=>l.tipo==='ganho' && !RENDA_EXTRA_KEYS.includes((l.plataforma||'').toLowerCase().trim())).reduce((s,l)=>s+parseFloat(l.valor),0);
+  const ganhosExtra = lancs.filter(l=>l.tipo==='ganho' && RENDA_EXTRA_KEYS.includes((l.plataforma||'').toLowerCase().trim())).reduce((s,l)=>s+parseFloat(l.valor),0);
+
+  // Monta aviso de conferência levando em conta renda extra
+  let passos = '';
+  if(ganhosExtra > 0) {
+    passos = `
+      <div style="background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#f5a623;line-height:1.5">
+        ⚠️ <strong>Atenção:</strong> ${fmt(ganhosExtra)} desse total vieram de renda extra (não de app de corrida). Se você comparar só com o extrato da Uber/99, vai parecer que falta dinheiro — isso é normal. O valor correto nos apps é <strong>${fmt(ganhosApp)}</strong>.
+      </div>
+      <div style="font-size:13px;color:var(--tx);line-height:1.8">
+        <div style="padding:8px 0;border-bottom:1px solid var(--b)">1. Abra o extrato do app da Uber/99/inDrive</div>
+        <div style="padding:8px 0;border-bottom:1px solid var(--b)">2. Some os repasses recebidos no período — deve dar <strong style="color:var(--am)">${fmt(ganhosApp)}</strong></div>
+        <div style="padding:8px 0;border-bottom:1px solid var(--b)">3. Os <strong>${fmt(ganhosExtra)}</strong> restantes são de outra fonte — confira separado</div>
+        <div style="padding:8px 0">4. Se ainda houver diferença, registre o ajuste no chat</div>
+      </div>`;
+  } else {
+    passos = `
+      <div style="font-size:13px;color:var(--tx);line-height:1.8">
+        <div style="padding:8px 0;border-bottom:1px solid var(--b)">1. Abra o extrato do período no app da Uber/99/inDrive</div>
+        <div style="padding:8px 0;border-bottom:1px solid var(--b)">2. Some todos os repasses recebidos no período</div>
+        <div style="padding:8px 0;border-bottom:1px solid var(--b)">3. O valor deve bater com <strong style="color:var(--am)">${fmt(ganhos)}</strong> registrado aqui</div>
+        <div style="padding:8px 0">4. Se houver diferença, registre o ajuste no chat dizendo o valor correto</div>
+      </div>`;
+  }
+
   return `
     <div class="gc" style="margin-top:0">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -3886,16 +3915,13 @@ function fmtFech(ganhos, despesas, horas, dias) {
         <div class="rh-item" style="grid-column:1/-1"><span class="rh-label">✅ Lucro líquido</span><span class="rh-val" style="color:${cor};font-size:20px">${fmt(lucro)}</span></div>
         ${dias>1?`<div class="rh-item"><span class="rh-label">📅 Dias trabalhados</span><span class="rh-val">${dias}</span></div>`:''}
         ${dias>1?`<div class="rh-item"><span class="rh-label">📊 Média por dia</span><span class="rh-val am">R$ ${pdia}</span></div>`:''}
+        ${ganhosExtra > 0 ? `<div class="rh-item" style="grid-column:1/-1"><span class="rh-label">🟡 Apps (Uber/99)</span><span class="rh-val am">${fmt(ganhosApp)}</span></div>
+        <div class="rh-item" style="grid-column:1/-1"><span class="rh-label">💼 Renda extra</span><span class="rh-val" style="color:#a5b4fc">${fmt(ganhosExtra)}</span></div>` : ''}
       </div>
     </div>
     <div class="gc" style="margin-top:0">
       <h3 style="margin:0 0 10px;font-size:13px;color:var(--mt2)">✅ Como conferir com o banco/app</h3>
-      <div style="font-size:13px;color:var(--tx);line-height:1.8">
-        <div style="padding:8px 0;border-bottom:1px solid var(--b)">1. Abra o extrato do período no app da Uber/99/inDrive</div>
-        <div style="padding:8px 0;border-bottom:1px solid var(--b)">2. Some todos os repasses recebidos</div>
-        <div style="padding:8px 0;border-bottom:1px solid var(--b)">3. Compare com <strong style="color:var(--am)">${fmt(ganhos)}</strong> registrado aqui</div>
-        <div style="padding:8px 0">4. Diferença deve ser R$ 0,00 — se não for, registre o ajuste no chat</div>
-      </div>
+      ${passos}
     </div>`;
 }
 
@@ -3912,11 +3938,11 @@ function calcFechamentoDiario() {
     const titulo = new Date(data+'T12:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
     document.getElementById('fech-diario-result').innerHTML =
       `<div class="gc"><h3 style="margin:0 0 12px;text-transform:capitalize">${titulo}</h3>${
-        ganhos===0&&despesas===0 ? '<p style="color:var(--mt);text-align:center;padding:12px">Nenhum lançamento neste dia</p>' : fmtFech(ganhos,despesas,horas,1)
+        ganhos===0&&despesas===0 ? '<p style="color:var(--mt);text-align:center;padding:12px">Nenhum lançamento neste dia</p>' : fmtFech(ganhos,despesas,horas,1,lanc)
       }</div>`;
   }).catch(()=>{
     const titulo = new Date(data+'T12:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
-    document.getElementById('fech-diario-result').innerHTML = `<div class="gc"><h3>${titulo}</h3>${fmtFech(ganhos,despesas,0,1)}</div>`;
+    document.getElementById('fech-diario-result').innerHTML = `<div class="gc"><h3>${titulo}</h3>${fmtFech(ganhos,despesas,0,1,lanc)}</div>`;
   });
 }
 
@@ -3938,7 +3964,7 @@ function calcFechamentoSemanal() {
     const horas = turnos.filter(t=>t.data>=startStr&&t.data<=endStr).reduce((a,t)=>a+parseFloat(t.horas||0),0);
     const ini = new Date(startStr+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
     const fim2 = new Date(endStr+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
-    document.getElementById('fech-semanal-result').innerHTML = `<div class="gc"><h3 style="margin:0 0 12px">Semana de ${ini} a ${fim2}</h3>${fmtFech(ganhos,despesas,horas,dias)}</div>`;
+    document.getElementById('fech-semanal-result').innerHTML = `<div class="gc"><h3 style="margin:0 0 12px">Semana de ${ini} a ${fim2}</h3>${fmtFech(ganhos,despesas,horas,dias,lanc)}</div>`;
   });
 }
 
@@ -3957,7 +3983,7 @@ function calcFechamentoMensal() {
   fetch(API+'/turnos/'+(MID||window.MID)).then(r=>r.json()).then(turnos=>{
     const horas = turnos.filter(t=>t.data>=startStr&&t.data<=endStr).reduce((a,t)=>a+parseFloat(t.horas||0),0);
     const mesNome = new Date(startStr+'T12:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
-    document.getElementById('fech-mensal-result').innerHTML = `<div class="gc"><h3 style="margin:0 0 12px;text-transform:capitalize">${mesNome}</h3>${fmtFech(ganhos,despesas,horas,dias)}</div>`;
+    document.getElementById('fech-mensal-result').innerHTML = `<div class="gc"><h3 style="margin:0 0 12px;text-transform:capitalize">${mesNome}</h3>${fmtFech(ganhos,despesas,horas,dias,lanc)}</div>`;
   });
 }
 
