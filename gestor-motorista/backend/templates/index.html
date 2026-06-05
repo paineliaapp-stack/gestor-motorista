@@ -3445,21 +3445,23 @@ function alertaContasVencendo(contas) {
   const el = document.getElementById('alerta-contas');
   if (!el) return;
   const hoje = new Date(); hoje.setHours(0,0,0,0);
-  // Filtra pendentes vencendo em até 3 dias, agrupa por nome (evita duplicatas de recorrentes)
+  // Filtra pendentes com saldo > 0 vencendo em até 3 dias, agrupa por nome
   const _urg = (contas || []).filter(c => {
     if (c.pago) return false;
+    const saldo = parseFloat(c.valor||0) - parseFloat(c.valor_pago||0);
+    if (saldo <= 0) return false; // ignora se já quitado mesmo sem flag pago
     const v = new Date(c.vencimento+'T12:00:00');
     const diff = Math.ceil((v - hoje)/(1000*60*60*24));
     return diff <= 3;
   });
-  // Agrupa por descrição — mantém só a parcela mais próxima de cada conta
+  // Agrupa por descrição — mantém só a parcela mais próxima com saldo pendente
   const _urgMap = {};
   _urg.forEach(c => {
     const key = (c.descricao||'').toLowerCase().trim();
     if (!_urgMap[key]) { _urgMap[key] = c; return; }
     const vOld = new Date(_urgMap[key].vencimento+'T12:00:00');
     const vNew = new Date(c.vencimento+'T12:00:00');
-    if (vNew < vOld) _urgMap[key] = c; // mantém a mais próxima
+    if (vNew < vOld) _urgMap[key] = c;
   });
   const urgentes = Object.values(_urgMap);
   if (!urgentes.length) {
