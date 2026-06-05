@@ -1418,6 +1418,7 @@ Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}
 - Abater parcial: {{"acao":"abater_conta","descricao":"nome","valor_pago":N}}
 - Editar conta (vencimento): {{"acao":"editar_conta","descricao":"nome","campo":"vencimento","novo_valor":"YYYY-MM-DD"}}
 - Editar valor de conta: {{"acao":"editar_conta","descricao":"nome","campo":"valor","novo_valor":N}} — atualiza TODAS as parcelas pendentes com esse nome
+- Editar valor de parcela específica: {{"acao":"editar_conta","descricao":"nome","campo":"valor","novo_valor":N,"vencimento_alvo":"YYYY-MM-DD"}} — usa quando motorista menciona "a que vence dia X" ou "a parcela do dia X"
 - Apagar conta: {{"acao":"deletar_conta","descricao":"nome"}}
 - Desfazer último: {{"acao":"deletar_ultimo_lancamento","tipo":"ganho"}}
 - Corrigir valor: {{"acao":"editar_ultimo_lancamento","tipo":"despesa","campo":"valor","novo_valor":N}}
@@ -1638,10 +1639,30 @@ Quando analisa situação geral:
                         supabase.table("contas").update({"vencimento": str(novo_valor)}).eq("id", alvo["id"]).execute()
                         acoes_executadas.append("conta_editada")
                 elif campo == "valor":
-                    for c in matches:
-                        supabase.table("contas").update({"valor": float(novo_valor)}).eq("id", c["id"]).execute()
-                    if matches:
-                        acoes_executadas.append("conta_editada")
+                    venc_alvo = acao.get("vencimento_alvo")
+                    if venc_alvo:
+                        # Edita só a parcela com vencimento mais próximo do alvo
+                        pendentes_match = [c for c in matches if not c.get("pago")]
+                        alvo = None
+                        if pendentes_match:
+                            # Pega a que tem vencimento mais próximo do alvo informado
+                            try:
+                                from datetime import date as _date
+                                alvo_dt = _date.fromisoformat(str(venc_alvo))
+                                pendentes_match.sort(key=lambda c: abs((_date.fromisoformat(c["vencimento"]) - alvo_dt).days))
+                                alvo = pendentes_match[0]
+                            except:
+                                alvo = pendentes_match[0]
+                        if alvo:
+                            supabase.table("contas").update({"valor": float(novo_valor)}).eq("id", alvo["id"]).execute()
+                            acoes_executadas.append("conta_editada")
+                    else:
+                        # Sem vencimento específico: atualiza todas as pendentes
+                        pendentes_match = [c for c in matches if not c.get("pago")]
+                        for c in pendentes_match:
+                            supabase.table("contas").update({"valor": float(novo_valor)}).eq("id", c["id"]).execute()
+                        if pendentes_match:
+                            acoes_executadas.append("conta_editada")
             elif acao.get("acao") == "deletar_ultimo_lancamento":
                 tipo = acao.get("tipo", "ganho")
                 r = supabase.table("lancamentos").select("id").eq("motorista_id", motorista_id).eq("tipo", tipo).order("created_at", desc=True).limit(1).execute()
@@ -1802,15 +1823,31 @@ Quando analisa situação geral:
                 descricao = acao.get("descricao", "").lower()
                 campo = acao.get("campo")
                 novo_valor = acao.get("novo_valor")
-                contas_res = supabase.table("contas").select("id,descricao").eq("motorista_id", motorista_id).execute()
+                venc_alvo = acao.get("vencimento_alvo")
+                contas_res = supabase.table("contas").select("id,descricao,pago,vencimento").eq("motorista_id", motorista_id).execute()
+                matches2 = []
                 for c in (contas_res.data or []):
                     if descricao and (descricao.lower() in c["descricao"].lower() or c["descricao"].lower() in descricao.lower() or len(__import__("os.path", fromlist=["commonprefix"]).commonprefix([descricao.lower(), c["descricao"].lower()])) >= 5):
-                        if campo == "valor":
-                            supabase.table("contas").update({"valor": float(novo_valor)}).eq("id", c["id"]).execute()
-                        elif campo == "vencimento":
-                            supabase.table("contas").update({"vencimento": str(novo_valor)}).eq("id", c["id"]).execute()
+                        matches2.append(c)
+                if campo == "valor" and venc_alvo:
+                    # Edita só a parcela mais próxima do vencimento informado
+                    pendentes2 = [c for c in matches2 if not c.get("pago")]
+                    if pendentes2:
+                        try:
+                            from datetime import date as _date2
+                            alvo_dt2 = _date2.fromisoformat(str(venc_alvo))
+                            pendentes2.sort(key=lambda c: abs((_date2.fromisoformat(c["vencimento"]) - alvo_dt2).days))
+                            supabase.table("contas").update({"valor": float(novo_valor)}).eq("id", pendentes2[0]["id"]).execute()
+                        except:
+                            supabase.table("contas").update({"valor": float(novo_valor)}).eq("id", pendentes2[0]["id"]).execute()
                         acoes_executadas.append("conta_editada")
-                        break
+                elif matches2:
+                    alvo2 = matches2[0]
+                    if campo == "valor":
+                        supabase.table("contas").update({"valor": float(novo_valor)}).eq("id", alvo2["id"]).execute()
+                    elif campo == "vencimento":
+                        supabase.table("contas").update({"vencimento": str(novo_valor)}).eq("id", alvo2["id"]).execute()
+                    acoes_executadas.append("conta_editada")
             elif acao.get("acao") == "deletar_ultimo_lancamento":
                 # Deleta o último lançamento registrado hoje para o motorista
                 tipo = acao.get("tipo")
