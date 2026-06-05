@@ -215,6 +215,8 @@ select option{background:#141820}
 @media(max-width:1024px){
   /* MOBILE LAYOUT: topbar fixo no topo, nav fixo no bottom, main no meio */
   body{overflow:hidden;height:100dvh}
+  /* Fix iOS 26.5: chat nao pode expandir além do limite — evita tela inteira */
+  #chat-msgs{max-height:280px!important;}
   .shell{display:flex;flex-direction:column;height:100dvh;width:100vw;overflow:hidden;position:fixed;top:0;left:0}
   .topbar{position:relative!important;flex-shrink:0;height:52px;z-index:300;width:100%}
   .sidenav{
@@ -484,7 +486,7 @@ const _supa = supabase.createClient(
     <div id="chat-msgs" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;max-height:420px;overflow-y:auto;padding-right:4px;min-height:52px;scroll-behavior:smooth"></div>
     <!-- Input -->
     <div style="display:flex;gap:6px;align-items:center">
-      <input id="chat-input" placeholder="Ex: fiz 350 na uber, paguei 80 de combustível..." style="flex:1;padding:11px 14px;border-radius:12px;border:1px solid rgba(99,102,241,.3);background:rgba(255,255,255,.05);color:var(--tx);font-size:15px;font-family:inherit;transition:border .2s" onkeydown="if(event.key==='Enter'){sendChat()}" onfocus="this.style.borderColor='rgba(99,102,241,.6)'" onblur="this.style.borderColor='rgba(99,102,241,.3)'">
+      <input id="chat-input" placeholder="Ex: fiz 350 na uber, paguei 80 de combustível..." style="flex:1;padding:11px 14px;border-radius:12px;border:1px solid rgba(99,102,241,.3);background:rgba(255,255,255,.05);color:var(--tx);font-size:16px;font-family:inherit;transition:border .2s" onkeydown="if(event.key==='Enter'){sendChat()}" onfocus="this.style.borderColor='rgba(99,102,241,.6)'" onblur="this.style.borderColor='rgba(99,102,241,.3)'">
       <button id="mic-btn" onclick="toggleMic()" title="Falar" style="padding:11px 13px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:var(--tx);cursor:pointer;font-size:18px;flex-shrink:0;transition:all .2s">🎤</button>
       <button id="chat-send-btn" onclick="sendChat()" style="padding:11px 16px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;cursor:pointer;font-size:16px;font-weight:800;flex-shrink:0">➤</button>
     </div>
@@ -1404,11 +1406,10 @@ async function abrirConsultorIA(){
   const mid = window.MID || window.MOTORISTA_ID || localStorage.getItem('mid');
   const box = document.getElementById('chat-msgs');
 
-  // Rola para o chat
+  // Rola para o chat — sem scrollIntoView (causa bug iOS 26.5: chat ocupa tela inteira)
   if(box){
     box.style.maxHeight = '420px';
-    const chatCard = box.closest ? box.closest('[style*="border-radius:18px"]') : null;
-    (chatCard || box).scrollIntoView({behavior:'smooth', block:'start'});
+    setTimeout(()=>{ box.scrollTop = box.scrollHeight; }, 100);
   }
 
   // Busca histórico real por dia da semana (sempre tenta, usa cache se disponível)
@@ -4460,6 +4461,35 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     document.getElementById('tela-login').style.display='flex';
   }
 });
+</script>
+<script>
+// Fix iOS 26.5: teclado nao pode expandir o shell para tela cheia
+(function(){
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if(!isIOS) return;
+  function fixViewport(){
+    var shell = document.querySelector('.shell');
+    if(!shell) return;
+    var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    shell.style.height = h + 'px';
+    shell.style.maxHeight = h + 'px';
+  }
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', fixViewport);
+  }
+  window.addEventListener('resize', fixViewport);
+  // Ao focar num input, bloqueia scroll do body
+  document.addEventListener('focusin', function(e){
+    if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'){
+      document.body.style.overflow = 'hidden';
+      setTimeout(fixViewport, 300);
+    }
+  });
+  document.addEventListener('focusout', function(){
+    document.body.style.overflow = 'hidden'; // mantém hidden sempre
+    setTimeout(fixViewport, 300);
+  });
+})();
 </script>
 </body>
 </html>
