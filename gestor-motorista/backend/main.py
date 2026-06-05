@@ -1539,6 +1539,40 @@ Quando analisa situação geral:
     print(f"DEBUG lista_acoes: {repr(lista_acoes)}")
     linhas_json = lista_acoes  # já são dicts, não precisa serializar
     acoes_executadas_count = 0
+
+    # === DETECÇÃO DE VALOR ALTO: ganho muito acima da média = pode ser acumulado de vários dias ===
+    # Calcula média diária real do motorista (últimos 30 dias, excluindo outliers)
+    _media_diaria_real = meta_dia_chat  # já calculada acima
+    _LIMIAR_PERIODO = max(700, _media_diaria_real * 2.5)  # mínimo R$700 ou 2.5x a média
+
+    # Verifica se há algum ganho alto suspeito na lista de ações
+    _ganho_alto_pendente = None
+    for _linha_check in linhas_json:
+        _a = _linha_check if isinstance(_linha_check, dict) else json.loads(_linha_check)
+        if (_a.get("acao") == "registrar_lancamento"
+                and _a.get("tipo", "ganho") == "ganho"
+                and float(_a.get("valor", 0)) >= _LIMIAR_PERIODO
+                and not _a.get("periodo_ja_confirmado")):  # flag para não perguntar de novo
+            _ganho_alto_pendente = _a
+            break
+
+    if _ganho_alto_pendente:
+        _valor_alto = float(_ganho_alto_pendente.get("valor", 0))
+        _plat_alta = _ganho_alto_pendente.get("plataforma", "app")
+        print(f"DEBUG valor_alto detectado: R${_valor_alto} plataforma={_plat_alta} limiar={_LIMIAR_PERIODO}")
+        return {
+            "resposta": texto,
+            "acao": None,
+            "acoes_count": 0,
+            "aguarda_periodo": True,
+            "ganho_pendente": {
+                "valor": _valor_alto,
+                "plataforma": _plat_alta,
+                "descricao": _ganho_alto_pendente.get("descricao", ""),
+                "lista_acoes_original": linhas_json  # guardamos para re-executar depois se confirmar 1 dia
+            }
+        }
+
     for linha in linhas_json:
         try:
             acao = linha if isinstance(linha, dict) else json.loads(linha)
@@ -1899,6 +1933,82 @@ Quando analisa situação geral:
 
     return {"resposta": texto, "acao": acao_executada, "acoes_count": len(acoes_executadas), "acoes_esperadas": len(lista_acoes)}
 
+
+
+@app.post("/distribuir-ganho")
+async def distribuir_ganho(dados: dict = Body(...)):
+    """
+    Distribui um ganho acumulado de vários dias igualmente pelos dias do período.
+    Body: { motorista_id, valor, plataforma, data_inicio, data_fim }
+    data_inicio e data_fim: "YYYY-MM-DD"
+    Se data_inicio == data_fim → registra tudo no único dia.
+    """
+    import datetime as _dt
+    mid = dados.get("motorista_id")
+    valor_total = float(dados.get("valor", 0))
+    plataforma = dados.get("plataforma", "uber")
+    descricao = dados.get("descricao", "")
+    data_inicio_str = dados.get("data_inicio", "")
+    data_fim_str = dados.get("data_fim", "")
+    hoje = hoje_brasil()
+
+    if not mid or valor_total <= 0 or not data_inicio_str or not data_fim_str:
+        return {"ok": False, "erro": "Parâmetros incompletos"}
+
+    try:
+        data_inicio = _dt.date.fromisoformat(data_inicio_str)
+        data_fim = _dt.date.fromisoformat(data_fim_str)
+    except:
+        return {"ok": False, "erro": "Data inválida"}
+
+    # Gera lista de dias entre inicio e fim (inclusive)
+    dias = []
+    d = data_inicio
+    while d <= data_fim:
+        dias.append(d.isoformat())
+        d += _dt.timedelta(days=1)
+
+    if not dias:
+        return {"ok": False, "erro": "Nenhum dia no período"}
+
+    # Distribui igualmente
+    n_dias = len(dias)
+    valor_por_dia = round(valor_total / n_dias, 2)
+    # Ajusta último dia para cobrir centavos
+    valores = [valor_por_dia] * n_dias
+    valores[-1] = round(valor_total - valor_por_dia * (n_dias - 1), 2)
+
+    registrados = []
+    erros = []
+    for i, data_str in enumerate(dias):
+        try:
+            row = {
+                "motorista_id": mid,
+                "tipo": "ganho",
+                "valor": valores[i],
+                "data": data_str,
+                "plataforma": plataforma,
+            }
+            if descricao:
+                row["descricao"] = descricao
+            supabase.table("lancamentos").insert(row).execute()
+            registrados.append({"data": data_str, "valor": valores[i]})
+        except Exception as e:
+            erros.append({"data": data_str, "erro": str(e)})
+
+    if n_dias == 1:
+        msg = f"✅ Anotei! R${valor_total:.0f} na {plataforma} em {data_inicio_str}."
+    else:
+        msg = f"✅ Distribuí R${valor_total:.0f} em {n_dias} dias ({data_inicio_str} a {data_fim_str}). R${valor_por_dia:.0f}/dia na {plataforma}."
+
+    return {
+        "ok": True,
+        "registrados": registrados,
+        "erros": erros,
+        "mensagem": msg,
+        "n_dias": n_dias,
+        "valor_por_dia": valor_por_dia
+    }
 
 
 @app.get("/diagnostico/{mid}")

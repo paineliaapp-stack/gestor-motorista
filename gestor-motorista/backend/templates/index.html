@@ -3404,6 +3404,93 @@ async function sendChat() {
     document.getElementById('typing-indicator')?.remove();
     const reply = data.resposta || data.message || JSON.stringify(data);
     appendMsg('assistant', reply);
+
+    // === DETECÇÃO DE VALOR ACUMULADO: mostra seletor de período ===
+    if (data.aguarda_periodo && data.ganho_pendente) {
+      const gp = data.ganho_pendente;
+      const hoje = new Date();
+      const fmtDate = d => d.toISOString().split('T')[0];
+      const fmtDia  = d => {
+        const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+        return `${dias[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}`;
+      };
+
+      // Gera opções de período: hoje, ontem, últimos 2 dias, 3 dias, 5 dias, 7 dias
+      const opcoes = [
+        { label: 'Só hoje',         inicio: 0, fim: 0 },
+        { label: 'Ontem + hoje',    inicio: 1, fim: 0 },
+        { label: 'Últimos 3 dias',  inicio: 2, fim: 0 },
+        { label: 'Últimos 5 dias',  inicio: 4, fim: 0 },
+        { label: 'Última semana',   inicio: 6, fim: 0 },
+      ];
+
+      const btns = opcoes.map(op => {
+        const di = new Date(hoje); di.setDate(di.getDate() - op.inicio);
+        const df = new Date(hoje); df.setDate(df.getDate() - op.fim);
+        const label = op.inicio === 0
+          ? `Só hoje (${fmtDia(df)})`
+          : `${fmtDia(di)} até hoje`;
+        return `<button class="periodo-btn"
+          data-inicio="${fmtDate(di)}"
+          data-fim="${fmtDate(df)}"
+          data-valor="${gp.valor}"
+          data-plat="${gp.plataforma}"
+          data-desc="${gp.descricao||''}"
+          style="display:block;width:100%;margin:4px 0;padding:10px 14px;border-radius:10px;border:1.5px solid var(--ac);background:var(--bg2);color:var(--tx);font-size:14px;cursor:pointer;text-align:left;">
+          ${label} &nbsp;<span style="float:right;opacity:.6;font-size:12px">${op.inicio === 0 ? 'R$'+Math.round(gp.valor) : 'R$'+Math.round(gp.valor/(op.inicio+1))+'/dia'}</span>
+        </button>`;
+      }).join('');
+
+      const pergunta = `De qual período é esse valor de R$${Math.round(gp.valor)}?<br><small style="opacity:.6">Vou dividir direitinho por cada dia 👇</small>`;
+      const html = `<div class="periodo-picker" style="background:var(--bg2);border-radius:14px;padding:14px;margin-top:4px;">${pergunta}${btns}</div>`;
+      appendMsg('assistant', html, true);
+
+      // Handler dos botões de período
+      document.querySelectorAll('.periodo-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const ini = this.dataset.inicio;
+          const fim = this.dataset.fim;
+          const val = parseFloat(this.dataset.valor);
+          const plat = this.dataset.plat;
+          const desc = this.dataset.desc;
+
+          // Remove o seletor de período
+          document.querySelector('.periodo-picker')?.closest('.msg.assistant')?.remove();
+
+          // Mostra resposta do usuário
+          const nDias = Math.round((new Date(fim) - new Date(ini)) / 86400000) + 1;
+          const labelEscolha = nDias === 1 ? `Só hoje (${fim})` : `${ini} até ${fim}`;
+          appendMsg('user', labelEscolha);
+
+          appendMsg('assistant', '<div class="typing-dots">⏳ Distribuindo...</div>', true);
+
+          try {
+            const dr = await fetch(API + '/distribuir-ganho', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({
+                motorista_id: MID||window.MID,
+                valor: val,
+                plataforma: plat,
+                descricao: desc,
+                data_inicio: ini,
+                data_fim: fim
+              })
+            });
+            const dRes = await dr.json();
+            document.querySelector('.typing-dots')?.closest('.msg.assistant')?.remove();
+            appendMsg('assistant', dRes.mensagem || '✅ Registrado!');
+            chatHistory.push({role:'assistant', content: dRes.mensagem||'✅'});
+            try{loadDash();}catch(e){}
+            try{loadContasDash();}catch(e){}
+          } catch(e) {
+            document.querySelector('.typing-dots')?.closest('.msg.assistant')?.remove();
+            appendMsg('assistant', '❌ Erro ao distribuir. Tenta de novo.');
+          }
+        });
+      });
+    }
+    // === FIM DETECÇÃO DE PERÍODO ===
     // Avisa se a IA disse que registrou mas nenhuma ação foi executada
     if(data.acoes_esperadas > 0 && data.acoes_count === 0){
       appendMsg('assistant', '⚠️ Não consegui salvar. Tenta de novo ou reformula a mensagem.');
