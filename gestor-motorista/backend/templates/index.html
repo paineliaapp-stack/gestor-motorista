@@ -1618,8 +1618,8 @@ async function loadDash(){
     const el=document.getElementById(id);
     if(el) el.style.display='none';
   });
-  // Verifica contas vencendo
-  fetch(API+'/contas/'+MID).then(r=>r.json()).then(c=>alertaContasVencendo(c)).catch(()=>{});
+  // Verifica contas vencendo + pré-carrega para meta mensal
+  fetch(API+'/contas/'+MID).then(r=>r.json()).then(c=>{window._contas=c;alertaContasVencendo(c);try{renderMetaMensal();}catch(e){}}).catch(()=>{});
   try{
     const r=await fetch(API+'/resumo/'+MID);
     const d=await r.json();
