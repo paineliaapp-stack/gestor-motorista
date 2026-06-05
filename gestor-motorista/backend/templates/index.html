@@ -458,13 +458,6 @@ const _supa = supabase.createClient(
       <div id="hero-lucro" style="font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:700;letter-spacing:.5px;line-height:1;color:var(--am)">R$ 0,00</div>
       <div class="sub" id="dash-sub" style="margin-top:4px;font-size:12px;color:var(--mt)">Carregando...</div>
     </div>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;margin-top:4px">
-      <div class="live">Ao vivo</div>
-    </div>
-  </div>
-      <div class="bt-sub" id="bt-sub"></div>
-    </div>
-    <button id="banner-turno-btn" onclick="bannerTurnoBtnClick()" style="background:rgba(255,77,106,.1);border:1px solid rgba(255,77,106,.25);border-radius:8px;padding:6px 12px;color:#FF4D6A;font-size:11px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer">⏹ Encerrar</button>
   </div>
 
   <!-- ALERTA CONTAS VENCENDO -->
@@ -4154,46 +4147,8 @@ function confirmarModalDia(){
   toast('Turno iniciado às ' + inicio + ' ▶');
 }
 
-function atualizarBannerAtivo(){
-  const banner = document.getElementById('banner-turno');
-  const btn = document.getElementById('banner-turno-btn');
-  if(!banner) return;
-  if(turnoAtivo){
-    document.getElementById('bt-titulo').textContent = '🟢 Turno ativo desde ' + turnoAtivo.inicio;
-    document.getElementById('bt-sub').textContent = turnoFimPrevisto ? 'Previsão: ' + turnoFimPrevisto : '';
-    banner.classList.add('ativo');
-    banner.classList.remove('inativo');
-    if(btn){ btn.textContent = '⏹ Encerrar'; btn.style.cssText='background:rgba(255,77,106,.1);border:1px solid rgba(255,77,106,.25);border-radius:8px;padding:6px 12px;color:#FF4D6A;font-size:11px;font-weight:700;font-family:"Outfit",sans-serif;cursor:pointer'; }
-  } else {
-    // Sem turno ativo — mostra faixa amarela discreta
-    document.getElementById('bt-titulo').textContent = '⏸ Nenhum turno iniciado hoje';
-    document.getElementById('bt-sub').textContent = 'Toque em Iniciar para registrar seu horário';
-    banner.classList.add('inativo');
-    banner.classList.remove('ativo');
-    if(btn){ btn.textContent = '▶ Iniciar'; btn.style.cssText='background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.35);border-radius:8px;padding:6px 12px;color:var(--am);font-size:11px;font-weight:700;font-family:"Outfit",sans-serif;cursor:pointer'; }
-  }
-}
 
-function bannerTurnoBtnClick(){
-  if(turnoAtivo){
-    toggleTurno();
-    setTimeout(atualizarBannerAtivo, 400);
-  } else {
-    abrirModalDia();
-  }
-}
 
-function mostrarBannerTurno(){
-  // Sempre mostra o banner
-  atualizarBannerAtivo();
-  // Se não tem turno ativo E não mostrou modal hoje → abre modal
-  if(!turnoAtivo && MID){
-    const chaveHoje = 'modal_dia_'+new Date().toISOString().slice(0,10);
-    if(!localStorage.getItem(chaveHoje)){
-      setTimeout(abrirModalDia, 1000);
-    }
-  }
-}
 
 // Detector de retorno ao app (visibilitychange)
 // Se o app ficou em background por mais de 4h e não tem turno ativo → abre modal
