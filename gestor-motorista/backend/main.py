@@ -1560,16 +1560,61 @@ Quando analisa situação geral:
         _valor_alto = float(_ganho_alto_pendente.get("valor", 0))
         _plat_alta = _ganho_alto_pendente.get("plataforma", "app")
         print(f"DEBUG valor_alto detectado: R${_valor_alto} plataforma={_plat_alta} limiar={_LIMIAR_PERIODO}")
+        # Separa ações: executa tudo EXCETO o ganho alto suspeito
+        _acoes_nao_ganho_alto = [_a for _a in linhas_json if not (
+            isinstance(_a, dict)
+            and _a.get("acao") == "registrar_lancamento"
+            and _a.get("tipo", "ganho") == "ganho"
+            and float(_a.get("valor", 0)) >= _LIMIAR_PERIODO
+            and not _a.get("periodo_ja_confirmado")
+        )]
+        # Executa ações não-ganho (editar_conta, despesas normais, etc.)
+        for _linha_ng in _acoes_nao_ganho_alto:
+            try:
+                _a_ng = _linha_ng if isinstance(_linha_ng, dict) else json.loads(_linha_ng)
+                if _a_ng.get("acao") == "editar_conta":
+                    import unicodedata as _ud2
+                    def _norm2(s): s=(s or '').lower().strip(); s=_ud2.normalize('NFD',s); return ''.join(c for c in s if _ud2.category(c)!='Mn')
+                    _desc_ng = _norm2(_a_ng.get("descricao",""))
+                    _campo_ng = _a_ng.get("campo")
+                    _novo_ng = _a_ng.get("novo_valor")
+                    _contas_ng = supabase.table("contas").select("id,descricao,pago,vencimento").eq("motorista_id", motorista_id).execute()
+                    _matches_ng = [c for c in (_contas_ng.data or []) if _desc_ng and (_desc_ng in _norm2(c["descricao"]) or _norm2(c["descricao"]) in _desc_ng or (len(_desc_ng)>=4 and _norm2(c["descricao"]).startswith(_desc_ng[:5])))]
+                    if not _matches_ng:
+                        for c in (_contas_ng.data or []):
+                            _pfx = ''.join(a for a,b in zip(_desc_ng, _norm2(c["descricao"])) if a==b)
+                            if len(_pfx) >= 4: _matches_ng.append(c)
+                    if _matches_ng and _campo_ng == "valor":
+                        _venc_ng = _a_ng.get("vencimento_alvo")
+                        _pend_ng = [c for c in _matches_ng if not c.get("pago")]
+                        if _venc_ng and _pend_ng:
+                            try:
+                                from datetime import date as _dn; _vd=_dn.fromisoformat(str(_venc_ng))
+                                _pend_ng.sort(key=lambda c: abs((_dn.fromisoformat(c["vencimento"])-_vd).days))
+                            except: pass
+                            supabase.table("contas").update({"valor": float(_novo_ng)}).eq("id", _pend_ng[0]["id"]).execute()
+                        elif _pend_ng:
+                            for _c_ng in _pend_ng:
+                                supabase.table("contas").update({"valor": float(_novo_ng)}).eq("id", _c_ng["id"]).execute()
+                        acoes_executadas.append("conta_editada")
+                    elif _matches_ng and _campo_ng == "vencimento":
+                        _pend_ng = sorted([c for c in _matches_ng if not c.get("pago")], key=lambda c: c.get("vencimento",""))
+                        if _pend_ng:
+                            supabase.table("contas").update({"vencimento": str(_novo_ng)}).eq("id", _pend_ng[0]["id"]).execute()
+                            acoes_executadas.append("conta_editada")
+            except Exception as _eng_e:
+                print(f"ERRO ao executar ação não-ganho: {_eng_e}")
         return {
             "resposta": texto,
-            "acao": None,
-            "acoes_count": 0,
+            "acao": "conta_editada" if "conta_editada" in acoes_executadas else None,
+            "acoes_count": len(acoes_executadas),
+            "acoes_esperadas": len(linhas_json),
             "aguarda_periodo": True,
             "ganho_pendente": {
                 "valor": _valor_alto,
                 "plataforma": _plat_alta,
                 "descricao": _ganho_alto_pendente.get("descricao", ""),
-                "lista_acoes_original": linhas_json  # guardamos para re-executar depois se confirmar 1 dia
+                "lista_acoes_original": linhas_json
             }
         }
 

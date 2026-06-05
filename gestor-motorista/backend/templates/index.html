@@ -3331,7 +3331,7 @@ function appendMsg(role, text, skipScroll, dateOverride) {
       <div style="flex:1;min-width:0">
         <div class="msg-base msg-gestor ${tipo}">
           <div style="font-size:10px;font-weight:600;color:rgba(99,102,241,.8);margin-bottom:4px;letter-spacing:.3px">GESTOR</div>
-          ${_mdToHtml(text)}
+          ${text.trimStart().startsWith('<') ? text : _mdToHtml(text)}
           ${botoesHtml}
           <span class="msg-time">${hora}</span>
         </div>
