@@ -1150,6 +1150,85 @@ function renderMetaMensal(){
   `;
 }
 
+function verificarCombustivelSemanal(lancamentos) {
+  // Só roda no fim de semana (sáb ou dom) ou se já passou o sábado desta semana
+  const agora = new Date(Date.now() - 3*60*60*1000);
+  const diaSemana = agora.getDay(); // 0=dom, 6=sáb
+  const ehFimDeSemana = diaSemana === 0 || diaSemana === 6;
+
+  // Calcula início da semana atual (segunda)
+  const hoje = new Date(agora.toISOString().slice(0,10)+'T00:00:00');
+  const diffSeg = diaSemana === 0 ? 6 : diaSemana - 1;
+  const inicioSemana = new Date(hoje); inicioSemana.setDate(hoje.getDate() - diffSeg);
+  const fimSemana = new Date(inicioSemana); fimSemana.setDate(inicioSemana.getDate() + 6);
+  const toStr = d => d.toISOString().slice(0,10);
+
+  // Pega key para não repetir o aviso na mesma semana
+  const chaveAviso = 'comb_aviso_sem_' + toStr(inicioSemana);
+  try { if(localStorage.getItem(chaveAviso)) return; } catch(e) {}
+
+  // Só avisa no fim de semana
+  if(!ehFimDeSemana) return;
+
+  // Filtra lançamentos da semana
+  const lancSem = (lancamentos||[]).filter(l => l.data >= toStr(inicioSemana) && l.data <= toStr(fimSemana));
+  const ganhosSem = lancSem.filter(l=>l.tipo==='ganho').reduce((s,l)=>s+parseFloat(l.valor||0),0);
+  const combSem = lancSem.filter(l=>
+    l.tipo==='despesa' && (
+      (l.plataforma||'').toLowerCase()==='combustivel' ||
+      (l.descricao||'').toLowerCase().includes('combust')
+    )
+  ).reduce((s,l)=>s+parseFloat(l.valor||0),0);
+
+  if(ganhosSem < 50 || combSem < 5) return; // dados insuficientes
+
+  // % real de combustível na semana
+  const pctReal = Math.round(combSem / ganhosSem * 100);
+
+  // % configurado
+  let pctConfig = 25;
+  try { pctConfig = parseFloat(localStorage.getItem('pct_comb_'+(window.MID||''))||'25'); } catch(e) {}
+
+  const diferenca = Math.abs(pctReal - pctConfig);
+  if(diferenca < 5) return; // dentro da margem, não avisa
+
+  // Monta mensagem no chat
+  const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const direcao = pctReal < pctConfig ? 'menos' : 'mais';
+  const emoji = pctReal < pctConfig ? '✅' : '⚠️';
+
+  const msgTexto = `${emoji} Essa semana você gastou ${fmt(combSem)} de combustível em ${fmt(ganhosSem)} faturados — isso é <strong>${pctReal}%</strong> do bruto, mas sua estimativa está em <strong>${pctConfig}%</strong>. Você gastou ${diferenca} ponto${diferenca!==1?'s':''} percentuais a ${direcao} do previsto.`;
+
+  // Cria mensagem com botão
+  const msgId = 'comb-aviso-'+Date.now();
+  const msgEl = document.createElement('div');
+  msgEl.className = 'msg msg-gestor';
+  msgEl.innerHTML = `
+    <div class="msg-avatar">🧠</div>
+    <div class="msg-balao">
+      <div style="font-size:13px;line-height:1.5;margin-bottom:10px">${msgTexto}</div>
+      <button onclick="(function(){
+        localStorage.setItem('pct_comb_'+(window.MID||''), ${pctReal});
+        try{renderMetaMensal();}catch(e){}
+        try{loadContas();}catch(e){}
+        document.getElementById('${msgId}').innerHTML = '<div class=\'msg-avatar\'>🧠</div><div class=\'msg-balao\'><div style=\'font-size:13px;color:#00D897\'>✅ Estimativa de combustível atualizada para <strong>${pctReal}%</strong>! Os cálculos do mês foram ajustados.</div></div>';
+        try{localStorage.setItem('${chaveAviso}','1');}catch(e){}
+      })()" style="width:100%;background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(99,102,241,.1));border:1px solid rgba(99,102,241,.4);border-radius:10px;color:#a5b4fc;font-size:12px;font-weight:600;padding:10px 14px;cursor:pointer;text-align:left;line-height:1.4">
+        🔄 Clique aqui e atualizamos automaticamente a projeção para <strong>${pctReal}%</strong> — mais próximo do que você realmente gasta
+      </button>
+    </div>
+  `;
+  msgEl.id = msgId;
+
+  const chat = document.getElementById('chat-msgs');
+  if(chat) {
+    chat.appendChild(msgEl);
+    chat.scrollTop = chat.scrollHeight;
+    // Marca que já avisou essa semana
+    try { localStorage.setItem(chaveAviso, '1'); } catch(e) {}
+  }
+}
+
 function renderResumoSemanal(lancamentos) {
   const card = document.getElementById('card-resumo-semanal');
   if (!card) return;
@@ -1803,6 +1882,7 @@ async function loadDash(){
     }
     try{renderMetaMensal();}catch(e){}
     try{renderResumoSemanal(todosLanc);}catch(e){}
+    try{verificarCombustivelSemanal(todosLanc);}catch(e){}
     // Busca renda extra prevista no próximo mês
     let rendaExtraPrevista = 0;
     let lancFuturos = [];
