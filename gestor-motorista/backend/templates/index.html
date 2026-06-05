@@ -3403,7 +3403,10 @@ async function sendChat() {
     const data = await res.json();
     document.getElementById('typing-indicator')?.remove();
     const reply = data.resposta || data.message || JSON.stringify(data);
-    appendMsg('assistant', reply);
+    // Só mostra o reply de texto se NÃO estiver aguardando período (evita HTML quebrado do Gemini)
+    if (!data.aguarda_periodo) {
+      appendMsg('assistant', reply);
+    }
 
     // === DETECÇÃO DE VALOR ACUMULADO: mostra seletor de período ===
     if (data.aguarda_periodo && data.ganho_pendente) {
