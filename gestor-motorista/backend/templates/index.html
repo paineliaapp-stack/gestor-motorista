@@ -1062,8 +1062,14 @@ function renderMetaMensal(){
   // Faturamento do mês atual — vem do loadDash (sempre atualizado)
   const faturadoAte = _faturadoMesAtual || 0;
 
-  // Projeção: média diária × dias restantes
-  const mediaDia = diaAtual > 0 ? faturadoAte / diaAtual : 0;
+  // Projeção: média só dos dias trabalhados (igual ao gráfico — exclui dias zerados)
+  const _anoMes = agora.toISOString().slice(0,7);
+  const _ganhosPorDia = {};
+  (todosLanc||[]).filter(l => l.tipo==='ganho' && l.data && l.data.startsWith(_anoMes)).forEach(l => {
+    _ganhosPorDia[l.data] = (_ganhosPorDia[l.data]||0) + parseFloat(l.valor);
+  });
+  const _diasTrabalhados = Math.max(1, Object.keys(_ganhosPorDia).length);
+  const mediaDia = faturadoAte / _diasTrabalhados;
   const projecao = faturadoAte + mediaDia * diasRestantes;
   const faltaMeta = Math.max(0, META_MENSAL - faturadoAte);
   const necessarioPorDia = diasRestantes > 0 ? faltaMeta / diasRestantes : faltaMeta;
