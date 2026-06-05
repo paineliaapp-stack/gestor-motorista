@@ -962,6 +962,7 @@ let NOME='Motorista';
 let META_DIARIA=parseFloat(localStorage.getItem('meta')||'150');
 let META_MENSAL=parseFloat(localStorage.getItem('meta_mensal_obj')||'0');
 let tipoAtual='ganho',catAtual='',todosLanc=[];
+let _faturadoMesAtual=0; // atualizado pelo loadDash, usado pelo renderMetaMensal
 let gPizza=null,gLinha=null;
 let obPlats=[],obMeta=150;
 
@@ -1058,15 +1059,8 @@ function renderMetaMensal(){
   const diasRestantes = Math.max(1, diasMes - diaAtual);
   const metaPorDia = META_MENSAL / diasMes;
 
-  // Faturamento do mês atual (usa todosLanc se disponível)
-  let faturadoAte = 0;
-  const mesAtual = agora.getUTCMonth();
-  const anoAtual = agora.getUTCFullYear();
-  (window.todosLanc||[]).forEach(l=>{
-    const dl = new Date(l.data+'T12:00:00');
-    if(l.tipo==='ganho' && dl.getMonth()===mesAtual && dl.getFullYear()===anoAtual)
-      faturadoAte += parseFloat(l.valor||0);
-  });
+  // Faturamento do mês atual — vem do loadDash (sempre atualizado)
+  const faturadoAte = _faturadoMesAtual || 0;
 
   // Projeção: média diária × dias restantes
   const mediaDia = diaAtual > 0 ? faturadoAte / diaAtual : 0;
@@ -1630,6 +1624,16 @@ async function loadDash(){
     const r=await fetch(API+'/resumo/'+MID);
     const d=await r.json();
     todosLanc=d.lancamentos||[];
+    // Calcula faturado do mês atual e expõe para renderMetaMensal
+    {
+      const _agMM = new Date(Date.now()-3*60*60*1000);
+      const _mMM = _agMM.getUTCMonth(), _aMM = _agMM.getUTCFullYear();
+      _faturadoMesAtual = todosLanc.filter(l=>{
+        const dl=new Date(l.data+'T12:00:00');
+        return l.tipo==='ganho' && dl.getMonth()===_mMM && dl.getFullYear()===_aMM;
+      }).reduce((s,l)=>s+parseFloat(l.valor||0),0);
+    }
+    try{renderMetaMensal();}catch(e){}
     // Busca renda extra prevista no próximo mês
     let rendaExtraPrevista = 0;
     let lancFuturos = [];
