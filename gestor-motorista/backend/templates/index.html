@@ -722,7 +722,7 @@ const _supa = supabase.createClient(
   <!-- GRAFICOS -->
   <div class="cr">
     <div class="gc"><h3>Lucro vs Despesas</h3><canvas id="g-pizza" height="200"></canvas></div>
-    <div class="gc"><h3>Evolução diária</h3><canvas id="g-linha" height="200"></canvas></div>
+    <div class="gc"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h3 style="margin:0">Evolução diária</h3><div id="media-label-linha" style="font-size:11px;color:rgba(78,158,255,.85);font-weight:600"></div></div><canvas id="g-linha" height="200"></canvas></div>
   </div>
   <div class="gc"><h3>Faturamento por plataforma</h3><canvas id="g-plataforma" height="80"></canvas></div>
   <div class="gc"><h3>Despesas por categoria</h3><div id="barras-cat" style="margin-top:6px"></div></div>
@@ -1638,6 +1638,10 @@ async function loadDash(){
     const diasComGanho=ultDias.filter(x=>pd[x]>0);
     const mediaLinhaVal=diasComGanho.length?diasComGanho.reduce((s,x)=>s+pd[x],0)/diasComGanho.length:0;
     const mediaArr=ultDias.map(()=>mediaLinhaVal>0?mediaLinhaVal:null);
+    const mediaLabelEl=document.getElementById('media-label-linha');
+    if(mediaLabelEl) mediaLabelEl.textContent = mediaLinhaVal>0
+      ? '─── Média: R$ '+mediaLinhaVal.toLocaleString('pt-BR',{minimumFractionDigits:2})+'/dia'
+      : '';
     gLinha=new Chart(document.getElementById('g-linha'),{type:'bar',data:{labels:ultDias.map(x=>x.slice(8)+'/'+x.slice(5,7)),datasets:[{label:'Ganhos',data:ultDias.map(x=>pd[x]),backgroundColor:ultDias.map(x=>pd[x]>0?'rgba(245,166,35,.7)':'rgba(255,255,255,.05)'),borderColor:ultDias.map(x=>pd[x]>0?'#F5A623':'rgba(255,255,255,.08)'),borderWidth:1,borderRadius:4},{type:'line',label:'Média',data:mediaArr,borderColor:'rgba(78,158,255,.85)',backgroundColor:'transparent',borderWidth:2,borderDash:[5,4],pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#4E9EFF',tension:0,order:0}]},options:{plugins:{legend:{display:false},datalabels:{display:false},tooltip:{callbacks:{label:(ctx)=>ctx.dataset.label+': R$ '+parseFloat(ctx.raw||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}}},scales:{x:{ticks:{color:'#555',maxRotation:0,font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#555'},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
 
     // Gráfico faturamento por plataforma
@@ -2562,8 +2566,9 @@ async function _renderResumoContasAsync(el, calc){
     // dias = 0 se vence hoje, 1 se amanhã, negativo se vencida
     const dias = Math.floor((venc - _hojeRef)/(1000*60*60*24) + 0.01);
     const vencida = dias < 0;
+    // dias+1 inclui hoje; label deixa claro isso para o motorista
     const diasEfetivos = vencida ? 1 : Math.max(1, dias + 1);
-    const porDia = saldo / diasEfetivos; // líquido necessário por dia
+    const porDia = saldo / diasEfetivos;
     totalPorDiaLiq += porDia;
     const urgente = !vencida && dias <= 3;
     const cor = vencida ? 'var(--rd)' : urgente ? 'var(--am)' : 'var(--tx)';
@@ -2587,7 +2592,11 @@ async function _renderResumoContasAsync(el, calc){
         ${outrasHtml}
       </div>`;
     }
-    const labelVenc = vencida ? `vencida há ${Math.abs(dias)}d` : `vence ${venc.toLocaleDateString('pt-BR')}`;
+    const labelVenc = vencida
+      ? `⚠️ vencida há ${Math.abs(dias)}d`
+      : dias === 0
+        ? `vence hoje · ${diasEfetivos}d contando hoje`
+        : `vence ${venc.toLocaleDateString('pt-BR')} · ${diasEfetivos}d incl. hoje`;
     return `<div style="border-radius:8px;background:var(--s)">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px">
         <div><div style="font-size:12px;font-weight:600">${proxima.descricao}${extraTag}</div><div style="font-size:10px;color:var(--mt)">${labelVenc}</div></div>
@@ -2603,9 +2612,9 @@ async function _renderResumoContasAsync(el, calc){
   const faturadoMes = totalFaturadoPlat + totalRendaExtraMes;
   const combMes = faturadoMes * (pctComb/100);
 
-  // Meta mensal
+  // Meta mensal — lida do card de meta mensal (meta_mensal_obj)
   let metaMensalConfig = 0;
-  try { metaMensalConfig = parseFloat(localStorage.getItem('meta_diaria_'+MID)||0) * diasMes; } catch(e){}
+  try { metaMensalConfig = parseFloat(localStorage.getItem('meta_mensal_obj')||'0'); } catch(e){}
   const faltaParaMeta = Math.max(0, metaMensalConfig - faturadoMes);
   const taxaCombEst = combMes > 0 && metaMensalConfig > 0 ? Math.min(combMes/metaMensalConfig, 0.45) : 0.25;
   const faturarParaContas = totalPend / (1 - taxaCombEst);
