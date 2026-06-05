@@ -1421,7 +1421,7 @@ Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}
 - Editar valor de conta: {{"acao":"editar_conta","descricao":"nome","campo":"valor","novo_valor":N}} — atualiza TODAS as parcelas pendentes com esse nome
 - Editar valor de parcela específica: {{"acao":"editar_conta","descricao":"nome","campo":"valor","novo_valor":N,"vencimento_alvo":"YYYY-MM-DD"}} — usa quando motorista menciona "a que vence dia X" ou "a parcela do dia X"
 - Apagar conta: {{"acao":"deletar_conta","descricao":"nome"}}
-- Desfazer último: {{"acao":"deletar_ultimo_lancamento","tipo":"ganho"}}
+- Desfazer último: {{"acao":"deletar_ultimo_lancamento","tipo":"ganho"}} — se mencionar plataforma específica, inclua {{"plataforma":"99"}} para apagar só aquela; sem plataforma = apaga o mais recente independente de plataforma
 - Corrigir valor: {{"acao":"editar_ultimo_lancamento","tipo":"despesa","campo":"valor","novo_valor":N}}
 - Deletar por ID específico: {{"acao":"deletar_lancamento_por_id","id":"uuid-do-lancamento"}} — use quando o motorista pedir para remover lançamento específico
 - Cancelar distribuição (vários IDs): {{"acao":"deletar_lancamentos_por_ids","ids":["id1","id2","id3"]}} — use quando o motorista pedir para cancelar/desfazer uma distribuição de período que está nos últimos_ids_distribuicao do contexto
@@ -1746,20 +1746,24 @@ Quando analisa situação geral:
                             acoes_executadas.append("conta_editada")
             elif acao.get("acao") == "deletar_ultimo_lancamento":
                 tipo = acao.get("tipo", "ganho")
-                # Pega os últimos 10 lançamentos para detectar distribuição em lote
-                r = supabase.table("lancamentos").select("id,created_at,plataforma").eq("motorista_id", motorista_id).eq("tipo", tipo).order("created_at", desc=True).limit(10).execute()
-                if r.data:
+                plataforma_filtro = acao.get("plataforma")  # None = qualquer plataforma
+                # Pega os últimos 15 lançamentos para detectar distribuição em lote
+                q_del = supabase.table("lancamentos").select("id,created_at,plataforma").eq("motorista_id", motorista_id).eq("tipo", tipo).order("created_at", desc=True).limit(15).execute()
+                cands_del = q_del.data or []
+                # Filtra por plataforma se informada pelo usuário
+                if plataforma_filtro:
+                    cands_del = [x for x in cands_del if (x.get("plataforma") or "").lower() == plataforma_filtro.lower()]
+                if cands_del:
                     from datetime import datetime as _dtt2
                     ultimo_ts = None
                     try:
-                        ts_str = r.data[0]["created_at"]
-                        ultimo_ts = _dtt2.fromisoformat(ts_str.replace("Z","+00:00"))
+                        ultimo_ts = _dtt2.fromisoformat(cands_del[0]["created_at"].replace("Z","+00:00"))
                     except: pass
-                    # Verifica se múltiplos lançamentos foram criados quase ao mesmo tempo (±5s = distribuição)
-                    ids_lote = [r.data[0]["id"]]
+                    # Verifica se múltiplos lançamentos foram criados quase ao mesmo tempo (±5s = distribuição em lote)
+                    ids_lote = [cands_del[0]["id"]]
                     if ultimo_ts:
-                        plat_ref = r.data[0].get("plataforma")
-                        for item in r.data[1:]:
+                        plat_ref = cands_del[0].get("plataforma")
+                        for item in cands_del[1:]:
                             try:
                                 ts2 = _dtt2.fromisoformat(item["created_at"].replace("Z","+00:00"))
                                 diff = abs((ultimo_ts - ts2).total_seconds())
@@ -1961,6 +1965,7 @@ Quando analisa situação geral:
                 # Deleta o último lançamento (ou lote de distribuição) para o motorista
                 tipo = acao.get("tipo")
                 descricao = acao.get("descricao")
+                plataforma_filtro2 = acao.get("plataforma")
                 from datetime import datetime as _dtt3
                 q2 = supabase.table("lancamentos").select("id,created_at,plataforma,tipo,descricao").eq("motorista_id", motorista_id).order("created_at", desc=True).limit(15).execute()
                 cands = q2.data or []
@@ -1968,6 +1973,9 @@ Quando analisa situação geral:
                     cands = [x for x in cands if x.get("tipo") == tipo]
                 if descricao:
                     cands = [x for x in cands if descricao.lower() in (x.get("descricao") or "").lower()]
+                # Filtra por plataforma se o usuário especificou (ex: "cancele o da 99")
+                if plataforma_filtro2:
+                    cands = [x for x in cands if (x.get("plataforma") or "").lower() == plataforma_filtro2.lower()]
                 if cands:
                     ref2 = cands[0]
                     ref_ts2 = None
