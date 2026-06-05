@@ -1557,7 +1557,10 @@ async function loadDash(){
     const pd={};ultDias.forEach(d=>pd[d]=0);
     todosLanc.forEach(l=>{if(l.tipo==='ganho'&&pd[l.data]!==undefined)pd[l.data]+=parseFloat(l.valor);});
     if(gLinha)gLinha.destroy();
-    gLinha=new Chart(document.getElementById('g-linha'),{type:'bar',data:{labels:ultDias.map(x=>x.slice(8)+'/'+x.slice(5,7)),datasets:[{label:'Ganhos',data:ultDias.map(x=>pd[x]),backgroundColor:ultDias.map(x=>pd[x]>0?'rgba(245,166,35,.7)':'rgba(255,255,255,.05)'),borderColor:ultDias.map(x=>pd[x]>0?'#F5A623':'rgba(255,255,255,.08)'),borderWidth:1,borderRadius:4}]},options:{plugins:{legend:{display:false},datalabels:{display:false}},scales:{x:{ticks:{color:'#555',maxRotation:0,font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#555'},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
+    const diasComGanho=ultDias.filter(x=>pd[x]>0);
+    const mediaLinhaVal=diasComGanho.length?diasComGanho.reduce((s,x)=>s+pd[x],0)/diasComGanho.length:0;
+    const mediaArr=ultDias.map(()=>mediaLinhaVal>0?mediaLinhaVal:null);
+    gLinha=new Chart(document.getElementById('g-linha'),{type:'bar',data:{labels:ultDias.map(x=>x.slice(8)+'/'+x.slice(5,7)),datasets:[{label:'Ganhos',data:ultDias.map(x=>pd[x]),backgroundColor:ultDias.map(x=>pd[x]>0?'rgba(245,166,35,.7)':'rgba(255,255,255,.05)'),borderColor:ultDias.map(x=>pd[x]>0?'#F5A623':'rgba(255,255,255,.08)'),borderWidth:1,borderRadius:4},{type:'line',label:'Média',data:mediaArr,borderColor:'rgba(78,158,255,.85)',backgroundColor:'transparent',borderWidth:2,borderDash:[5,4],pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#4E9EFF',tension:0,order:0}]},options:{plugins:{legend:{display:false},datalabels:{display:false},tooltip:{callbacks:{label:(ctx)=>ctx.dataset.label+': R$ '+parseFloat(ctx.raw||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}}},scales:{x:{ticks:{color:'#555',maxRotation:0,font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#555'},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
 
     // Gráfico faturamento por plataforma
     const RENDA_EXTRA_KEYS=['seguro_desemprego','freelance','aluguel_recebido','venda','emprestimo_recebido','bonus','renda_extra'];
