@@ -1113,9 +1113,18 @@ function renderMetaMensal(){
         <span style="color:var(--mt)">🎯 Falta para a meta</span>
         <span style="font-weight:700;color:var(--am)">${fmt(faltaMeta)}</span>
       </div>` : ''}
-      ${faturadoAte > 0 ? `<div style="display:flex;justify-content:space-between;font-size:12px">
-        <span style="color:var(--mt)">📈 Projeção fim do mês</span>
-        <span style="font-weight:700;color:${projecaoBate?'var(--gn)':'var(--rd)'}">${fmt(projecao)} ${projecaoBate?'✅':'⚠️'}</span>
+      ${faturadoAte > 0 ? `<div style="background:rgba(255,255,255,.04);border-radius:8px;padding:9px 12px;margin:2px 0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <span style="font-size:11px;color:var(--mt);font-weight:700;text-transform:uppercase;letter-spacing:.3px">📈 Projeção fim do mês</span>
+          <span style="font-size:16px;font-weight:700;color:${projecaoBate?'var(--gn)':'var(--rd)'}">${fmt(projecao)} ${projecaoBate?'✅':'⚠️'}</span>
+        </div>
+        <div style="font-size:11px;color:#888;line-height:1.5">
+          Se continuar fazendo em média <strong style="color:#aaa">${fmt(mediaDia)}/dia</strong> nos próximos <strong style="color:#aaa">${diasRestantes} dias</strong>, é isso que vai entrar no mês.
+          ${projecaoBate
+            ? '<span style="color:var(--gn)"> No ritmo certo pra bater a meta! 🚀</span>'
+            : '<span style="color:var(--rd)"> Precisa aumentar o ritmo pra bater a meta.</span>'
+          }
+        </div>
       </div>` : ''}
       <div style="height:1px;background:rgba(255,255,255,.07);margin:2px 0"></div>
       <div style="display:flex;justify-content:space-between;font-size:12px">
