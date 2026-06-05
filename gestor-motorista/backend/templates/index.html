@@ -1897,10 +1897,6 @@ async function loadDash(){
     document.getElementById('c-lucro').textContent=fmt(d.lucro);
     const heroLucro=document.getElementById('hero-lucro');
     if(heroLucro){heroLucro.textContent=fmt(d.lucro);heroLucro.style.color=d.lucro>=0?'var(--am)':'var(--rd)';}
-    // Ganho por hora - busca da tabela turnos (horas corretas por dia)
-    const ganhoMes = todosLanc.filter(l=>l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
-      } else { if(cHora) cHora.textContent = '—'; }
-    } catch(e){ if(cHora) cHora.textContent = '—'; }
     const hoje=hojeStr();
     const ganhoHoje=todosLanc.filter(l=>l.data===hoje&&l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
     const pct=Math.min(100,Math.round(ganhoHoje/META_DIARIA*100));
