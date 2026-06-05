@@ -3483,7 +3483,14 @@ async function sendChat() {
             const dRes = await dr.json();
             document.querySelector('.typing-dots')?.closest('.msg.assistant')?.remove();
             appendMsg('assistant', dRes.mensagem || '✅ Registrado!');
-            chatHistory.push({role:'assistant', content: dRes.mensagem||'✅'});
+            // Salva IDs criados para que o Gemini possa cancelar a distribuição depois
+            if (dRes.ids_criados && dRes.ids_criados.length > 0) {
+              window._ultimaDistribuicaoIds = dRes.ids_criados;
+            }
+            const ctxDistrib = dRes.ids_criados && dRes.ids_criados.length > 0
+              ? ` [últimos_ids_distribuicao: ${JSON.stringify(dRes.ids_criados)}]`
+              : '';
+            chatHistory.push({role:'assistant', content: (dRes.mensagem||'✅') + ctxDistrib});
             try{loadDash();}catch(e){}
             try{loadContasDash();}catch(e){}
           } catch(e) {

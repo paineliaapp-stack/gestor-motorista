@@ -1406,6 +1406,7 @@ CONTAS:
    - Ajuste de total de MÊS (não de hoje): consulte TODOS OS GANHOS DO MÊS, calcule diferença, identifique lançamento suspeito, use editar_lancamento_por_id.
    - Com confirmação: use editar_lancamento_por_id com o id correto
    - Se pedir para cancelar/desfazer um registro que acabou de fazer: use deletar_lancamento_por_id com o id mais recente da plataforma
+   - Se pedir para cancelar/desfazer uma DISTRIBUIÇÃO (histórico tem [últimos_ids_distribuicao: [...]]):  use deletar_lancamentos_por_ids com todos os IDs listados
 
 === AÇÕES (responda SEMPRE em JSON puro) ===
 Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}
@@ -1423,6 +1424,7 @@ Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}
 - Desfazer último: {{"acao":"deletar_ultimo_lancamento","tipo":"ganho"}}
 - Corrigir valor: {{"acao":"editar_ultimo_lancamento","tipo":"despesa","campo":"valor","novo_valor":N}}
 - Deletar por ID específico: {{"acao":"deletar_lancamento_por_id","id":"uuid-do-lancamento"}} — use quando o motorista pedir para remover lançamento específico
+- Cancelar distribuição (vários IDs): {{"acao":"deletar_lancamentos_por_ids","ids":["id1","id2","id3"]}} — use quando o motorista pedir para cancelar/desfazer uma distribuição de período que está nos últimos_ids_distribuicao do contexto
 - Editar valor por ID: {{"acao":"editar_lancamento_por_id","id":"uuid-do-lancamento","valor":N}} — use para corrigir valor de lançamento específico pelo ID que aparece no histórico
 - Turno: {{"acao":"registrar_turno","inicio":"HH:MM","fim":"HH:MM"}}
 - Salvar perfil: {{"acao":"salvar_perfil","plataformas":["uber","99"],"cap_diaria":N,"setup_completo":true}}
@@ -1755,6 +1757,13 @@ Quando analisa situação geral:
                     supabase.table("lancamentos").delete().eq("id", lid).eq("motorista_id", motorista_id).execute()
                     acoes_executadas.append("lancamento_deletado")
 
+            elif acao.get("acao") == "deletar_lancamentos_por_ids":
+                ids = acao.get("ids", [])
+                for lid in ids:
+                    supabase.table("lancamentos").delete().eq("id", lid).eq("motorista_id", motorista_id).execute()
+                if ids:
+                    acoes_executadas.append("lancamentos_deletados")
+
             elif acao.get("acao") == "editar_lancamento_por_id":
                 lid = acao.get("id")
                 novo_valor = acao.get("valor")
@@ -2036,8 +2045,9 @@ async def distribuir_ganho(dados: dict = Body(...)):
             }
             if descricao:
                 row["descricao"] = descricao
-            supabase.table("lancamentos").insert(row).execute()
-            registrados.append({"data": data_str, "valor": valores[i]})
+            res_insert = supabase.table("lancamentos").insert(row).execute()
+            inserted_id = res_insert.data[0]["id"] if res_insert.data else None
+            registrados.append({"data": data_str, "valor": valores[i], "id": inserted_id})
         except Exception as e:
             erros.append({"data": data_str, "erro": str(e)})
 
@@ -2046,9 +2056,11 @@ async def distribuir_ganho(dados: dict = Body(...)):
     else:
         msg = f"✅ Distribuí R${valor_total:.0f} em {n_dias} dias ({data_inicio_str} a {data_fim_str}). R${valor_por_dia:.0f}/dia na {plataforma}."
 
+    ids_criados = [r["id"] for r in registrados if r.get("id")]
     return {
         "ok": True,
         "registrados": registrados,
+        "ids_criados": ids_criados,
         "erros": erros,
         "mensagem": msg,
         "n_dias": n_dias,
