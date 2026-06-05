@@ -1746,10 +1746,31 @@ Quando analisa situação geral:
                             acoes_executadas.append("conta_editada")
             elif acao.get("acao") == "deletar_ultimo_lancamento":
                 tipo = acao.get("tipo", "ganho")
-                r = supabase.table("lancamentos").select("id").eq("motorista_id", motorista_id).eq("tipo", tipo).order("created_at", desc=True).limit(1).execute()
+                # Pega os últimos 10 lançamentos para detectar distribuição em lote
+                r = supabase.table("lancamentos").select("id,created_at,plataforma").eq("motorista_id", motorista_id).eq("tipo", tipo).order("created_at", desc=True).limit(10).execute()
                 if r.data:
-                    supabase.table("lancamentos").delete().eq("id", r.data[0]["id"]).execute()
-                    acoes_executadas.append("lancamento_deletado")
+                    from datetime import datetime as _dtt2
+                    ultimo_ts = None
+                    try:
+                        ts_str = r.data[0]["created_at"]
+                        ultimo_ts = _dtt2.fromisoformat(ts_str.replace("Z","+00:00"))
+                    except: pass
+                    # Verifica se múltiplos lançamentos foram criados quase ao mesmo tempo (±5s = distribuição)
+                    ids_lote = [r.data[0]["id"]]
+                    if ultimo_ts:
+                        plat_ref = r.data[0].get("plataforma")
+                        for item in r.data[1:]:
+                            try:
+                                ts2 = _dtt2.fromisoformat(item["created_at"].replace("Z","+00:00"))
+                                diff = abs((ultimo_ts - ts2).total_seconds())
+                                if diff <= 5 and item.get("plataforma") == plat_ref:
+                                    ids_lote.append(item["id"])
+                                else:
+                                    break
+                            except: break
+                    for lid in ids_lote:
+                        supabase.table("lancamentos").delete().eq("id", lid).eq("motorista_id", motorista_id).execute()
+                    acoes_executadas.append("lancamento_deletado" if len(ids_lote)==1 else "lancamentos_deletados")
 
             elif acao.get("acao") == "deletar_lancamento_por_id":
                 lid = acao.get("id")
@@ -1937,21 +1958,37 @@ Quando analisa situação geral:
                         supabase.table("contas").update({"vencimento": str(novo_valor)}).eq("id", alvo2["id"]).execute()
                     acoes_executadas.append("conta_editada")
             elif acao.get("acao") == "deletar_ultimo_lancamento":
-                # Deleta o último lançamento registrado hoje para o motorista
+                # Deleta o último lançamento (ou lote de distribuição) para o motorista
                 tipo = acao.get("tipo")
                 descricao = acao.get("descricao")
-                hoje_str = hoje_brasil().isoformat()
-                q = supabase.table("lancamentos").select("id").eq("motorista_id", motorista_id).eq("data", hoje_str).order("created_at", desc=True).limit(10).execute()
-                for item in (q.data or []):
-                    # Busca o registro completo para verificar tipo/descricao
-                    full = supabase.table("lancamentos").select("*").eq("id", item["id"]).execute()
-                    if not full.data: continue
-                    l = full.data[0]
-                    if tipo and l.get("tipo") != tipo: continue
-                    if descricao and descricao.lower() not in (l.get("descricao") or "").lower(): continue
-                    supabase.table("lancamentos").delete().eq("id", item["id"]).execute()
-                    acoes_executadas.append("lancamento_deletado")
-                    break
+                from datetime import datetime as _dtt3
+                q2 = supabase.table("lancamentos").select("id,created_at,plataforma,tipo,descricao").eq("motorista_id", motorista_id).order("created_at", desc=True).limit(15).execute()
+                cands = q2.data or []
+                if tipo:
+                    cands = [x for x in cands if x.get("tipo") == tipo]
+                if descricao:
+                    cands = [x for x in cands if descricao.lower() in (x.get("descricao") or "").lower()]
+                if cands:
+                    ref2 = cands[0]
+                    ref_ts2 = None
+                    try:
+                        ref_ts2 = _dtt3.fromisoformat(ref2["created_at"].replace("Z","+00:00"))
+                    except: pass
+                    ids_lote2 = [ref2["id"]]
+                    if ref_ts2:
+                        plat_ref2 = ref2.get("plataforma")
+                        for it2 in cands[1:]:
+                            try:
+                                ts3 = _dtt3.fromisoformat(it2["created_at"].replace("Z","+00:00"))
+                                diff2 = abs((ref_ts2 - ts3).total_seconds())
+                                if diff2 <= 5 and it2.get("plataforma") == plat_ref2:
+                                    ids_lote2.append(it2["id"])
+                                else:
+                                    break
+                            except: break
+                    for lid2 in ids_lote2:
+                        supabase.table("lancamentos").delete().eq("id", lid2).eq("motorista_id", motorista_id).execute()
+                    acoes_executadas.append("lancamento_deletado" if len(ids_lote2)==1 else "lancamentos_deletados")
             elif acao.get("acao") == "zerar_despesas_hoje":
                 # Deleta TODAS as despesas de hoje do motorista
                 hoje_str = hoje_brasil().isoformat()
