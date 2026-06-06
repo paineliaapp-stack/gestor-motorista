@@ -733,7 +733,7 @@ const _supa = supabase.createClient(
 
   <!-- GRAFICOS -->
   <div class="cr">
-    <div class="gc"><h3>Lucro vs Despesas</h3><canvas id="g-pizza" height="200"></canvas></div>
+    <div class="gc"><h3>Lucro vs Despesas</h3><canvas id="g-pizza" height="200"></canvas><div id="pizza-contexto" style="text-align:center;font-size:12px;margin-top:10px;line-height:1.5"></div></div>
     <div class="gc"><h3 style="margin:0 0 6px 0">Evolução diária</h3><div id="media-label-linha" style="font-size:12px;color:#ccc;font-weight:500;line-height:1.5;margin-bottom:10px"></div><canvas id="g-linha" height="200"></canvas></div>
   </div>
   <div class="gc"><h3>Faturamento por plataforma</h3><canvas id="g-plataforma" height="80"></canvas></div>
@@ -1069,14 +1069,20 @@ function renderMetaMensal(){
   // Faturamento do mês atual — vem do loadDash (sempre atualizado)
   const faturadoAte = _faturadoMesAtual || 0;
 
-  // Projeção: média só dos dias trabalhados (igual ao gráfico — exclui dias zerados)
+  // Projeção: usa só ganhos de app (exclui renda extra) para não distorcer média e projeção
   const _anoMes = agora.toISOString().slice(0,7);
+  const _RENDA_EXTRA_KEYS_PROJ=['seguro_desemprego','freelance','aluguel_recebido','venda','emprestimo_recebido','bonus','renda_extra'];
   const _ganhosPorDia = {};
   (todosLanc||[]).filter(l => l.tipo==='ganho' && l.data && l.data.startsWith(_anoMes)).forEach(l => {
-    _ganhosPorDia[l.data] = (_ganhosPorDia[l.data]||0) + parseFloat(l.valor);
+    const plat=(l.plataforma||'').toLowerCase().trim().replace(/[^a-z0-9_]/g,'');
+    if(!_RENDA_EXTRA_KEYS_PROJ.includes(plat)){
+      _ganhosPorDia[l.data] = (_ganhosPorDia[l.data]||0) + parseFloat(l.valor);
+    }
   });
   const _diasTrabalhados = Math.max(1, Object.keys(_ganhosPorDia).length);
-  const mediaDia = faturadoAte / _diasTrabalhados;
+  const _totalApp = Object.values(_ganhosPorDia).reduce((s,v)=>s+v,0);
+  const mediaDia = _totalApp / _diasTrabalhados;
+  // Projeção = total real do mês (inclui renda extra) + média diária de app × dias restantes
   const projecao = faturadoAte + mediaDia * diasRestantes;
   const faltaMeta = Math.max(0, META_MENSAL - faturadoAte);
   const necessarioPorDia = diasRestantes > 0 ? faltaMeta / diasRestantes : faltaMeta;
@@ -2155,10 +2161,22 @@ async function loadDash(){
 
       `;
     }
-    const pctDesp=d.ganhos>0?Math.min(100,d.despesas/d.ganhos*100):0;
+    // Pizza: usa só ganhos de app (exclui renda extra) para não distorcer o %
+    const RENDA_EXTRA_KEYS_PIZZA=['seguro_desemprego','freelance','aluguel_recebido','venda','emprestimo_recebido','bonus','renda_extra'];
+    const ganhosApp=todosLanc.filter(l=>l.tipo==='ganho'&&!RENDA_EXTRA_KEYS_PIZZA.includes((l.plataforma||'').toLowerCase().trim().replace(/[^a-z0-9_]/g,''))).reduce((s,l)=>s+parseFloat(l.valor),0);
+    const pctDesp=ganhosApp>0?Math.min(100,d.despesas/ganhosApp*100):0;
     const pctLucro=100-pctDesp;
+    const corPizza=pctDesp>70?'#FF4D6A':pctDesp>50?'#F5A623':'#2ECC8F';
+    const msgPizza=pctDesp>70?'Gastos altos':pctDesp>50?'Atenção aos gastos':'Bom controle';
     if(gPizza)gPizza.destroy();
-    gPizza=new Chart(document.getElementById('g-pizza'),{type:'doughnut',data:{labels:['Lucro','Despesas'],datasets:[{data:[pctLucro,pctDesp],backgroundColor:['#2ECC8F','#FF4D6A'],borderWidth:0,hoverOffset:4}]},options:{cutout:'72%',plugins:{legend:{labels:{color:'#888',font:{size:11}}},datalabels:{color:'#fff',font:{size:13,weight:'bold'},formatter:(v)=>v>3?v.toFixed(0)+'%':''}},animation:{animateRotate:true}}});
+    gPizza=new Chart(document.getElementById('g-pizza'),{type:'doughnut',data:{labels:['Lucro','Despesas'],datasets:[{data:[Math.max(0,pctLucro),Math.min(100,pctDesp)],backgroundColor:[corPizza,'#FF4D6A'],borderWidth:0,hoverOffset:4}]},options:{cutout:'72%',plugins:{legend:{labels:{color:'#888',font:{size:11}}},datalabels:{color:'#fff',font:{size:13,weight:'bold'},formatter:(v)=>v>3?v.toFixed(0)+'%':''},tooltip:{callbacks:{label:(c)=>c.label+': '+c.raw.toFixed(0)+'% dos ganhos por app'}}},animation:{animateRotate:true}}});
+    // Contexto abaixo do pizza
+    const pizzaCtx=document.getElementById('pizza-contexto');
+    if(pizzaCtx){
+      if(pctDesp>70) pizzaCtx.innerHTML='<span style="color:#FF4D6A">⚠️ Você gastou '+pctDesp.toFixed(0)+'% do que ganhou nos apps esse mês — tente reduzir despesas</span>';
+      else if(pctDesp>50) pizzaCtx.innerHTML='<span style="color:#F5A623">📊 '+pctDesp.toFixed(0)+'% do faturamento foi em despesas — está acima do ideal</span>';
+      else pizzaCtx.innerHTML='<span style="color:#2ECC8F">✅ Bom controle! Você ficou com '+pctLucro.toFixed(0)+'% do que ganhou nos apps</span>';
+    }
     const hoje14=new Date();
     const ultDias=[];
     for(let i=13;i>=0;i--){const dd=new Date(hoje14);dd.setDate(dd.getDate()-i);ultDias.push(new Date(dd.getTime()-3*60*60*1000).toISOString().slice(0,10));}
