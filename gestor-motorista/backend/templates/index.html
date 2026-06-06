@@ -2162,23 +2162,43 @@ async function loadDash(){
     const hoje14=new Date();
     const ultDias=[];
     for(let i=13;i>=0;i--){const dd=new Date(hoje14);dd.setDate(dd.getDate()-i);ultDias.push(new Date(dd.getTime()-3*60*60*1000).toISOString().slice(0,10));}
-    const pd={};ultDias.forEach(d=>pd[d]=0);
-    todosLanc.forEach(l=>{if(l.tipo==='ganho'&&pd[l.data]!==undefined)pd[l.data]+=parseFloat(l.valor);});
-    if(gLinha)gLinha.destroy();
-    const diasComGanho=ultDias.filter(x=>pd[x]>0);
-    const mediaLinhaVal=diasComGanho.length?diasComGanho.reduce((s,x)=>s+pd[x],0)/diasComGanho.length:0;
-    const mediaArr=ultDias.map(()=>mediaLinhaVal>0?mediaLinhaVal:null);
-    const mediaLabelEl=document.getElementById('media-label-linha');
-    if(mediaLabelEl){
-      if(mediaLinhaVal>0){
-        const totalDias=diasComGanho.length;
-        const totalFat=diasComGanho.reduce((s,x)=>s+pd[x],0);
-        mediaLabelEl.innerHTML = `<span style="color:rgba(78,158,255,.85)">─── </span><span>Você tem feito em média <strong>R$ ${mediaLinhaVal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}/dia</strong></span><span style="color:#888;font-size:10px;margin-left:4px">(total ÷ ${totalDias} dia${totalDias!==1?'s':''} trabalhado${totalDias!==1?'s':''})</span>`;
-      } else {
-        mediaLabelEl.innerHTML='';
+    // Separa ganhos de app vs renda extra
+    const RENDA_EXTRA_KEYS_GRAFICO=['seguro_desemprego','freelance','aluguel_recebido','venda','emprestimo_recebido','bonus','renda_extra'];
+    const pdApp={};const pdTudo={};
+    ultDias.forEach(d=>{pdApp[d]=0;pdTudo[d]=0;});
+    todosLanc.forEach(l=>{
+      if(l.tipo==='ganho'&&pdTudo[l.data]!==undefined){
+        const plat=(l.plataforma||'').toLowerCase().trim().replace(/[^a-z0-9_]/g,'');
+        pdTudo[l.data]+=parseFloat(l.valor);
+        if(!RENDA_EXTRA_KEYS_GRAFICO.includes(plat)) pdApp[l.data]+=parseFloat(l.valor);
       }
+    });
+
+    // Estado do toggle (padrão: só app)
+    if(window._grafIncluiExtra===undefined) window._grafIncluiExtra=false;
+
+    function renderGraficoLinha(incluiExtra){
+      window._grafIncluiExtra=incluiExtra;
+      const pd=incluiExtra?pdTudo:pdApp;
+      if(gLinha)gLinha.destroy();
+      const diasComGanho=ultDias.filter(x=>pd[x]>0);
+      const mediaLinhaVal=diasComGanho.length?diasComGanho.reduce((s,x)=>s+pd[x],0)/diasComGanho.length:0;
+      const mediaArr=ultDias.map(()=>mediaLinhaVal>0?mediaLinhaVal:null);
+      const mediaLabelEl=document.getElementById('media-label-linha');
+      if(mediaLabelEl){
+        if(mediaLinhaVal>0){
+          const totalDias=diasComGanho.length;
+          const temExtra=Object.values(pdTudo).some((v,i)=>v!==Object.values(pdApp)[i]);
+          const btnExtra=temExtra?`<button onclick="renderGraficoLinha(!window._grafIncluiExtra)" style="margin-left:8px;padding:2px 8px;border-radius:12px;border:1px solid rgba(78,158,255,.4);background:${incluiExtra?'rgba(78,158,255,.2)':'rgba(255,255,255,.05)'};color:${incluiExtra?'#4E9EFF':'#666'};font-size:10px;cursor:pointer;font-family:inherit">${incluiExtra?'✓ Com renda extra':'+ Incluir renda extra'}</button>`:'';
+          const descricao=incluiExtra?'apps + renda extra':'só apps de corrida';
+          mediaLabelEl.innerHTML=`<span style="color:rgba(78,158,255,.85)">─── </span><span>Média dos <strong>ganhos por app</strong>: <strong>R$ ${mediaLinhaVal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}/dia</strong></span><span style="color:#888;font-size:10px;margin-left:4px">(${descricao} ÷ ${totalDias} dia${totalDias!==1?'s':''})</span>${btnExtra}`;
+        } else {
+          mediaLabelEl.innerHTML='';
+        }
+      }
+      gLinha=new Chart(document.getElementById('g-linha'),{type:'bar',data:{labels:ultDias.map(x=>x.slice(8)+'/'+x.slice(5,7)),datasets:[{label:'Ganhos',data:ultDias.map(x=>pd[x]),backgroundColor:ultDias.map(x=>pd[x]>0?'rgba(245,166,35,.7)':'rgba(255,255,255,.05)'),borderColor:ultDias.map(x=>pd[x]>0?'#F5A623':'rgba(255,255,255,.08)'),borderWidth:1,borderRadius:4},{type:'line',label:'Média',data:mediaArr,borderColor:'rgba(78,158,255,.85)',backgroundColor:'transparent',borderWidth:2,borderDash:[5,4],pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#4E9EFF',tension:0,order:0}]},options:{plugins:{legend:{display:false},datalabels:{display:false},tooltip:{callbacks:{label:(ctx)=>ctx.dataset.label+': R$ '+parseFloat(ctx.raw||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}}},scales:{x:{ticks:{color:'#555',maxRotation:0,font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#555'},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
     }
-    gLinha=new Chart(document.getElementById('g-linha'),{type:'bar',data:{labels:ultDias.map(x=>x.slice(8)+'/'+x.slice(5,7)),datasets:[{label:'Ganhos',data:ultDias.map(x=>pd[x]),backgroundColor:ultDias.map(x=>pd[x]>0?'rgba(245,166,35,.7)':'rgba(255,255,255,.05)'),borderColor:ultDias.map(x=>pd[x]>0?'#F5A623':'rgba(255,255,255,.08)'),borderWidth:1,borderRadius:4},{type:'line',label:'Média',data:mediaArr,borderColor:'rgba(78,158,255,.85)',backgroundColor:'transparent',borderWidth:2,borderDash:[5,4],pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#4E9EFF',tension:0,order:0}]},options:{plugins:{legend:{display:false},datalabels:{display:false},tooltip:{callbacks:{label:(ctx)=>ctx.dataset.label+': R$ '+parseFloat(ctx.raw||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}}},scales:{x:{ticks:{color:'#555',maxRotation:0,font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#555'},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
+    renderGraficoLinha(window._grafIncluiExtra||false);
 
     // Gráfico faturamento por plataforma
     const RENDA_EXTRA_KEYS=['seguro_desemprego','freelance','aluguel_recebido','venda','emprestimo_recebido','bonus','renda_extra'];
