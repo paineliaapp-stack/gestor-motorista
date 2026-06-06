@@ -4487,31 +4487,35 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 });
 </script>
 <script>
-// Fix iOS 26.5: teclado nao pode expandir o shell para tela cheia
+// Fix iOS 26.5: quando teclado abre, o main rola até o chat e parece tela inteira
+// Solução: travar scroll do main enquanto input do chat está focado
 (function(){
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   if(!isIOS) return;
-  function fixViewport(){
-    var shell = document.querySelector('.shell');
-    if(!shell) return;
-    var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    shell.style.height = h + 'px';
-    shell.style.maxHeight = h + 'px';
-  }
-  if(window.visualViewport){
-    window.visualViewport.addEventListener('resize', fixViewport);
-  }
-  window.addEventListener('resize', fixViewport);
-  // Ao focar num input, bloqueia scroll do body
+
+  var scrollSalvo = 0;
+
   document.addEventListener('focusin', function(e){
-    if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'){
-      document.body.style.overflow = 'hidden';
-      setTimeout(fixViewport, 300);
+    if(e.target.id === 'chat-input'){
+      var main = document.querySelector('.main');
+      if(!main) return;
+      scrollSalvo = main.scrollTop;
+      // Pequeno delay para o teclado subir primeiro
+      setTimeout(function(){
+        // Restaura a posição de scroll — impede que o iOS role para o input
+        main.scrollTop = scrollSalvo;
+      }, 100);
+      setTimeout(function(){
+        main.scrollTop = scrollSalvo;
+      }, 300);
     }
   });
-  document.addEventListener('focusout', function(){
-    document.body.style.overflow = 'hidden'; // mantém hidden sempre
-    setTimeout(fixViewport, 300);
+
+  document.addEventListener('focusout', function(e){
+    if(e.target.id === 'chat-input'){
+      var main = document.querySelector('.main');
+      if(main) setTimeout(function(){ main.scrollTop = scrollSalvo; }, 100);
+    }
   });
 })();
 </script>
