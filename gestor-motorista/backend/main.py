@@ -420,7 +420,9 @@ Extraia as informações e responda APENAS com JSON válido, sem texto extra, se
   "resposta": mensagem amigável de confirmação em português
 }}
 
-Categorias válidas para despesa: combustivel, manutencao, aluguel_carro, financiamento, seguro, ipva, multa, lavagem, mercado, restaurante, farmacia, saude, celular, internet, streaming, aluguel_casa, condominio, luz_agua, roupa, lazer, educacao, investimento, emprestimo, outros, desconhecido
+Categorias válidas para despesa (use a chave exata):
+combustivel(gasolina/posto/etanol), manutencao(pneu/óleo/mecânico/conserto/peça), aluguel_carro, financiamento(parcela do carro/banco), seguro(seguro auto), ipva(detran/licença), multa(infração), lavagem(lava-jato), mercado(supermercado/feira/compras de casa), restaurante(lanche/comida/delivery/ifood/almoço/janta), farmacia(remédio), saude(médico/dentista/plano/academia/hospital/exame/psicólogo), celular(plano/chip/recarga/tim/vivo/claro), internet(wi-fi/fibra/net), streaming(netflix/spotify/amazon), aluguel_casa, condominio, luz_agua(energia/água/gás/enel), roupa(calçado/tênis/camisa), lazer(bar/cinema/viagem/festa/passeio), educacao(escola/curso/faculdade/inglês), investimento, emprestimo(dívida/crédito pessoal/parcela pessoal), outros, desconhecido(não sei/não lembro)
+Sempre prefira a categoria específica antes de usar "outros".
 
 Se não entender, responda: {{"erro": true, "resposta": "mensagem pedindo para reformular"}}"""
 
@@ -1450,7 +1452,34 @@ Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}
 - Compromissos: {{"acao":"salvar_compromissos","compromissos":[{{"data":"YYYY-MM-DD","meta_bruta":N,"nota":"sexta"}}]}}
 - Zerar despesas: {{"acao":"zerar_despesas_hoje"}}
 
-Categorias de despesa: combustivel, manutencao, aluguel_carro, financiamento, seguro, ipva, multa, lavagem, mercado, restaurante, farmacia, saude, celular, internet, streaming, aluguel_casa, condominio, luz_agua, roupa, lazer, educacao, investimento, emprestimo, outros, desconhecido
+Categorias de despesa — use a chave exata:
+- combustivel → gasolina, etanol, diesel, álcool, abasteci, posto, combustível
+- manutencao → borracha, pneu, óleo, troca de óleo, revisão, mecânico, freio, bateria, retífica, conserto do carro, peça, amortecedor, correia, escapamento, suspensão
+- aluguel_carro → aluguel do carro, diária do carro, locação
+- financiamento → parcela do carro, prestação do carro, financiamento, banco do carro
+- seguro → seguro do carro, seguro auto
+- ipva → ipva, licenciamento, licença, vistoria, detran
+- multa → multa, infração, auto de infração, multa de trânsito
+- lavagem → lavagem, lava rápido, lava-jato, polimento, higienização
+- mercado → mercado, supermercado, feira, sacolão, hortifrúti, açougue, padaria, compras de casa, rancho
+- restaurante → restaurante, lanche, comida, hamburguer, pizza, almoço, janta, marmita, ifood, delivery, mc, burguer, subway, kfc, churrasco, pastel, espetinho
+- farmacia → farmácia, remédio, medicamento, droga, ultrafarma
+- saude → médico, consulta, dentista, exame, plano de saúde, academia, fisio, hospital, cirurgia, óculos, psicólogo
+- celular → celular, plano do celular, chip, recarga, tim, vivo, claro, oi, operadora
+- internet → internet, wi-fi, fibra, net, claro net, vivo fibra
+- streaming → netflix, spotify, amazon prime, disney, hbo, youtube premium, deezer, globoplay
+- aluguel_casa → aluguel, aluguel da casa, aluguel do apartamento
+- condominio → condomínio, taxa condominial
+- luz_agua → luz, energia elétrica, água, gás, enel, sabesp, copel, cemig, conta de luz, conta de água
+- roupa → roupa, calçado, tênis, camisa, calça, sapato, vestuário
+- lazer → lazer, passeio, cinema, show, festa, bar, balada, viagem, hotel
+- educacao → escola, faculdade, curso, mensalidade escolar, inglês, aula
+- investimento → investimento, poupança, previdência, aplicação
+- emprestimo → empréstimo, dívida, parcela pessoal, consignado, crédito pessoal
+- outros → qualquer outro gasto não listado acima
+- desconhecido → "não sei onde foi", "não lembro", "sumiram X reais"
+
+REGRA: Sempre tente encaixar na categoria certa antes de usar "outros". "Paguei academia" → saude. "Fui no bar" → lazer. "Parcela do celular" → celular. "Elaine" sem contexto → emprestimo ou outros (pergunte se não tiver certeza). "Conta" genérica → pergunte o que é antes de classificar.
 
 === PLANO FINANCEIRO ===
 DETECÇÃO DE COMPROMISSOS — CRÍTICO:
