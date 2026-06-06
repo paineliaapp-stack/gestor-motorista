@@ -4432,9 +4432,7 @@ _supa.auth.onAuthStateChange((event, session)=>{
         const _temLocalHist = localStorage.getItem('dashHistory_'+MID);
         const _temPlataformas = d.plataformas && d.plataformas.length > 0;
         const _temMeta = d.meta_diaria && d.meta_diaria !== 150;
-        if((d.setup_completo === false || d.is_new === true) && !_temHistChat && !_temLocalHist && !_temPlataformas && !_temMeta){
-          setTimeout(() => ativarSetupMode(), 800);
-        }
+        // setup automático desativado — usuário acessa o dashboard diretamente
       });
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.remove();
@@ -4481,9 +4479,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     const _temLocalHist2 = localStorage.getItem('dashHistory_'+MID);
     const _temPlataformas2 = upData.plataformas && upData.plataformas.length > 0;
     const _temMeta2 = upData.meta_diaria && upData.meta_diaria !== 150;
-    if((upData.setup_completo === false || upData.is_new === true) && !_temHistChat2 && !_temLocalHist2 && !_temPlataformas2 && !_temMeta2){
-      setTimeout(() => ativarSetupMode(), 1000);
-    }
+    // setup automático desativado — usuário acessa o dashboard diretamente
   } else {
     document.getElementById('tela-login').style.display='flex';
   }
