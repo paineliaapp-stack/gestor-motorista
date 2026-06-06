@@ -4409,10 +4409,10 @@ _supa.auth.onAuthStateChange((event, session)=>{
         if(d.meta_diaria){ META_DIARIA=d.meta_diaria; localStorage.setItem('meta',META_DIARIA); }
         if(d.comb_diario){ window.COMB_DIARIO=d.comb_diario; localStorage.setItem('comb_diario',d.comb_diario); atualizarExibicaoMeta(META_DIARIA, d.comb_diario); }
         // Detecta novo usuário ou setup incompleto
-        // Fix iOS race condition: só ativa setup se setup_completo é explicitamente false
-        if(d.setup_completo === false && d.is_new !== true){
-          setTimeout(() => ativarSetupMode(), 800);
-        } else if(d.is_new === true){
+        // Só ativa setup se explicitamente false E não tem histórico de uso
+        const _temHistChat = window.chatHistory && window.chatHistory.length > 0;
+        const _temLocalHist = localStorage.getItem('chatHistory_'+MID) || localStorage.getItem('chat_'+MID);
+        if((d.setup_completo === false || d.is_new === true) && !_temHistChat && !_temLocalHist){
           setTimeout(() => ativarSetupMode(), 800);
         }
       });
@@ -4456,10 +4456,10 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(tl) tl.remove();
     if(typeof init === 'function') init();
     // Detecta novo usuário ou setup incompleto (via DOMContentLoaded)
-    // Fix iOS race condition: só ativa setup se explicitamente false
-    if(upData.setup_completo === false && upData.is_new !== true){
-      setTimeout(() => ativarSetupMode(), 1000);
-    } else if(upData.is_new === true){
+    // Só ativa setup se explicitamente false E não tem histórico de uso
+    const _temHistChat2 = window.chatHistory && window.chatHistory.length > 0;
+    const _temLocalHist2 = localStorage.getItem('chatHistory_'+MID) || localStorage.getItem('chat_'+MID);
+    if((upData.setup_completo === false || upData.is_new === true) && !_temHistChat2 && !_temLocalHist2){
       setTimeout(() => ativarSetupMode(), 1000);
     }
   } else {

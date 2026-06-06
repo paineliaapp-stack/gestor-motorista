@@ -129,6 +129,23 @@ def upsert_motorista(dados: dict = Body(...)):
         comb = res.data[0].get("comb_diario")
         setup_completo = res.data[0].get("setup_completo", True)  # True = usuários antigos já passam direto
         if setup_completo is None: setup_completo = True  # usuário antigo sem a coluna
+        # Se setup_completo ainda é False mas usuário tem meta configurada (meta != 150 padrão),
+        # significa que já usou o app — marca como completo automaticamente
+        if setup_completo is False and meta and meta != 150:
+            setup_completo = True
+            try:
+                supabase.table("motoristas").update({"setup_completo": True}).eq("id", uid).execute()
+            except:
+                pass
+        # Verifica se tem lançamentos (usuário ativo) — se sim, setup_completo sempre True
+        if setup_completo is False:
+            try:
+                lanc = supabase.table("lancamentos").select("id").eq("motorista_id", uid).limit(1).execute()
+                if lanc.data:
+                    setup_completo = True
+                    supabase.table("motoristas").update({"setup_completo": True}).eq("id", uid).execute()
+            except:
+                pass
         plataformas = res.data[0].get("plataformas")
         return {"ok": True, "meta_diaria": meta, "comb_diario": comb, "is_new": False, "setup_completo": setup_completo, "plataformas": plataformas}
     except Exception as e:
