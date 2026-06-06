@@ -1452,58 +1452,9 @@ Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}
 - Compromissos: {{"acao":"salvar_compromissos","compromissos":[{{"data":"YYYY-MM-DD","meta_bruta":N,"nota":"sexta"}}]}}
 - Zerar despesas: {{"acao":"zerar_despesas_hoje"}}
 
-Categorias de despesa — use a chave exata:
-CARRO:
-- combustivel → gasolina, etanol, diesel, álcool, abasteci, posto, combustível
-- pedagio → pedágio, estacionamento, zona azul, rotativo, cancela, vaga
-- manutencao → pneu, borracha, óleo, troca de óleo, revisão, mecânico, freio, bateria, conserto, peça, amortecedor, correia, escapamento, suspensão, retífica, alinhamento, balanceamento
-- lavagem → lavagem, lava rápido, lava-jato, polimento, higienização do carro
-- acessorio_carro → suporte de celular, carregador veicular, tapete, perfume carro, câmera, película, acessório
-- aluguel_carro → aluguel do carro, diária do carro, locação
-- financiamento → parcela do carro, prestação do carro, financiamento, banco do carro
-- seguro → seguro do carro, seguro auto
-- ipva → ipva, licenciamento, licença, vistoria, detran
-- multa → multa de trânsito, infração, auto de infração, radar
-- multa_app → multa do app, punição, bloqueio, cancelamento cobrado, taxa 99, taxa uber, desconto da plataforma
-
-ALIMENTAÇÃO:
-- mercado → mercado, supermercado, feira, sacolão, hortifrúti, açougue, padaria, compras de casa, rancho
-- restaurante → restaurante, comida, almoço, janta, marmita, ifood, delivery, hamburguer, pizza, mc, subway, kfc, churrasco, pastel, espetinho, rodízio
-- lanche → lanche, café, cafezinho, suco, água, refrigerante, biscoito, barra de cereal, coxinha, pão de queijo, snack
-
-SAÚDE E BEM-ESTAR:
-- farmacia → farmácia, remédio, medicamento, droga, ultrafarma
-- saude → médico, consulta, dentista, exame, plano de saúde, academia, fisio, hospital, cirurgia, óculos, psicólogo
-- higiene → shampoo, sabonete, desodorante, pasta de dente, papel higiênico, higiene, limpeza pessoal, absorvente, barba, creme
-
-CASA:
-- aluguel_casa → aluguel, aluguel da casa, aluguel do apartamento
-- condominio → condomínio, taxa condominial
-- luz_agua → luz, energia elétrica, água, gás, enel, sabesp, copel, cemig, conta de luz, conta de água
-
-FAMÍLIA E PESSOAL:
-- presente_familia → presente, gift, filho, esposa, marido, mãe, pai, família, aniversário, dia das mães, natal
-- roupa → roupa, calçado, tênis, camisa, calça, sapato, vestuário, moda
-
-TECNOLOGIA:
-- celular → celular, plano do celular, chip, recarga, tim, vivo, claro, oi, operadora
-- internet → internet, wi-fi, fibra, net, claro net, vivo fibra
-- streaming → netflix, spotify, amazon prime, disney, hbo, youtube premium, deezer, globoplay
-
-FINANCEIRO:
-- emprestimo → empréstimo, dívida, parcela pessoal, consignado, crédito pessoal
-- investimento → investimento, poupança, previdência, aplicação
-
-OUTROS:
-- lazer → bar, cinema, show, festa, balada, viagem, hotel, passeio, ingresso
-- educacao → escola, faculdade, curso, mensalidade escolar, inglês, aula
-- outros → qualquer gasto não listado acima
-- desconhecido → "não sei onde foi", "não lembro", "sumiram X reais"
-
-GORJETA RECEBIDA: registre como ganho com plataforma="gorjeta" e valor informado.
-
-REGRA CRÍTICA: Sempre tente encaixar na categoria certa antes de usar "outros".
-Exemplos: "café" → lanche | "academia" → saude | "bar" → lazer | "suporte celular" → acessorio_carro | "presente pra minha filha" → presente_familia | "estacionei" → pedagio | "multa da 99" → multa_app | "Elaine" sem contexto → emprestimo
+Categorias de despesa (use a chave exata — prefira sempre a específica antes de "outros"):
+combustivel(gasolina/etanol/posto) | pedagio(pedágio/estacionamento/zona azul) | manutencao(pneu/óleo/mecânico/conserto/peça/revisão/freio/bateria) | lavagem(lava-jato/polimento) | acessorio_carro(suporte celular/carregador/tapete/câmera) | aluguel_carro | financiamento(parcela/prestação do carro) | seguro(seguro auto) | ipva(detran/licença/vistoria) | multa(multa trânsito/radar/infração) | multa_app(punição/desconto da plataforma/taxa uber/taxa 99) | mercado(supermercado/feira/rancho/compras de casa) | restaurante(almoço/janta/ifood/delivery/hamburguer/pizza) | lanche(café/cafezinho/lanchinho/suco/biscoito/coxinha) | farmacia(remédio/medicamento) | saude(médico/dentista/plano/academia/hospital/exame/psicólogo) | higiene(shampoo/sabonete/desodorante/higiene pessoal) | aluguel_casa | condominio | luz_agua(luz/água/gás/enel/copel/cemig) | presente_familia(presente/filho/esposa/mãe/pai/família) | roupa(calçado/tênis/camisa) | celular(plano/chip/tim/vivo/claro) | internet(wi-fi/fibra/net) | streaming(netflix/spotify/amazon/disney) | emprestimo(dívida/parcela pessoal/consignado) | investimento(poupança/previdência) | lazer(bar/cinema/festa/viagem/show) | educacao(escola/curso/faculdade/inglês) | outros | desconhecido(não sei/não lembro)
+GORJETA: registrar como ganho plataforma="gorjeta". Exemplos rápidos: "café"→lanche | "academia"→saude | "estacionei"→pedagio | "multa da 99"→multa_app | "presente filha"→presente_familia
 
 === PLANO FINANCEIRO ===
 DETECÇÃO DE COMPROMISSOS — CRÍTICO:
