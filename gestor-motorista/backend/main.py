@@ -1453,33 +1453,57 @@ Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}
 - Zerar despesas: {{"acao":"zerar_despesas_hoje"}}
 
 Categorias de despesa — use a chave exata:
+CARRO:
 - combustivel → gasolina, etanol, diesel, álcool, abasteci, posto, combustível
-- manutencao → borracha, pneu, óleo, troca de óleo, revisão, mecânico, freio, bateria, retífica, conserto do carro, peça, amortecedor, correia, escapamento, suspensão
+- pedagio → pedágio, estacionamento, zona azul, rotativo, cancela, vaga
+- manutencao → pneu, borracha, óleo, troca de óleo, revisão, mecânico, freio, bateria, conserto, peça, amortecedor, correia, escapamento, suspensão, retífica, alinhamento, balanceamento
+- lavagem → lavagem, lava rápido, lava-jato, polimento, higienização do carro
+- acessorio_carro → suporte de celular, carregador veicular, tapete, perfume carro, câmera, película, acessório
 - aluguel_carro → aluguel do carro, diária do carro, locação
 - financiamento → parcela do carro, prestação do carro, financiamento, banco do carro
 - seguro → seguro do carro, seguro auto
 - ipva → ipva, licenciamento, licença, vistoria, detran
-- multa → multa, infração, auto de infração, multa de trânsito
-- lavagem → lavagem, lava rápido, lava-jato, polimento, higienização
+- multa → multa de trânsito, infração, auto de infração, radar
+- multa_app → multa do app, punição, bloqueio, cancelamento cobrado, taxa 99, taxa uber, desconto da plataforma
+
+ALIMENTAÇÃO:
 - mercado → mercado, supermercado, feira, sacolão, hortifrúti, açougue, padaria, compras de casa, rancho
-- restaurante → restaurante, lanche, comida, hamburguer, pizza, almoço, janta, marmita, ifood, delivery, mc, burguer, subway, kfc, churrasco, pastel, espetinho
+- restaurante → restaurante, comida, almoço, janta, marmita, ifood, delivery, hamburguer, pizza, mc, subway, kfc, churrasco, pastel, espetinho, rodízio
+- lanche → lanche, café, cafezinho, suco, água, refrigerante, biscoito, barra de cereal, coxinha, pão de queijo, snack
+
+SAÚDE E BEM-ESTAR:
 - farmacia → farmácia, remédio, medicamento, droga, ultrafarma
 - saude → médico, consulta, dentista, exame, plano de saúde, academia, fisio, hospital, cirurgia, óculos, psicólogo
-- celular → celular, plano do celular, chip, recarga, tim, vivo, claro, oi, operadora
-- internet → internet, wi-fi, fibra, net, claro net, vivo fibra
-- streaming → netflix, spotify, amazon prime, disney, hbo, youtube premium, deezer, globoplay
+- higiene → shampoo, sabonete, desodorante, pasta de dente, papel higiênico, higiene, limpeza pessoal, absorvente, barba, creme
+
+CASA:
 - aluguel_casa → aluguel, aluguel da casa, aluguel do apartamento
 - condominio → condomínio, taxa condominial
 - luz_agua → luz, energia elétrica, água, gás, enel, sabesp, copel, cemig, conta de luz, conta de água
-- roupa → roupa, calçado, tênis, camisa, calça, sapato, vestuário
-- lazer → lazer, passeio, cinema, show, festa, bar, balada, viagem, hotel
-- educacao → escola, faculdade, curso, mensalidade escolar, inglês, aula
-- investimento → investimento, poupança, previdência, aplicação
+
+FAMÍLIA E PESSOAL:
+- presente_familia → presente, gift, filho, esposa, marido, mãe, pai, família, aniversário, dia das mães, natal
+- roupa → roupa, calçado, tênis, camisa, calça, sapato, vestuário, moda
+
+TECNOLOGIA:
+- celular → celular, plano do celular, chip, recarga, tim, vivo, claro, oi, operadora
+- internet → internet, wi-fi, fibra, net, claro net, vivo fibra
+- streaming → netflix, spotify, amazon prime, disney, hbo, youtube premium, deezer, globoplay
+
+FINANCEIRO:
 - emprestimo → empréstimo, dívida, parcela pessoal, consignado, crédito pessoal
-- outros → qualquer outro gasto não listado acima
+- investimento → investimento, poupança, previdência, aplicação
+
+OUTROS:
+- lazer → bar, cinema, show, festa, balada, viagem, hotel, passeio, ingresso
+- educacao → escola, faculdade, curso, mensalidade escolar, inglês, aula
+- outros → qualquer gasto não listado acima
 - desconhecido → "não sei onde foi", "não lembro", "sumiram X reais"
 
-REGRA: Sempre tente encaixar na categoria certa antes de usar "outros". "Paguei academia" → saude. "Fui no bar" → lazer. "Parcela do celular" → celular. "Elaine" sem contexto → emprestimo ou outros (pergunte se não tiver certeza). "Conta" genérica → pergunte o que é antes de classificar.
+GORJETA RECEBIDA: registre como ganho com plataforma="gorjeta" e valor informado.
+
+REGRA CRÍTICA: Sempre tente encaixar na categoria certa antes de usar "outros".
+Exemplos: "café" → lanche | "academia" → saude | "bar" → lazer | "suporte celular" → acessorio_carro | "presente pra minha filha" → presente_familia | "estacionei" → pedagio | "multa da 99" → multa_app | "Elaine" sem contexto → emprestimo
 
 === PLANO FINANCEIRO ===
 DETECÇÃO DE COMPROMISSOS — CRÍTICO:
@@ -2420,3 +2444,230 @@ def buscar_plano_ativo(mid: str):
     except Exception as e:
         return {"tem_plano": False, "erro": str(e)}
 
+
+# ─── GERADOR DE PDF MENSAL ─────────────────────────────────────────────────────
+@app.post("/relatorio-pdf")
+async def gerar_relatorio_pdf(dados: dict = Body(...)):
+    try:
+        import io, datetime as _dt
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib import colors
+        from reportlab.lib.styles import ParagraphStyle
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+        from reportlab.lib.units import mm
+        from fastapi.responses import StreamingResponse
+
+        mid = dados.get("motorista_id")
+        mes = dados.get("mes")  # "2026-06"
+        if not mid or not mes:
+            return {"erro": "motorista_id e mes obrigatórios"}
+
+        ano, mes_num = mes.split("-")
+        inicio = f"{mes}-01"
+        import calendar
+        ultimo_dia = calendar.monthrange(int(ano), int(mes_num))[1]
+        fim = f"{mes}-{ultimo_dia:02d}"
+
+        # Busca lançamentos do mês
+        lanc_res = supabase.table("lancamentos").select("*").eq("motorista_id", mid).gte("data", inicio).lte("data", fim).order("data").execute()
+        lancs = lanc_res.data or []
+
+        # Busca mês anterior para comparação
+        dt_mes = _dt.date(int(ano), int(mes_num), 1)
+        dt_ant = (dt_mes - _dt.timedelta(days=1)).replace(day=1)
+        mes_ant = dt_ant.strftime("%Y-%m")
+        ultimo_ant = calendar.monthrange(dt_ant.year, dt_ant.month)[1]
+        lanc_ant = supabase.table("lancamentos").select("*").eq("motorista_id", mid).gte("data", f"{mes_ant}-01").lte("data", f"{mes_ant}-{ultimo_ant:02d}").execute()
+        lancs_ant = lanc_ant.data or []
+
+        # Busca contas
+        contas_res = supabase.table("contas").select("*").eq("motorista_id", mid).execute()
+        contas = contas_res.data or []
+
+        # Cálculos mês atual
+        RENDA_EXTRA = ['seguro_desemprego','freelance','aluguel_recebido','venda','emprestimo_recebido','bonus','renda_extra']
+        ganhos = sum(float(l["valor"]) for l in lancs if l["tipo"] == "ganho")
+        ganhos_app = sum(float(l["valor"]) for l in lancs if l["tipo"] == "ganho" and (l.get("plataforma","") or "") not in RENDA_EXTRA)
+        despesas = sum(float(l["valor"]) for l in lancs if l["tipo"] == "despesa")
+        lucro = ganhos - despesas
+        dias_trab = len(set(l["data"] for l in lancs if l["tipo"] == "ganho"))
+        media_dia = ganhos_app / max(dias_trab, 1)
+
+        # Cálculos mês anterior
+        ganhos_ant = sum(float(l["valor"]) for l in lancs_ant if l["tipo"] == "ganho")
+        despesas_ant = sum(float(l["valor"]) for l in lancs_ant if l["tipo"] == "despesa")
+        lucro_ant = ganhos_ant - despesas_ant
+
+        # Por categoria
+        cats = {}
+        for l in lancs:
+            if l["tipo"] == "despesa":
+                k = l.get("descricao") or "outros"
+                cats[k] = cats.get(k, 0) + float(l["valor"])
+
+        # Contas
+        contas_pagas = [c for c in contas if c.get("pago")]
+        contas_pend = [c for c in contas if not c.get("pago")]
+
+        def fmt(v): return f"R$ {float(v):,.2f}".replace(",","X").replace(".",",").replace("X",".")
+        def delta(atual, ant):
+            if ant == 0: return ""
+            pct = (atual - ant) / ant * 100
+            sinal = "▲" if pct >= 0 else "▼"
+            return f"{sinal} {abs(pct):.0f}% vs mês anterior"
+
+        NOMES_MESES = ["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
+        nome_mes = f"{NOMES_MESES[int(mes_num)]} {ano}"
+
+        # ── Monta PDF ──
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4,
+            leftMargin=15*mm, rightMargin=15*mm, topMargin=15*mm, bottomMargin=15*mm)
+
+        AMARELO = colors.HexColor("#F5A623")
+        VERDE   = colors.HexColor("#2ECC8F")
+        VERMELHO= colors.HexColor("#FF4D6A")
+        CINZA   = colors.HexColor("#888888")
+        FUNDO   = colors.HexColor("#1a1a2e")
+        BRANCO  = colors.white
+
+        def estilo(nome, **kw):
+            base = {"fontName":"Helvetica","fontSize":10,"textColor":colors.black,"leading":14}
+            base.update(kw)
+            return ParagraphStyle(nome, **base)
+
+        titulo_style  = estilo("titulo", fontSize=20, fontName="Helvetica-Bold", textColor=AMARELO, spaceAfter=2)
+        sub_style     = estilo("sub", fontSize=11, textColor=CINZA, spaceAfter=12)
+        secao_style   = estilo("secao", fontSize=13, fontName="Helvetica-Bold", textColor=colors.HexColor("#333"), spaceBefore=14, spaceAfter=6)
+        normal_style  = estilo("normal", fontSize=10, textColor=colors.HexColor("#333"), leading=15)
+        delta_style   = estilo("delta", fontSize=9, textColor=CINZA)
+
+        story = []
+
+        # Cabeçalho
+        story.append(Paragraph("Painel.IA", titulo_style))
+        story.append(Paragraph(f"Relatório Financeiro — {nome_mes}", sub_style))
+        story.append(HRFlowable(width="100%", thickness=1, color=AMARELO, spaceAfter=12))
+
+        # Resumo mensal
+        story.append(Paragraph("Resumo do Mês", secao_style))
+        resumo_data = [
+            ["", "Este mês", "Mês anterior", "Variação"],
+            ["💰 Ganhos totais", fmt(ganhos), fmt(ganhos_ant), delta(ganhos, ganhos_ant)],
+            ["💸 Despesas", fmt(despesas), fmt(despesas_ant), delta(despesas, despesas_ant)],
+            ["✅ Lucro líquido", fmt(lucro), fmt(lucro_ant), delta(lucro, lucro_ant)],
+            ["📅 Dias trabalhados", str(dias_trab), "", ""],
+            ["💵 Média/dia (apps)", fmt(media_dia), "", ""],
+        ]
+        t = Table(resumo_data, colWidths=[55*mm, 40*mm, 40*mm, 45*mm])
+        t.setStyle(TableStyle([
+            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#f5f5f5")),
+            ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+            ("FONTSIZE", (0,0), (-1,-1), 9),
+            ("TEXTCOLOR", (0,0), (-1,0), colors.HexColor("#333")),
+            ("ROWBACKGROUNDS", (0,1), (-1,-1), [BRANCO, colors.HexColor("#fafafa")]),
+            ("GRID", (0,0), (-1,-1), 0.3, colors.HexColor("#ddd")),
+            ("PADDING", (0,0), (-1,-1), 5),
+            ("TEXTCOLOR", (1,1), (1,1), VERDE if ganhos >= ganhos_ant else CINZA),
+            ("TEXTCOLOR", (1,2), (1,2), VERMELHO),
+            ("TEXTCOLOR", (1,3), (1,3), VERDE if lucro >= 0 else VERMELHO),
+        ]))
+        story.append(t)
+        story.append(Spacer(1, 10))
+
+        # Despesas por categoria
+        if cats:
+            story.append(Paragraph("Despesas por Categoria", secao_style))
+            total_desp = sum(cats.values())
+            cats_sorted = sorted(cats.items(), key=lambda x: x[1], reverse=True)
+            NOMES_CAT = {
+                'combustivel':'Combustível','pedagio':'Pedágio/Estac.','manutencao':'Manutenção',
+                'lavagem':'Lavagem','acessorio_carro':'Acessório Carro','aluguel_carro':'Aluguel Carro',
+                'financiamento':'Financiamento','seguro':'Seguro','ipva':'IPVA/Licenc.',
+                'multa':'Multa Trânsito','multa_app':'Multa do App','mercado':'Mercado',
+                'restaurante':'Restaurante','lanche':'Lanche/Café','farmacia':'Farmácia',
+                'saude':'Saúde/Plano','higiene':'Higiene','aluguel_casa':'Aluguel Casa',
+                'condominio':'Condomínio','luz_agua':'Luz/Água/Gás','presente_familia':'Presente/Família',
+                'roupa':'Roupas','celular':'Celular','internet':'Internet','streaming':'Streaming',
+                'emprestimo':'Empréstimo','investimento':'Investimento','lazer':'Lazer',
+                'educacao':'Educação','outros':'Outros','desconhecido':'Não identificado',
+            }
+            cat_data = [["Categoria", "Valor", "% do total"]]
+            for k, v in cats_sorted:
+                nome = NOMES_CAT.get(k, k.replace("_"," ").title())
+                pct = v / total_desp * 100 if total_desp > 0 else 0
+                cat_data.append([nome, fmt(v), f"{pct:.1f}%"])
+            cat_data.append(["TOTAL", fmt(total_desp), "100%"])
+            tc = Table(cat_data, colWidths=[80*mm, 45*mm, 35*mm])
+            tc.setStyle(TableStyle([
+                ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#f5f5f5")),
+                ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+                ("FONTNAME", (0,-1), (-1,-1), "Helvetica-Bold"),
+                ("BACKGROUND", (0,-1), (-1,-1), colors.HexColor("#fff3e0")),
+                ("FONTSIZE", (0,0), (-1,-1), 9),
+                ("ROWBACKGROUNDS", (0,1), (-1,-2), [BRANCO, colors.HexColor("#fafafa")]),
+                ("GRID", (0,0), (-1,-1), 0.3, colors.HexColor("#ddd")),
+                ("PADDING", (0,0), (-1,-1), 5),
+            ]))
+            story.append(tc)
+            story.append(Spacer(1, 10))
+
+        # Lista de lançamentos
+        story.append(Paragraph("Todos os Lançamentos", secao_style))
+        lanc_data = [["Data", "Tipo", "Descrição/Plataforma", "Valor"]]
+        for l in sorted(lancs, key=lambda x: x["data"]):
+            data_fmt = "/".join(reversed(l["data"].split("-")))
+            tipo = "Ganho" if l["tipo"] == "ganho" else "Despesa"
+            desc = l.get("plataforma") or l.get("descricao") or "-"
+            val = float(l["valor"])
+            sinal = "+" if l["tipo"] == "ganho" else "-"
+            lanc_data.append([data_fmt, tipo, desc.title(), f"{sinal}{fmt(val)}"])
+        tl = Table(lanc_data, colWidths=[22*mm, 22*mm, 80*mm, 36*mm])
+        tl.setStyle(TableStyle([
+            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#f5f5f5")),
+            ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+            ("FONTSIZE", (0,0), (-1,-1), 8),
+            ("ROWBACKGROUNDS", (0,1), (-1,-1), [BRANCO, colors.HexColor("#fafafa")]),
+            ("GRID", (0,0), (-1,-1), 0.3, colors.HexColor("#ddd")),
+            ("PADDING", (0,0), (-1,-1), 4),
+        ]))
+        # Colore ganhos de verde e despesas de vermelho
+        for i, l in enumerate(lancs, 1):
+            cor = VERDE if l["tipo"] == "ganho" else VERMELHO
+            tl.setStyle(TableStyle([("TEXTCOLOR", (3,i), (3,i), cor)]))
+        story.append(tl)
+        story.append(Spacer(1, 10))
+
+        # Contas
+        if contas:
+            story.append(Paragraph("Contas do Mês", secao_style))
+            contas_data = [["Conta", "Valor", "Status"]]
+            for c in sorted(contas, key=lambda x: x.get("vencimento","") or ""):
+                nome = c.get("descricao","") or c.get("nome","")
+                val = fmt(float(c.get("valor",0)))
+                status = "✅ Pago" if c.get("pago") else "⏳ Pendente"
+                contas_data.append([nome, val, status])
+            tc2 = Table(contas_data, colWidths=[90*mm, 40*mm, 30*mm])
+            tc2.setStyle(TableStyle([
+                ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#f5f5f5")),
+                ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+                ("FONTSIZE", (0,0), (-1,-1), 9),
+                ("ROWBACKGROUNDS", (0,1), (-1,-1), [BRANCO, colors.HexColor("#fafafa")]),
+                ("GRID", (0,0), (-1,-1), 0.3, colors.HexColor("#ddd")),
+                ("PADDING", (0,0), (-1,-1), 5),
+            ]))
+            story.append(tc2)
+
+        # Rodapé
+        story.append(Spacer(1, 14))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=CINZA))
+        story.append(Paragraph(f"Gerado pelo Painel.IA em {_dt.date.today().strftime('%d/%m/%Y')}", delta_style))
+
+        doc.build(story)
+        buffer.seek(0)
+        nome_arquivo = f"relatorio_{mes}.pdf"
+        return StreamingResponse(buffer, media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={nome_arquivo}"})
+    except Exception as e:
+        import traceback
+        return {"erro": str(e), "trace": traceback.format_exc()}
