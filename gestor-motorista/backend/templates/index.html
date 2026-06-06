@@ -4426,8 +4426,10 @@ _supa.auth.onAuthStateChange((event, session)=>{
         // Detecta novo usuário ou setup incompleto
         // Só ativa setup se explicitamente false E não tem histórico de uso
         const _temHistChat = window.chatHistory && window.chatHistory.length > 0;
-        const _temLocalHist = localStorage.getItem('chatHistory_'+MID) || localStorage.getItem('chat_'+MID);
-        if((d.setup_completo === false || d.is_new === true) && !_temHistChat && !_temLocalHist){
+        const _temLocalHist = localStorage.getItem('dashHistory_'+MID);
+        const _temPlataformas = d.plataformas && d.plataformas.length > 0;
+        const _temMeta = d.meta_diaria && d.meta_diaria !== 150;
+        if((d.setup_completo === false || d.is_new === true) && !_temHistChat && !_temLocalHist && !_temPlataformas && !_temMeta){
           setTimeout(() => ativarSetupMode(), 800);
         }
       });
@@ -4473,8 +4475,10 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     // Detecta novo usuário ou setup incompleto (via DOMContentLoaded)
     // Só ativa setup se explicitamente false E não tem histórico de uso
     const _temHistChat2 = window.chatHistory && window.chatHistory.length > 0;
-    const _temLocalHist2 = localStorage.getItem('chatHistory_'+MID) || localStorage.getItem('chat_'+MID);
-    if((upData.setup_completo === false || upData.is_new === true) && !_temHistChat2 && !_temLocalHist2){
+    const _temLocalHist2 = localStorage.getItem('dashHistory_'+MID);
+    const _temPlataformas2 = upData.plataformas && upData.plataformas.length > 0;
+    const _temMeta2 = upData.meta_diaria && upData.meta_diaria !== 150;
+    if((upData.setup_completo === false || upData.is_new === true) && !_temHistChat2 && !_temLocalHist2 && !_temPlataformas2 && !_temMeta2){
       setTimeout(() => ativarSetupMode(), 1000);
     }
   } else {
