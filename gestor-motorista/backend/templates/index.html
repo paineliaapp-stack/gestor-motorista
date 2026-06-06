@@ -2424,14 +2424,24 @@ async function loadDash(){
     const platVals=platFilt.map(p=>p.v);
     const platColors=platFilt.map(p=>p.c);
     if(window.gPlat)window.gPlat.destroy();
-    window.gPlat=new Chart(document.getElementById('g-plataforma'),{type:'bar',data:{labels:platLabels,datasets:[{data:platVals,backgroundColor:platColors,borderWidth:0,borderRadius:6,label:'Faturamento'}]},options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>'R$ '+c.raw.toLocaleString('pt-BR',{minimumFractionDigits:2})}}},scales:{x:{ticks:{color:'rgba(255,255,255,.4)',callback:(v)=>'R$'+v.toLocaleString('pt-BR'),font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true},y:{ticks:{color:'rgba(255,255,255,.8)',font:{size:13,weight:'600'}},grid:{display:false}}}}});
+    window.gPlat=new Chart(document.getElementById('g-plataforma'),{type:'bar',data:{labels:platLabels,datasets:[{data:platVals.map(v=>Math.round(v*100)/100),backgroundColor:platColors,borderWidth:0,borderRadius:6,label:'Faturamento'}]},options:{indexAxis:'y',plugins:{legend:{display:false},datalabels:{display:false},tooltip:{callbacks:{label:(c)=>'R$ '+parseFloat(c.raw).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}}},scales:{x:{ticks:{color:'rgba(255,255,255,.4)',maxTicksLimit:5,callback:(v)=>'R$'+Math.round(v).toLocaleString('pt-BR'),font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true},y:{ticks:{color:'rgba(255,255,255,.8)',font:{size:13,weight:'600'}},grid:{display:false}}}}});
     const ct={};todosLanc.filter(l=>l.tipo==='despesa').forEach(l=>{const k=l.descricao||'outros';ct[k]=(ct[k]||0)+parseFloat(l.valor)});
+    const totalDesp=Object.values(ct).reduce((a,v)=>a+v,0);
     const mx=Math.max(...Object.values(ct),1);
     const el=document.getElementById('barras-cat');el.innerHTML='';
-    Object.entries(ct).sort((a,b)=>b[1]-a[1]).slice(0,6).forEach(([k,v])=>{
+    const despOrdenadas=Object.entries(ct).sort((a,b)=>b[1]-a[1]);
+    const top3=despOrdenadas.slice(0,3);
+    const resto=despOrdenadas.slice(3);
+    const restoTotal=resto.reduce((s,[,v])=>s+v,0);
+    top3.forEach(([k,v])=>{
       const c=CATS.find(x=>x.k===k)||{e:'📦',n:k};
-      el.innerHTML+='<div class="cb-item"><div class="cb-top"><span>'+c.e+' '+c.n+'</span><span class="cb-val">'+fmt(v)+'</span></div><div class="cb-bg"><div class="cb-fill" style="width:'+(v/mx*100).toFixed(1)+'%"></div></div></div>';
+      const pct=totalDesp>0?(v/totalDesp*100).toFixed(0)+'%':'';
+      el.innerHTML+='<div class="cb-item"><div class="cb-top"><span>'+c.e+' '+c.n+'</span><span class="cb-val">'+fmt(v)+' <span style="color:var(--mt);font-size:11px;font-weight:400">'+pct+'</span></span></div><div class="cb-bg"><div class="cb-fill" style="width:'+(v/mx*100).toFixed(1)+'%"></div></div></div>';
     });
+    if(restoTotal>0){
+      const pctResto=totalDesp>0?(restoTotal/totalDesp*100).toFixed(0)+'%':'';
+      el.innerHTML+='<div class="cb-item" style="opacity:.6"><div class="cb-top"><span>📦 Outros ('+resto.length+' categorias)</span><span class="cb-val">'+fmt(restoTotal)+' <span style="color:var(--mt);font-size:11px;font-weight:400">'+pctResto+'</span></span></div><div class="cb-bg"><div class="cb-fill" style="width:'+(restoTotal/mx*100).toFixed(1)+'%"></div></div></div>';
+    }
     if(!Object.keys(ct).length)el.innerHTML='<p style="color:var(--mt);font-size:12px">Nenhuma despesa registrada.</p>';
   }catch(e){console.error(e)}
 }
