@@ -345,7 +345,7 @@ const _supa = supabase.createClient(
   <div style="padding:12px 14px;border-top:1px solid rgba(255,255,255,.08);background:#0d0d12">
     <div style="display:flex;gap:10px;align-items:center">
       <input id="setup-inp" type="text" placeholder="Digite sua resposta..." autocomplete="off"
-        style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:11px 16px;color:#fff;font-size:14px;outline:none"
+        style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:11px 16px;color:#fff;font-size:16px;outline:none"
         onkeydown="if(event.key==='Enter')enviarSetup()">
       <button onclick="enviarSetup()" style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#6d28d9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -3585,7 +3585,8 @@ async function sendChat() {
     _chatSending = false;
     if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
     inp.disabled = false;
-    inp.focus();
+    // iOS 26.5: não forçar focus após resposta — evita loop de teclado/viewport
+    if(!/iPhone|iPad|iPod/.test(navigator.userAgent)) inp.focus();
   }
 }
 
@@ -3610,10 +3611,8 @@ function atualizarFaturamentoDia() {
       inp.value = fatAtual && fatAtual !== '—'
         ? `quero atualizar o total faturado de hoje, atualmente está ${fatAtual}`
         : 'quero registrar o faturamento de hoje, quanto fiz em cada plataforma';
-      inp.focus();
+      // iOS 26.5: focus() e scrollIntoView causam chat em tela cheia — não usamos aqui
       inp.setSelectionRange(inp.value.length, inp.value.length);
-      // Rola suavemente até o chat
-      inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, 150);
 }
@@ -4410,7 +4409,10 @@ _supa.auth.onAuthStateChange((event, session)=>{
         if(d.meta_diaria){ META_DIARIA=d.meta_diaria; localStorage.setItem('meta',META_DIARIA); }
         if(d.comb_diario){ window.COMB_DIARIO=d.comb_diario; localStorage.setItem('comb_diario',d.comb_diario); atualizarExibicaoMeta(META_DIARIA, d.comb_diario); }
         // Detecta novo usuário ou setup incompleto
-        if(d.setup_completo === false || d.is_new === true){
+        // Fix iOS race condition: só ativa setup se setup_completo é explicitamente false
+        if(d.setup_completo === false && d.is_new !== true){
+          setTimeout(() => ativarSetupMode(), 800);
+        } else if(d.is_new === true){
           setTimeout(() => ativarSetupMode(), 800);
         }
       });
@@ -4454,7 +4456,10 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(tl) tl.remove();
     if(typeof init === 'function') init();
     // Detecta novo usuário ou setup incompleto (via DOMContentLoaded)
-    if(upData.setup_completo === false || upData.is_new === true){
+    // Fix iOS race condition: só ativa setup se explicitamente false
+    if(upData.setup_completo === false && upData.is_new !== true){
+      setTimeout(() => ativarSetupMode(), 1000);
+    } else if(upData.is_new === true){
       setTimeout(() => ativarSetupMode(), 1000);
     }
   } else {
