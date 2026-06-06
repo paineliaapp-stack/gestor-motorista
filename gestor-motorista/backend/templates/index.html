@@ -325,6 +325,7 @@ const _supa = supabase.createClient(
 </div>
 <!-- SETUP MODE OVERLAY - app bloqueado para novo usuário -->
 <div id="setup-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:#0d0d12;flex-direction:column;overflow:hidden;height:100dvh;max-height:100dvh;box-sizing:border-box">
+  <button id="setup-skip-btn" onclick="finalizarSetupMode()" style="display:none;position:absolute;top:16px;right:16px;background:rgba(255,255,255,.08);border:none;border-radius:50%;width:36px;height:36px;color:#aaa;font-size:18px;cursor:pointer;z-index:10;line-height:1">×</button>
   <!-- Header simples -->
   <div style="display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08)">
     <div style="width:32px;height:32px;border-radius:8px;overflow:hidden;flex-shrink:0"><img src="/static/icon-192.png" style="width:100%;height:100%;object-fit:cover"></div>
@@ -3657,6 +3658,12 @@ function ativarSetupMode() {
 
   // Inicia conversa de setup
   iniciarChatSetup();
+
+  // Mostra botão de pular após 8s — segurança para usuário que já tem dados
+  setTimeout(() => {
+    const skipBtn = document.getElementById('setup-skip-btn');
+    if (skipBtn) skipBtn.style.display = 'block';
+  }, 8000);
 }
 
 function finalizarSetupMode() {
