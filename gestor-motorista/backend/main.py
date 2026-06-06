@@ -1415,15 +1415,17 @@ CONTAS:
    - "divida a Elaine em parcelas de 160/dia" ou "quero pagar 160 por dia para Elaine" → significa que o motorista quer ABATER R$160 hoje: use abater_conta com descricao="Elaine", valor_pago=160. Responda: "Certo! Vou registrar R$160 abatidos da Elaine hoje. Me avisa quando pagar mais."
    - "divida X em N dias" → calcule valor/N e use abater_conta com o valor de hoje. Não crie múltiplas contas.
    - NUNCA pergunte mais detalhes quando o motorista diz "vencimento para amanhã/dia X" ou "parcelas de R$X" — execute direto.
-9. AJUSTE DE TOTAL POR PLATAFORMA:
-   Quando o motorista diz "o total da 99 foi X" ou "atualize para X" ou "total na 99 hoje X":
-   - Se já existe lançamento da plataforma HOJE: delete o(s) lançamento(s) de hoje dessa plataforma e registre o valor novo. NÃO pergunte — faça direto.
-   - Se não tem lançamento de hoje: registre o valor como novo lançamento direto.
-   - Se diz "total na 99 hoje 326,17 e na uber 84,66": registre AMBOS os valores como ganhos de hoje nas respectivas plataformas (ou atualize se já existirem). Isso NÃO é ajuste de histórico antigo — é o total do dia.
-   - Ajuste de total de MÊS (não de hoje): consulte TODOS OS GANHOS DO MÊS, calcule diferença, identifique lançamento suspeito, use editar_lancamento_por_id.
-   - Com confirmação: use editar_lancamento_por_id com o id correto
+9. AJUSTE DE TOTAL POR PLATAFORMA — CRÍTICO:
+   Quando o motorista informa um valor de faturamento por plataforma (ex: "fiz 277 na 99 ontem", "hoje na uber foram 350"), SEMPRE verifique se já existe lançamento dessa plataforma naquele dia:
+   - SE JÁ EXISTE lançamento da plataforma no dia mencionado (hoje ou ontem): use substituir:true para SUBSTITUIR o valor antigo, não criar novo. NÃO some os valores.
+   - SE NÃO EXISTE lançamento naquele dia: registre como novo.
+   - "fiz 277 na 99 ontem" + já existe ganho da 99 ontem → substituir:true com data=ontem. NÃO crie um segundo lançamento.
+   - "fiz 277 na 99 ontem" + não existe ganho da 99 ontem → registre direto.
+   - "total na 99 hoje 326,17 e na uber 84,66": atualize AMBOS nas respectivas plataformas.
+   - Ajuste de total de MÊS (não de dia específico): use editar_lancamento_por_id com o id correto.
    - Se pedir para cancelar/desfazer um registro que acabou de fazer: use deletar_lancamento_por_id com o id mais recente da plataforma
    - Se pedir para cancelar/desfazer uma DISTRIBUIÇÃO (histórico tem [últimos_ids_distribuicao: [...]]):  use deletar_lancamentos_por_ids com todos os IDs listados
+   REGRA DE OURO: motorista de app raramente faz dois faturamentos separados na mesma plataforma no mesmo dia. Se já existe um valor, ele está ATUALIZANDO, não adicionando. Duvide sempre de duplicata no mesmo dia/plataforma.
 
 === AÇÕES (responda SEMPRE em JSON puro) ===
 Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}

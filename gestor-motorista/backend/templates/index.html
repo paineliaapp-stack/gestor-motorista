@@ -1193,34 +1193,109 @@ function verificarCombustivelSemanal(lancamentos) {
   const direcao = pctReal < pctConfig ? 'menos' : 'mais';
   const emoji = pctReal < pctConfig ? '✅' : '⚠️';
 
+  // Antes de mostrar o relatório, verifica se tem dias sem combustível registrado
+  // Conta dias com ganho na semana que não têm despesa de combustível
+  const diasComGanho = [...new Set(lancSem.filter(l=>l.tipo==='ganho').map(l=>l.data))];
+  const diasComComb = [...new Set(lancSem.filter(l=>
+    l.tipo==='despesa' && (
+      (l.plataforma||'').toLowerCase()==='combustivel' ||
+      (l.descricao||'').toLowerCase().includes('combust')
+    )
+  ).map(l=>l.data))];
+  const diasSemComb = diasComGanho.filter(d => !diasComComb.includes(d));
+
+  // Se tem dias trabalhados sem combustível registrado, pergunta antes de dar o relatório
+  if (diasSemComb.length > 0) {
+    const nDias = diasSemComb.length;
+    const perguntaId = 'comb-pergunta-'+Date.now();
+    const pergEl = document.createElement('div');
+    pergEl.className = 'msg msg-gestor';
+    pergEl.id = perguntaId;
+
+    const avatarP = document.createElement('div');
+    avatarP.className = 'msg-avatar';
+    avatarP.textContent = '🧠';
+
+    const balaoP = document.createElement('div');
+    balaoP.className = 'msg-balao';
+
+    const textoP = document.createElement('div');
+    textoP.style.cssText = 'font-size:13px;line-height:1.5;margin-bottom:10px';
+    textoP.innerHTML = `⛽ Antes de te mostrar o relatório da semana — você trabalhou ${diasComGanho.length} dia${diasComGanho.length!==1?'s':''} essa semana, mas só registrei combustível em ${diasComComb.length}. Esqueceu de lançar o combustível em algum dia?`;
+
+    const btnSim = document.createElement('button');
+    btnSim.style.cssText = 'width:100%;background:rgba(255,100,100,.1);border:1px solid rgba(255,100,100,.3);border-radius:10px;color:#f87171;font-size:12px;font-weight:600;padding:10px 14px;cursor:pointer;margin-bottom:8px;text-align:left';
+    btnSim.textContent = '⛽ Sim, vou lançar agora';
+    btnSim.addEventListener('click', () => {
+      document.getElementById('chat-input').value = 'quero lançar combustível esquecido';
+      document.getElementById('chat-input').focus();
+      pergEl.remove();
+      try { localStorage.removeItem(chaveAviso); } catch(e) {}
+    });
+
+    const btnNao = document.createElement('button');
+    btnNao.style.cssText = 'width:100%;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);border-radius:10px;color:#a5b4fc;font-size:12px;font-weight:600;padding:10px 14px;cursor:pointer;text-align:left';
+    btnNao.textContent = '✅ Não, meus dados estão completos';
+    btnNao.addEventListener('click', () => {
+      pergEl.remove();
+      // Agora mostra o relatório real
+      _mostrarRelatorioCombuSemanal(ganhosSem, combSem, pctReal, pctConfig, diferenca, direcao, emoji, msgId_inner, chaveAviso, fmt);
+    });
+
+    balaoP.appendChild(textoP);
+    balaoP.appendChild(btnSim);
+    balaoP.appendChild(btnNao);
+    pergEl.appendChild(avatarP);
+    pergEl.appendChild(balaoP);
+
+    const chat = document.getElementById('chat-msgs');
+    if(chat) { chat.appendChild(pergEl); chat.scrollTop = chat.scrollHeight; }
+    return; // não mostra relatório ainda
+  }
+
+  const msgId_inner = 'comb-aviso-'+Date.now();
+  _mostrarRelatorioCombuSemanal(ganhosSem, combSem, pctReal, pctConfig, diferenca, direcao, emoji, msgId_inner, chaveAviso, fmt);
+}
+
+function _mostrarRelatorioCombuSemanal(ganhosSem, combSem, pctReal, pctConfig, diferenca, direcao, emoji, msgId, chaveAviso, fmt) {
   const msgTexto = `${emoji} Essa semana você gastou ${fmt(combSem)} de combustível em ${fmt(ganhosSem)} faturados — isso é <strong>${pctReal}%</strong> do bruto, mas sua estimativa está em <strong>${pctConfig}%</strong>. Você gastou ${diferenca} ponto${diferenca!==1?'s':''} percentuais a ${direcao} do previsto.`;
 
   // Cria mensagem com botão
-  const msgId = 'comb-aviso-'+Date.now();
   const msgEl = document.createElement('div');
   msgEl.className = 'msg msg-gestor';
-  msgEl.innerHTML = `
-    <div class="msg-avatar">🧠</div>
-    <div class="msg-balao">
-      <div style="font-size:13px;line-height:1.5;margin-bottom:10px">${msgTexto}</div>
-      <button onclick="(function(){
-        localStorage.setItem('pct_comb_'+(window.MID||''), ${pctReal});
-        try{renderMetaMensal();}catch(e){}
-        try{loadContas();}catch(e){}
-        document.getElementById('${msgId}').innerHTML = '<div class=\'msg-avatar\'>🧠</div><div class=\'msg-balao\'><div style=\'font-size:13px;color:#00D897\'>✅ Estimativa de combustível atualizada para <strong>${pctReal}%</strong>! Os cálculos do mês foram ajustados.</div></div>';
-        try{localStorage.setItem('${chaveAviso}','1');}catch(e){}
-      })()" style="width:100%;background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(99,102,241,.1));border:1px solid rgba(99,102,241,.4);border-radius:10px;color:#a5b4fc;font-size:12px;font-weight:600;padding:10px 14px;cursor:pointer;text-align:left;line-height:1.4">
-        🔄 Clique aqui e atualizamos automaticamente a projeção para <strong>${pctReal}%</strong> — mais próximo do que você realmente gasta
-      </button>
-    </div>
-  `;
   msgEl.id = msgId;
+
+  const avatarEl = document.createElement('div');
+  avatarEl.className = 'msg-avatar';
+  avatarEl.textContent = '🧠';
+
+  const balaoEl = document.createElement('div');
+  balaoEl.className = 'msg-balao';
+
+  const textoEl = document.createElement('div');
+  textoEl.style.cssText = 'font-size:13px;line-height:1.5;margin-bottom:10px';
+  textoEl.innerHTML = msgTexto;
+
+  const btnEl = document.createElement('button');
+  btnEl.style.cssText = 'width:100%;background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(99,102,241,.1));border:1px solid rgba(99,102,241,.4);border-radius:10px;color:#a5b4fc;font-size:12px;font-weight:600;padding:10px 14px;cursor:pointer;text-align:left;line-height:1.4';
+  btnEl.innerHTML = '🔄 Clique aqui e atualizamos automaticamente a projeção para <strong>' + pctReal + '%</strong> — mais próximo do que você realmente gasta';
+  btnEl.addEventListener('click', function() {
+    localStorage.setItem('pct_comb_' + (window.MID||''), pctReal);
+    try { renderMetaMensal(); } catch(e) {}
+    try { loadContas(); } catch(e) {}
+    balaoEl.innerHTML = '<div style="font-size:13px;color:#00D897">✅ Estimativa de combustível atualizada para <strong>' + pctReal + '%</strong>! Os cálculos do mês foram ajustados.</div>';
+    try { localStorage.setItem(chaveAviso, '1'); } catch(e) {}
+  });
+
+  balaoEl.appendChild(textoEl);
+  balaoEl.appendChild(btnEl);
+  msgEl.appendChild(avatarEl);
+  msgEl.appendChild(balaoEl);
 
   const chat = document.getElementById('chat-msgs');
   if(chat) {
     chat.appendChild(msgEl);
     chat.scrollTop = chat.scrollHeight;
-    // Marca que já avisou essa semana
     try { localStorage.setItem(chaveAviso, '1'); } catch(e) {}
   }
 }
