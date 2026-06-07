@@ -1111,6 +1111,17 @@ async def chat_setup(dados: dict = Body(...)):
     uid = dados.get("id") or dados.get("motorista_id")
     mensagem = dados.get("mensagem", "")
     historico = dados.get("historico", [])
+    # Pré-normaliza valores monetários com vírgula: "156,28" não vire "156" e "28"
+    # Substitui padrões como "R$156,28" ou "156,28" por "R$156.28" antes de mandar ao Gemini
+    import re as _re_pre
+    def _norm_valor(m):
+        # só normaliza se parece número monetário (dígitos,dígitos onde parte após vírgula tem 1-2 dígitos)
+        full = m.group(0)
+        parts = full.replace("R$","").replace(" ","").split(",")
+        if len(parts)==2 and parts[1].isdigit() and len(parts[1])<=2:
+            return full.replace(",",".")
+        return full
+    mensagem = _re_pre.sub(r'R?\$?\s*\d+,\d{1,2}', _norm_valor, mensagem)
     nome = dados.get("nome", "motorista")
 
     GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
@@ -1420,7 +1431,13 @@ CONTAS:
 5. VALORES ALTOS (ganho>R$700 ou despesa>R$350): confirme levemente antes de registrar.
 6. SIM/NÃO: "sim/pode/isso/confirma" → registre o pendente do histórico. "não/cancela" → pergunte o certo.
 7. CRUZAMENTO: ganho muito acima da média (>2x) → registre e comente. Valor baixo declarado explicitamente → registre direto.
-8. MÚLTIPLOS REGISTROS NUMA MENSAGEM — CRÍTICO:
+8. VÍRGULA = CENTAVOS — CRÍTICO:
+   No Brasil, vírgula é separador decimal. "156,28" = CENTO E CINQUENTA E SEIS REAIS E VINTE E OITO CENTAVOS = 156.28 — UM único valor, NUNCA dois valores separados.
+   - "fiz 156,28 na 99" → 1 ação com valor=156.28. JAMAIS crie duas ações com 156 e 28.
+   - "fiz 300,50 e paguei 45,90" → 2 ações: valor=300.50 e valor=45.90
+   - O separador de MÚLTIPLOS valores é "e", "mais", "também" — nunca a vírgula dentro de um número.
+
+9. MÚLTIPLOS REGISTROS NUMA MENSAGEM — CRÍTICO:
    Se o motorista informa vários ganhos/despesas de uma vez (ex: "hoje fiz 336, ontem 400, sábado 500" ou "fiz 300 na uber e paguei 80 de combustível"), REGISTRE TODOS de uma vez com múltiplas ações no JSON.
    - "hoje fiz 336, ontem fiz 400" → duas ações registrar_lancamento com datas diferentes (hoje={hoje_str}, ontem={ontem_str})
    - "sábado 500" em contexto de relato = data do sábado passado ({sabado_str})
