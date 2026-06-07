@@ -1246,7 +1246,7 @@ function gerarRelatorioSemanal() {
   const combStatus = pctComb < pctConfig - 4 ? `✅ <strong>${pctComb}%</strong> — abaixo do previsto (${pctConfig}%)` : pctComb > pctConfig + 4 ? `⚠️ <strong>${pctComb}%</strong> — acima do previsto (${pctConfig}%)` : `✅ <strong>${pctComb}%</strong> — dentro do esperado`;
 
   const avisoSemComb = diasSemComb.length > 0
-    ? `<div style="margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);font-size:12px;color:#fcd34d">⚠️ Combustível não registrado em ${diasSemComb.length} dia${diasSemComb.length>1?'s':''} trabalhado${diasSemComb.length>1?'s':''} — % pode estar errado</div>` : '';
+    ? `<div style="margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);font-size:12px;color:#fcd34d">💡 Combustível não lançado em ${diasSemComb.length} dia${diasSemComb.length>1?'s':''} trabalhado${diasSemComb.length>1?'s':''} — se abasteceu e sobrou pro dia seguinte, tá certo</div>` : '';
 
   const html = `
     <div style="font-size:13px;line-height:1.7">
@@ -1280,8 +1280,8 @@ function gerarRelatorioSemanal() {
       </div>
 
       ${melhorDia ? `<div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;font-size:12px">
-        <div style="margin-bottom:6px"><span style="color:#fcd34d">🏆 Melhor dia:</span> ${nomeDia(melhorDia[0])} — ${fmt(melhorDia[1])}</div>
-        ${piorDia && piorDia[0] !== melhorDia[0] ? `<div><span style="color:#9ca3af">📉 Pior dia:</span> ${nomeDia(piorDia[0])} — ${fmt(piorDia[1])}</div>` : ''}
+        <div style="margin-bottom:6px"><span style="color:#fcd34d">🏆 Melhor dia:</span> ${nomeDia(melhorDia[0])} — ${fmt(melhorDia[1])} <span style="color:#888;font-size:11px">(total com extras)</span></div>
+        ${piorDia && piorDia[0] !== melhorDia[0] ? `<div><span style="color:#9ca3af">📉 Pior dia:</span> ${nomeDia(piorDia[0])} — ${fmt(piorDia[1])} <span style="color:#888;font-size:11px">(total com extras)</span></div>` : ''}
       </div>` : '<div style="font-size:12px;color:#6b7280;text-align:center;padding:10px">Nenhum ganho registrado essa semana ainda.</div>'}
     </div>`;
 
