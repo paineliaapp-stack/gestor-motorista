@@ -1498,11 +1498,9 @@ Quando analisa situação geral:
     renda_extra_ctx = ""
     if renda_extra_semana:
         itens = ", ".join(f"R${r['valor']:.0f} ({r['plataforma']}) em {r['data']}" for r in renda_extra_semana)
-        renda_extra_ctx = f"
-RENDA EXTRA ESSA SEMANA: {itens} — total R${renda_extra_semana_total:.2f}"
+        renda_extra_ctx = f"\nRENDA EXTRA ESSA SEMANA: {itens} — total R${renda_extra_semana_total:.2f}"
     else:
-        renda_extra_ctx = "
-RENDA EXTRA ESSA SEMANA: nenhuma registrada."
+        renda_extra_ctx = "\nRENDA EXTRA ESSA SEMANA: nenhuma registrada."
 
     # Contexto sempre na primeira mensagem
     msgs = [{"role": "user", "parts": [{"text": contexto}]},
