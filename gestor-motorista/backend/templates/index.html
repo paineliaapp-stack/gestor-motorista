@@ -1285,12 +1285,18 @@ function gerarRelatorioSemanal() {
       </div>` : '<div style="font-size:12px;color:#6b7280;text-align:center;padding:10px">Nenhum ganho registrado essa semana ainda.</div>'}
     </div>`;
 
-  // Se tem dias sem combustível, pergunta antes
+  // Mostra relatório diretamente — pergunta de combustível é feita por verificarCombustivelSemanal
   const chat = document.getElementById('chat-msgs');
   if(!chat) return;
 
+  // Evitar duplicata: se já tem relatório da semana no chat, não adiciona de novo
+  if(document.querySelector('.relatorio-semanal-msg')) {
+    chat.scrollTop = chat.scrollHeight;
+    return;
+  }
+
   const msgEl = document.createElement('div');
-  msgEl.className = 'msg msg-gestor';
+  msgEl.className = 'msg msg-gestor relatorio-semanal-msg';
   const avatar = document.createElement('div');
   avatar.className = 'msg-avatar';
   avatar.textContent = '🧠';
@@ -1388,10 +1394,14 @@ function verificarCombustivelSemanal(lancamentos) {
     btnSim.style.cssText = 'width:100%;background:rgba(255,100,100,.1);border:1px solid rgba(255,100,100,.3);border-radius:10px;color:#f87171;font-size:12px;font-weight:600;padding:10px 14px;cursor:pointer;margin-bottom:8px;text-align:left';
     btnSim.textContent = '⛽ Sim, vou lançar agora';
     btnSim.addEventListener('click', () => {
-      document.getElementById('chat-input').value = 'quero lançar combustível esquecido';
-      document.getElementById('chat-input').focus();
       pergEl.remove();
       try { localStorage.removeItem(chaveAviso); } catch(e) {}
+      // Envia a mensagem diretamente
+      const inp = document.getElementById('chat-input');
+      if(inp) {
+        inp.value = 'quero lançar combustível esquecido';
+        if(typeof sendChat === 'function') sendChat();
+      }
     });
 
     const btnNao = document.createElement('button');
@@ -1399,8 +1409,9 @@ function verificarCombustivelSemanal(lancamentos) {
     btnNao.textContent = '✅ Não, meus dados estão completos';
     btnNao.addEventListener('click', () => {
       pergEl.remove();
-      // Agora mostra o relatório real
-      _mostrarRelatorioCombuSemanal(ganhosSem, combSem, pctReal, pctConfig, diferenca, direcao, emoji, msgId_inner, chaveAviso, fmt);
+      try { localStorage.setItem(chaveAviso, '1'); } catch(e) {}
+      // Mostra o relatório da semana
+      gerarRelatorioSemanal();
     });
 
     balaoP.appendChild(textoP);
