@@ -2118,6 +2118,15 @@ Quando analisa situação geral:
 
     return {"resposta": texto, "acao": acao_executada, "acoes_count": len(acoes_executadas), "acoes_esperadas": len(lista_acoes)}
 
+# wrapper global para capturar qualquer exceção não tratada no /chat
+@app.exception_handler(Exception)
+async def generic_exception_handler(request, exc):
+    import traceback
+    print(f"ERRO GLOBAL: {exc}")
+    traceback.print_exc()
+    from fastapi.responses import JSONResponse
+    return JSONResponse(status_code=500, content={"resposta": "Tive um erro interno. Tente de novo em alguns segundos.", "acao": None, "erro": str(exc)})
+
 
 
 @app.post("/distribuir-ganho")
