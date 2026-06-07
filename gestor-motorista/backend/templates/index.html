@@ -4422,9 +4422,32 @@ function fmtFech(ganhos, despesas, horas, dias, lancamentos) {
 
   // Separa fontes de ganho
   const RENDA_EXTRA_KEYS = ['seguro_desemprego','freelance','aluguel_recebido','venda','emprestimo_recebido','bonus','renda_extra'];
+  // Categorias operacionais (gastos do dia a dia)
+  const CATS_OPERACIONAL = ['combustivel','restaurante','lanche','pedagio','lavagem','farmacia','mercado','higiene','outros'];
   const lancs = lancamentos || [];
   const ganhosApp = lancs.filter(l=>l.tipo==='ganho' && !RENDA_EXTRA_KEYS.includes((l.plataforma||'').toLowerCase().trim())).reduce((s,l)=>s+parseFloat(l.valor),0);
   const ganhosExtra = lancs.filter(l=>l.tipo==='ganho' && RENDA_EXTRA_KEYS.includes((l.plataforma||'').toLowerCase().trim())).reduce((s,l)=>s+parseFloat(l.valor),0);
+
+  // Separa despesas: operacionais vs contas pagas
+  const despOp = lancs.filter(l=>l.tipo==='despesa' && CATS_OPERACIONAL.includes((l.descricao||l.plataforma||'').toLowerCase().split(' ')[0])).reduce((s,l)=>s+parseFloat(l.valor),0);
+  const despContas = despesas - despOp;
+
+  // Lucro do mês (usa todosLanc global)
+  const lucroMes = (() => {
+    try {
+      const todos = window._todosLanc || [];
+      const g = todos.filter(l=>l.tipo==='ganho').reduce((s,l)=>s+parseFloat(l.valor),0);
+      const d = todos.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+parseFloat(l.valor),0);
+      return g - d;
+    } catch(e) { return null; }
+  })();
+
+  // Bloco explicativo quando o dia ficou negativo por pagamento de contas
+  const avisoNegativo = (lucro < 0 && despContas > 0 && dias <= 1) ? `
+    <div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);font-size:12px;line-height:1.6;color:var(--tx)">
+      📌 Desse total, <strong style="color:#a5b4fc">${fmt(despContas)}</strong> foram contas pagas hoje — por isso o dia ficou negativo, não por falta de ganho.
+      ${lucroMes !== null ? `<br>📊 <strong>Lucro do mês até agora: <span style="color:${lucroMes>=0?'var(--gn)':'var(--rd)'}">${fmt(lucroMes)}</span></strong>` : ''}
+    </div>` : '';
 
   // Monta aviso de conferência levando em conta renda extra
   let passos = '';
@@ -4460,6 +4483,7 @@ function fmtFech(ganhos, despesas, horas, dias, lancamentos) {
         ${ganhosExtra > 0 ? `<div class="rh-item" style="grid-column:1/-1"><span class="rh-label">🟡 Apps (Uber/99)</span><span class="rh-val am">${fmt(ganhosApp)}</span></div>
         <div class="rh-item" style="grid-column:1/-1"><span class="rh-label">💼 Renda extra</span><span class="rh-val" style="color:#a5b4fc">${fmt(ganhosExtra)}</span></div>` : ''}
       </div>
+      ${avisoNegativo}
     </div>
     <div class="gc" style="margin-top:0">
       <h3 style="margin:0 0 10px;font-size:13px;color:var(--mt2)">✅ Como conferir com o banco/app</h3>
