@@ -2259,7 +2259,7 @@ async function loadDash(){
     // Estado do toggle (padrão: só app)
     if(window._grafIncluiExtra===undefined) window._grafIncluiExtra=false;
 
-    function renderGraficoLinha(incluiExtra){
+    window.renderGraficoLinha = function renderGraficoLinha(incluiExtra){
       window._grafIncluiExtra=incluiExtra;
       const pd=incluiExtra?pdTudo:pdApp;
       if(gLinha)gLinha.destroy();
