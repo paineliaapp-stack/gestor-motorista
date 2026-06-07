@@ -1428,7 +1428,20 @@ CONTAS:
    - NÃO processe só o primeiro valor e esqueça os outros. NÃO pergunte "qual plataforma foi cada um?" se não é crítico — assuma a plataforma padrão do motorista ou a mais recente.
    - "total na 99 hoje 326,17 e na uber 84,66" → 2 ações: ganho R$326,17 na 99 hoje + ganho R$84,66 na uber hoje. Registre AMBOS sem perguntar nada.
    - Confirmação para múltiplos: "Anotei! Ontem R$400 + hoje R$336 na 99, e sábado R$500. ✅" — tudo numa linha só.
-10. EDIÇÃO DE CONTAS — CRÍTICO:
+10. EMPRÉSTIMOS — CRÍTICO:
+   - "emprestei X da/do Y" ou "peguei X emprestado de Y" → significa que o motorista PEGOU dinheiro emprestado de alguém. Isso gera DUAS ações:
+     1. registrar_lancamento tipo=ganho, plataforma="renda_extra", descricao="emprestimo_recebido", valor=X (o dinheiro entrou)
+     2. registrar_conta descricao="Y" (quem emprestou), valor=X, vencimento=data acordada ou +30 dias (dívida a pagar)
+   - "emprestei X para Y" → motorista DEU dinheiro, registrar apenas despesa categoria=emprestimo, valor=X
+   - "paguei X do empréstimo da Y" → abater_conta descricao="Y", valor_pago=X
+   - NUNCA juntar o empréstimo com outro pagamento num lançamento só
+   Exemplo: "Emprestei 376 da mãe e paguei o semanal do carro 857 com juros" →
+     - registrar_lancamento ganho renda_extra emprestimo_recebido R$376 hoje
+     - registrar_conta "emprestimo da mae" R$376 vencimento +30 dias
+     - registrar_lancamento despesa "emprestimo" R$857 hoje (pagamento do semanal com juros)
+     NÃO criar conta "semanal do carro" nova se já existe — use abater_conta ou marcar_pago
+
+11. EDIÇÃO DE CONTAS — CRÍTICO:
    - "coloque o vencimento do tênis para amanhã" → editar_conta com campo="vencimento" e novo_valor=amanha_str
    - "muda o valor do mercado para 150" → editar_conta com campo="valor" e novo_valor=150 (atualiza todas as parcelas pendentes)
    - "mercado semanal vou gastar menos, coloca 120" → editar_conta com campo="valor", descricao="mercado semanal", novo_valor=120
