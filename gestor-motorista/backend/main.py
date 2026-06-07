@@ -1485,9 +1485,12 @@ Quando analisa situação geral:
     # Contexto sempre na primeira mensagem
     msgs = [{"role": "user", "parts": [{"text": contexto}]},
             {"role": "model", "parts": [{"text": "Entendido. Estou pronto para registrar e responder de forma curta."}]}]
-    for h in (historico or []):
+    # Limita histórico a 8 mensagens para evitar MAX_TOKENS no Gemini
+    hist_curto = (historico or [])[-8:]
+    for h in hist_curto:
         role = "model" if h["role"] == "assistant" else h["role"]
-        msgs.append({"role": role, "parts": [{"text": h["content"]}]})
+        txt = str(h.get("content",""))[:600]  # trunca msgs muito longas
+        msgs.append({"role": role, "parts": [{"text": txt}]})
     msgs.append({"role": "user", "parts": [{"text": mensagem}]})
 
     GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
@@ -1521,13 +1524,41 @@ Quando analisa situação geral:
                 await __import__("asyncio").sleep(5)
 
     if "error" in result:
-        return {"resposta": f"Erro da IA: {result['error'].get('message','sem detalhes')}", "acao": None}
-    texto = result.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+        err_detail = result['error'].get('message','sem detalhes')
+        print(f"GEMINI API ERROR: {err_detail}")
+        return {"resposta": f"Não consegui processar agora. Tente de novo em alguns segundos.", "acao": None}
+
+    candidates = result.get("candidates", [])
+    print(f"DEBUG candidates count: {len(candidates)}")
+    if candidates:
+        finish = candidates[0].get("finishReason","")
+        print(f"DEBUG finishReason: {finish}")
+        if finish in ("MAX_TOKENS", "RECITATION", "SAFETY"):
+            print(f"GEMINI finish={finish} — retrying sem histórico longo")
+            # Tenta de novo com histórico reduzido (só última mensagem)
+            msgs_curto = [msgs[0], msgs[-1]]  # só system + mensagem atual
+            try:
+                async with httpx.AsyncClient(timeout=30) as c2:
+                    r2 = await c2.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_KEY}",
+                        json={"contents": msgs_curto, "generationConfig": {"responseMimeType":"application/json","maxOutputTokens":1024,"temperature":0.1}}
+                    )
+                    result2 = r2.json()
+                    if "candidates" in result2:
+                        result = result2
+                        candidates = result2.get("candidates",[])
+            except Exception as e2:
+                print(f"Retry falhou: {e2}")
+
+    texto = ""
+    if candidates:
+        parts = candidates[0].get("content", {}).get("parts", [])
+        texto = parts[0].get("text","") if parts else ""
+    
+    print(f"DEBUG texto len: {len(texto)} | inicio: {repr(texto[:100])}")
     if not texto:
-        return {"resposta": f"Sem resposta da IA. Chave configurada: {bool(GEMINI_KEY)}", "acao": None}
-    print(f"GEMINI RETORNOU COMPLETO: {repr(texto)}")
-    print(f"DEBUG result keys: {list(result.keys())}")
-    print(f"DEBUG candidates: {repr(result.get('candidates','AUSENTE'))[:300]}")
+        print(f"DEBUG result completo: {repr(str(result)[:500])}")
+        return {"resposta": "Não entendi. Pode repetir de outro jeito?", "acao": None}
 
     # Executa todas as ações retornadas pelo Gemini (JSON mode)
     acoes_executadas = []
