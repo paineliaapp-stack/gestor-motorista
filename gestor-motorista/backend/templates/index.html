@@ -2526,6 +2526,9 @@ async function loadDash(){
     const platLabels=platFilt.map(p=>p.l);
     const platVals=platFilt.map(p=>p.v);
     const platColors=platFilt.map(p=>p.c);
+    // Ajusta altura do canvas conforme número de plataformas
+    const gPlatCanvas = document.getElementById('g-plataforma');
+    if(gPlatCanvas) gPlatCanvas.height = Math.max(80, platFilt.length * 44);
     if(window.gPlat)window.gPlat.destroy();
     window.gPlat=new Chart(document.getElementById('g-plataforma'),{type:'bar',data:{labels:platLabels,datasets:[{data:platVals.map(v=>Math.round(v*100)/100),backgroundColor:platColors,borderWidth:0,borderRadius:6,label:'Faturamento'}]},options:{indexAxis:'y',plugins:{legend:{display:false},datalabels:{display:false},tooltip:{callbacks:{label:(c)=>'R$ '+parseFloat(c.raw).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}}},scales:{x:{ticks:{color:'rgba(255,255,255,.4)',maxTicksLimit:5,callback:(v)=>'R$'+Math.round(v).toLocaleString('pt-BR'),font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true},y:{ticks:{color:'rgba(255,255,255,.8)',font:{size:13,weight:'600'}},grid:{display:false}}}}});
     const ct={};todosLanc.filter(l=>l.tipo==='despesa').forEach(l=>{const k=l.descricao||'outros';ct[k]=(ct[k]||0)+parseFloat(l.valor)});
