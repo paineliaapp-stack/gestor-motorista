@@ -2178,10 +2178,11 @@ async function loadDash(){
 
       `;
     }
-    // Pizza: usa só ganhos de app (exclui renda extra) para não distorcer o %
+    // Pizza: usa total de ganhos (apps + extras) para mostrar quadro real
     const RENDA_EXTRA_KEYS_PIZZA=['seguro_desemprego','freelance','aluguel_recebido','venda','emprestimo_recebido','bonus','renda_extra'];
     const ganhosApp=todosLanc.filter(l=>l.tipo==='ganho'&&!RENDA_EXTRA_KEYS_PIZZA.includes((l.plataforma||'').toLowerCase().trim().replace(/[^a-z0-9_]/g,''))).reduce((s,l)=>s+parseFloat(l.valor),0);
-    const pctDesp=ganhosApp>0?Math.min(100,d.despesas/ganhosApp*100):0;
+    const ganhoTotal=todosLanc.filter(l=>l.tipo==='ganho').reduce((s,l)=>s+parseFloat(l.valor),0);
+    const pctDesp=ganhoTotal>0?Math.min(100,d.despesas/ganhoTotal*100):0;
     const pctLucro=100-pctDesp;
     // Cores fixas: lucro sempre verde, despesas sempre vermelho — independente do %
     const corLucro = '#2ECC8F';
@@ -2236,9 +2237,9 @@ async function loadDash(){
     // Contexto abaixo do pizza
     const pizzaCtx=document.getElementById('pizza-contexto');
     if(pizzaCtx){
-      if(pctDesp>70) pizzaCtx.innerHTML='<span style="color:#FF4D6A">⚠️ Você gastou <strong>'+pctDesp.toFixed(0)+'%</strong> do que ganhou nos apps esse mês — tente reduzir despesas</span>';
-      else if(pctDesp>50) pizzaCtx.innerHTML='<span style="color:#F5A623">📊 <strong>'+pctDesp.toFixed(0)+'%</strong> do faturamento foi em despesas — está acima do ideal</span>';
-      else pizzaCtx.innerHTML='<span style="color:#2ECC8F">✅ Bom controle! Você ficou com <strong>'+pctLucro.toFixed(0)+'%</strong> do que ganhou nos apps</span>';
+      if(pctDesp>70) pizzaCtx.innerHTML='<span style="color:#FF4D6A">⚠️ Você gastou <strong>'+pctDesp.toFixed(0)+'%</strong> do total que ganhou esse mês — tente reduzir despesas</span>';
+      else if(pctDesp>50) pizzaCtx.innerHTML='<span style="color:#F5A623">📊 <strong>'+pctDesp.toFixed(0)+'%</strong> do faturamento total foi em despesas — está acima do ideal</span>';
+      else pizzaCtx.innerHTML='<span style="color:#2ECC8F">✅ Bom controle! Você ficou com <strong>'+pctLucro.toFixed(0)+'%</strong> do total que ganhou</span>';
     }
     const hoje14=new Date();
     const ultDias=[];
