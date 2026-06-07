@@ -1354,6 +1354,24 @@ async def chat(dados: dict = Body(...)):
         ensure_ascii=False, default=str
     )
 
+    # Renda extra da semana — precisa ser calculado ANTES do f-string que usa {renda_extra_ctx}
+    import datetime as _dt_re
+    semana_inicio_re = (hoje - _dt_re.timedelta(days=7)).isoformat()
+    RENDA_EXTRA_PLATS = ['renda_extra','gorjeta','freelance','bico','bonus','seguro_desemprego','venda','aluguel_recebido']
+    renda_extra_semana = [
+        {"data": l["data"], "plataforma": l.get("plataforma",""), "valor": float(l["valor"])}
+        for l in lancamentos_mes
+        if l["tipo"] == "ganho"
+        and l.get("data","") >= semana_inicio_re
+        and (l.get("plataforma","") or "").lower().replace(" ","_") in RENDA_EXTRA_PLATS
+    ]
+    renda_extra_semana_total = sum(r["valor"] for r in renda_extra_semana)
+    if renda_extra_semana:
+        itens_re = ", ".join(f"R${r['valor']:.0f} ({r['plataforma']}) em {r['data']}" for r in renda_extra_semana)
+        renda_extra_ctx = f"\nRENDA EXTRA ESSA SEMANA: {itens_re} — total R${renda_extra_semana_total:.2f}"
+    else:
+        renda_extra_ctx = "\nRENDA EXTRA ESSA SEMANA: nenhuma registrada."
+
     contexto = f"""Você é o GESTOR FINANCEIRO do motorista no Painel.IA. Hoje: {hoje_str}.
 
 ESTILO — REGRAS RÍGIDAS:
@@ -1482,25 +1500,6 @@ Quando analisa situação geral:
 - Nunca jogue tudo de uma vez — 1 pergunta por mensagem, construa o plano em conversa.
 {renda_extra_ctx}
 """
-
-    # Renda extra da semana (últimos 7 dias) para o Gemini poder responder perguntas sobre isso
-    import datetime as _dt_re
-    semana_inicio = (hoje - _dt_re.timedelta(days=7)).isoformat()
-    RENDA_EXTRA_PLATS = ['renda_extra','gorjeta','freelance','bico','bonus','seguro_desemprego','venda','aluguel_recebido']
-    renda_extra_semana = [
-        {"data": l["data"], "plataforma": l.get("plataforma",""), "valor": float(l["valor"])}
-        for l in lancamentos_mes
-        if l["tipo"] == "ganho"
-        and l.get("data","") >= semana_inicio
-        and (l.get("plataforma","") or "").lower().replace(" ","_") in RENDA_EXTRA_PLATS
-    ]
-    renda_extra_semana_total = sum(r["valor"] for r in renda_extra_semana)
-    renda_extra_ctx = ""
-    if renda_extra_semana:
-        itens = ", ".join(f"R${r['valor']:.0f} ({r['plataforma']}) em {r['data']}" for r in renda_extra_semana)
-        renda_extra_ctx = f"\nRENDA EXTRA ESSA SEMANA: {itens} — total R${renda_extra_semana_total:.2f}"
-    else:
-        renda_extra_ctx = "\nRENDA EXTRA ESSA SEMANA: nenhuma registrada."
 
     # Contexto sempre na primeira mensagem
     msgs = [{"role": "user", "parts": [{"text": contexto}]},
