@@ -1480,7 +1480,29 @@ Quando analisa situação geral:
 - "Pelo seu histórico, você faz R${meta_dia_chat:.0f}/dia líquido. Em {dias_rest_chat} dias = R${projecao_liq_chat:.0f} total. Contas = R${total_pendente:.0f}. Déficit = R${deficit_chat:.0f}."
 - Para fechar precisaria de R${cap_esforco_chat:.0f}/dia. Pergunte em quais dias consegue fazer mais.
 - Nunca jogue tudo de uma vez — 1 pergunta por mensagem, construa o plano em conversa.
+{renda_extra_ctx}
 """
+
+    # Renda extra da semana (últimos 7 dias) para o Gemini poder responder perguntas sobre isso
+    import datetime as _dt_re
+    semana_inicio = (hoje - _dt_re.timedelta(days=7)).isoformat()
+    RENDA_EXTRA_PLATS = ['renda_extra','gorjeta','freelance','bico','bonus','seguro_desemprego','venda','aluguel_recebido']
+    renda_extra_semana = [
+        {"data": l["data"], "plataforma": l.get("plataforma",""), "valor": float(l["valor"])}
+        for l in lancamentos_mes
+        if l["tipo"] == "ganho"
+        and l.get("data","") >= semana_inicio
+        and (l.get("plataforma","") or "").lower().replace(" ","_") in RENDA_EXTRA_PLATS
+    ]
+    renda_extra_semana_total = sum(r["valor"] for r in renda_extra_semana)
+    renda_extra_ctx = ""
+    if renda_extra_semana:
+        itens = ", ".join(f"R${r['valor']:.0f} ({r['plataforma']}) em {r['data']}" for r in renda_extra_semana)
+        renda_extra_ctx = f"
+RENDA EXTRA ESSA SEMANA: {itens} — total R${renda_extra_semana_total:.2f}"
+    else:
+        renda_extra_ctx = "
+RENDA EXTRA ESSA SEMANA: nenhuma registrada."
 
     # Contexto sempre na primeira mensagem
     msgs = [{"role": "user", "parts": [{"text": contexto}]},
