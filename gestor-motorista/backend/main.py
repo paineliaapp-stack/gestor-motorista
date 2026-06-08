@@ -2489,27 +2489,55 @@ async def gerar_relatorio_pdf(dados: dict = Body(...)):
         from reportlab.lib.units import mm
         from fastapi.responses import StreamingResponse
 
+        import calendar as _cal
         mid = dados.get("motorista_id")
-        mes = dados.get("mes")  # "2026-06"
-        if not mid or not mes:
-            return {"erro": "motorista_id e mes obrigatórios"}
+        tipo = dados.get("tipo", "mes")  # mes | semana | ano
 
-        ano, mes_num = mes.split("-")
-        inicio = f"{mes}-01"
-        import calendar
-        ultimo_dia = calendar.monthrange(int(ano), int(mes_num))[1]
-        fim = f"{mes}-{ultimo_dia:02d}"
+        if not mid:
+            return {"erro": "motorista_id obrigatório"}
 
-        # Busca lançamentos do mês
+        # Define período conforme tipo
+        if tipo == "semana":
+            inicio = dados.get("inicio")
+            fim = dados.get("fim")
+            if not inicio or not fim:
+                return {"erro": "inicio e fim obrigatórios para semana"}
+            ano = inicio[:4]
+            label_periodo = f"Semana {inicio} a {fim}"
+            # Para comparação: semana anterior
+            dt_ini = _dt.date.fromisoformat(inicio)
+            ini_ant = (dt_ini - _dt.timedelta(days=7)).isoformat()
+            fim_ant = (dt_ini - _dt.timedelta(days=1)).isoformat()
+        elif tipo == "ano":
+            ano = str(dados.get("ano", _dt.date.today().year))
+            inicio = f"{ano}-01-01"
+            fim = f"{ano}-12-31"
+            label_periodo = f"Ano {ano}"
+            ini_ant = f"{int(ano)-1}-01-01"
+            fim_ant = f"{int(ano)-1}-12-31"
+        else:  # mes (padrão)
+            mes = dados.get("mes")
+            if not mes:
+                return {"erro": "mes obrigatório"}
+            ano, mes_num = mes.split("-")
+            inicio = f"{mes}-01"
+            ultimo_dia = _cal.monthrange(int(ano), int(mes_num))[1]
+            fim = f"{mes}-{ultimo_dia:02d}"
+            NOMES_MESES_B = ["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
+            label_periodo = f"{NOMES_MESES_B[int(mes_num)]} {ano}"
+            dt_mes = _dt.date(int(ano), int(mes_num), 1)
+            dt_ant = (dt_mes - _dt.timedelta(days=1)).replace(day=1)
+            mes_ant = dt_ant.strftime("%Y-%m")
+            ultimo_ant = _cal.monthrange(dt_ant.year, dt_ant.month)[1]
+            ini_ant = f"{mes_ant}-01"
+            fim_ant = f"{mes_ant}-{ultimo_ant:02d}"
+
+        # Busca lançamentos do período
         lanc_res = supabase.table("lancamentos").select("*").eq("motorista_id", mid).gte("data", inicio).lte("data", fim).order("data").execute()
         lancs = lanc_res.data or []
 
-        # Busca mês anterior para comparação
-        dt_mes = _dt.date(int(ano), int(mes_num), 1)
-        dt_ant = (dt_mes - _dt.timedelta(days=1)).replace(day=1)
-        mes_ant = dt_ant.strftime("%Y-%m")
-        ultimo_ant = calendar.monthrange(dt_ant.year, dt_ant.month)[1]
-        lanc_ant = supabase.table("lancamentos").select("*").eq("motorista_id", mid).gte("data", f"{mes_ant}-01").lte("data", f"{mes_ant}-{ultimo_ant:02d}").execute()
+        # Busca período anterior para comparação
+        lanc_ant = supabase.table("lancamentos").select("*").eq("motorista_id", mid).gte("data", ini_ant).lte("data", fim_ant).execute()
         lancs_ant = lanc_ant.data or []
 
         # Busca contas
@@ -2548,8 +2576,7 @@ async def gerar_relatorio_pdf(dados: dict = Body(...)):
             sinal = "▲" if pct >= 0 else "▼"
             return f"{sinal} {abs(pct):.0f}% vs mês anterior"
 
-        NOMES_MESES = ["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
-        nome_mes = f"{NOMES_MESES[int(mes_num)]} {ano}"
+        nome_mes = label_periodo
 
         # ── Monta PDF ──
         buffer = io.BytesIO()

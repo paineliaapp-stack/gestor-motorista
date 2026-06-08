@@ -875,7 +875,7 @@ const _supa = supabase.createClient(
 
 <div class="page" id="page-fechamento">
   <div class="ph"><div><h1>Fechamento</h1><div class="sub">Confira se as contas fecham</div></div>
-    <button onclick="baixarPDF()" style="display:flex;align-items:center;gap:6px;background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.35);border-radius:10px;padding:8px 14px;color:#F5A623;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">
+    <button onclick="abrirModalPDF()" style="display:flex;align-items:center;gap:6px;background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.35);border-radius:10px;padding:8px 14px;color:#F5A623;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">
       📄 Baixar PDF
     </button>
   </div>
@@ -4373,36 +4373,119 @@ function mudarVisaoHist(el, visao) {
   if(visao==='mensal') loadHistTodosParaComparativo().then(()=>renderComparativoMensal());
 }
 
-async function baixarPDF() {
+function abrirModalPDF(){
+  if(!window.MID){ toast('Faça login primeiro', false); return; }
+  const ex = document.getElementById('modal-pdf');
+  if(ex) ex.remove();
+
   const agora = new Date(Date.now() - 3*60*60*1000);
-  const mes = agora.toISOString().slice(0,7);
-  if(!window.MID){ alert('Faça login primeiro'); return; }
-  const btn = event.currentTarget;
-  const txtOrig = btn.innerHTML;
-  btn.innerHTML = '⏳ Gerando...';
-  btn.disabled = true;
+  const anoAtual = agora.getFullYear();
+  const mesAtual = agora.getMonth() + 1;
+
+  // Monta opções de mês (últimos 12)
+  let opsMes = '';
+  for(let i = 0; i < 12; i++){
+    let m = mesAtual - i; let a = anoAtual;
+    if(m <= 0){ m += 12; a -= 1; }
+    const val = `${a}-${String(m).padStart(2,'0')}`;
+    const MESES = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    opsMes += `<option value="${val}">${MESES[m]} ${a}</option>`;
+  }
+
+  // Monta opções de ano (últimos 3)
+  let opsAno = '';
+  for(let a = anoAtual; a >= anoAtual-2; a--){
+    opsAno += `<option value="${a}">${a}</option>`;
+  }
+
+  // Monta semanas do mês atual (últimas 8 semanas)
+  let opsSem = '';
+  const hoje = new Date(agora.toISOString().slice(0,10)+'T00:00:00');
+  for(let w = 0; w < 8; w++){
+    const fimSem = new Date(hoje); fimSem.setDate(hoje.getDate() - hoje.getDay() + 0 - w*7);
+    const iniSem = new Date(fimSem); iniSem.setDate(fimSem.getDate() - 6);
+    const fmt2 = d => d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+    const val = `${iniSem.toISOString().slice(0,10)}_${fimSem.toISOString().slice(0,10)}`;
+    opsSem += `<option value="${val}">${fmt2(iniSem)} a ${fmt2(fimSem)}</option>`;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'modal-pdf';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `
+    <div style="background:#1a1a2e;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:24px;width:100%;max-width:340px">
+      <div style="font-size:15px;font-weight:700;color:#F5A623;margin-bottom:18px">📄 Gerar relatório PDF</div>
+
+      <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Período</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button id="pdf-tipo-mes" onclick="setPdfTipo('mes')" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(245,166,35,.5);background:rgba(245,166,35,.15);color:#F5A623;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📅 Mês</button>
+        <button id="pdf-tipo-sem" onclick="setPdfTipo('semana')" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#888;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📆 Semana</button>
+        <button id="pdf-tipo-ano" onclick="setPdfTipo('ano')" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#888;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📊 Ano</button>
+      </div>
+
+      <div id="pdf-sel-mes" style="margin-bottom:16px">
+        <div style="font-size:11px;color:#888;margin-bottom:6px">Qual mês?</div>
+        <select id="pdf-mes-val" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px;color:#fff;font-size:14px;font-family:inherit">${opsMes}</select>
+      </div>
+      <div id="pdf-sel-sem" style="display:none;margin-bottom:16px">
+        <div style="font-size:11px;color:#888;margin-bottom:6px">Qual semana?</div>
+        <select id="pdf-sem-val" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px;color:#fff;font-size:14px;font-family:inherit">${opsSem}</select>
+      </div>
+      <div id="pdf-sel-ano" style="display:none;margin-bottom:16px">
+        <div style="font-size:11px;color:#888;margin-bottom:6px">Qual ano?</div>
+        <select id="pdf-ano-val" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px;color:#fff;font-size:14px;font-family:inherit">${opsAno}</select>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button onclick="document.getElementById('modal-pdf').remove()" style="flex:1;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#888;font-size:13px;cursor:pointer;font-family:inherit">Cancelar</button>
+        <button id="pdf-gerar-btn" onclick="gerarPDF()" style="flex:2;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#F5A623,#f59e0b);color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📄 Gerar PDF</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+}
+
+let _pdfTipo = 'mes';
+function setPdfTipo(tipo){
+  _pdfTipo = tipo;
+  ['mes','semana','ano'].forEach(t => {
+    const btn = document.getElementById('pdf-tipo-'+t);
+    const sel = document.getElementById('pdf-sel-'+t);
+    const ativo = t === tipo;
+    if(btn){ btn.style.background = ativo ? 'rgba(245,166,35,.15)' : 'transparent'; btn.style.color = ativo ? '#F5A623' : '#888'; btn.style.borderColor = ativo ? 'rgba(245,166,35,.5)' : 'rgba(255,255,255,.1)'; }
+    if(sel) sel.style.display = ativo ? '' : 'none';
+  });
+}
+
+async function gerarPDF(){
+  const btn = document.getElementById('pdf-gerar-btn');
+  btn.innerHTML = '⏳ Gerando...'; btn.disabled = true;
   try {
-    const res = await fetch(API+'/relatorio-pdf', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({motorista_id: window.MID, mes})
-    });
-    if(!res.ok) throw new Error('Erro ao gerar PDF');
+    let body = {motorista_id: window.MID, tipo: _pdfTipo};
+    if(_pdfTipo === 'mes') body.mes = document.getElementById('pdf-mes-val').value;
+    else if(_pdfTipo === 'semana'){ const [ini,fim] = document.getElementById('pdf-sem-val').value.split('_'); body.inicio = ini; body.fim = fim; }
+    else if(_pdfTipo === 'ano') body.ano = document.getElementById('pdf-ano-val').value;
+
+    const res = await fetch(API+'/relatorio-pdf', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+    if(!res.ok) throw new Error('Erro');
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `relatorio_${mes}.pdf`;
+    const label = _pdfTipo==='mes' ? body.mes : _pdfTipo==='ano' ? body.ano : `${body.inicio}_${body.fim}`;
+    a.download = `relatorio_${label}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
-    btn.innerHTML = '✅ Baixado!';
-    setTimeout(()=>{ btn.innerHTML=txtOrig; btn.disabled=false; }, 3000);
+    document.getElementById('modal-pdf').remove();
+    toast('PDF gerado! ✓');
   } catch(e) {
-    btn.innerHTML = '❌ Erro';
-    setTimeout(()=>{ btn.innerHTML=txtOrig; btn.disabled=false; }, 3000);
+    btn.innerHTML = '❌ Erro — tente de novo'; btn.disabled = false;
     console.error(e);
   }
 }
+
+async function baixarPDF() { abrirModalPDF(); }
 
 function semanaStr(data) {
   const d = new Date(data+'T12:00:00');
