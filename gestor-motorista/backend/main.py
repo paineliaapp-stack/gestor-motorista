@@ -18,7 +18,20 @@ load_dotenv()
 
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-app = FastAPI(title="Painel.IA API")
+from starlette.middleware.base import BaseHTTPMiddleware
+app = FastAPI(title="Painel.IA API", docs_url=None, redoc_url=None, openapi_url=None)
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
@@ -43,15 +56,7 @@ def _match_conta(descricao_busca: str, contas: list) -> dict | None:
 def favicon():
     return FileResponse("static/favicon.png")
 
-@app.get("/setup-colunas")
-async def setup_colunas():
-    """Endpoint temporário para criar colunas faltantes no Supabase."""
-    try:
-        supabase.rpc("exec_sql", {"query": "ALTER TABLE lancamentos ADD COLUMN IF NOT EXISTS horas_rodadas FLOAT; ALTER TABLE lancamentos ADD COLUMN IF NOT EXISTS km_rodados FLOAT; ALTER TABLE motoristas ADD COLUMN IF NOT EXISTS meta_mensal FLOAT;"}).execute()
-        return {"ok": True, "msg": "Colunas criadas"}
-    except Exception as e:
-        # Tenta via insert direto para forçar criação
-        return {"ok": False, "erro": str(e), "instrucao": "Execute no Supabase SQL Editor: ALTER TABLE lancamentos ADD COLUMN IF NOT EXISTS horas_rodadas FLOAT; ALTER TABLE lancamentos ADD COLUMN IF NOT EXISTS km_rodados FLOAT;"}
+# /setup-colunas removido — endpoint admin sem autenticação
 
 _ALLOWED_ORIGINS = [
     "https://gestor-motorista-production.up.railway.app",
@@ -137,6 +142,10 @@ def criar_motorista(m: Motorista):
 def upsert_motorista(dados: dict = Body(...)):
     uid = dados.get("id")
     nome = dados.get("nome", "Usuário")
+    if not _valid_uuid(uid):
+        return {"ok": False, "erro": "ID inválido"}
+    # Sanitiza nome — máximo 100 chars, sem HTML
+    nome = str(nome)[:100].replace("<", "").replace(">", "").strip() or "Usuário"
     try:
         res = supabase.table("motoristas").select("id,meta_diaria,comb_diario,setup_completo,plataformas").eq("id", uid).execute()
         if not res.data:
@@ -170,12 +179,15 @@ def upsert_motorista(dados: dict = Body(...)):
         plataformas = res.data[0].get("plataformas")
         return {"ok": True, "meta_diaria": meta, "comb_diario": comb, "is_new": False, "setup_completo": setup_completo, "plataformas": plataformas}
     except Exception as e:
-        return {"ok": True, "meta_diaria": 150, "comb_diario": None, "is_new": False, "setup_completo": True, "erro": str(e)}
+        print(f"ERRO upsert_motorista: {e}")
+        return {"ok": True, "meta_diaria": 150, "comb_diario": None, "is_new": False, "setup_completo": True}
 
 @app.post("/completar-setup")
 def completar_setup(dados: dict = Body(...)):
     """Marca setup como completo e salva dados coletados pelo Gestor."""
     uid = dados.get("id")
+    if not _valid_uuid(uid):
+        return {"ok": False, "erro": "ID inválido"}
     meta = dados.get("meta_diaria")
     comb = dados.get("comb_diario")
     plataformas = dados.get("plataformas")
@@ -200,7 +212,8 @@ def salvar_meta_diaria(motorista_id: str, body: dict = Body(...)):
         supabase.table("motoristas").update(update).eq("id", motorista_id).execute()
         return {"ok": True, "meta_diaria": nova_meta, "comb_diario": novo_comb}
     except Exception as e:
-        return {"ok": False, "erro": str(e)}
+        print(f"ERRO meta: {e}")
+        return {"ok": False, "erro": "Erro interno"}
 
 @app.get("/meta-diaria/{motorista_id}")
 def buscar_meta_diaria(motorista_id: str):
@@ -492,6 +505,12 @@ async def enviar_whatsapp(numero: str, mensagem: str):
 
 @app.post("/webhook/whatsapp")
 async def webhook_whatsapp(req: Request):
+    # Verifica token de segurança do webhook (Evolution API envia no header)
+    _wh_token = req.headers.get("apikey", "") or req.headers.get("Authorization", "")
+    _expected_wh = os.getenv("EVOLUTION_KEY", "")
+    if _expected_wh and _wh_token != _expected_wh:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=403, content={"ok": False})
     body = await req.json()
     try:
         msg = body.get("data", {}).get("message", {})
@@ -1284,6 +1303,10 @@ async def chat(dados: dict = Body(...)):
     if not _check_rate(_mid_rate):
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=429, content={"resposta": "Muitas mensagens. Aguarde um momento.", "acoes": []})
+    # Limite de tamanho do histórico — evita payload gigante
+    if dados.get("historico") and len(str(dados.get("historico", ""))) > 50000:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=400, content={"resposta": "Payload muito grande.", "acoes": []})
     import httpx, json
     motorista_id = dados.get("motorista_id") or dados.get("mid")
     mensagem = dados.get("mensagem", "")
@@ -2987,4 +3010,5 @@ async def gerar_relatorio_pdf(dados: dict = Body(...)):
             })
     except Exception as e:
         import traceback
-        return {"erro": str(e), "trace": traceback.format_exc()}
+        print(f"ERRO PDF: {traceback.format_exc()}")
+        return {"erro": "Erro interno ao gerar relatório"}
