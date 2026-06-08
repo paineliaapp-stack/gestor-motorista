@@ -53,16 +53,37 @@ async def setup_colunas():
         # Tenta via insert direto para forçar criação
         return {"ok": False, "erro": str(e), "instrucao": "Execute no Supabase SQL Editor: ALTER TABLE lancamentos ADD COLUMN IF NOT EXISTS horas_rodadas FLOAT; ALTER TABLE lancamentos ADD COLUMN IF NOT EXISTS km_rodados FLOAT;"}
 
+_ALLOWED_ORIGINS = [
+    "https://gestor-motorista-production.up.railway.app",
+    "http://localhost:8080",
+    "http://localhost:3000",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    allow_credentials=False,
 )
 
 def hoje_brasil():
     import datetime as _dt
     return (_dt.datetime.utcnow() - _dt.timedelta(hours=3)).date()
+
+import re as _re, time as _time
+_UUID_RE = _re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', _re.I)
+def _valid_uuid(v: str) -> bool:
+    return bool(v and _UUID_RE.match(str(v).strip()))
+
+_chat_rate: dict = {}
+def _check_rate(mid: str, max_per_min: int = 60) -> bool:
+    agora = _time.time()
+    hist = [t for t in _chat_rate.get(mid, []) if agora - t < 60]
+    if len(hist) >= max_per_min:
+        return False
+    hist.append(agora)
+    _chat_rate[mid] = hist
+    return True
 
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
 
@@ -520,6 +541,7 @@ async def webhook_whatsapp(req: Request):
 
 @app.get("/contas/{motorista_id}")
 def listar_contas(motorista_id: str):
+    if not _valid_uuid(motorista_id): return []
     res = supabase.table("contas").select("*").eq("motorista_id", motorista_id).order("vencimento").execute()
     return res.data
 
@@ -1258,6 +1280,10 @@ Quando setup_completo for true, a última "resposta" deve ser comemorativa e mot
 
 @app.post("/chat")
 async def chat(dados: dict = Body(...)):
+    _mid_rate = dados.get("mid") or dados.get("motorista_id") or "anon"
+    if not _check_rate(_mid_rate):
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=429, content={"resposta": "Muitas mensagens. Aguarde um momento.", "acoes": []})
     import httpx, json
     motorista_id = dados.get("motorista_id") or dados.get("mid")
     mensagem = dados.get("mensagem", "")
@@ -2378,6 +2404,8 @@ async def distribuir_ganho(dados: dict = Body(...)):
 
 @app.get("/diagnostico/{mid}")
 def diagnostico(mid: str):
+    return {"erro": "Endpoint desativado"}
+async def _diagnostico_impl(mid: str):
     """Mostra TODOS os lancamentos do motorista sem filtro de data."""
     try:
         todos = supabase.table("lancamentos").select("id,data,tipo,valor,plataforma,descricao").eq("motorista_id", mid).order("data", desc=True).execute()
@@ -2400,6 +2428,8 @@ def diagnostico(mid: str):
 
 @app.get("/debug-chat/{mid}")
 async def debug_chat(mid: str):
+    return {"erro": "Endpoint desativado em producao"}
+async def _debug_chat_impl(mid: str):
     import json, os, httpx, datetime
     logs = []
     motorista_id = mid
