@@ -2746,8 +2746,9 @@ async def gerar_relatorio_pdf(dados: dict = Body(...)):
         # Contas
         if contas:
             story.append(Paragraph("Contas do Mês", secao_style))
+            contas_ord = sorted(contas, key=lambda x: x.get("vencimento","") or "")
             contas_data = [["Conta", "Vencimento", "Valor", "Status"]]
-            for c in sorted(contas, key=lambda x: x.get("vencimento","") or ""):
+            for c in contas_ord:
                 nome_c = c.get("descricao","") or c.get("nome","")
                 venc = c.get("vencimento","") or ""
                 if venc: venc = "/".join(reversed(venc.split("-")))
@@ -2765,7 +2766,7 @@ async def gerar_relatorio_pdf(dados: dict = Body(...)):
                 ("ALIGN", (2,0), (2,-1), "RIGHT"),
                 ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
             ]))
-            for i, c in enumerate(contas, 1):
+            for i, c in enumerate(contas_ord, 1):
                 cor = VERDE if c.get("pago") else VERMELHO
                 tc2.setStyle(TableStyle([("TEXTCOLOR",(3,i),(3,i),cor),("FONTNAME",(3,i),(3,i),"Helvetica-Bold")]))
             story.append(tc2)
