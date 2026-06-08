@@ -1198,7 +1198,7 @@ function renderMetaMensal(){
   `;
 }
 
-function gerarRelatorioSemanal() {
+function gerarRelatorioSemanal(force) {
   const lancamentos = window._todosLanc || [];
   const agora = new Date(Date.now() - 3*60*60*1000);
   const hoje = new Date(agora.toISOString().slice(0,10)+'T00:00:00');
@@ -1214,10 +1214,29 @@ function gerarRelatorioSemanal() {
   const fimSemAnt = new Date(inicioSem); fimSemAnt.setDate(inicioSem.getDate() - 1);
 
   const toStr = d => d.toISOString().slice(0,10);
+
+  // Se semana atual tem poucos dados (seg/ter com 0 lançamentos), usa semana passada
+  const lancSemAtual = lancamentos.filter(l => l.data >= toStr(inicioSem) && l.data <= toStr(fimSem));
+  const ganhosSemAtual = lancSemAtual.filter(l=>l.tipo==='ganho').reduce((s,l)=>s+parseFloat(l.valor||0),0);
+  let _inicioSem = inicioSem, _fimSem = fimSem, _inicioSemAnt, _fimSemAnt, _usandoSemPassada = false;
+
+  if(ganhosSemAtual === 0 && diffSeg <= 1) {
+    // Segunda ou terça sem dados → mostra semana passada
+    _inicioSem = inicioSemAnt;
+    _fimSem = fimSemAnt;
+    _inicioSemAnt = new Date(inicioSemAnt); _inicioSemAnt.setDate(inicioSemAnt.getDate() - 7);
+    _fimSemAnt = new Date(inicioSemAnt); _fimSemAnt.setDate(inicioSemAnt.getDate() - 1);
+    _usandoSemPassada = true;
+  } else {
+    _inicioSemAnt = inicioSemAnt;
+    _fimSemAnt = fimSemAnt;
+  }
+
+  const toStr = d => d.toISOString().slice(0,10);
   const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-  const lancSem = lancamentos.filter(l => l.data >= toStr(inicioSem) && l.data <= toStr(fimSem));
-  const lancSemAnt = lancamentos.filter(l => l.data >= toStr(inicioSemAnt) && l.data <= toStr(fimSemAnt));
+  const lancSem = lancamentos.filter(l => l.data >= toStr(_inicioSem) && l.data <= toStr(_fimSem));
+  const lancSemAnt = lancamentos.filter(l => l.data >= toStr(_inicioSemAnt) && l.data <= toStr(_fimSemAnt));
 
   // Totais semana atual
   const ganhosSem = lancSem.filter(l=>l.tipo==='ganho').reduce((s,l)=>s+parseFloat(l.valor||0),0);
@@ -1269,7 +1288,7 @@ function gerarRelatorioSemanal() {
 
   const html = `
     <div style="font-size:13px;line-height:1.7">
-      <div style="font-weight:700;font-size:14px;margin-bottom:10px;color:#fcd34d">📊 Relatório da semana</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:10px;color:#fcd34d">📊 Relatório da semana${_usandoSemPassada ? ' <span style="font-size:11px;font-weight:400;color:#9ca3af">(semana passada)</span>' : ''}</div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
         <div style="background:rgba(0,216,151,.08);border:1px solid rgba(0,216,151,.2);border-radius:10px;padding:10px">
@@ -1309,7 +1328,7 @@ function gerarRelatorioSemanal() {
   if(!chat) return;
 
   // Evitar duplicata: se já tem relatório da semana no chat, não adiciona de novo
-  if(document.querySelector('.relatorio-semanal-msg')) {
+  if(!force && document.querySelector('.relatorio-semanal-msg')) {
     chat.scrollTop = chat.scrollHeight;
     return;
   }
@@ -1429,8 +1448,11 @@ function verificarCombustivelSemanal(lancamentos) {
     btnNao.addEventListener('click', () => {
       pergEl.remove();
       try { localStorage.setItem(chaveAviso, '1'); } catch(e) {}
+      // Remove relatório antigo se existir, para forçar novo
+      const old = document.querySelector('.relatorio-semanal-msg');
+      if(old) old.remove();
       // Mostra o relatório da semana
-      gerarRelatorioSemanal();
+      gerarRelatorioSemanal(true);
     });
 
     balaoP.appendChild(textoP);
