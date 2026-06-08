@@ -1256,6 +1256,14 @@ async def chat(dados: dict = Body(...)):
     # Sábado passado
     dias_ate_sabado = (hoje.weekday() - 5) % 7  # 5 = sábado
     sabado_str = (hoje - _dt2.timedelta(days=dias_ate_sabado if dias_ate_sabado > 0 else 7)).isoformat()
+    # Próximo sábado e sábado que vem (para edição de contas)
+    dias_para_prox_sabado = (5 - hoje.weekday()) % 7 or 7  # 5 = sábado
+    proximo_sabado_str = (hoje + _dt2.timedelta(days=dias_para_prox_sabado)).isoformat()
+    sabado_que_vem_str = (hoje + _dt2.timedelta(days=dias_para_prox_sabado + 7)).isoformat()
+    # Datas "daqui X dias" pré-calculadas
+    daqui2_str = (hoje + _dt2.timedelta(days=2)).isoformat()
+    daqui3_str = (hoje + _dt2.timedelta(days=3)).isoformat()
+    daqui7_str = (hoje + _dt2.timedelta(days=7)).isoformat()
     try:
         c = supabase.table("contas").select("*").eq("motorista_id", motorista_id).execute()
         contas = c.data or []
@@ -1402,6 +1410,10 @@ ESTILO — REGRAS RÍGIDAS:
 - Zero markdown (sem **, sem #). Emojis só no início ou fim da frase.
 
 === SITUAÇÃO FINANCEIRA ===
+DATAS DE REFERÊNCIA (use para calcular vencimentos):
+Hoje: {hoje_str} | Amanhã: {amanha_str} | Daqui 2 dias: {daqui2_str} | Daqui 3 dias: {daqui3_str} | Daqui 7 dias: {daqui7_str}
+Próximo sábado: {proximo_sabado_str} | Sábado que vem (seguinte): {sabado_que_vem_str}
+
 HOJE: Ganhos R${ganhos_hoje:.0f} | Despesas R${despesas_hoje:.0f} | Líquido R${(ganhos_hoje-despesas_hoje):.0f}
 Lançamentos hoje: {_json.dumps(ganhos_hoje_detalhe + despesas_hoje_detalhe, ensure_ascii=False)}
 Lançamentos ontem ({ontem_str_ctx}): {_json.dumps(ganhos_ontem_detalhe, ensure_ascii=False)}
@@ -1473,6 +1485,9 @@ CONTAS:
    - "divida a Elaine em parcelas de 160/dia" ou "quero pagar 160 por dia para Elaine" → significa que o motorista quer ABATER R$160 hoje: use abater_conta com descricao="Elaine", valor_pago=160. Responda: "Certo! Vou registrar R$160 abatidos da Elaine hoje. Me avisa quando pagar mais."
    - "divida X em N dias" → calcule valor/N e use abater_conta com o valor de hoje. Não crie múltiplas contas.
    - NUNCA pergunte mais detalhes quando o motorista diz "vencimento para amanhã/dia X" ou "parcelas de R$X" — execute direto.
+   - RESOLUÇÃO DE "daqui X dias" — CRÍTICO: quando o motorista diz "o que vence daqui 2 dias" ou "o que vence daqui 3 dias", calcule a data exata (hoje={hoje_str}) e cruze com as CONTAS listadas acima para identificar qual conta vence nessa data. Então execute editar_conta direto, sem perguntar nada.
+   - MÚLTIPLAS CONTAS DE MESMO NOME (ex: dois "tênis"): use o campo vencimento_alvo para identificar qual parcela específica alterar. Ex: "mude o tênis que vence daqui 2 dias para sábado" → editar_conta descricao="tênis" campo="vencimento" vencimento_alvo="{amanha_str}" (data atual + 2 dias) novo_valor="próximo sábado".
+   - MÚLTIPLAS EDIÇÕES numa mensagem: execute TODAS como ações separadas no mesmo JSON. "mude X para sábado e Y para sábado que vem" → duas ações editar_conta.
 9. AJUSTE DE TOTAL POR PLATAFORMA — CRÍTICO:
    Quando o motorista informa um valor de faturamento por plataforma (ex: "fiz 277 na 99 ontem", "hoje na uber foram 350"), SEMPRE verifique se já existe lançamento dessa plataforma naquele dia:
    - SE JÁ EXISTE lançamento da plataforma no dia mencionado (hoje ou ontem): use substituir:true para SUBSTITUIR o valor antigo, não criar novo. NÃO some os valores.
