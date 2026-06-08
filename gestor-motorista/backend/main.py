@@ -158,8 +158,20 @@ def landing(request: Request):
     return templates.TemplateResponse("landing.html", {"request": request})
 
 @app.get("/status")
-def status():
-    return {"status": "Painel.IA rodando!"}
+async def status():
+    import datetime
+    try:
+        # Testa conexão com Supabase
+        supabase.table("motoristas").select("id").limit(1).execute()
+        db_ok = True
+    except Exception:
+        db_ok = False
+    return {
+        "status": "ok",
+        "app": "Painel.IA",
+        "db": "ok" if db_ok else "erro",
+        "ts": datetime.datetime.utcnow().isoformat()
+    }
 
 @app.post("/motoristas")
 def criar_motorista(m: Motorista):
@@ -227,7 +239,8 @@ async def completar_setup(dados: dict = Body(...)):
         supabase.table("motoristas").update(update).eq("id", uid).execute()
         return {"ok": True}
     except Exception as e:
-        return {"ok": False, "erro": str(e)}
+        log_erro("endpoint_erro", erro=e)
+        return {"ok": False, "erro": "Erro interno"}
 
 @app.post("/meta-diaria/{motorista_id}")
 async def salvar_meta_diaria(motorista_id: str, body: dict = Body(...)):
@@ -263,7 +276,8 @@ def salvar_meta_mensal(motorista_id: str, body: dict = Body(...)):
         supabase.table("motoristas").update({"meta_mensal": float(meta)}).eq("id", motorista_id).execute()
         return {"ok": True, "meta_mensal": float(meta)}
     except Exception as e:
-        return {"ok": False, "erro": str(e)}
+        log_erro("endpoint_erro", erro=e)
+        return {"ok": False, "erro": "Erro interno"}
 
 @app.get("/meta-mensal/{motorista_id}")
 def buscar_meta_mensal(motorista_id: str):
@@ -312,7 +326,8 @@ async def salvar_turno(body: dict = Body(...)):
             supabase.table("turnos").insert({"motorista_id": motorista_id, "data": data, "inicio": inicio, "fim": fim, "horas": horas}).execute()
         return {"ok": True, "horas": horas}
     except Exception as e:
-        return {"ok": False, "erro": str(e)}
+        log_erro("endpoint_erro", erro=e)
+        return {"ok": False, "erro": "Erro interno"}
 
 @app.get("/turnos/{motorista_id}")
 def get_turnos(motorista_id: str):
@@ -623,7 +638,8 @@ async def plano_financeiro(dados: dict = Body(...)):
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return {"ok": False, "plano": f"Erro interno: {str(e)[:200]}"}
+        log_erro("plano_financeiro_erro", erro=e)
+        return {"ok": False, "plano": "Erro ao gerar plano"}
 
 async def _plano_financeiro_impl(dados: dict):
     import httpx, datetime as _dt
@@ -1207,7 +1223,7 @@ async def chat_setup(dados: dict = Body(...)):
     """Chat do onboarding guiado — Gestor coleta dados do novo usuário."""
     import httpx, json as _json
     uid = dados.get("id") or dados.get("motorista_id")
-    mensagem = dados.get("mensagem", "")
+    mensagem = str(dados.get("mensagem", ""))[:1000]  # limite 1000 chars
     historico = dados.get("historico", [])
     # Pré-normaliza valores monetários com vírgula: "156,28" não vire "156" e "28"
     # Substitui padrões como "R$156,28" ou "156,28" por "R$156.28" antes de mandar ao Gemini
@@ -1345,7 +1361,7 @@ async def chat(dados: dict = Body(...)):
         return JSONResponse(status_code=400, content={"resposta": "Payload muito grande.", "acoes": []})
     import httpx, json
     motorista_id = dados.get("motorista_id") or dados.get("mid")
-    mensagem = dados.get("mensagem", "")
+    mensagem = str(dados.get("mensagem", ""))[:1000]  # limite 1000 chars
     historico = dados.get("historico", [])
     semana_relatorio = dados.get("semana_relatorio")  # {ini, fim} ou None
 
@@ -2542,7 +2558,8 @@ async def salvar_compromisso(dados: dict = Body(...)):
                 supabase.table("plano_compromissos").insert({"motorista_id": mid, "data": data, "meta_bruta": meta_bruta, "nota": nota, "status": "pendente"}).execute()
         return {"ok": True, "salvos": len(compromissos)}
     except Exception as e:
-        return {"ok": False, "erro": str(e)}
+        log_erro("endpoint_erro", erro=e)
+        return {"ok": False, "erro": "Erro interno"}
 
 @app.get("/plano-compromisso/{mid}")
 async def buscar_compromissos(mid: str):
@@ -2619,7 +2636,8 @@ async def salvar_plano_ativo(dados: dict = Body(...)):
             supabase.table("plano_ativo").insert(plano).execute()
         return {"ok": True}
     except Exception as e:
-        return {"ok": False, "erro": str(e)}
+        log_erro("endpoint_erro", erro=e)
+        return {"ok": False, "erro": "Erro interno"}
 
 @app.post("/admin/limpar-duplicatas")
 async def limpar_duplicatas(dados: dict = Body(...)):
