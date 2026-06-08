@@ -47,7 +47,7 @@ def favicon():
 async def setup_colunas():
     """Endpoint temporário para criar colunas faltantes no Supabase."""
     try:
-        supabase.rpc("exec_sql", {"query": "ALTER TABLE lancamentos ADD COLUMN IF NOT EXISTS horas_rodadas FLOAT; ALTER TABLE lancamentos ADD COLUMN IF NOT EXISTS km_rodados FLOAT;"}).execute()
+        supabase.rpc("exec_sql", {"query": "ALTER TABLE lancamentos ADD COLUMN IF NOT EXISTS horas_rodadas FLOAT; ALTER TABLE lancamentos ADD COLUMN IF NOT EXISTS km_rodados FLOAT; ALTER TABLE motoristas ADD COLUMN IF NOT EXISTS meta_mensal FLOAT;"}).execute()
         return {"ok": True, "msg": "Colunas criadas"}
     except Exception as e:
         # Tenta via insert direto para forçar criação
@@ -190,6 +190,27 @@ def buscar_meta_diaria(motorista_id: str):
         return {"meta_diaria": meta or 150, "comb_diario": comb}
     except Exception as e:
         return {"meta_diaria": 150, "comb_diario": None}
+
+
+@app.post("/meta-mensal/{motorista_id}")
+def salvar_meta_mensal(motorista_id: str, body: dict = Body(...)):
+    meta = body.get("meta_mensal")
+    if not meta or float(meta) < 100:
+        return {"ok": False, "erro": "Valor inválido"}
+    try:
+        supabase.table("motoristas").update({"meta_mensal": float(meta)}).eq("id", motorista_id).execute()
+        return {"ok": True, "meta_mensal": float(meta)}
+    except Exception as e:
+        return {"ok": False, "erro": str(e)}
+
+@app.get("/meta-mensal/{motorista_id}")
+def buscar_meta_mensal(motorista_id: str):
+    try:
+        res = supabase.table("motoristas").select("meta_mensal").eq("id", motorista_id).execute()
+        meta = res.data[0].get("meta_mensal") if res.data else None
+        return {"meta_mensal": meta}
+    except Exception as e:
+        return {"meta_mensal": None}
 
 @app.get("/motoristas/{telefone}")
 def buscar_motorista(telefone: str):

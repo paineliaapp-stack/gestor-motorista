@@ -1059,15 +1059,22 @@ function editarMetaMensal(){
   form.style.display = form.style.display==='none' ? '' : 'none';
   if(META_MENSAL > 0) document.getElementById('mm-input').value = META_MENSAL;
 }
-function salvarMetaMensal(){
+async function salvarMetaMensal(){
   const v = parseFloat(document.getElementById('mm-input').value||'0');
   if(!v || v < 100){ toast('Informe um valor válido'); return; }
   META_MENSAL = v;
   localStorage.setItem('meta_mensal_obj', v);
   document.getElementById('mm-form').style.display = 'none';
   renderMetaMensal();
-  // Atualiza calculos de contas se já carregado
   if(window._contas) renderResumoContas();
+  // Salva no banco também — não perde se limpar cache
+  try {
+    const mid = MID || window.MID;
+    if(mid) await fetch(API+'/meta-mensal/'+mid, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({meta_mensal: v})
+    });
+  } catch(e) { console.warn('meta_mensal banco err', e); }
   toast('Meta mensal salva 💰');
 }
 function renderMetaMensal(){
@@ -2782,6 +2789,17 @@ async function init(){
   if(metaSalva)META_DIARIA=parseFloat(metaSalva);
   const metaMensalSalva=localStorage.getItem('meta_mensal_obj');
   if(metaMensalSalva) META_MENSAL=parseFloat(metaMensalSalva);
+  // Se não tem no localStorage, busca do banco
+  const _midInit = MID || window.MID || localStorage.getItem('mid');
+  if((!META_MENSAL || META_MENSAL <= 0) && _midInit){
+    fetch(API+'/meta-mensal/'+_midInit).then(r=>r.json()).then(d=>{
+      if(d.meta_mensal && d.meta_mensal > 0){
+        META_MENSAL = parseFloat(d.meta_mensal);
+        localStorage.setItem('meta_mensal_obj', META_MENSAL);
+        try{ renderMetaMensal(); }catch(e){}
+      }
+    }).catch(()=>{});
+  }
   try{ renderMetaMensal(); }catch(e){}
 
   // Atualiza UI com nome do usuário
