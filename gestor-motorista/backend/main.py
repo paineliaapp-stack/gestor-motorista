@@ -2699,7 +2699,11 @@ async def gerar_relatorio_pdf(dados: dict = Body(...)):
         buffer.seek(0)
         nome_arquivo = f"relatorio_{mes}.pdf"
         return StreamingResponse(buffer, media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename={nome_arquivo}"})
+            headers={
+                "Content-Disposition": f'attachment; filename="{nome_arquivo}"',
+                "Content-Type": "application/pdf",
+                "X-Content-Type-Options": "nosniff"
+            })
     except Exception as e:
         import traceback
         return {"erro": str(e), "trace": traceback.format_exc()}
