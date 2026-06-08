@@ -1756,17 +1756,29 @@ Quando analisa situação geral:
                         acoes_executadas.append("conta_editada")
                     elif _matches_ng and _campo_ng == "vencimento":
                         _venc_ng2 = _a_ng.get("vencimento_alvo")
+                        _vfiltro_ng = _a_ng.get("valor_filtro")
                         _pend_ng2 = [c for c in _matches_ng if not c.get("pago")]
-                        if _venc_ng2 and _pend_ng2:
+                        _alvo_ng2 = None
+                        # 1) Prioridade: valor_filtro (ex: "o tênis de 500")
+                        if _vfiltro_ng and _pend_ng2:
+                            try:
+                                _vf = float(_vfiltro_ng)
+                                _por_valor = [c for c in _pend_ng2 if abs(float(c.get("valor",0) or 0) - _vf) < 1]
+                                _alvo_ng2 = _por_valor[0] if _por_valor else None
+                            except: pass
+                        # 2) Fallback: vencimento_alvo
+                        if not _alvo_ng2 and _venc_ng2 and _pend_ng2:
                             try:
                                 from datetime import date as _dn2; _vd2=_dn2.fromisoformat(str(_venc_ng2))
                                 _pend_ng2.sort(key=lambda c: abs((_dn2.fromisoformat(c["vencimento"])-_vd2).days))
-                            except: _pend_ng2.sort(key=lambda c: c.get("vencimento",""))
-                            supabase.table("contas").update({"vencimento": str(_novo_ng)}).eq("id", _pend_ng2[0]["id"]).execute()
-                            acoes_executadas.append("conta_editada")
-                        elif _pend_ng2:
+                                _alvo_ng2 = _pend_ng2[0]
+                            except: pass
+                        # 3) Fallback final: a mais próxima do vencimento
+                        if not _alvo_ng2 and _pend_ng2:
                             _pend_ng2.sort(key=lambda c: c.get("vencimento",""))
-                            supabase.table("contas").update({"vencimento": str(_novo_ng)}).eq("id", _pend_ng2[0]["id"]).execute()
+                            _alvo_ng2 = _pend_ng2[0]
+                        if _alvo_ng2:
+                            supabase.table("contas").update({"vencimento": str(_novo_ng)}).eq("id", _alvo_ng2["id"]).execute()
                             acoes_executadas.append("conta_editada")
             except Exception as _eng_e:
                 print(f"ERRO ao executar ação não-ganho: {_eng_e}")
