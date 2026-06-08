@@ -1486,7 +1486,8 @@ CONTAS:
    - "divida X em N dias" → calcule valor/N e use abater_conta com o valor de hoje. Não crie múltiplas contas.
    - NUNCA pergunte mais detalhes quando o motorista diz "vencimento para amanhã/dia X" ou "parcelas de R$X" — execute direto.
    - RESOLUÇÃO DE "daqui X dias" — CRÍTICO: quando o motorista diz "o que vence daqui 2 dias" ou "o que vence daqui 3 dias", calcule a data exata (hoje={hoje_str}) e cruze com as CONTAS listadas acima para identificar qual conta vence nessa data. Então execute editar_conta direto, sem perguntar nada.
-   - MÚLTIPLAS CONTAS DE MESMO NOME (ex: dois "tênis"): use o campo vencimento_alvo para identificar qual parcela específica alterar. Ex: "mude o tênis que vence daqui 2 dias para sábado" → editar_conta descricao="tênis" campo="vencimento" vencimento_alvo="{amanha_str}" (data atual + 2 dias) novo_valor="próximo sábado".
+   - MÚLTIPLAS CONTAS DE MESMO NOME (ex: dois "tênis"): use o campo vencimento_alvo para identificar qual parcela específica alterar. Ex: "mude o tênis que vence daqui 2 dias para sábado" → editar_conta descricao="tênis" campo="vencimento" vencimento_alvo="{daqui2_str}" novo_valor="{proximo_sabado_str}".
+   - IDENTIFICAÇÃO POR VALOR (ex: "o tênis de 500"): use o campo valor_filtro=500 para identificar qual parcela alterar pelo valor. Nunca use vencimento_alvo e valor_filtro juntos — escolha o mais específico. Ex: "mude o tênis de 500 para sábado" → editar_conta descricao="tênis" campo="vencimento" valor_filtro=500 novo_valor="{proximo_sabado_str}".
    - MÚLTIPLAS EDIÇÕES numa mensagem: execute TODAS como ações separadas no mesmo JSON. "mude X para sábado e Y para sábado que vem" → duas ações editar_conta.
 9. AJUSTE DE TOTAL POR PLATAFORMA — CRÍTICO:
    Quando o motorista informa um valor de faturamento por plataforma (ex: "fiz 277 na 99 ontem", "hoje na uber foram 350"), SEMPRE verifique se já existe lançamento dessa plataforma naquele dia:
@@ -1510,6 +1511,8 @@ Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}
 - Pagar conta: {{"acao":"marcar_pago","descricao":"nome"}}
 - Abater parcial: {{"acao":"abater_conta","descricao":"nome","valor_pago":N}}
 - Editar conta (vencimento): {{"acao":"editar_conta","descricao":"nome","campo":"vencimento","novo_valor":"YYYY-MM-DD"}}
+- Editar vencimento de parcela específica por valor: {{"acao":"editar_conta","descricao":"nome","campo":"vencimento","novo_valor":"YYYY-MM-DD","valor_filtro":N}} — usa quando motorista diz "o tênis de 500"
+- Editar vencimento de parcela específica por data: {{"acao":"editar_conta","descricao":"nome","campo":"vencimento","novo_valor":"YYYY-MM-DD","vencimento_alvo":"YYYY-MM-DD"}} — usa quando motorista diz "o que vence daqui X dias"
 - Editar valor de conta: {{"acao":"editar_conta","descricao":"nome","campo":"valor","novo_valor":N}} — atualiza TODAS as parcelas pendentes com esse nome
 - Editar valor de parcela específica: {{"acao":"editar_conta","descricao":"nome","campo":"valor","novo_valor":N,"vencimento_alvo":"YYYY-MM-DD"}} — usa quando motorista menciona "a que vence dia X" ou "a parcela do dia X"
 - Apagar conta: {{"acao":"deletar_conta","descricao":"nome"}}
@@ -1870,8 +1873,18 @@ Quando analisa situação geral:
                 if campo == "vencimento":
                     pendentes_match = [c for c in matches if not c.get("pago")]
                     venc_alvo = acao.get("vencimento_alvo")
-                    if venc_alvo and pendentes_match:
-                        # Tem vencimento_alvo: pega a parcela com vencimento mais próximo do alvo
+                    valor_filtro = acao.get("valor_filtro")
+                    alvo = None
+                    if valor_filtro and pendentes_match:
+                        # Filtra por valor exato (ex: "o tênis de 500")
+                        try:
+                            vf = float(valor_filtro)
+                            por_valor = [c for c in pendentes_match if abs(float(c.get("valor", 0)) - vf) < 1]
+                            alvo = por_valor[0] if por_valor else pendentes_match[0]
+                        except:
+                            alvo = pendentes_match[0]
+                    elif venc_alvo and pendentes_match:
+                        # Filtra por vencimento mais próximo do alvo
                         try:
                             from datetime import date as _date
                             alvo_dt = _date.fromisoformat(str(venc_alvo))
@@ -1880,12 +1893,10 @@ Quando analisa situação geral:
                         except:
                             pendentes_match.sort(key=lambda c: c.get("vencimento",""))
                             alvo = pendentes_match[0]
-                        supabase.table("contas").update({"vencimento": str(novo_valor)}).eq("id", alvo["id"]).execute()
-                        acoes_executadas.append("conta_editada")
                     elif pendentes_match:
-                        # Sem vencimento_alvo: altera só a mais próxima
                         pendentes_match.sort(key=lambda c: c.get("vencimento",""))
                         alvo = pendentes_match[0]
+                    if alvo:
                         supabase.table("contas").update({"vencimento": str(novo_valor)}).eq("id", alvo["id"]).execute()
                         acoes_executadas.append("conta_editada")
                 elif campo == "valor":
