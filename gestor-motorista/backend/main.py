@@ -1735,7 +1735,7 @@ Quando analisa situação geral:
                     _desc_ng = _norm2(_a_ng.get("descricao",""))
                     _campo_ng = _a_ng.get("campo")
                     _novo_ng = _a_ng.get("novo_valor")
-                    _contas_ng = supabase.table("contas").select("id,descricao,pago,vencimento").eq("motorista_id", motorista_id).execute()
+                    _contas_ng = supabase.table("contas").select("id,descricao,pago,vencimento,valor").eq("motorista_id", motorista_id).execute()
                     _matches_ng = [c for c in (_contas_ng.data or []) if _desc_ng and (_desc_ng in _norm2(c["descricao"]) or _norm2(c["descricao"]) in _desc_ng or (len(_desc_ng)>=4 and _norm2(c["descricao"]).startswith(_desc_ng[:5])))]
                     if not _matches_ng:
                         for c in (_contas_ng.data or []):
@@ -1865,7 +1865,7 @@ Quando analisa situação geral:
                 campo = acao.get("campo")
                 novo_valor = acao.get("novo_valor")
                 apenas_proxima = acao.get("apenas_proxima", False)  # default: atualiza todas pendentes
-                contas_res = supabase.table("contas").select("id,descricao,pago,vencimento").eq("motorista_id", motorista_id).execute()
+                contas_res = supabase.table("contas").select("id,descricao,pago,vencimento,valor").eq("motorista_id", motorista_id).execute()
                 import unicodedata as _ud
                 def _norm_desc(s):
                     s = (s or '').lower().strip()
@@ -2128,7 +2128,7 @@ Quando analisa situação geral:
                 campo = acao.get("campo")
                 novo_valor = acao.get("novo_valor")
                 venc_alvo = acao.get("vencimento_alvo")
-                contas_res = supabase.table("contas").select("id,descricao,pago,vencimento").eq("motorista_id", motorista_id).execute()
+                contas_res = supabase.table("contas").select("id,descricao,pago,vencimento,valor").eq("motorista_id", motorista_id).execute()
                 matches2 = []
                 for c in (contas_res.data or []):
                     if descricao and (descricao.lower() in c["descricao"].lower() or c["descricao"].lower() in descricao.lower() or len(__import__("os.path", fromlist=["commonprefix"]).commonprefix([descricao.lower(), c["descricao"].lower()])) >= 5):
