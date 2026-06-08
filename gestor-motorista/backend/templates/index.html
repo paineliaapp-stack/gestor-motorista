@@ -3914,9 +3914,11 @@ async function sendChat() {
     try{loadDash();}catch(e){}
     try{loadContasDash();}catch(e){}
     try{loadCompromissos();}catch(e){};
-    // Se registrou algo, atualiza o histórico de lançamentos também
+    // Se executou alguma ação (pagar conta, registrar gasto), recarrega dashboard e histórico
     if(data.acoes_count > 0 || data.acao){
+      try{ loadDash(); }catch(e){}
       try{ if(document.getElementById('page-historico')?.classList.contains('active')) loadHist('todos'); }catch(e){}
+      try{ loadContas(); }catch(e){}
     }
     const metaMatch = msg.match(/meta[^\d]*?(?:de\s+)?(?:r\$\s*)?([\d.,]+)/i) || msg.match(/(?:quero\s+)?(?:ganhar|faturar)\s+(?:r\$\s*)?([\d.,]+)/i);
     if(metaMatch){ const nv=parseFloat(metaMatch[1].replace(',','.')); if(nv>0) await atualizarMeta(nv); }

@@ -1971,24 +1971,16 @@ Quando analisa situação geral:
                 }).execute()
                 acoes_executadas.append("conta_registrada")
             elif acao.get("acao") == "marcar_pago":
-                # Marca a conta como paga e cria lancamento de despesa pelo saldo restante
+                # Marca a conta como paga — NÃO cria lançamento automático
+                # O motorista já registrou o gasto separadamente no chat
                 descricao = acao.get("descricao", "").lower()
                 contas_res = supabase.table("contas").select("id,descricao,valor,valor_pago").eq("motorista_id", motorista_id).eq("pago", False).execute()
                 for c in (contas_res.data or []):
-                    if descricao and (descricao.lower() in c["descricao"].lower() or c["descricao"].lower() in descricao.lower() or len(__import__("os.path", fromlist=["commonprefix"]).commonprefix([descricao.lower(), c["descricao"].lower()])) >= 5):
+                    nome_c = c["descricao"].lower()
+                    if descricao and (descricao in nome_c or nome_c in descricao or
+                        len(__import__("os.path", fromlist=["commonprefix"]).commonprefix([descricao, nome_c])) >= 4):
                         valor_total = float(c["valor"])
-                        ja_pago = float(c.get("valor_pago") or 0)
-                        saldo_restante = max(0, valor_total - ja_pago)
                         supabase.table("contas").update({"pago": True, "valor_pago": valor_total}).eq("id", c["id"]).execute()
-                        # Só registra despesa se ainda havia saldo restante (evita duplicar se já abateu tudo)
-                        if saldo_restante > 0.01:
-                            supabase.table("lancamentos").insert({
-                                "motorista_id": motorista_id,
-                                "tipo": "despesa",
-                                "valor": saldo_restante,
-                                "descricao": c["descricao"],
-                                "data": hoje_brasil().isoformat()
-                            }).execute()
                         acoes_executadas.append("conta_paga")
                         break
             elif acao.get("acao") == "abater_conta":
