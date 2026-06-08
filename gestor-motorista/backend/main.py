@@ -1747,9 +1747,18 @@ Quando analisa situação geral:
                                 supabase.table("contas").update({"valor": float(_novo_ng)}).eq("id", _c_ng["id"]).execute()
                         acoes_executadas.append("conta_editada")
                     elif _matches_ng and _campo_ng == "vencimento":
-                        _pend_ng = sorted([c for c in _matches_ng if not c.get("pago")], key=lambda c: c.get("vencimento",""))
-                        if _pend_ng:
-                            supabase.table("contas").update({"vencimento": str(_novo_ng)}).eq("id", _pend_ng[0]["id"]).execute()
+                        _venc_ng2 = _a_ng.get("vencimento_alvo")
+                        _pend_ng2 = [c for c in _matches_ng if not c.get("pago")]
+                        if _venc_ng2 and _pend_ng2:
+                            try:
+                                from datetime import date as _dn2; _vd2=_dn2.fromisoformat(str(_venc_ng2))
+                                _pend_ng2.sort(key=lambda c: abs((_dn2.fromisoformat(c["vencimento"])-_vd2).days))
+                            except: _pend_ng2.sort(key=lambda c: c.get("vencimento",""))
+                            supabase.table("contas").update({"vencimento": str(_novo_ng)}).eq("id", _pend_ng2[0]["id"]).execute()
+                            acoes_executadas.append("conta_editada")
+                        elif _pend_ng2:
+                            _pend_ng2.sort(key=lambda c: c.get("vencimento",""))
+                            supabase.table("contas").update({"vencimento": str(_novo_ng)}).eq("id", _pend_ng2[0]["id"]).execute()
                             acoes_executadas.append("conta_editada")
             except Exception as _eng_e:
                 print(f"ERRO ao executar ação não-ganho: {_eng_e}")
@@ -1859,11 +1868,24 @@ Quando analisa situação geral:
                             matches.append(c)
                 # Filtra só pendentes (a não ser que seja campo=valor, aí edita todas)
                 if campo == "vencimento":
-                    # Para vencimento: só altera a PRÓXIMA parcela (não pagas, vencimento mais próximo)
                     pendentes_match = [c for c in matches if not c.get("pago")]
-                    if pendentes_match:
+                    venc_alvo = acao.get("vencimento_alvo")
+                    if venc_alvo and pendentes_match:
+                        # Tem vencimento_alvo: pega a parcela com vencimento mais próximo do alvo
+                        try:
+                            from datetime import date as _date
+                            alvo_dt = _date.fromisoformat(str(venc_alvo))
+                            pendentes_match.sort(key=lambda c: abs((_date.fromisoformat(c["vencimento"]) - alvo_dt).days))
+                            alvo = pendentes_match[0]
+                        except:
+                            pendentes_match.sort(key=lambda c: c.get("vencimento",""))
+                            alvo = pendentes_match[0]
+                        supabase.table("contas").update({"vencimento": str(novo_valor)}).eq("id", alvo["id"]).execute()
+                        acoes_executadas.append("conta_editada")
+                    elif pendentes_match:
+                        # Sem vencimento_alvo: altera só a mais próxima
                         pendentes_match.sort(key=lambda c: c.get("vencimento",""))
-                        alvo = pendentes_match[0]  # só a mais próxima
+                        alvo = pendentes_match[0]
                         supabase.table("contas").update({"vencimento": str(novo_valor)}).eq("id", alvo["id"]).execute()
                         acoes_executadas.append("conta_editada")
                 elif campo == "valor":
