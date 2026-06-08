@@ -1201,10 +1201,12 @@ function renderMetaMensal(){
 // Botão manual "Ver relatório da semana"
 function gerarRelatorioSemanal() {
   const lancamentos = window._todosLanc || [];
-  const agora = new Date(Date.now() - 3*60*60*1000);
+  // Usa a data local do dispositivo do usuário (já está no fuso correto)
+  const agora = new Date();
   const diaSemana = agora.getDay(); // 0=dom, 1=seg...
-  const hoje = new Date(agora.toISOString().slice(0,10)+'T00:00:00');
-  const toStr = d => d.toISOString().slice(0,10);
+  const hojeStr = agora.getFullYear()+'-'+String(agora.getMonth()+1).padStart(2,'0')+'-'+String(agora.getDate()).padStart(2,'0');
+  const hoje = new Date(hojeStr+'T00:00:00');
+  const toStr = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 
   // Calcula semana atual (seg-dom)
   const diffSeg = diaSemana === 0 ? 6 : diaSemana - 1;
