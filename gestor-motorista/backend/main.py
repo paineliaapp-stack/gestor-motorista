@@ -1562,9 +1562,28 @@ Quando analisa situação geral:
 {renda_extra_ctx}
 """
 
-    # Contexto sempre na primeira mensagem
-    msgs = [{"role": "user", "parts": [{"text": contexto}]},
-            {"role": "model", "parts": [{"text": "Entendido. Estou pronto para registrar e responder de forma curta."}]}]
+    # Separa prompt em system_instruction (estático, cacheável) + contexto dinâmico
+    # A seção AÇÕES nunca muda → vai para system_instruction → Gemini 2.5 Flash
+    # aplica implicit caching automático em prefixos >1024 tokens, reduzindo custo ~75%
+    _ACOES_MARKER = "=== AÇÕES (responda SEMPRE em JSON puro) ==="
+    _PLANO_MARKER = "=== PLANO FINANCEIRO ==="
+    _acoes_start = contexto.find(_ACOES_MARKER)
+    _plano_start = contexto.find(_PLANO_MARKER)
+    if _acoes_start != -1 and _plano_start != -1:
+        _system_static = contexto[_acoes_start:_plano_start].strip()
+        _contexto_dinamico = contexto[:_acoes_start] + contexto[_plano_start:]
+    else:
+        _system_static = None
+        _contexto_dinamico = contexto
+
+    if _system_static:
+        msgs = [{"role": "user", "parts": [{"text": _contexto_dinamico}]},
+                {"role": "model", "parts": [{"text": "Entendido. Pronto para registrar."}]}]
+        _gemini_payload_extra = {"system_instruction": {"parts": [{"text": _system_static}]}}
+    else:
+        msgs = [{"role": "user", "parts": [{"text": contexto}]},
+                {"role": "model", "parts": [{"text": "Entendido. Estou pronto para registrar e responder de forma curta."}]}]
+        _gemini_payload_extra = {}
     # Limita histórico a 8 mensagens para evitar MAX_TOKENS no Gemini
     hist_curto = (historico or [])[-8:]
     for h in hist_curto:
@@ -1583,7 +1602,7 @@ Quando analisa situação geral:
             try:
                 resp = await client.post(
                     f"https://generativelanguage.googleapis.com/v1beta/models/{modelo_atual}:generateContent?key={GEMINI_KEY}",
-                    json={"contents": msgs, "generationConfig": {
+                    json={**_gemini_payload_extra, "contents": msgs, "generationConfig": {
                         "responseMimeType": "application/json",
                         "maxOutputTokens": 4096,
                         "temperature": 0.1
@@ -1621,7 +1640,7 @@ Quando analisa situação geral:
                 async with httpx.AsyncClient(timeout=30) as c2:
                     r2 = await c2.post(
                         f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_KEY}",
-                        json={"contents": msgs_curto, "generationConfig": {"responseMimeType":"application/json","maxOutputTokens":1024,"temperature":0.1}}
+                        json={**_gemini_payload_extra, "contents": msgs_curto, "generationConfig": {"responseMimeType":"application/json","maxOutputTokens":1024,"temperature":0.1}}
                     )
                     result2 = r2.json()
                     if "candidates" in result2:
