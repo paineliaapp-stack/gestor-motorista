@@ -2542,21 +2542,12 @@ async function loadDash(){
     if(gPlatCanvas) gPlatCanvas.height = Math.max(80, platFilt.length * 44);
     if(window.gPlat)window.gPlat.destroy();
     window.gPlat=new Chart(document.getElementById('g-plataforma'),{type:'bar',data:{labels:platLabels,datasets:[{data:platVals.map(v=>Math.round(v*100)/100),backgroundColor:platColors,borderWidth:0,borderRadius:6,label:'Faturamento'}]},options:{indexAxis:'y',plugins:{legend:{display:false},datalabels:{display:false},tooltip:{callbacks:{label:(c)=>'R$ '+parseFloat(c.raw).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}}},scales:{x:{ticks:{color:'rgba(255,255,255,.4)',maxTicksLimit:5,callback:(v)=>'R$'+Math.round(v).toLocaleString('pt-BR'),font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true},y:{ticks:{color:'rgba(255,255,255,.8)',font:{size:13,weight:'600'}},grid:{display:false}}}}});
-    // Agrupa despesas por categoria — exclui lançamentos que são pagamentos de contas (evita duplicar)
-    const CONTAS_KEYS=['semanal','parcela','financiamento','aluguel','condominio','mensalidade'];
+    // Agrupa despesas por categoria — usa a chave CATS quando disponível
     const ct={};
     todosLanc.filter(l=>l.tipo==='despesa').forEach(l=>{
       const k=(l.descricao||'outros').toLowerCase().trim();
-      const catObj=CATS.find(x=>x.k===k);
-      // Se não tem categoria conhecida E parece nome de conta (não de gasto), agrupa em "contas_pagas"
-      if(!catObj && CONTAS_KEYS.some(ck=>k.includes(ck))){
-        ct['__contas_pagas__']=(ct['__contas_pagas__']||0)+parseFloat(l.valor);
-      } else {
-        ct[k]=(ct[k]||0)+parseFloat(l.valor);
-      }
+      ct[k]=(ct[k]||0)+parseFloat(l.valor);
     });
-    // Remove contas pagas da visualização de categorias (elas aparecem na tela Contas)
-    delete ct['__contas_pagas__'];
     const totalDesp=Object.values(ct).reduce((a,v)=>a+v,0);
     const mx=Math.max(...Object.values(ct),1);
     const el=document.getElementById('barras-cat');el.innerHTML='';
