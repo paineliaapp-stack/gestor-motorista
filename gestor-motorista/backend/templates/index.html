@@ -1198,47 +1198,101 @@ function renderMetaMensal(){
   `;
 }
 
-function gerarRelatorioSemanal(force) {
+// Botão manual "Ver relatório da semana"
+function gerarRelatorioSemanal() {
   const lancamentos = window._todosLanc || [];
   const agora = new Date(Date.now() - 3*60*60*1000);
+  const diaSemana = agora.getDay(); // 0=dom, 1=seg...
   const hoje = new Date(agora.toISOString().slice(0,10)+'T00:00:00');
-  const diaSemana = hoje.getDay();
-  const diffSeg = diaSemana === 0 ? 6 : diaSemana - 1;
-
-  // Semana atual (seg-dom)
-  const inicioSem = new Date(hoje); inicioSem.setDate(hoje.getDate() - diffSeg);
-  const fimSem = new Date(inicioSem); fimSem.setDate(inicioSem.getDate() + 6);
-
-  // Semana passada
-  const inicioSemAnt = new Date(inicioSem); inicioSemAnt.setDate(inicioSem.getDate() - 7);
-  const fimSemAnt = new Date(inicioSem); fimSemAnt.setDate(inicioSem.getDate() - 1);
-
   const toStr = d => d.toISOString().slice(0,10);
 
-  // Se semana atual tem poucos dados (seg/ter com 0 lançamentos), usa semana passada
-  const lancSemAtual = lancamentos.filter(l => l.data >= toStr(inicioSem) && l.data <= toStr(fimSem));
-  const ganhosSemAtual = lancSemAtual.filter(l=>l.tipo==='ganho').reduce((s,l)=>s+parseFloat(l.valor||0),0);
-  let _inicioSem = inicioSem, _fimSem = fimSem, _inicioSemAnt, _fimSemAnt, _usandoSemPassada = false;
+  // Calcula semana atual (seg-dom)
+  const diffSeg = diaSemana === 0 ? 6 : diaSemana - 1;
+  const inicioSemAtual = new Date(hoje); inicioSemAtual.setDate(hoje.getDate() - diffSeg);
+  const fimSemAtual = new Date(inicioSemAtual); fimSemAtual.setDate(inicioSemAtual.getDate() + 6);
 
-  if(ganhosSemAtual === 0 && diffSeg <= 1) {
-    // Segunda ou terça sem dados → mostra semana passada
-    _inicioSem = inicioSemAnt;
-    _fimSem = fimSemAnt;
-    _inicioSemAnt = new Date(inicioSemAnt); _inicioSemAnt.setDate(inicioSemAnt.getDate() - 7);
-    _fimSemAnt = new Date(inicioSemAnt); _fimSemAnt.setDate(inicioSemAnt.getDate() - 1);
-    _usandoSemPassada = true;
-  } else {
-    _inicioSemAnt = inicioSemAnt;
-    _fimSemAnt = fimSemAnt;
+  // Semana passada (seg-dom anterior)
+  const inicioSemAnt = new Date(inicioSemAtual); inicioSemAnt.setDate(inicioSemAtual.getDate() - 7);
+  const fimSemAnt = new Date(inicioSemAtual); fimSemAnt.setDate(inicioSemAtual.getDate() - 1);
+
+  const lancSemAtual = lancamentos.filter(l => l.data >= toStr(inicioSemAtual) && l.data <= toStr(fimSemAtual));
+  const ganhosSemAtual = lancSemAtual.filter(l=>l.tipo==='ganho').reduce((s,l)=>s+parseFloat(l.valor||0),0);
+
+  // Se semana atual não tem dados (segunda/terça vazias), usa semana passada
+  if(ganhosSemAtual === 0) {
+    const chat = document.getElementById('chat-msgs');
+    // Remove relatório anterior se existir
+    const old = document.querySelector('.relatorio-semanal-msg');
+    if(old) old.remove();
+
+    const lancSemAntDados = lancamentos.filter(l => l.data >= toStr(inicioSemAnt) && l.data <= toStr(fimSemAnt));
+    const ganhosSemAnt = lancSemAntDados.filter(l=>l.tipo==='ganho').reduce((s,l)=>s+parseFloat(l.valor||0),0);
+
+    if(ganhosSemAnt === 0) {
+      // Sem dados em nenhuma semana — avisa no chat
+      if(chat) {
+        const msgEl = document.createElement('div');
+        msgEl.className = 'msg msg-gestor relatorio-semanal-msg';
+        msgEl.innerHTML = '<div class="msg-avatar">🧠</div><div class="msg-balao" style="font-size:13px;color:var(--mt)">Não encontrei lançamentos dessa semana ainda. Registre seus ganhos e volte aqui no domingo para ver o relatório completo.</div>';
+        chat.appendChild(msgEl);
+        chat.scrollTop = chat.scrollHeight;
+      }
+      return;
+    }
+
+    // Pergunta se quer ver semana passada
+    if(chat) {
+      const msgEl = document.createElement('div');
+      msgEl.className = 'msg msg-gestor relatorio-semanal-msg';
+      const avatar = document.createElement('div');
+      avatar.className = 'msg-avatar';
+      avatar.textContent = '🧠';
+      const balao = document.createElement('div');
+      balao.className = 'msg-balao';
+      const txt = document.createElement('div');
+      txt.style.cssText = 'font-size:13px;line-height:1.5;margin-bottom:10px';
+      txt.textContent = 'A semana atual ainda não tem lançamentos. Quer ver o relatório da semana passada?';
+      const btnSim = document.createElement('button');
+      btnSim.style.cssText = 'width:100%;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);border-radius:10px;color:#a5b4fc;font-size:12px;font-weight:600;padding:10px 14px;cursor:pointer';
+      btnSim.textContent = '📊 Ver relatório da semana passada';
+      btnSim.addEventListener('click', () => {
+        msgEl.remove();
+        _exibirRelatorioSemana(toStr(inicioSemAnt), toStr(fimSemAnt), 'semana passada');
+      });
+      balao.appendChild(txt);
+      balao.appendChild(btnSim);
+      msgEl.appendChild(avatar);
+      msgEl.appendChild(balao);
+      chat.appendChild(msgEl);
+      chat.scrollTop = chat.scrollHeight;
+    }
+    return;
   }
 
-  const toStr = d => d.toISOString().slice(0,10);
+  // Semana atual tem dados — mostra normalmente
+  const old = document.querySelector('.relatorio-semanal-msg');
+  if(old) old.remove();
+  _exibirRelatorioSemana(toStr(inicioSemAtual), toStr(fimSemAtual), null);
+
+  const btn = document.getElementById('btn-relatorio-semanal');
+  if(btn) btn.style.animation = 'none';
+}
+
+// Função central que monta e exibe o relatório no chat
+function _exibirRelatorioSemana(inicioStr, fimStr, label) {
+  const lancamentos = window._todosLanc || [];
   const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const toStr = d => d.toISOString().slice(0,10);
 
-  const lancSem = lancamentos.filter(l => l.data >= toStr(_inicioSem) && l.data <= toStr(_fimSem));
-  const lancSemAnt = lancamentos.filter(l => l.data >= toStr(_inicioSemAnt) && l.data <= toStr(_fimSemAnt));
+  const lancSem = lancamentos.filter(l => l.data >= inicioStr && l.data <= fimStr);
 
-  // Totais semana atual
+  // Semana anterior para comparação
+  const inicioD = new Date(inicioStr+'T12:00:00');
+  const inicioAntStr = toStr(new Date(inicioD.setDate(inicioD.getDate()-7)));
+  const fimAntD = new Date(inicioStr+'T12:00:00'); fimAntD.setDate(fimAntD.getDate()-1);
+  const fimAntStr = toStr(fimAntD);
+  const lancSemAnt = lancamentos.filter(l => l.data >= inicioAntStr && l.data <= fimAntStr);
+
   const ganhosSem = lancSem.filter(l=>l.tipo==='ganho').reduce((s,l)=>s+parseFloat(l.valor||0),0);
   const despSem = lancSem.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+parseFloat(l.valor||0),0);
   const lucroSem = ganhosSem - despSem;
@@ -1247,54 +1301,30 @@ function gerarRelatorioSemanal(force) {
   let pctConfig = 25;
   try { pctConfig = parseFloat(localStorage.getItem('pct_comb_'+(window.MID||''))||'25'); } catch(e) {}
 
-  // Semana passada
   const ganhosSemAnt = lancSemAnt.filter(l=>l.tipo==='ganho').reduce((s,l)=>s+parseFloat(l.valor||0),0);
-  const despSemAnt = lancSemAnt.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+parseFloat(l.valor||0),0);
-  const lucroSemAnt = ganhosSemAnt - despSemAnt;
+  const lucroSemAnt = ganhosSemAnt - lancSemAnt.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+parseFloat(l.valor||0),0);
 
-  // Melhor e pior dia
   const porDia = {};
   lancSem.filter(l=>l.tipo==='ganho').forEach(l => { porDia[l.data] = (porDia[l.data]||0) + parseFloat(l.valor||0); });
-  const dias = Object.entries(porDia);
-  const nomeDia = d => {
-    const nd = new Date(d+'T12:00:00');
-    return nd.toLocaleDateString('pt-BR',{weekday:'long'});
-  };
-  let melhorDia = null, piorDia = null;
-  if(dias.length > 0) {
-    dias.sort((a,b)=>b[1]-a[1]);
-    melhorDia = dias[0];
-    piorDia = dias[dias.length-1];
-  }
-
-  // Dias trabalhados
+  const dias = Object.entries(porDia).sort((a,b)=>b[1]-a[1]);
   const diasTrab = dias.length;
+  const nomeDia = d => new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long'});
 
-  // Verifica se tem dias sem combustível (alerta)
-  const diasComGanho = Object.keys(porDia);
-  const diasComComb = [...new Set(lancSem.filter(l=>l.tipo==='despesa'&&((l.descricao||'').toLowerCase().includes('combust')||(l.plataforma||'').toLowerCase()==='combustivel')).map(l=>l.data))];
-  const diasSemComb = diasComGanho.filter(d=>!diasComComb.includes(d));
-
-  // Compara com semana passada
+  const seta = v => v === null ? '' : (v >= 0 ? `<span style="color:#00D897">▲ ${Math.abs(v).toFixed(0)}%</span>` : `<span style="color:#f87171">▼ ${Math.abs(v).toFixed(0)}%</span>`);
   const varGanhos = ganhosSemAnt > 0 ? ((ganhosSem - ganhosSemAnt)/ganhosSemAnt*100) : null;
-  const varLucro = lucroSemAnt > 0 ? ((lucroSem - lucroSemAnt)/lucroSemAnt*100) : null;
-
-  // Monta HTML do relatório
-  const seta = (v) => v === null ? '' : (v >= 0 ? `<span style="color:#00D897">▲ ${Math.abs(v).toFixed(0)}%</span>` : `<span style="color:#f87171">▼ ${Math.abs(v).toFixed(0)}%</span>`);
+  const varLucro = lucroSemAnt !== 0 ? ((lucroSem - lucroSemAnt)/Math.abs(lucroSemAnt)*100) : null;
   const combStatus = pctComb < pctConfig - 4 ? `✅ <strong>${pctComb}%</strong> — abaixo do previsto (${pctConfig}%)` : pctComb > pctConfig + 4 ? `⚠️ <strong>${pctComb}%</strong> — acima do previsto (${pctConfig}%)` : `✅ <strong>${pctComb}%</strong> — dentro do esperado`;
 
-  const avisoSemComb = diasSemComb.length > 0
-    ? `<div style="margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);font-size:12px;color:#fcd34d">💡 Combustível não lançado em ${diasSemComb.length} dia${diasSemComb.length>1?'s':''} trabalhado${diasSemComb.length>1?'s':''} — se abasteceu e sobrou pro dia seguinte, tá certo</div>` : '';
+  const tituloLabel = label ? ` <span style="font-size:11px;font-weight:400;color:#9ca3af">(${label})</span>` : '';
 
   const html = `
     <div style="font-size:13px;line-height:1.7">
-      <div style="font-weight:700;font-size:14px;margin-bottom:10px;color:#fcd34d">📊 Relatório da semana${_usandoSemPassada ? ' <span style="font-size:11px;font-weight:400;color:#9ca3af">(semana passada)</span>' : ''}</div>
-
+      <div style="font-weight:700;font-size:14px;margin-bottom:10px;color:#fcd34d">📊 Relatório da semana${tituloLabel}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
         <div style="background:rgba(0,216,151,.08);border:1px solid rgba(0,216,151,.2);border-radius:10px;padding:10px">
           <div style="font-size:10px;color:#9ca3af;margin-bottom:2px">GANHOS</div>
           <div style="font-size:16px;font-weight:700;color:#00D897">${fmt(ganhosSem)}</div>
-          <div style="font-size:11px;color:#6b7280">${seta(varGanhos)} vs semana passada</div>
+          <div style="font-size:11px;color:#6b7280">${seta(varGanhos)} vs semana anterior</div>
         </div>
         <div style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);border-radius:10px;padding:10px">
           <div style="font-size:10px;color:#9ca3af;margin-bottom:2px">GASTOS</div>
@@ -1302,37 +1332,27 @@ function gerarRelatorioSemanal(force) {
           <div style="font-size:11px;color:#6b7280">${diasTrab} dia${diasTrab!==1?'s':''} trabalhado${diasTrab!==1?'s':''}</div>
         </div>
       </div>
-
       <div style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:10px;color:#9ca3af;margin-bottom:2px">LUCRO DA SEMANA</div>
           <div style="font-size:18px;font-weight:800;color:${lucroSem>=0?'#00D897':'#f87171'}">${fmt(lucroSem)}</div>
         </div>
-        <div style="font-size:12px;color:#6b7280;text-align:right">${seta(varLucro)}<br>vs sem. passada</div>
+        <div style="font-size:12px;color:#6b7280;text-align:right">${seta(varLucro)}<br>vs sem. anterior</div>
       </div>
-
       <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px">
         <div style="color:#9ca3af;margin-bottom:4px">⛽ COMBUSTÍVEL</div>
         <div>${combStatus}</div>
-        ${avisoSemComb}
       </div>
-
-      ${melhorDia ? `<div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;font-size:12px">
-        <div style="margin-bottom:6px"><span style="color:#fcd34d">🏆 Melhor dia:</span> ${nomeDia(melhorDia[0])} — ${fmt(melhorDia[1])} <span style="color:#888;font-size:11px">(total com extras)</span></div>
-        ${piorDia && piorDia[0] !== melhorDia[0] ? `<div><span style="color:#9ca3af">📉 Pior dia:</span> ${nomeDia(piorDia[0])} — ${fmt(piorDia[1])} <span style="color:#888;font-size:11px">(total com extras)</span></div>` : ''}
-      </div>` : '<div style="font-size:12px;color:#6b7280;text-align:center;padding:10px">Nenhum ganho registrado essa semana ainda.</div>'}
+      ${dias.length > 0 ? `<div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;font-size:12px">
+        <div style="margin-bottom:6px"><span style="color:#fcd34d">🏆 Melhor dia:</span> ${nomeDia(dias[0][0])} — ${fmt(dias[0][1])}</div>
+        ${dias.length > 1 ? `<div><span style="color:#9ca3af">📉 Pior dia:</span> ${nomeDia(dias[dias.length-1][0])} — ${fmt(dias[dias.length-1][1])}</div>` : ''}
+      </div>` : '<div style="font-size:12px;color:#6b7280;text-align:center;padding:10px">Nenhum ganho registrado nessa semana.</div>'}
     </div>`;
 
-  // Mostra relatório diretamente — pergunta de combustível é feita por verificarCombustivelSemanal
   const chat = document.getElementById('chat-msgs');
   if(!chat) return;
-
-  // Evitar duplicata: se já tem relatório da semana no chat, não adiciona de novo
-  if(!force && document.querySelector('.relatorio-semanal-msg')) {
-    chat.scrollTop = chat.scrollHeight;
-    return;
-  }
-
+  const old = document.querySelector('.relatorio-semanal-msg');
+  if(old) old.remove();
   const msgEl = document.createElement('div');
   msgEl.className = 'msg msg-gestor relatorio-semanal-msg';
   const avatar = document.createElement('div');
@@ -1346,61 +1366,32 @@ function gerarRelatorioSemanal(force) {
   chat.appendChild(msgEl);
   chat.scrollTop = chat.scrollHeight;
 
-  // Para de piscar o botão por 1h depois de abrir
   const btn = document.getElementById('btn-relatorio-semanal');
   if(btn) btn.style.animation = 'none';
 }
 
-function verificarCombustivelSemanal(lancamentos) {
-  // Só roda no fim de semana (sáb ou dom) ou se já passou o sábado desta semana
-  const agora = new Date(Date.now() - 3*60*60*1000);
-  const diaSemana = agora.getDay(); // 0=dom, 6=sáb
-  const ehFimDeSemana = diaSemana === 0 || diaSemana === 6;
 
-  // Calcula início da semana atual (segunda)
+function verificarCombustivelSemanal(lancamentos) {
+  // Só dispara automaticamente no domingo (horário Brasil)
+  const agora = new Date(Date.now() - 3*60*60*1000);
+  const diaSemana = agora.getDay(); // 0=dom
+  if(diaSemana !== 0) return;
+
+  // Semana que está terminando: seg a dom (hoje)
   const hoje = new Date(agora.toISOString().slice(0,10)+'T00:00:00');
-  const diffSeg = diaSemana === 0 ? 6 : diaSemana - 1;
-  const inicioSemana = new Date(hoje); inicioSemana.setDate(hoje.getDate() - diffSeg);
-  const fimSemana = new Date(inicioSemana); fimSemana.setDate(inicioSemana.getDate() + 6);
+  const inicioSemana = new Date(hoje); inicioSemana.setDate(hoje.getDate() - 6);
+  const fimSemana = hoje;
   const toStr = d => d.toISOString().slice(0,10);
 
-  // Pega key para não repetir o aviso na mesma semana
-  const chaveAviso = 'comb_aviso_sem_' + toStr(inicioSemana);
+  // Chave única por domingo — não repete se já disparou hoje
+  const chaveAviso = 'relatorio_sem_dom_' + toStr(hoje);
   try { if(localStorage.getItem(chaveAviso)) return; } catch(e) {}
-
-  // Só avisa no fim de semana
-  if(!ehFimDeSemana) return;
 
   // Filtra lançamentos da semana
   const lancSem = (lancamentos||[]).filter(l => l.data >= toStr(inicioSemana) && l.data <= toStr(fimSemana));
-  const ganhosSem = lancSem.filter(l=>l.tipo==='ganho').reduce((s,l)=>s+parseFloat(l.valor||0),0);
-  const combSem = lancSem.filter(l=>
-    l.tipo==='despesa' && (
-      (l.plataforma||'').toLowerCase()==='combustivel' ||
-      (l.descricao||'').toLowerCase().includes('combust')
-    )
-  ).reduce((s,l)=>s+parseFloat(l.valor||0),0);
-
-  if(ganhosSem < 50 || combSem < 5) return; // dados insuficientes
-
-  // % real de combustível na semana
-  const pctReal = Math.round(combSem / ganhosSem * 100);
-
-  // % configurado
-  let pctConfig = 25;
-  try { pctConfig = parseFloat(localStorage.getItem('pct_comb_'+(window.MID||''))||'25'); } catch(e) {}
-
-  const diferenca = Math.abs(pctReal - pctConfig);
-  if(diferenca < 5) return; // dentro da margem, não avisa
-
-  // Monta mensagem no chat
-  const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-  const direcao = pctReal < pctConfig ? 'menos' : 'mais';
-  const emoji = pctReal < pctConfig ? '✅' : '⚠️';
-
-  // Antes de mostrar o relatório, verifica se tem dias sem combustível registrado
-  // Conta dias com ganho na semana que não têm despesa de combustível
   const diasComGanho = [...new Set(lancSem.filter(l=>l.tipo==='ganho').map(l=>l.data))];
+  if(diasComGanho.length === 0) return; // sem dados, não incomoda
+
   const diasComComb = [...new Set(lancSem.filter(l=>
     l.tipo==='despesa' && (
       (l.plataforma||'').toLowerCase()==='combustivel' ||
@@ -1409,13 +1400,19 @@ function verificarCombustivelSemanal(lancamentos) {
   ).map(l=>l.data))];
   const diasSemComb = diasComGanho.filter(d => !diasComComb.includes(d));
 
-  // Se tem dias trabalhados sem combustível registrado, pergunta antes de dar o relatório
-  if (diasSemComb.length > 0) {
-    const nDias = diasSemComb.length;
-    const perguntaId = 'comb-pergunta-'+Date.now();
+  const chat = document.getElementById('chat-msgs');
+  if(!chat) return;
+
+  // Evita duplicata no chat
+  if(document.querySelector('.comb-pergunta-msg')) return;
+
+  // Marca como disparado hoje
+  try { localStorage.setItem(chaveAviso, '1'); } catch(e) {}
+
+  if(diasSemComb.length > 0) {
+    // Pergunta sobre combustível antes de mostrar o relatório
     const pergEl = document.createElement('div');
-    pergEl.className = 'msg msg-gestor';
-    pergEl.id = perguntaId;
+    pergEl.className = 'msg msg-gestor comb-pergunta-msg';
 
     const avatarP = document.createElement('div');
     avatarP.className = 'msg-avatar';
@@ -1426,33 +1423,24 @@ function verificarCombustivelSemanal(lancamentos) {
 
     const textoP = document.createElement('div');
     textoP.style.cssText = 'font-size:13px;line-height:1.5;margin-bottom:10px';
-    textoP.innerHTML = `⛽ Antes de te mostrar o relatório da semana — você trabalhou ${diasComGanho.length} dia${diasComGanho.length!==1?'s':''} essa semana, mas só registrei combustível em ${diasComComb.length}. Esqueceu de lançar o combustível em algum dia?`;
+    textoP.innerHTML = `⛽ Antes de fechar a semana — você trabalhou ${diasComGanho.length} dia${diasComGanho.length!==1?'s':''} essa semana, mas só registrei combustível em ${diasComComb.length}. Esqueceu de lançar em algum dia?`;
 
     const btnSim = document.createElement('button');
     btnSim.style.cssText = 'width:100%;background:rgba(255,100,100,.1);border:1px solid rgba(255,100,100,.3);border-radius:10px;color:#f87171;font-size:12px;font-weight:600;padding:10px 14px;cursor:pointer;margin-bottom:8px;text-align:left';
     btnSim.textContent = '⛽ Sim, vou lançar agora';
     btnSim.addEventListener('click', () => {
-      pergEl.remove();
-      try { localStorage.removeItem(chaveAviso); } catch(e) {}
-      // Envia a mensagem diretamente
+      // Reabre o relatório depois que lançar — guarda flag
+      try { localStorage.setItem(chaveAviso+'_aguardando', '1'); } catch(e) {}
       const inp = document.getElementById('chat-input');
-      if(inp) {
-        inp.value = 'quero lançar combustível esquecido';
-        if(typeof sendChat === 'function') sendChat();
-      }
+      if(inp) { inp.value = 'quero lançar combustível esquecido'; if(typeof sendChat === 'function') sendChat(); }
     });
 
     const btnNao = document.createElement('button');
     btnNao.style.cssText = 'width:100%;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);border-radius:10px;color:#a5b4fc;font-size:12px;font-weight:600;padding:10px 14px;cursor:pointer;text-align:left';
     btnNao.textContent = '✅ Não, meus dados estão completos';
     btnNao.addEventListener('click', () => {
-      pergEl.remove();
-      try { localStorage.setItem(chaveAviso, '1'); } catch(e) {}
-      // Remove relatório antigo se existir, para forçar novo
-      const old = document.querySelector('.relatorio-semanal-msg');
-      if(old) old.remove();
-      // Mostra o relatório da semana
-      gerarRelatorioSemanal(true);
+      // Mostra o relatório da semana que acabou (seg-dom de hoje)
+      _exibirRelatorioSemana(toStr(inicioSemana), toStr(fimSemana), 'semana que passou');
     });
 
     balaoP.appendChild(textoP);
@@ -1460,56 +1448,11 @@ function verificarCombustivelSemanal(lancamentos) {
     balaoP.appendChild(btnNao);
     pergEl.appendChild(avatarP);
     pergEl.appendChild(balaoP);
-
-    const chat = document.getElementById('chat-msgs');
-    if(chat) { chat.appendChild(pergEl); chat.scrollTop = chat.scrollHeight; }
-    return; // não mostra relatório ainda
-  }
-
-  const msgId_inner = 'comb-aviso-'+Date.now();
-  _mostrarRelatorioCombuSemanal(ganhosSem, combSem, pctReal, pctConfig, diferenca, direcao, emoji, msgId_inner, chaveAviso, fmt);
-}
-
-function _mostrarRelatorioCombuSemanal(ganhosSem, combSem, pctReal, pctConfig, diferenca, direcao, emoji, msgId, chaveAviso, fmt) {
-  const msgTexto = `${emoji} Essa semana você gastou ${fmt(combSem)} de combustível em ${fmt(ganhosSem)} faturados — isso é <strong>${pctReal}%</strong> do bruto, mas sua estimativa está em <strong>${pctConfig}%</strong>. Você gastou ${diferenca} ponto${diferenca!==1?'s':''} percentuais a ${direcao} do previsto.`;
-
-  // Cria mensagem com botão
-  const msgEl = document.createElement('div');
-  msgEl.className = 'msg msg-gestor';
-  msgEl.id = msgId;
-
-  const avatarEl = document.createElement('div');
-  avatarEl.className = 'msg-avatar';
-  avatarEl.textContent = '🧠';
-
-  const balaoEl = document.createElement('div');
-  balaoEl.className = 'msg-balao';
-
-  const textoEl = document.createElement('div');
-  textoEl.style.cssText = 'font-size:13px;line-height:1.5;margin-bottom:10px';
-  textoEl.innerHTML = msgTexto;
-
-  const btnEl = document.createElement('button');
-  btnEl.style.cssText = 'width:100%;background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(99,102,241,.1));border:1px solid rgba(99,102,241,.4);border-radius:10px;color:#a5b4fc;font-size:12px;font-weight:600;padding:10px 14px;cursor:pointer;text-align:left;line-height:1.4';
-  btnEl.innerHTML = '🔄 Clique aqui e atualizamos automaticamente a projeção para <strong>' + pctReal + '%</strong> — mais próximo do que você realmente gasta';
-  btnEl.addEventListener('click', function() {
-    localStorage.setItem('pct_comb_' + (window.MID||''), pctReal);
-    try { renderMetaMensal(); } catch(e) {}
-    try { loadContas(); } catch(e) {}
-    balaoEl.innerHTML = '<div style="font-size:13px;color:#00D897">✅ Estimativa de combustível atualizada para <strong>' + pctReal + '%</strong>! Os cálculos do mês foram ajustados.</div>';
-    try { localStorage.setItem(chaveAviso, '1'); } catch(e) {}
-  });
-
-  balaoEl.appendChild(textoEl);
-  balaoEl.appendChild(btnEl);
-  msgEl.appendChild(avatarEl);
-  msgEl.appendChild(balaoEl);
-
-  const chat = document.getElementById('chat-msgs');
-  if(chat) {
-    chat.appendChild(msgEl);
+    chat.appendChild(pergEl);
     chat.scrollTop = chat.scrollHeight;
-    try { localStorage.setItem(chaveAviso, '1'); } catch(e) {}
+  } else {
+    // Sem pendência de combustível — mostra relatório direto
+    _exibirRelatorioSemana(toStr(inicioSemana), toStr(fimSemana), 'semana que passou');
   }
 }
 
