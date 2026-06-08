@@ -80,6 +80,7 @@ _UUID_RE = _re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-
 def _valid_uuid(v: str) -> bool:
     return bool(v and _UUID_RE.match(str(v).strip()))
 
+# Rate limiting por motorista_id (em memória por worker)
 _chat_rate: dict = {}
 def _check_rate(mid: str, max_per_min: int = 60) -> bool:
     agora = _time.time()
@@ -88,7 +89,34 @@ def _check_rate(mid: str, max_per_min: int = 60) -> bool:
         return False
     hist.append(agora)
     _chat_rate[mid] = hist
+    # Limpa entradas antigas a cada 1000 requests (evita crescimento ilimitado)
+    if len(_chat_rate) > 1000:
+        cutoff = agora - 120
+        _chat_rate.clear()
     return True
+
+# Cache simples em memória com TTL (evita queries repetidas ao Supabase)
+_cache: dict = {}
+def _cache_get(key: str):
+    entry = _cache.get(key)
+    if entry and _time.time() - entry["ts"] < entry["ttl"]:
+        return entry["val"]
+    return None
+
+def _cache_set(key: str, val, ttl: int = 30):
+    _cache[key] = {"val": val, "ts": _time.time(), "ttl": ttl}
+    # Limpa cache quando cresce demais
+    if len(_cache) > 5000:
+        cutoff = _time.time()
+        for k in list(_cache.keys()):
+            if cutoff - _cache[k]["ts"] > _cache[k]["ttl"] * 2:
+                del _cache[k]
+
+def _cache_del(prefix: str):
+    """Invalida entradas de cache com esse prefixo."""
+    for k in list(_cache.keys()):
+        if k.startswith(prefix):
+            del _cache[k]
 
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
 
@@ -139,7 +167,7 @@ def criar_motorista(m: Motorista):
     return res.data
 
 @app.post("/upsert-motorista")
-def upsert_motorista(dados: dict = Body(...)):
+async def upsert_motorista(dados: dict = Body(...)):
     uid = dados.get("id")
     nome = dados.get("nome", "Usuário")
     if not _valid_uuid(uid):
@@ -183,7 +211,7 @@ def upsert_motorista(dados: dict = Body(...)):
         return {"ok": True, "meta_diaria": 150, "comb_diario": None, "is_new": False, "setup_completo": True}
 
 @app.post("/completar-setup")
-def completar_setup(dados: dict = Body(...)):
+async def completar_setup(dados: dict = Body(...)):
     """Marca setup como completo e salva dados coletados pelo Gestor."""
     uid = dados.get("id")
     if not _valid_uuid(uid):
@@ -202,7 +230,7 @@ def completar_setup(dados: dict = Body(...)):
         return {"ok": False, "erro": str(e)}
 
 @app.post("/meta-diaria/{motorista_id}")
-def salvar_meta_diaria(motorista_id: str, body: dict = Body(...)):
+async def salvar_meta_diaria(motorista_id: str, body: dict = Body(...)):
     nova_meta = body.get("meta")
     novo_comb = body.get("comb_diario")  # opcional
     try:
@@ -216,7 +244,7 @@ def salvar_meta_diaria(motorista_id: str, body: dict = Body(...)):
         return {"ok": False, "erro": "Erro interno"}
 
 @app.get("/meta-diaria/{motorista_id}")
-def buscar_meta_diaria(motorista_id: str):
+async def buscar_meta_diaria(motorista_id: str):
     try:
         res = supabase.table("motoristas").select("meta_diaria,comb_diario").eq("id", motorista_id).execute()
         meta = res.data[0].get("meta_diaria", 150) if res.data else 150
@@ -295,10 +323,14 @@ def get_turnos(motorista_id: str):
         return []
 
 @app.get("/resumo/{motorista_id}")
-def resumo(motorista_id: str, mes: Optional[int] = None, ano: Optional[int] = None):
+async def resumo(motorista_id: str, mes: Optional[int] = None, ano: Optional[int] = None):
+    if not _valid_uuid(motorista_id): return {"erro": "ID inválido"}
     hoje = hoje_brasil()
     mes = mes or hoje.month
     ano = ano or hoje.year
+    _cache_key = f"resumo:{motorista_id}:{mes}:{ano}"
+    _cached = _cache_get(_cache_key)
+    if _cached: return _cached
     inicio = f"{ano}-{mes:02d}-01"
     if mes == 12:
         fim = f"{ano+1}-01-01"
@@ -330,7 +362,7 @@ def resumo(motorista_id: str, mes: Optional[int] = None, ano: Optional[int] = No
 
 
 @app.get("/historico-semana/{motorista_id}")
-def historico_semana(motorista_id: str):
+async def historico_semana(motorista_id: str):
     """Retorna média de faturamento por dia da semana (últimos 45 dias), excluindo outliers."""
     import datetime as _dt
     hoje = hoje_brasil()
@@ -417,7 +449,7 @@ def historico_semana(motorista_id: str):
 
 
 @app.get("/lancamentos-futuros/{motorista_id}")
-def lancamentos_futuros(motorista_id: str):
+async def lancamentos_futuros(motorista_id: str):
     """Retorna lançamentos do próximo mês (renda extra prevista)"""
     import datetime as _dt
     hoje = hoje_brasil()
@@ -559,23 +591,27 @@ async def webhook_whatsapp(req: Request):
 
 
 @app.get("/contas/{motorista_id}")
-def listar_contas(motorista_id: str):
+async def listar_contas(motorista_id: str):
     if not _valid_uuid(motorista_id): return []
+    _cached = _cache_get(f"contas:{motorista_id}")
+    if _cached is not None: return _cached
     res = supabase.table("contas").select("*").eq("motorista_id", motorista_id).order("vencimento").execute()
     return res.data
 
 @app.post("/contas")
-def criar_conta(c: dict = Body(...)):
+async def criar_conta(c: dict = Body(...)):
     res = supabase.table("contas").insert(c).execute()
+    _cache_del(f"contas:{c.get('motorista_id','')}")
+    _cache_del(f"resumo:{c.get('motorista_id','')}")
     return res.data
 
 @app.patch("/contas/{conta_id}")
-def atualizar_conta(conta_id: str, dados: dict = Body(...)):
+async def atualizar_conta(conta_id: str, dados: dict = Body(...)):
     res = supabase.table("contas").update(dados).eq("id", conta_id).execute()
     return res.data
 
 @app.delete("/contas/{conta_id}")
-def deletar_conta(conta_id: str):
+async def deletar_conta(conta_id: str):
     supabase.table("contas").delete().eq("id", conta_id).execute()
     return {"ok": True}
 
@@ -1665,7 +1701,7 @@ Quando analisa situação geral:
     GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
     result = {}
     modelos = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
-    async with httpx.AsyncClient(timeout=45) as client:
+    async with httpx.AsyncClient(timeout=35) as client:
         for tentativa in range(3):
             modelo_atual = modelos[min(tentativa, len(modelos)-1)]
             try:
@@ -2485,7 +2521,7 @@ async def _debug_chat_impl(mid: str):
 # ── COMPROMISSOS DO PLANO ────────────────────────────────────────────────────
 # Salva metas específicas por dia que o motorista se comprometeu a cumprir
 @app.post("/plano-compromisso")
-def salvar_compromisso(dados: dict = Body(...)):
+async def salvar_compromisso(dados: dict = Body(...)):
     """Salva meta diária comprometida pelo motorista (ex: 'vou fazer 600 na sexta')."""
     mid = dados.get("motorista_id")
     compromissos = dados.get("compromissos", [])  # [{data, meta_bruta, nota}]
@@ -2509,7 +2545,7 @@ def salvar_compromisso(dados: dict = Body(...)):
         return {"ok": False, "erro": str(e)}
 
 @app.get("/plano-compromisso/{mid}")
-def buscar_compromissos(mid: str):
+async def buscar_compromissos(mid: str):
     """Retorna compromissos dos próximos 14 dias + cruzado com o que foi feito."""
     import datetime as _dt
     hoje = hoje_brasil()
@@ -2561,7 +2597,7 @@ def buscar_compromissos(mid: str):
 
 # ── PLANO ATIVO (persiste entre sessões até o objetivo ser cumprido) ──────────
 @app.post("/plano-ativo")
-def salvar_plano_ativo(dados: dict = Body(...)):
+async def salvar_plano_ativo(dados: dict = Body(...)):
     """Salva o plano completo — sobrevive entre sessões até o objetivo ser atingido."""
     mid = dados.get("motorista_id")
     if not mid:
@@ -2622,7 +2658,7 @@ async def limpar_duplicatas(dados: dict = Body(...)):
 
 
 @app.get("/plano-ativo/{mid}")
-def buscar_plano_ativo(mid: str):
+async def buscar_plano_ativo(mid: str):
     """Retorna o plano ativo + progresso real dos compromissos."""
     import datetime as _dt
     try:
