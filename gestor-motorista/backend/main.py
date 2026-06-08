@@ -1759,25 +1759,27 @@ Quando analisa situação geral:
                         _vfiltro_ng = _a_ng.get("valor_filtro")
                         _pend_ng2 = [c for c in _matches_ng if not c.get("pago")]
                         _alvo_ng2 = None
-                        # 1) Prioridade: valor_filtro (ex: "o tênis de 500")
+                        print(f"DEBUG editar_vencimento: desc={_a_ng.get('descricao')} valor_filtro={_vfiltro_ng} venc_alvo={_venc_ng2} novo={_novo_ng} pendentes={[(c['descricao'],c.get('valor'),c['vencimento']) for c in _pend_ng2]}")
                         if _vfiltro_ng and _pend_ng2:
                             try:
                                 _vf = float(_vfiltro_ng)
                                 _por_valor = [c for c in _pend_ng2 if abs(float(c.get("valor",0) or 0) - _vf) < 1]
                                 _alvo_ng2 = _por_valor[0] if _por_valor else None
-                            except: pass
-                        # 2) Fallback: vencimento_alvo
+                                print(f"DEBUG valor_filtro={_vf} achou={_alvo_ng2['id'] if _alvo_ng2 else 'NENHUM'}")
+                            except Exception as _ef: print(f"DEBUG vf erro: {_ef}")
                         if not _alvo_ng2 and _venc_ng2 and _pend_ng2:
                             try:
                                 from datetime import date as _dn2; _vd2=_dn2.fromisoformat(str(_venc_ng2))
                                 _pend_ng2.sort(key=lambda c: abs((_dn2.fromisoformat(c["vencimento"])-_vd2).days))
                                 _alvo_ng2 = _pend_ng2[0]
+                                print(f"DEBUG venc_alvo fallback={_alvo_ng2['id']}")
                             except: pass
-                        # 3) Fallback final: a mais próxima do vencimento
                         if not _alvo_ng2 and _pend_ng2:
                             _pend_ng2.sort(key=lambda c: c.get("vencimento",""))
                             _alvo_ng2 = _pend_ng2[0]
+                            print(f"DEBUG fallback final={_alvo_ng2['id']} venc={_alvo_ng2['vencimento']}")
                         if _alvo_ng2:
+                            print(f"DEBUG SALVANDO id={_alvo_ng2['id']} desc={_alvo_ng2['descricao']} val={_alvo_ng2.get('valor')} novo_venc={_novo_ng}")
                             supabase.table("contas").update({"vencimento": str(_novo_ng)}).eq("id", _alvo_ng2["id"]).execute()
                             acoes_executadas.append("conta_editada")
             except Exception as _eng_e:
