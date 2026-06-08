@@ -1078,6 +1078,7 @@ async function salvarMetaMensal(){
   toast('Meta mensal salva 💰');
 }
 function renderMetaMensal(){
+  const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const el = document.getElementById('mm-display');
   if(!el) return;
   if(!META_MENSAL || META_MENSAL <= 0){
@@ -1130,7 +1131,6 @@ function renderMetaMensal(){
     ? window._contas.filter(c=>!c.pago).reduce((s,c)=>s+Math.max(0,parseFloat(c.valor)-parseFloat(c.valor_pago||0)),0)
     : 0;
 
-  const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   let pctCombMM = 25;
   try { pctCombMM = parseFloat(localStorage.getItem('pct_comb_'+(window.MID||''))||'25'); } catch(e){}
   const combEstMM = META_MENSAL * (pctCombMM / 100);
