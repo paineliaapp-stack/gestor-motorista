@@ -1577,7 +1577,7 @@ Quando analisa situação geral:
                     f"https://generativelanguage.googleapis.com/v1beta/models/{modelo_atual}:generateContent?key={GEMINI_KEY}",
                     json={"contents": msgs, "generationConfig": {
                         "responseMimeType": "application/json",
-                        "maxOutputTokens": 2048,
+                        "maxOutputTokens": 4096,
                         "temperature": 0.1
                     }}
                 )
@@ -1648,12 +1648,33 @@ Quando analisa situação geral:
             texto_parse = texto_parse[start:end]
         parsed = json.loads(texto_parse)
         lista_acoes = parsed.get("acoes", [])
-        texto = parsed.get("resposta", "OK")
-        if not texto or texto == "OK":
-            texto = "Entendi! Me fala mais detalhes."
+        texto = parsed.get("resposta", "")
+        if not texto or texto.strip() in ("OK", "ok", "", "Entendido.", "Entendido"):
+            # Se há ações, gera confirmação automática descrevendo o que foi feito
+            if lista_acoes:
+                partes = []
+                for _a in lista_acoes:
+                    if isinstance(_a, dict):
+                        _ac = _a.get("acao","")
+                        if _ac == "editar_conta":
+                            _desc = _a.get("descricao","conta")
+                            _campo = _a.get("campo","")
+                            _val = _a.get("novo_valor","")
+                            if _campo == "vencimento":
+                                partes.append(f"{_desc} → {_val}")
+                            else:
+                                partes.append(f"{_desc} {_campo} → {_val}")
+                        elif _ac == "registrar_lancamento":
+                            partes.append(f"R${_a.get('valor',0)} registrado")
+                if partes:
+                    texto = "✅ " + " | ".join(partes)
+                else:
+                    texto = "✅ Feito!"
+            else:
+                texto = "Pode repetir? Não entendi bem o que você quis dizer."
         print(f"DEBUG parse OK: acoes={lista_acoes}")
     except Exception as e:
-        print(f"ERRO parse JSON Gemini: {e} | texto_raw: {repr(texto[:300])}")
+        print(f"ERRO parse JSON Gemini: {e} | texto_raw_FULL: {repr(texto[:2000])}")
         lista_acoes = []
         # Tenta extrair só o campo "resposta" com regex como fallback
         import re as _re
@@ -1663,7 +1684,7 @@ Quando analisa situação geral:
         elif not texto.startswith("{") and not texto.startswith("["):
             pass  # texto já é texto puro, mantém
         else:
-            texto = "Entendi! Me fala mais detalhes."
+            texto = "Pode repetir? Não entendi bem."
     print(f"DEBUG lista_acoes: {repr(lista_acoes)}")
     linhas_json = lista_acoes  # já são dicts, não precisa serializar
     acoes_executadas_count = 0
