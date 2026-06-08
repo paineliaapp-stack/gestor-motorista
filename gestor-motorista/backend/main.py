@@ -2548,6 +2548,7 @@ async def gerar_relatorio_pdf(dados: dict = Body(...)):
         RENDA_EXTRA = ['seguro_desemprego','freelance','aluguel_recebido','venda','emprestimo_recebido','bonus','renda_extra']
         ganhos = sum(float(l["valor"]) for l in lancs if l["tipo"] == "ganho")
         ganhos_app = sum(float(l["valor"]) for l in lancs if l["tipo"] == "ganho" and (l.get("plataforma","") or "") not in RENDA_EXTRA)
+        ganhos_extra = sum(float(l["valor"]) for l in lancs if l["tipo"] == "ganho" and (l.get("plataforma","") or "") in RENDA_EXTRA)
         despesas = sum(float(l["valor"]) for l in lancs if l["tipo"] == "despesa")
         lucro = ganhos - despesas
         dias_trab = len(set(l["data"] for l in lancs if l["tipo"] == "ganho"))
@@ -2658,6 +2659,13 @@ async def gerar_relatorio_pdf(dados: dict = Body(...)):
             [Paragraph("■ Média/dia (apps)", normal_style),
              Paragraph(f"<font color='#D97706'><b>{fmt(media_dia)}</b></font>", normal_style), "", ""],
         ]
+        if ganhos_app > 0 and ganhos_extra > 0:
+            resumo_data += [
+                [Paragraph("  ↳ Apps (Uber/99/inDrive)", normal_style),
+                 Paragraph(f"<font color='#16A34A'>{fmt(ganhos_app)}</font>", normal_style), "", ""],
+                [Paragraph("  ↳ Renda extra", normal_style),
+                 Paragraph(f"<font color='#6366F1'>{fmt(ganhos_extra)}</font>", normal_style), "", ""],
+            ]
         t = Table(resumo_data, colWidths=[52*mm, 42*mm, 42*mm, 44*mm])
         t.setStyle(TableStyle([
             ("BACKGROUND", (0,0), (-1,0), CINZA2),
