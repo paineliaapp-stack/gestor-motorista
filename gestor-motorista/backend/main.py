@@ -1241,6 +1241,7 @@ async def chat(dados: dict = Body(...)):
     motorista_id = dados.get("motorista_id") or dados.get("mid")
     mensagem = dados.get("mensagem", "")
     historico = dados.get("historico", [])
+    semana_relatorio = dados.get("semana_relatorio")  # {ini, fim} ou None
 
     # Busca contexto completo do motorista
     import datetime
@@ -1383,7 +1384,14 @@ async def chat(dados: dict = Body(...)):
     else:
         renda_extra_ctx = "\nRENDA EXTRA ESSA SEMANA: nenhuma registrada."
 
-    contexto = f"""Você é o GESTOR FINANCEIRO do motorista no Painel.IA. Hoje: {hoje_str}.
+    # Monta aviso de contexto semanal se necessário
+    _semana_ctx_str = ""
+    if semana_relatorio and semana_relatorio.get("ini") and semana_relatorio.get("fim"):
+        _sem_ini = semana_relatorio["ini"]
+        _sem_fim = semana_relatorio["fim"]
+        _semana_ctx_str = f"\n\n⚠️ CONTEXTO ESPECIAL: Esta conversa é sobre o RELATÓRIO DA SEMANA {_sem_ini} a {_sem_fim}. Ao responder perguntas sobre ganhos, despesas, dias trabalhados ou qualquer dado dessa semana, use SOMENTE os lançamentos desse intervalo de datas — não da semana atual (que começa em {hoje_str})."
+
+    contexto = f"""Você é o GESTOR FINANCEIRO do motorista no Painel.IA. Hoje: {hoje_str}.{_semana_ctx_str}
 
 ESTILO — REGRAS RÍGIDAS:
 - Máximo 2 frases por resposta. Se precisar de mais, mande em 2 mensagens separadas.

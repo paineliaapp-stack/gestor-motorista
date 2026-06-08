@@ -2065,6 +2065,11 @@ async function resumoSemanal(){
 
 ${lucro>0?'Boa semana! Continue assim 🚀':'Semana difícil, mas você está no caminho! 💪'}`;
     appendDashMsg('assistant', msg);
+    // Salva contexto de semana — válido por 24h para o chat entender respostas posteriores
+    try {
+      const _ctxSem = {ini: iniStr, fim: fimStr, expira: Date.now() + 24*60*60*1000};
+      localStorage.setItem('relatorio_semana_ctx_'+(MID||''), JSON.stringify(_ctxSem));
+    } catch(e) {}
   } catch(e){}
 }
 
@@ -2821,8 +2826,11 @@ async function init(){
 
     if(hist.length){
       _lastMsgDate = null;
-      // Filtra mensagens de onboarding antigas (pergunta de capacidade) e deduplica por conteúdo+data
-      const MSGS_FILTRAR = [
+      // Na segunda-feira, filtra também mensagens de relatório semanal da semana passada
+      const _agora = new Date(Date.now() - 3*60*60*1000);
+      const _ehSegunda = _agora.getDay() === 1;
+      // Filtra mensagens de onboarding antigas e deduplica por conteúdo+data
+      const MSGS_FILTRAR_BASE = [
         'quanto você consegue faturar num dia bom',
         'num dia normal de trabalho, quanto você costuma',
         'Não entendi bem. Me manda só o número',
@@ -2842,6 +2850,18 @@ async function init(){
         'Se trabalhar normal',
         'Deixa eu montar o plano',
       ];
+      const MSGS_FILTRAR_SEGUNDA = [
+        'você trabalhou',
+        'essa semana',
+        'semana passada',
+        'dias trabalhados',
+        'Sim, vou lançar',
+        'meus dados estão completos',
+        'Antes de te mostrar',
+        'relatorio da semana',
+        'relatório da semana',
+      ];
+      const MSGS_FILTRAR = _ehSegunda ? [...MSGS_FILTRAR_BASE, ...MSGS_FILTRAR_SEGUNDA] : MSGS_FILTRAR_BASE;
       const vistas = new Set();
       const histFiltrado = hist.filter(h => {
         if(MSGS_FILTRAR.some(f => (h.content||'').includes(f))) return false;
@@ -2855,13 +2875,18 @@ async function init(){
       if(histFiltrado.length < hist.length){
         try{ localStorage.setItem(hKeyReal, JSON.stringify(histFiltrado)); }catch{}
       }
-      histFiltrado.forEach(h=>{
-        try{
-          if(h.date && h.date !== _lastMsgDate) _lastMsgDate = null;
-          appendMsg(h.role, h.content, true, h.date);
-        }catch(e){}
-      });
-      setTimeout(()=>{ const b=document.getElementById('chat-msgs'); if(b) b.scrollTop=b.scrollHeight; },150);
+      if(histFiltrado.length > 0){
+        histFiltrado.forEach(h=>{
+          try{
+            if(h.date && h.date !== _lastMsgDate) _lastMsgDate = null;
+            appendMsg(h.role, h.content, true, h.date);
+          }catch(e){}
+        });
+        setTimeout(()=>{ const b=document.getElementById('chat-msgs'); if(b) b.scrollTop=b.scrollHeight; },150);
+      } else {
+        // Histórico ficou vazio após filtro (ex: segunda-feira) — mostra boas-vindas
+        iniciarMsgBoasVindas();
+      }
     } else {
       iniciarMsgBoasVindas();
     }
@@ -3871,10 +3896,24 @@ async function sendChat() {
   inp.disabled = true;
 
   try {
+    // Verifica se há contexto de relatório semanal ativo (válido por 24h)
+    let _semanaCtx = null;
+    try {
+      const _ctxRaw = localStorage.getItem('relatorio_semana_ctx_'+(MID||window.MID||''));
+      if (_ctxRaw) {
+        const _ctx = JSON.parse(_ctxRaw);
+        if (_ctx.expira && Date.now() < _ctx.expira) {
+          _semanaCtx = {ini: _ctx.ini, fim: _ctx.fim};
+        } else {
+          localStorage.removeItem('relatorio_semana_ctx_'+(MID||window.MID||''));
+        }
+      }
+    } catch(e) {}
+
     const res = await fetch(API + '/chat', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({mid: MID||window.MID, mensagem: msg, historico: chatHistory.slice(-24)})
+      body: JSON.stringify({mid: MID||window.MID, mensagem: msg, historico: chatHistory.slice(-24), semana_relatorio: _semanaCtx})
     });
     const data = await res.json();
     document.getElementById('typing-indicator')?.remove();
