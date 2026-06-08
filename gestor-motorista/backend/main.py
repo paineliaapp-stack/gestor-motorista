@@ -2132,7 +2132,27 @@ Quando analisa situação geral:
                             supabase.table("contas").update({"valor": float(novo_valor)}).eq("id", pendentes2[0]["id"]).execute()
                         acoes_executadas.append("conta_editada")
                 elif matches2:
-                    alvo2 = matches2[0]
+                    pendentes2b = [c for c in matches2 if not c.get("pago")]
+                    lista2b = pendentes2b if pendentes2b else matches2
+                    alvo2 = None
+                    valor_filtro2 = acao.get("valor_filtro")
+                    venc_alvo2 = acao.get("vencimento_alvo")
+                    if valor_filtro2:
+                        try:
+                            vf2 = float(valor_filtro2)
+                            por_valor2 = [c for c in lista2b if abs(float(c.get("valor",0) or 0) - vf2) < 1]
+                            alvo2 = por_valor2[0] if por_valor2 else None
+                        except: pass
+                    if not alvo2 and venc_alvo2:
+                        try:
+                            from datetime import date as _dv2
+                            alvo_dt2b = _dv2.fromisoformat(str(venc_alvo2))
+                            lista2b_s = sorted(lista2b, key=lambda c: abs((_dv2.fromisoformat(c["vencimento"]) - alvo_dt2b).days))
+                            alvo2 = lista2b_s[0]
+                        except: pass
+                    if not alvo2:
+                        lista2b.sort(key=lambda c: c.get("vencimento",""))
+                        alvo2 = lista2b[0]
                     if campo == "valor":
                         supabase.table("contas").update({"valor": float(novo_valor)}).eq("id", alvo2["id"]).execute()
                     elif campo == "vencimento":
