@@ -1080,7 +1080,19 @@ function renderMetaMensal(){
   const agora = new Date(Date.now() - 3*60*60*1000);
   const diaAtual = agora.getUTCDate();
   const diasMes = new Date(agora.getUTCFullYear(), agora.getUTCMonth()+1, 0).getDate();
-  const diasRestantes = Math.max(1, diasMes - diaAtual);
+  // Dias restantes inteligente:
+  // Se hoje já tem ganho registrado = dia em andamento, não conta como disponível completo
+  // Se hoje não tem nada = dia ainda disponível, conta normalmente
+  const hojeStr2 = agora.toISOString().slice(0,10);
+  const temGanhoHoje = (todosLanc||[]).some(l => l.tipo==='ganho' && l.data === hojeStr2);
+  // Se já faturou hoje: dias restantes = dias até fim do mês (excluindo hoje)
+  // Se não faturou nada hoje: dias restantes = incluindo hoje
+  const diasRestantes = temGanhoHoje
+    ? Math.max(1, diasMes - diaAtual)      // hoje em andamento, conta só os próximos
+    : Math.max(1, diasMes - diaAtual + 1); // hoje ainda vazio, inclui hoje
+  const diasLabel = temGanhoHoje
+    ? `${diasRestantes}d restantes (hoje em andamento)`
+    : `${diasRestantes}d restantes · já fez ${fmt(faturadoAte)}`;
   const metaPorDia = META_MENSAL / diasMes;
 
   // Faturamento do mês atual — vem do loadDash (sempre atualizado)
@@ -1137,7 +1149,7 @@ function renderMetaMensal(){
     <div style="background:rgba(240,180,41,.08);border:1px solid rgba(240,180,41,.25);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
       <div>
         <div style="font-size:10px;color:rgba(240,180,41,.8);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px">🎯 Meta/dia a partir de hoje</div>
-        <div style="font-size:10px;color:var(--mt)">${diasRestantes}d restantes · já fez ${fmt(faturadoAte)}</div>
+        <div style="font-size:10px;color:var(--mt)">${diasLabel}</div>
       </div>
       <div style="font-size:22px;font-weight:700;color:var(--am);font-family:'Barlow Condensed',sans-serif">${fmt(necessarioPorDia)}</div>
     </div>` : `
