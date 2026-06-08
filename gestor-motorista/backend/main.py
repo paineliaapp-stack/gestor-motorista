@@ -1615,11 +1615,10 @@ Quando analisa situação geral:
 
     GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
     result = {}
-    # Só gemini-2.5-flash — modelos 1.5 e 2.0 foram descontinuados pelo Google
-    modelos = ["gemini-2.5-flash"]
+    modelos = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
     async with httpx.AsyncClient(timeout=45) as client:
         for tentativa in range(3):
-            modelo_atual = modelos[0]
+            modelo_atual = modelos[min(tentativa, len(modelos)-1)]
             try:
                 resp = await client.post(
                     f"https://generativelanguage.googleapis.com/v1beta/models/{modelo_atual}:generateContent?key={GEMINI_KEY}",
@@ -1631,14 +1630,18 @@ Quando analisa situação geral:
                 )
                 result = resp.json()
                 err_msg = result.get("error",{}).get("message","")
+                err_code = result.get("error",{}).get("code", 0)
                 if "error" not in result:
+                    print(f"Gemini OK com modelo {modelo_atual} na tentativa {tentativa+1}")
                     break
-                if any(x in err_msg for x in ["high demand","overloaded","quota","RESOURCE_EXHAUSTED","503","502"]):
+                print(f"Gemini erro (tentativa {tentativa+1}, modelo {modelo_atual}): [{err_code}] {err_msg}")
+                if any(x in err_msg for x in ["high demand","overloaded","quota","RESOURCE_EXHAUSTED","503","502","429"]) or err_code in [429, 503, 502]:
                     wait = (tentativa+1)*5
-                    print(f"Gemini ocupado (tentativa {tentativa+1}), aguardando {wait}s...")
+                    print(f"Gemini ocupado, aguardando {wait}s...")
                     await __import__("asyncio").sleep(wait)
                 else:
-                    break
+                    # Erro diferente — tenta próximo modelo
+                    await __import__("asyncio").sleep(2)
             except Exception as e:
                 print(f"Timeout/erro na tentativa {tentativa+1}: {e}")
                 await __import__("asyncio").sleep(5)
