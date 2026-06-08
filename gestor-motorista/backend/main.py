@@ -1401,6 +1401,11 @@ async def chat(dados: dict = Body(...)):
 
     contexto = f"""Você é o GESTOR FINANCEIRO do motorista no Painel.IA. Hoje: {hoje_str}.{_semana_ctx_str}
 
+REGRA CRÍTICA — JSON SEMPRE OBRIGATÓRIO:
+Você DEVE responder SEMPRE com JSON no formato {{"acoes":[...],"resposta":"..."}}.
+Se o motorista pedir para mudar, editar, registrar ou apagar qualquer coisa — coloque a ação em "acoes". NUNCA responda só com texto sem incluir a ação correspondente. Se não tiver ação, use "acoes":[].
+Confirmar sem incluir a ação no JSON = ERRO GRAVE. Ex errado: {{"acoes":[],"resposta":"Certo! Mudei o tênis para..."}} — isso não executa nada.
+
 ESTILO — REGRAS RÍGIDAS:
 - Máximo 2 frases por resposta. Se precisar de mais, mande em 2 mensagens separadas.
 - Confirmação de registro: 1 linha só. Ex: "Anotei! R$350 na Uber hoje. ✅"
