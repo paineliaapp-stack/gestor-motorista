@@ -1630,7 +1630,7 @@ Quando analisa situação geral:
         parts = candidates[0].get("content", {}).get("parts", [])
         texto = parts[0].get("text","") if parts else ""
     
-    print(f"DEBUG texto len: {len(texto)} | inicio: {repr(texto[:100])}")
+    print(f"DEBUG texto len: {len(texto)} | FULL_RESPONSE: {repr(texto[:1000])}")
     if not texto:
         print(f"DEBUG result completo: {repr(str(result)[:500])}")
         return {"resposta": "Não entendi. Pode repetir de outro jeito?", "acao": None}
