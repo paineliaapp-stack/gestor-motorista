@@ -1750,7 +1750,8 @@ Quando analisa situação geral:
     if "error" in result:
         err_detail = result['error'].get('message','sem detalhes')
         print(f"GEMINI API ERROR: {err_detail}")
-        return {"resposta": f"Não consegui processar agora. Tente de novo em alguns segundos.", "acao": None}
+        log_erro("gemini_falhou", erro=err_detail)
+        return {"resposta": f"Erro Gemini: {err_detail[:120]}", "acao": None}
 
     candidates = result.get("candidates", [])
     print(f"DEBUG candidates count: {len(candidates)}")
