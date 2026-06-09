@@ -5446,7 +5446,53 @@ function tourProximo(){
   else _renderTourPasso();
 }
 
-function tourPular(){ tourFinalizar(); }
+function tourPular(){
+  // Se pulou antes de chegar no passo de instalação, mostra o mini-modal de instalar
+  const installStepIdx = _tourPassos.findIndex(p=>p.installBtn);
+  const isStandalone = window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;
+  if(!isStandalone && _tourIdx < installStepIdx){
+    tourFinalizar();
+    _mostrarMiniInstall();
+  } else {
+    tourFinalizar();
+  }
+}
+
+function _mostrarMiniInstall(){
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid=/Android/.test(navigator.userAgent);
+  if(!isIOS && !isAndroid) return; // desktop: não precisa
+  const jaViu=localStorage.getItem('painel_install_shown');
+  if(jaViu) return;
+  localStorage.setItem('painel_install_shown','1');
+
+  const modal=document.createElement('div');
+  modal.id='mini-install-modal';
+  modal.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center';
+  const instrucoes = isIOS
+    ? `<div style="background:rgba(255,255,255,.04);border-radius:10px;padding:11px 13px;margin-bottom:7px;display:flex;gap:10px;align-items:center"><div style="font-size:16px">1️⃣</div><div style="font-size:13px;color:#e2e8f0">Toque no botão <strong>compartilhar ⎙</strong> na barra do Safari</div></div>
+       <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:11px 13px;margin-bottom:7px;display:flex;gap:10px;align-items:center"><div style="font-size:16px">2️⃣</div><div style="font-size:13px;color:#e2e8f0">Role e toque em <strong>"Adicionar à Tela de Início"</strong></div></div>
+       <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:11px 13px;display:flex;gap:10px;align-items:center"><div style="font-size:16px">3️⃣</div><div style="font-size:13px;color:#e2e8f0">Toque em <strong>"Adicionar"</strong> no canto superior direito</div></div>`
+    : `<div style="background:rgba(255,255,255,.04);border-radius:10px;padding:11px 13px;margin-bottom:7px;display:flex;gap:10px;align-items:center"><div style="font-size:16px">1️⃣</div><div style="font-size:13px;color:#e2e8f0">Toque nos <strong>3 pontinhos ⋮</strong> no topo do Chrome</div></div>
+       <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:11px 13px;margin-bottom:7px;display:flex;gap:10px;align-items:center"><div style="font-size:16px">2️⃣</div><div style="font-size:13px;color:#e2e8f0">Toque em <strong>"Adicionar à tela inicial"</strong></div></div>
+       <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:11px 13px;display:flex;gap:10px;align-items:center"><div style="font-size:16px">3️⃣</div><div style="font-size:13px;color:#e2e8f0">Toque em <strong>"Adicionar"</strong> para confirmar</div></div>`;
+  const installBtnHtml = (!isIOS && _installPrompt)
+    ? `<button onclick="document.getElementById('mini-install-modal').remove();instalarApp()" style="width:100%;margin-bottom:8px;padding:12px;border-radius:11px;border:none;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">📲 Instalar agora com 1 toque</button>`
+    : '';
+  modal.innerHTML=`
+    <div style="background:#1e1e2e;border-radius:20px 20px 0 0;padding:22px;width:100%;max-width:420px;border:1px solid rgba(255,255,255,.1)">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:30px;margin-bottom:6px">📲</div>
+        <div style="font-weight:700;font-size:16px;color:#fff">Salve o app no celular</div>
+        <div style="font-size:12px;color:#64748b;margin-top:4px">Abre com 1 toque, sem precisar do navegador</div>
+      </div>
+      ${instrucoes}
+      ${installBtnHtml}
+      <button onclick="document.getElementById('mini-install-modal').remove()" style="width:100%;margin-top:12px;padding:12px;border-radius:11px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#64748b;font-size:13px;cursor:pointer;font-family:inherit">Agora não</button>
+    </div>`;
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
 
 function tourFinalizar(){
   ['tour-overlay','tour-highlight','tour-card'].forEach(id=>{document.getElementById(id).style.display='none';});
