@@ -134,6 +134,44 @@ def _cache_del(prefix: str):
             del _cache[k]
 
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+# Cliente separado com service_role para operações admin (bypassa RLS)
+_supabase_url = os.getenv("SUPABASE_URL", "")
+_supabase_service_key = os.getenv("SUPABASE_KEY", "")
+
+from fastapi import HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import httpx as _httpx_auth
+
+_bearer_scheme = HTTPBearer(auto_error=False)
+
+async def get_uid_from_token(
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme)
+) -> str:
+    """Verifica JWT do Supabase e retorna o uid do usuário autenticado."""
+    if not credentials or not credentials.credentials:
+        raise HTTPException(status_code=401, detail="Token não fornecido")
+    token = credentials.credentials
+    try:
+        async with _httpx_auth.AsyncClient(timeout=5) as c:
+            r = await c.get(
+                f"{_supabase_url}/auth/v1/user",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "apikey": _supabase_service_key,
+                }
+            )
+        if r.status_code != 200:
+            raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+        data = r.json()
+        uid = data.get("id")
+        if not uid:
+            raise HTTPException(status_code=401, detail="Usuário não encontrado")
+        return uid
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Erro verificação token: {e}")
+        raise HTTPException(status_code=401, detail="Erro ao verificar token")
 
 class Motorista(BaseModel):
     nome: str
@@ -194,8 +232,8 @@ def criar_motorista(m: Motorista):
     return res.data
 
 @app.post("/upsert-motorista")
-async def upsert_motorista(dados: dict = Body(...)):
-    uid = dados.get("id")
+async def upsert_motorista(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    uid = uid  # usa uid do token, ignora body
     nome = dados.get("nome", "Usuário")
     if not _valid_uuid(uid):
         return {"ok": False, "erro": "ID inválido"}
@@ -311,7 +349,8 @@ def buscar_motorista(telefone: str):
     return res.data[0]
 
 @app.post("/lancamentos")
-def criar_lancamento(l: Lancamento):
+async def criar_lancamento(l: Lancamento, uid: str = Depends(get_uid_from_token)):
+    if l.motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     dados = l.dict()
     dados["data"] = str(dados.get("data") or hoje_brasil())
     res = supabase.table("lancamentos").insert(dados).execute()
@@ -353,7 +392,8 @@ def get_turnos(motorista_id: str):
         return []
 
 @app.get("/resumo/{motorista_id}")
-async def resumo(motorista_id: str, mes: Optional[int] = None, ano: Optional[int] = None):
+async def resumo(motorista_id: str, mes: Optional[int] = None, ano: Optional[int] = None, uid: str = Depends(get_uid_from_token)):
+    if motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     if not _valid_uuid(motorista_id): return {"erro": "ID inválido"}
     hoje = hoje_brasil()
     mes = mes or hoje.month
@@ -392,7 +432,8 @@ async def resumo(motorista_id: str, mes: Optional[int] = None, ano: Optional[int
 
 
 @app.get("/historico-semana/{motorista_id}")
-async def historico_semana(motorista_id: str):
+async def historico_semana(motorista_id: str, uid: str = Depends(get_uid_from_token)):
+    if motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     """Retorna média de faturamento por dia da semana (últimos 45 dias), excluindo outliers."""
     import datetime as _dt
     hoje = hoje_brasil()
@@ -621,7 +662,8 @@ async def webhook_whatsapp(req: Request):
 
 
 @app.get("/contas/{motorista_id}")
-async def listar_contas(motorista_id: str):
+async def listar_contas(motorista_id: str, uid: str = Depends(get_uid_from_token)):
+    if motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     if not _valid_uuid(motorista_id): return []
     _cached = _cache_get(f"contas:{motorista_id}")
     if _cached is not None: return _cached
@@ -646,7 +688,8 @@ async def deletar_conta(conta_id: str):
     return {"ok": True}
 
 @app.post("/plano-financeiro")
-async def plano_financeiro(dados: dict = Body(...)):
+async def plano_financeiro(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    if dados.get("motorista_id") != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     """Plano financeiro: Python faz todos os calculos, IA só escreve com empatia."""
     try:
         return await _plano_financeiro_impl(dados)
@@ -1234,7 +1277,10 @@ REGRAS ABSOLUTAS:
         }
     }
 @app.post("/chat-setup")
-async def chat_setup(dados: dict = Body(...)):
+async def chat_setup(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    # Força motorista_id = uid do token
+    dados["motorista_id"] = uid
+    dados["mid"] = uid
     """Chat do onboarding guiado — Gestor coleta dados do novo usuário."""
     import httpx, json as _json
     uid = dados.get("id") or dados.get("motorista_id")
@@ -1365,9 +1411,10 @@ Quando setup_completo for true, a última "resposta" deve ser comemorativa e mot
         return {"resposta": "Não entendi bem. Me conta de novo?", "setup_completo": False}
 
 @app.post("/chat")
-async def chat(dados: dict = Body(...)):
-    _mid_rate = dados.get("mid") or dados.get("motorista_id") or "anon"
-    if not _check_rate(_mid_rate):
+async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    # uid vem do token JWT verificado — ignora qualquer motorista_id do body
+    motorista_id = uid
+    if not _check_rate(motorista_id):
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=429, content={"resposta": "Muitas mensagens. Aguarde um momento.", "acoes": []})
     # Limite de tamanho do histórico — evita payload gigante
@@ -1375,7 +1422,6 @@ async def chat(dados: dict = Body(...)):
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=400, content={"resposta": "Payload muito grande.", "acoes": []})
     import httpx, json
-    motorista_id = dados.get("motorista_id") or dados.get("mid")
     mensagem = str(dados.get("mensagem", ""))[:1000]  # limite 1000 chars
     historico = dados.get("historico", [])
     semana_relatorio = dados.get("semana_relatorio")  # {ini, fim} ou None
@@ -2418,7 +2464,8 @@ async def generic_exception_handler(request, exc):
 
 
 @app.post("/distribuir-ganho")
-async def distribuir_ganho(dados: dict = Body(...)):
+async def distribuir_ganho(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    if dados.get("motorista_id") != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     """
     Distribui um ganho acumulado de vários dias igualmente pelos dias do período.
     Body: { motorista_id, valor, plataforma, data_inicio, data_fim }
@@ -2764,7 +2811,8 @@ async def buscar_plano_ativo(mid: str):
 
 # ─── GERADOR DE PDF MENSAL ─────────────────────────────────────────────────────
 @app.post("/relatorio-pdf")
-async def gerar_relatorio_pdf(dados: dict = Body(...)):
+async def gerar_relatorio_pdf(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    if dados.get("motorista_id") != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     try:
         import io, datetime as _dt
         from reportlab.lib.pagesizes import A4

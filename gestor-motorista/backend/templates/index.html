@@ -1013,6 +1013,15 @@ const _supa = supabase.createClient(
 
 <script>
 try{Chart.register(ChartDataLabels);}catch(e){}const API='https://gestor-motorista-production.up.railway.app';
+
+// Helper global: fetch autenticado — injeta Bearer token em todas as chamadas ao backend
+async function authFetch(url, options={}) {
+  const session = await _supa.auth.getSession();
+  const token = session?.data?.session?.access_token;
+  if(!token) { console.warn('authFetch: sem token'); throw new Error('Não autenticado'); }
+  const headers = { 'Content-Type': 'application/json', ...(options.headers||{}), 'Authorization': 'Bearer '+token };
+  return fetch(url, { ...options, headers });
+}
 // Data atual no horário de Brasília (UTC-3)
 function hojeStr(){const d=new Date(Date.now()-3*60*60*1000);return d.toISOString().slice(0,10);}
 let MID=null;
@@ -1089,7 +1098,7 @@ async function salvarMetaCard(){
   const novaComb = combVal > 0 ? combVal : null;
   const mid = window.MID || window.MOTORISTA_ID || localStorage.getItem('mid');
   try{
-    await fetch(API+'/meta-diaria/'+mid,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({meta:nova, comb_diario:novaComb})});
+    await authFetch(API+'/meta-diaria/'+mid,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({meta:nova, comb_diario:novaComb})});
     window.META_DIARIA = nova;
     localStorage.setItem('meta', nova);
     if(novaComb){ window.COMB_DIARIO = novaComb; localStorage.setItem('comb_diario', novaComb); }
@@ -1117,7 +1126,7 @@ async function salvarMetaMensal(){
   // Salva no banco também — não perde se limpar cache
   try {
     const mid = MID || window.MID;
-    if(mid) await fetch(API+'/meta-mensal/'+mid, {
+    if(mid) await authFetch(API+'/meta-mensal/'+mid, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({meta_mensal: v})
     });
@@ -1697,7 +1706,7 @@ async function abrirConsultorIA(){
   let hist = window._historicoSemana || null;
   if((!hist || !hist.tem_historico) && mid){
     try{
-      const r = await fetch(API+'/historico-semana/'+mid);
+      const r = await authFetch(API+'/historico-semana/'+mid);
       hist = await r.json();
       window._historicoSemana = hist;
     }catch(e){ hist = null; }
@@ -1836,7 +1845,7 @@ async function _executarGeracaoPlano(mid, capMax, box, _tentativa){
   if(box){ box.appendChild(typing); box.scrollTop = box.scrollHeight; }
 
   try {
-    const resp = await fetch(API + '/plano-financeiro', {
+    const resp = await authFetch(API + '/plano-financeiro', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ motorista_id: mid, min_dia: capMin, max_dia: capMax })
@@ -1943,7 +1952,7 @@ async function obFim(){
   const tel=document.getElementById('ob-tel').value.trim();
   document.getElementById('ob-btn-fim').disabled=true;
   try{
-    const r=await fetch(API+'/motoristas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,telefone:tel})});
+    const r=await authFetch(API+'/motoristas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,telefone:tel})});
     const data=await r.json();
     MID=data[0].id;
     // mid agora vem do Google Auth
@@ -2008,7 +2017,7 @@ async function salvar(){
   body.observacao=document.getElementById('f-obs').value||null;
   if(!body.valor||body.valor<=0){toast('Informe um valor válido',false);return}
   try{
-    const r=await fetch(API+'/lancamentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r=await authFetch(API+'/lancamentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(r.ok){
       toast('Lançamento salvo! ✓');
       document.getElementById('f-val').value='';
@@ -2026,7 +2035,7 @@ async function desfazerDistribuicao(ids) {
   try {
     // Deleta cada lançamento diretamente, sem passar pelo Gemini
     await Promise.all(ids.map(id =>
-      fetch(API + '/lancamentos/' + id, {method: 'DELETE'})
+      authFetch(API + '/lancamentos/' + id, {method: 'DELETE'})
     ));
     // Remove a mensagem com o botão desfazer
     document.querySelectorAll('.msg.assistant').forEach(el => {
@@ -2045,7 +2054,7 @@ async function desfazerDistribuicao(ids) {
 async function deletar(id){
   if(!confirm('Deletar este lançamento?'))return;
   try{
-    const r=await fetch(API+'/lancamentos/'+id,{method:'DELETE'});
+    const r=await authFetch(API+'/lancamentos/'+id,{method:'DELETE'});
     if(r.ok){toast('Deletado!');loadHist('todos');loadDash();}
     else toast('Erro ao deletar',false);
   }catch(e){toast('Sem conexão',false)}
@@ -2067,7 +2076,7 @@ async function resumoSemanal(){
   const fimStr = fim.toISOString().slice(0,10);
   const iniStr = ini.toISOString().slice(0,10);
   try {
-    const r = await fetch(API+'/resumo/'+MID);
+    const r = await authFetch(API+'/resumo/'+MID);
     const d = await r.json();
     const lanc = d.lancamentos||[];
     const semLanc = lanc.filter(l=>l.data>=iniStr&&l.data<=fimStr);
@@ -2133,7 +2142,7 @@ async function toggleTurno(){
     const [h2,m2] = fim.split(':').map(Number);
     const horas = Math.round(((h2*60+m2)-(h1*60+m1))/60*10)/10;
     try {
-      await fetch(API+'/turno',{method:'POST',headers:{'Content-Type':'application/json'},
+      await authFetch(API+'/turno',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({motorista_id:MID,data:turnoAtivo.data,inicio:turnoAtivo.inicio,fim,horas})});
       toast('Turno encerrado! '+horas+'h registradas ✓');
     } catch(e){ toast('Erro ao salvar turno',false); }
@@ -2152,7 +2161,7 @@ async function atualizarMeta(novaMeta){
   META_DIARIA = m;
   localStorage.setItem('meta', m);
   try{
-    await fetch(API+'/meta-diaria/'+MID,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({meta:m})});
+    await authFetch(API+'/meta-diaria/'+MID,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({meta:m})});
   }catch(e){}
   loadDash();
   return true;
@@ -2167,9 +2176,9 @@ async function loadDash(){
     if(el) el.style.display='none';
   });
   // Verifica contas vencendo + pré-carrega para meta mensal
-  fetch(API+'/contas/'+MID).then(r=>r.json()).then(c=>{window._contas=c;alertaContasVencendo(c);try{renderMetaMensal();}catch(e){}}).catch(()=>{});
+  authFetch(API+'/contas/'+MID).then(r=>r.json()).then(c=>{window._contas=c;alertaContasVencendo(c);try{renderMetaMensal();}catch(e){}}).catch(()=>{});
   try{
-    const r=await fetch(API+'/resumo/'+MID);
+    const r=await authFetch(API+'/resumo/'+MID);
     const d=await r.json();
     todosLanc=d.lancamentos||[];
     window._todosLanc = todosLanc;
@@ -2189,7 +2198,7 @@ async function loadDash(){
     let rendaExtraPrevista = 0;
     let lancFuturos = [];
     try {
-      const rf = await fetch(API+'/lancamentos-futuros/'+MID);
+      const rf = await authFetch(API+'/lancamentos-futuros/'+MID);
       const df = await rf.json();
       rendaExtraPrevista = df.total_renda_extra_prevista || 0;
       lancFuturos = df.lancamentos || [];
@@ -2658,7 +2667,7 @@ async function loadHist(tipo){
     const nextBtn = document.getElementById('hist-mes-next');
     if(nextBtn) nextBtn.disabled = _histMesOffset >= 0;
 
-    const r=await fetch(API+'/resumo/'+MID+'?mes='+mes+'&ano='+ano+'&t='+Date.now());
+    const r=await authFetch(API+'/resumo/'+MID+'?mes='+mes+'&ano='+ano+'&t='+Date.now());
     const d=await r.json();
     const allLancs = d.lancamentos||[];
     if(_histMesOffset === 0) todosLanc = allLancs;
@@ -2696,7 +2705,7 @@ async function loadHistTodosParaComparativo(){
     const promises = [];
     for(let i=0;i<6;i++){
       const alvo = new Date(hoje.getFullYear(), hoje.getMonth()-i, 1);
-      promises.push(fetch(API+'/resumo/'+MID+'?mes='+(alvo.getMonth()+1)+'&ano='+alvo.getFullYear()).then(r=>r.json()));
+      promises.push(authFetch(API+'/resumo/'+MID+'?mes='+(alvo.getMonth()+1)+'&ano='+alvo.getFullYear()).then(r=>r.json()));
     }
     const results = await Promise.all(promises);
     todosLanc = results.flatMap(d=>d.lancamentos||[]);
@@ -2706,7 +2715,7 @@ async function loadHistTodosParaComparativo(){
 async function renderCal(){
   if(!MID)return;
   try{
-    const r=await fetch(API+'/resumo/'+MID);
+    const r=await authFetch(API+'/resumo/'+MID);
     const d=await r.json();
     const lancs=d.lancamentos||[];
     const hoje=new Date();
@@ -2741,7 +2750,7 @@ async function renderCal(){
 async function loadCorrida(){
   if(!MID)return;
   try{
-    const r=await fetch(API+'/resumo/'+MID);
+    const r=await authFetch(API+'/resumo/'+MID);
     const d=await r.json();
     const lancs=d.lancamentos||[];
     const hoje=new Date();
@@ -2806,7 +2815,7 @@ async function init(){
   // Se não tem no localStorage, busca do banco
   const _midInit = MID || window.MID || localStorage.getItem('mid');
   if((!META_MENSAL || META_MENSAL <= 0) && _midInit){
-    fetch(API+'/meta-mensal/'+_midInit).then(r=>r.json()).then(d=>{
+    authFetch(API+'/meta-mensal/'+_midInit).then(r=>r.json()).then(d=>{
       if(d.meta_mensal && d.meta_mensal > 0){
         META_MENSAL = parseFloat(d.meta_mensal);
         localStorage.setItem('meta_mensal_obj', META_MENSAL);
@@ -2934,7 +2943,7 @@ async function init(){
   // Pré-carrega histórico por dia da semana (usado no plano da IA)
   try{
     const _mid = window.MID || localStorage.getItem('mid');
-    if(_mid){ const _rh = await fetch(API+'/historico-semana/'+_mid); window._historicoSemana = await _rh.json(); }
+    if(_mid){ const _rh = await authFetch(API+'/historico-semana/'+_mid); window._historicoSemana = await _rh.json(); }
   }catch(e){}
   // Re-checa alertas após tudo carregar
   setTimeout(()=>{ try{ alertaContasVencendo(window._contas||[]); }catch(e){} }, 1200);
@@ -2956,7 +2965,7 @@ function filtroConta(el, f){
 async function loadCompromissos(){
   if(!MID) return;
   try {
-    const r = await fetch(API + '/plano-compromisso/' + MID);
+    const r = await authFetch(API + '/plano-compromisso/' + MID);
     const d = await r.json();
     const lista = d.compromissos || [];
     const card = document.getElementById('card-compromissos');
@@ -3024,7 +3033,7 @@ async function loadCompromissos(){
 
 async function loadContas(){
   if(!MID) return;
-  const r = await fetch(API+'/contas/'+MID);
+  const r = await authFetch(API+'/contas/'+MID);
   window._contas = await r.json();
   renderContas();
   renderResumoContas();
@@ -3233,7 +3242,7 @@ async function _renderResumoContasAsync(el, calc){
   let d = { lucro: 0, lancamentos: [] };  // default seguro
   const RENDA_EXTRA_KEYS_CALC=['seguro_desemprego','freelance','aluguel_recebido','venda','emprestimo_recebido','bonus','renda_extra'];
   try{
-    const r = await fetch(API+'/resumo/'+MID);
+    const r = await authFetch(API+'/resumo/'+MID);
     d = await r.json();
     const agora2 = new Date();
     const mesAtual = agora2.getMonth();
@@ -3441,7 +3450,7 @@ async function addConta(){
   const val = parseFloat(document.getElementById('c-val').value);
   const venc = document.getElementById('c-venc').value;
   if(!desc||!val||!venc){ alert('Preencha todos os campos'); return; }
-  await fetch(API+'/contas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({motorista_id:MID,descricao:desc,valor:val,vencimento:venc,pago:false})});
+  await authFetch(API+'/contas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({motorista_id:MID,descricao:desc,valor:val,vencimento:venc,pago:false})});
   document.getElementById('c-desc').value='';
   document.getElementById('c-val').value='';
   document.getElementById('c-venc').value='';
@@ -3449,7 +3458,7 @@ async function addConta(){
 }
 
 async function togglePago(id, pago){
-  await fetch(API+'/contas/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({pago})});
+  await authFetch(API+'/contas/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({pago})});
   loadContas();
 }
 
@@ -3462,9 +3471,9 @@ async function abaterConta(id, valorJaPago){
   const conta = window._contas.find(c=>c.id===id);
   const pago = novoValorPago >= parseFloat(conta.valor);
   // 1. Atualiza a conta
-  await fetch(API+'/contas/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor_pago:novoValorPago,pago})});
+  await authFetch(API+'/contas/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor_pago:novoValorPago,pago})});
   // 2. Registra como despesa real nos lançamentos
-  await fetch(API+'/lancamentos',{method:'POST',headers:{'Content-Type':'application/json'},
+  await authFetch(API+'/lancamentos',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({motorista_id:MID,tipo:'despesa',valor:abate,descricao:conta.descricao,plataforma:'conta',data:hojeStr()})});
   input.value='';
   loadContas();
@@ -3473,7 +3482,7 @@ async function abaterConta(id, valorJaPago){
 }
 async function delConta(id){
   if(!confirm('Remover esta conta?')) return;
-  await fetch(API+'/contas/'+id,{method:'DELETE'});
+  await authFetch(API+'/contas/'+id,{method:'DELETE'});
   loadContas();
 }
 
@@ -3521,7 +3530,7 @@ async function salvarEdicaoConta(id){
   const body = {descricao: nome};
   if(valorStr && !isNaN(valor) && valor > 0) body.valor = valor;
 
-  await fetch(API+'/contas/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  await authFetch(API+'/contas/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
   document.getElementById('modal-editar-conta').remove();
   toast('Conta atualizada ✓');
   loadContas();
@@ -3535,7 +3544,7 @@ async function editarVencimento(id, vencimentoAtual){
   if(/^\d{2}\/\d{2}\/\d{4}$/.test(dataNorm)){ const [d,m,a]=dataNorm.split('/'); dataNorm=a+'-'+m+'-'+d; }
   if(!/^\d{4}-\d{2}-\d{2}$/.test(dataNorm)){ toast('Data inválida. Use DD/MM/AAAA', false); return; }
   if(dataNorm === vencimentoAtual) return;
-  await fetch(API+'/contas/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({vencimento:dataNorm})});
+  await authFetch(API+'/contas/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({vencimento:dataNorm})});
   toast('Prazo atualizado para '+dataNorm.split('-').reverse().join('/')+' ✓');
   loadContas();
 }
@@ -3719,7 +3728,7 @@ async function _calDrop(event, cell, dateStr){
   if(!conta) return;
   if(conta.vencimento === dateStr){ _dragContaId=null; return; }
   try{
-    await fetch(API+'/contas/'+_dragContaId,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({vencimento:dateStr})});
+    await authFetch(API+'/contas/'+_dragContaId,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({vencimento:dateStr})});
     conta.vencimento = dateStr;
     const nova = new Date(dateStr+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
     toast('📅 '+conta.descricao+' → '+nova+' ✓');
@@ -3875,7 +3884,7 @@ async function sendChat() {
     appendMsg('assistant', '<div class="typing-dots">↩ Desfazendo...</div>', true);
     try {
       await Promise.all(window._ultimaDistribuicaoIds.map(id =>
-        fetch(API + '/lancamentos/' + id, {method: 'DELETE'})
+        authFetch(API + '/lancamentos/' + id, {method: 'DELETE'})
       ));
       document.querySelector('.typing-dots')?.closest('.msg.assistant')?.remove();
       // Remove também o botão desfazer se ainda estiver visível
@@ -3948,7 +3957,7 @@ async function sendChat() {
     const _errosGemini = ['dificuldade para processar','Não entendi. Pode repetir','tenta de novo'];
     for(let _tentativa = 0; _tentativa < 3; _tentativa++){
       try {
-        const res = await fetch(API + '/chat', {
+        const res = await authFetch(API + '/chat', {
           method: 'POST', headers: {'Content-Type':'application/json'}, body: _chatPayload
         });
         data = await res.json();
@@ -4031,7 +4040,7 @@ async function sendChat() {
           appendMsg('assistant', '<div class="typing-dots">⏳ Distribuindo...</div>', true);
 
           try {
-            const dr = await fetch(API + '/distribuir-ganho', {
+            const dr = await authFetch(API + '/distribuir-ganho', {
               method: 'POST',
               headers: {'Content-Type':'application/json'},
               body: JSON.stringify({
@@ -4214,7 +4223,7 @@ async function iniciarChatSetup() {
   document.getElementById('setup-typing').style.display = 'block';
 
   try {
-    const r = await fetch(API + '/chat-setup', {
+    const r = await authFetch(API + '/chat-setup', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -4261,7 +4270,7 @@ async function enviarSetup() {
   document.getElementById('setup-typing').style.display = 'block';
 
   try {
-    const r = await fetch(API + '/chat-setup', {
+    const r = await authFetch(API + '/chat-setup', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -4415,7 +4424,7 @@ function alertaContasVencendo(contas) {
 async function loadContasDash() {
   if (!MID) return;
   try {
-    const r = await fetch(API + '/contas/' + MID);
+    const r = await authFetch(API + '/contas/' + MID);
     const data = await r.json();
     window._contas = data.contas || data || [];
     window._contasCarregadas = true;
@@ -4554,7 +4563,7 @@ async function gerarPDF(){
     else if(_pdfTipo === 'semana'){ const [ini,fim] = document.getElementById('pdf-sem-val').value.split('_'); body.inicio = ini; body.fim = fim; }
     else if(_pdfTipo === 'ano') body.ano = document.getElementById('pdf-ano-val').value;
 
-    const res = await fetch(API+'/relatorio-pdf', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+    const res = await authFetch(API+'/relatorio-pdf', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
     if(!res.ok) throw new Error('Erro');
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
@@ -4750,7 +4759,7 @@ function calcFechamentoDiario() {
   const ganhos = lanc.filter(l=>l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
   const despesas = lanc.filter(l=>l.tipo==='despesa').reduce((a,l)=>a+parseFloat(l.valor),0);
   // Horas do turno do dia - busca da API
-  fetch(API+'/turnos/'+(MID||window.MID)).then(r=>r.json()).then(turnos=>{
+  authFetch(API+'/turnos/'+(MID||window.MID)).then(r=>r.json()).then(turnos=>{
     const turno = turnos.find(t=>t.data===data);
     const horas = turno ? parseFloat(turno.horas||0) : 0;
     const titulo = new Date(data+'T12:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
@@ -4778,7 +4787,7 @@ function calcFechamentoSemanal() {
   const ganhos = lanc.filter(l=>l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
   const despesas = lanc.filter(l=>l.tipo==='despesa').reduce((a,l)=>a+parseFloat(l.valor),0);
   const dias = new Set(lanc.map(l=>l.data)).size;
-  fetch(API+'/turnos/'+(MID||window.MID)).then(r=>r.json()).then(turnos=>{
+  authFetch(API+'/turnos/'+(MID||window.MID)).then(r=>r.json()).then(turnos=>{
     const horas = turnos.filter(t=>t.data>=startStr&&t.data<=endStr).reduce((a,t)=>a+parseFloat(t.horas||0),0);
     const ini = new Date(startStr+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
     const fim2 = new Date(endStr+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
@@ -4798,7 +4807,7 @@ function calcFechamentoMensal() {
   const ganhos = lanc.filter(l=>l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
   const despesas = lanc.filter(l=>l.tipo==='despesa').reduce((a,l)=>a+parseFloat(l.valor),0);
   const dias = new Set(lanc.map(l=>l.data)).size;
-  fetch(API+'/turnos/'+(MID||window.MID)).then(r=>r.json()).then(turnos=>{
+  authFetch(API+'/turnos/'+(MID||window.MID)).then(r=>r.json()).then(turnos=>{
     const horas = turnos.filter(t=>t.data>=startStr&&t.data<=endStr).reduce((a,t)=>a+parseFloat(t.horas||0),0);
     const mesNome = new Date(startStr+'T12:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
     document.getElementById('fech-mensal-result').innerHTML = `<div class="gc"><h3 style="margin:0 0 12px;text-transform:capitalize">${mesNome}</h3>${fmtFech(ganhos,despesas,horas,dias,lanc)}</div>`;
@@ -5261,7 +5270,7 @@ _supa.auth.onAuthStateChange((event, session)=>{
     window.MID = session.user.id;
     MID = session.user.id;
     NOME = setUserUI(session);
-    fetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})})
+    authFetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})})
       .then(r=>r.json()).then(d=>{
         if(d.meta_diaria){ META_DIARIA=d.meta_diaria; localStorage.setItem('meta',META_DIARIA); }
         if(d.comb_diario){ window.COMB_DIARIO=d.comb_diario; localStorage.setItem('comb_diario',d.comb_diario); atualizarExibicaoMeta(META_DIARIA, d.comb_diario); }
@@ -5292,14 +5301,14 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     window.MID = session.user.id;
     MID = session.user.id;
     NOME = setUserUI(session);
-    const upRes = await fetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})});
+    const upRes = await authFetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})});
     const upData = await upRes.json();
     if(upData.meta_diaria && upData.meta_diaria !== 150){
       META_DIARIA=upData.meta_diaria; localStorage.setItem('meta',META_DIARIA);
     } else {
       // Tenta buscar direto do endpoint de meta
       try{
-        const mr = await fetch(API+'/meta-diaria/'+MID);
+        const mr = await authFetch(API+'/meta-diaria/'+MID);
         const md = await mr.json();
         if(md.meta_diaria && md.meta_diaria !== 150){ META_DIARIA=md.meta_diaria; localStorage.setItem('meta',META_DIARIA); }
         else { const ls=parseFloat(localStorage.getItem('meta')); if(ls>0){ META_DIARIA=ls; } }
