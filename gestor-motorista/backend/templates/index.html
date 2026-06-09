@@ -5265,6 +5265,7 @@ async function checkAuth(){
   if(session && session.user){
     window.MID = session.user.id;
     MID = session.user.id;
+    localStorage.setItem('mid', MID); // persiste para _tourKey e outros
     setUserUI(session);
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.style.display='none';
@@ -5284,6 +5285,7 @@ _supa.auth.onAuthStateChange((event, session)=>{
   if(event === 'SIGNED_IN' && session){
     window.MID = session.user.id;
     MID = session.user.id;
+    localStorage.setItem('mid', MID);
     NOME = setUserUI(session);
     authFetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})})
       .then(r=>r.json()).then(d=>{
@@ -5315,6 +5317,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   if(session && session.user){
     window.MID = session.user.id;
     MID = session.user.id;
+    localStorage.setItem('mid', MID);
     NOME = setUserUI(session);
     const upRes = await authFetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})});
     const upData = await upRes.json();
@@ -5424,8 +5427,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 <script>
 // Tour key vinculada ao usuário — não reabre em sessões novas do mesmo usuário
 function _tourKey(){ 
-  const mid = window.MID;
-  if(!mid) return null; // sem MID não opera
+  const mid = window.MID || localStorage.getItem('mid');
+  if(!mid) return null;
   return 'painel_tour_v2_'+mid; 
 }
 const _tourPassos=[
