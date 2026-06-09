@@ -385,12 +385,12 @@ async def criar_lancamento(l: Lancamento, uid: str = Depends(get_uid_from_token)
     return res.data
 
 @app.post("/turno")
-async def salvar_turno(body: dict = Body(...)):
-    motorista_id = body.get("motorista_id")
+async def salvar_turno(body: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    motorista_id = uid  # sempre usa uid do token, nunca do body
     data = body.get("data", str(hoje_brasil()))
-    inicio = body.get("inicio")  # "08:00"
-    fim = body.get("fim")        # "16:00"
-    horas = body.get("horas")    # float direto se informado
+    inicio = body.get("inicio")
+    fim = body.get("fim")
+    horas = body.get("horas")
 
     if inicio and fim:
         from datetime import datetime
@@ -412,7 +412,8 @@ async def salvar_turno(body: dict = Body(...)):
         return {"ok": False, "erro": "Erro interno"}
 
 @app.get("/turnos/{motorista_id}")
-def get_turnos(motorista_id: str):
+async def get_turnos(motorista_id: str, uid: str = Depends(get_uid_from_token)):
+    if motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     try:
         r = supabase.table("turnos").select("*").eq("motorista_id", motorista_id).order("data", desc=True).limit(60).execute()
         return r.data or []
@@ -550,7 +551,8 @@ async def historico_semana(motorista_id: str, uid: str = Depends(get_uid_from_to
 
 
 @app.get("/lancamentos-futuros/{motorista_id}")
-async def lancamentos_futuros(motorista_id: str):
+async def lancamentos_futuros(motorista_id: str, uid: str = Depends(get_uid_from_token)):
+    if motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     """Retorna lançamentos do próximo mês (renda extra prevista)"""
     import datetime as _dt
     hoje = hoje_brasil()
@@ -583,7 +585,11 @@ def buscar_meta(motorista_id: str):
 
 
 @app.delete("/lancamentos/{lancamento_id}")
-async def deletar_lancamento(lancamento_id: str):
+async def deletar_lancamento(lancamento_id: str, uid: str = Depends(get_uid_from_token)):
+    # Verifica ownership antes de deletar
+    check = supabase.table("lancamentos").select("motorista_id").eq("id", lancamento_id).execute()
+    if not check.data or check.data[0]["motorista_id"] != uid:
+        raise HTTPException(status_code=403, detail="Acesso negado")
     supabase.table("lancamentos").delete().eq("id", lancamento_id).execute()
     return {"ok": True}
 
@@ -708,12 +714,20 @@ async def criar_conta(c: dict = Body(...)):
     return res.data
 
 @app.patch("/contas/{conta_id}")
-async def atualizar_conta(conta_id: str, dados: dict = Body(...)):
+async def atualizar_conta(conta_id: str, dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    check = supabase.table("contas").select("motorista_id").eq("id", conta_id).execute()
+    if not check.data or check.data[0]["motorista_id"] != uid:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    # Remove campos que não devem ser alterados diretamente
+    dados.pop("motorista_id", None); dados.pop("id", None)
     res = supabase.table("contas").update(dados).eq("id", conta_id).execute()
     return res.data
 
 @app.delete("/contas/{conta_id}")
-async def deletar_conta(conta_id: str):
+async def deletar_conta(conta_id: str, uid: str = Depends(get_uid_from_token)):
+    check = supabase.table("contas").select("motorista_id").eq("id", conta_id).execute()
+    if not check.data or check.data[0]["motorista_id"] != uid:
+        raise HTTPException(status_code=403, detail="Acesso negado")
     supabase.table("contas").delete().eq("id", conta_id).execute()
     return {"ok": True}
 
@@ -1453,6 +1467,16 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
         return JSONResponse(status_code=400, content={"resposta": "Payload muito grande.", "acoes": []})
     import httpx, json
     mensagem = str(dados.get("mensagem", ""))[:1000]  # limite 1000 chars
+
+    # Proteção básica contra prompt injection
+    _injection_patterns = [
+        "ignore previous", "ignore as instruções", "esqueça tudo", "novo sistema",
+        "system prompt", "você agora é", "aja como", "finja ser", "ignore all",
+        "disregard", "forget everything", "jailbreak", "DAN mode"
+    ]
+    if any(p.lower() in mensagem.lower() for p in _injection_patterns):
+        return {"resposta": "Não consigo processar essa mensagem.", "acoes": []}
+
     historico = dados.get("historico", [])
     semana_relatorio = dados.get("semana_relatorio")  # {ini, fim} ou None
 
@@ -2633,11 +2657,11 @@ async def _debug_chat_impl(mid: str):
 # ── COMPROMISSOS DO PLANO ────────────────────────────────────────────────────
 # Salva metas específicas por dia que o motorista se comprometeu a cumprir
 @app.post("/plano-compromisso")
-async def salvar_compromisso(dados: dict = Body(...)):
-    """Salva meta diária comprometida pelo motorista (ex: 'vou fazer 600 na sexta')."""
-    mid = dados.get("motorista_id")
-    compromissos = dados.get("compromissos", [])  # [{data, meta_bruta, nota}]
-    if not mid or not compromissos:
+async def salvar_compromisso(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    """Salva meta diária comprometida pelo motorista."""
+    mid = uid  # sempre do token
+    compromissos = dados.get("compromissos", [])
+    if not compromissos:
         return {"ok": False, "erro": "dados incompletos"}
     try:
         for c in compromissos:
@@ -2646,7 +2670,6 @@ async def salvar_compromisso(dados: dict = Body(...)):
             nota = c.get("nota", "")
             if not data or meta_bruta <= 0:
                 continue
-            # Upsert: se já existe para esse dia, atualiza
             existente = supabase.table("plano_compromissos").select("id").eq("motorista_id", mid).eq("data", data).execute()
             if existente.data:
                 supabase.table("plano_compromissos").update({"meta_bruta": meta_bruta, "nota": nota}).eq("id", existente.data[0]["id"]).execute()
@@ -2658,7 +2681,8 @@ async def salvar_compromisso(dados: dict = Body(...)):
         return {"ok": False, "erro": "Erro interno"}
 
 @app.get("/plano-compromisso/{mid}")
-async def buscar_compromissos(mid: str):
+async def buscar_compromissos(mid: str, uid: str = Depends(get_uid_from_token)):
+    if mid != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     """Retorna compromissos dos próximos 14 dias + cruzado com o que foi feito."""
     import datetime as _dt
     hoje = hoje_brasil()
@@ -2667,22 +2691,17 @@ async def buscar_compromissos(mid: str):
     try:
         comp_res = supabase.table("plano_compromissos").select("*").eq("motorista_id", mid).gte("data", inicio).lte("data", fim).order("data").execute()
         compromissos = comp_res.data or []
-
-        # Busca o que foi faturado em cada dia com compromisso
         datas = [c["data"] for c in compromissos]
         if datas:
             lanc_res = supabase.table("lancamentos").select("data,tipo,valor").eq("motorista_id", mid).in_("data", datas).execute()
             lancamentos = lanc_res.data or []
         else:
             lancamentos = []
-
-        # Cruzamento: faturado real vs meta
         ganho_por_data = {}
         for l in lancamentos:
             if l["tipo"] == "ganho":
                 d = l["data"]
                 ganho_por_data[d] = ganho_por_data.get(d, 0) + float(l["valor"])
-
         resultado = []
         for c in compromissos:
             data = c["data"]
@@ -2694,37 +2713,24 @@ async def buscar_compromissos(mid: str):
                 status = "hoje"
             else:
                 status = "pendente"
-            resultado.append({
-                "id": c["id"],
-                "data": data,
-                "meta_bruta": meta,
-                "faturado": faturado,
-                "nota": c.get("nota", ""),
-                "status": status,
-                "pct": round((faturado or 0) / meta * 100) if meta > 0 else 0
-            })
+            resultado.append({"id": c["id"], "data": data, "meta_bruta": meta, "faturado": faturado, "nota": c.get("nota", ""), "status": status, "pct": round((faturado or 0) / meta * 100) if meta > 0 else 0})
         return {"compromissos": resultado}
     except Exception as e:
         return {"compromissos": [], "erro": str(e)}
 
-
-# ── PLANO ATIVO (persiste entre sessões até o objetivo ser cumprido) ──────────
 @app.post("/plano-ativo")
-async def salvar_plano_ativo(dados: dict = Body(...)):
-    """Salva o plano completo — sobrevive entre sessões até o objetivo ser atingido."""
-    mid = dados.get("motorista_id")
-    if not mid:
-        return {"ok": False}
+async def salvar_plano_ativo(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    """Salva o plano completo."""
+    mid = uid  # sempre do token
     try:
         plano = {
             "motorista_id": mid,
             "total_contas": dados.get("total_contas", 0),
             "caixa_inicial": dados.get("caixa_inicial", 0),
-            "comb_ajustado": dados.get("comb_ajustado"),   # None = usa histórico
+            "comb_ajustado": dados.get("comb_ajustado"),
             "criado_em": datetime.now(TZ_BR).isoformat(),
             "status": "ativo"
         }
-        # Upsert: um plano ativo por motorista
         existente = supabase.table("plano_ativo").select("id").eq("motorista_id", mid).eq("status", "ativo").execute()
         if existente.data:
             supabase.table("plano_ativo").update(plano).eq("id", existente.data[0]["id"]).execute()
@@ -2736,43 +2742,27 @@ async def salvar_plano_ativo(dados: dict = Body(...)):
         return {"ok": False, "erro": "Erro interno"}
 
 @app.post("/admin/limpar-duplicatas")
-async def limpar_duplicatas(dados: dict = Body(...)):
-    """Endpoint temporário para limpeza de duplicatas via chat."""
-    mid = dados.get("motorista_id")
-    if not mid:
-        return {"erro": "motorista_id obrigatório"}
-    
-    # Busca todos os ganhos da 99 em maio
+async def limpar_duplicatas(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    """Limpeza de duplicatas — só opera nos dados do próprio usuário autenticado."""
+    mid = uid  # sempre do token, nunca do body
     r = supabase.table("lancamentos").select("id,data,valor,created_at").eq("motorista_id", mid).eq("tipo", "ganho").eq("plataforma", "99").gte("data", "2026-05-01").order("data", desc=False).order("created_at", desc=False).execute()
     lancs = r.data or []
-    
     removidos = []
-    
-    # 1. Remove duplicatas por data+valor (mantém o mais antigo)
     vistos = {}
     for l in sorted(lancs, key=lambda x: x.get("created_at","")):
         chave = f"{l['data']}_{float(l['valor']):.2f}"
         if chave in vistos:
-            # É duplicata — remove o mais recente
             supabase.table("lancamentos").delete().eq("id", l["id"]).execute()
             removidos.append({"id": l["id"], "data": l["data"], "valor": float(l["valor"]), "motivo": "duplicata"})
         else:
             vistos[chave] = l["id"]
-    
-    # Recalcula total após limpeza
     r2 = supabase.table("lancamentos").select("valor").eq("motorista_id", mid).eq("tipo", "ganho").eq("plataforma", "99").gte("data", "2026-05-01").execute()
     novo_total = sum(float(l["valor"]) for l in (r2.data or []))
-    
-    return {
-        "ok": True,
-        "removidos": len(removidos),
-        "detalhes": removidos,
-        "novo_total_99": round(novo_total, 2)
-    }
-
+    return {"ok": True, "removidos": len(removidos), "detalhes": removidos, "novo_total_99": round(novo_total, 2)}
 
 @app.get("/plano-ativo/{mid}")
-async def buscar_plano_ativo(mid: str):
+async def buscar_plano_ativo(mid: str, uid: str = Depends(get_uid_from_token)):
+    if mid != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     """Retorna o plano ativo + progresso real dos compromissos."""
     import datetime as _dt
     try:
