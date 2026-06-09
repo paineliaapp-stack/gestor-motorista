@@ -481,6 +481,7 @@ const _supa = supabase.createClient(
       <div class="dot-on"></div>
     </div>
     <button class="voice-btn" id="voice-toggle" onclick="toggleVoice()" title="Voz da IA">🔇</button>
+    <button id="btn-notif-push" onclick="ativarNotificacoes()" title="Ativar notificações" style="background:rgba(255,200,0,.12);border:1px solid rgba(255,200,0,.3);border-radius:8px;color:#ffd700;font-size:15px;padding:7px 10px;cursor:pointer;flex-shrink:0;display:none">🔔</button>
     <button onclick="fazerLogout()" title="Sair" style="background:rgba(255,77,106,.12);border:1px solid rgba(255,77,106,.3);border-radius:8px;color:#FF4D6A;font-size:13px;font-weight:700;padding:7px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0">⏻</button>
   </div>
 </header>
@@ -5031,11 +5032,18 @@ function quickDashChat(txt){ quickChat(txt); }
 
 
 <script>
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.getRegistrations().then(regs=>{
-    regs.forEach(r=>r.unregister());
-  });
-}
+// Service worker mantido para push notifications — não desregistrar
+// Fallback: se o usuário já estava logado e init não vai rodar de novo,
+// tenta registrar push após 3s de qualquer forma
+window.addEventListener('load', () => {
+  setTimeout(async () => {
+    _atualizarBotaoNotif();
+    const mid = window.MID || localStorage.getItem('mid');
+    if (mid && typeof _registrarPush === 'function') {
+      try { await _registrarPush(); } catch(e) {}
+    }
+  }, 3000);
+});
 
 </script>
 <script>
@@ -5640,6 +5648,39 @@ window.addEventListener('load',function(){
 // ── Push Notifications ────────────────────────────────────────────────────────
 const _VAPID_PUBLIC = "BCy8ETKpP9jIkSHcogzLDgCUlOq3ZuKQ84nnF9Td7Wya6K-q-TUH0NIloBgDPaArR6lhEVt-KhOevVWgG8PCg98";
 
+
+async function ativarNotificacoes() {
+  const btn = document.getElementById('btn-notif-push');
+  if(btn) btn.textContent = '⏳';
+  await _registrarPush();
+  // Check result
+  const perm = Notification.permission;
+  if(perm === 'granted') {
+    if(btn){ btn.textContent = '🔔'; btn.style.color = '#00D897'; btn.style.borderColor = 'rgba(0,216,151,.4)'; btn.title = 'Notificações ativas'; }
+    toast('✅ Notificações ativadas!');
+    // Manda teste imediato
+    const mid = MID || window.MID;
+    if(mid) fetch(API+'/push-teste', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({motorista_id: mid})});
+  } else {
+    if(btn) btn.textContent = '🔕';
+    toast('Permissão negada. Ative nas configurações do navegador.');
+  }
+}
+
+function _atualizarBotaoNotif() {
+  const btn = document.getElementById('btn-notif-push');
+  if(!btn) return;
+  if(!('Notification' in window) || !('PushManager' in window)) { btn.style.display='none'; return; }
+  btn.style.display = '';
+  if(Notification.permission === 'granted') {
+    btn.textContent = '🔔'; btn.style.color = '#00D897'; btn.style.borderColor = 'rgba(0,216,151,.4)'; btn.title = 'Notificações ativas';
+  } else if(Notification.permission === 'denied') {
+    btn.textContent = '🔕'; btn.style.color = '#888'; btn.title = 'Notificações bloqueadas — ative no navegador';
+  } else {
+    btn.textContent = '🔔'; btn.style.color = '#ffd700'; btn.title = 'Toque para ativar notificações';
+  }
+}
+
 async function _registrarPush() {
   try {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
@@ -5668,6 +5709,7 @@ async function _registrarPush() {
       body: JSON.stringify({ motorista_id: mid, subscription: sub.toJSON() })
     });
     console.log("✅ Push registrado");
+    _atualizarBotaoNotif();
   } catch(e) {
     console.warn("Push setup falhou:", e);
   }
