@@ -5727,11 +5727,28 @@ function _atualizarBotaoNotif() {
 async function _registrarPush() {
   try {
     const mid = MID || window.MID || localStorage.getItem('mid');
-    console.log('[Push] iniciando, mid=', mid, 'SW=', 'serviceWorker' in navigator, 'Push=', 'PushManager' in window);
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.warn('[Push] sem suporte no browser'); return;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    console.log('[Push] iniciando, mid=', mid, 'SW=', 'serviceWorker' in navigator, 'Push=', 'PushManager' in window, 'iOS=', isIOS, 'standalone=', isStandalone);
+
+    if (!('serviceWorker' in navigator)) {
+      toast('⚠️ Seu navegador não suporta notificações');
+      console.warn('[Push] sem serviceWorker'); return;
     }
-    if (!mid) { console.warn('[Push] mid nao disponivel'); return; }
+    if (!('PushManager' in window)) {
+      // iOS só tem PushManager quando instalado como PWA
+      if (isIOS && !isStandalone) {
+        // Mostra instrução para instalar o app
+        const banner = document.getElementById('banner-notif');
+        if(banner) banner.innerHTML = `<div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">📲</span><div><div style="font-size:13px;font-weight:700;color:#ffd700">Instale o app para ativar</div><div style="font-size:11px;color:rgba(255,200,0,.8);margin-top:2px">No Safari: toque em ⎙ → "Adicionar à Tela de Início" → abra o app instalado</div></div></div>`;
+        console.warn('[Push] iOS sem PWA — precisa instalar'); 
+      } else {
+        toast('⚠️ Notificações não suportadas neste navegador');
+        console.warn('[Push] sem PushManager');
+      }
+      return;
+    }
+    if (!mid) { toast('⚠️ Faça login primeiro'); console.warn('[Push] mid nao disponivel'); return; }
 
     const reg = await navigator.serviceWorker.register('/static/sw.js');
     console.log('[Push] SW registrado:', reg.scope);
