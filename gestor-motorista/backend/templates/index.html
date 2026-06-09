@@ -5142,7 +5142,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   <div style="padding:10px;max-height:420px;overflow-y:auto">
     <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">💬 Como registrar meus ganhos?</div><div class="faq-a">No chat, fale: <em>"Fiz R$350 na Uber hoje"</em> ou <em>"Ganhei 280 na 99 ontem"</em>. O Gestor registra automaticamente.</div></div>
     <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">📋 Como cadastrar minhas contas?</div><div class="faq-a">Fale no chat: <em>"Tenho conta de aluguel R$800 vencendo dia 10"</em> ou <em>"Academia R$120 todo mês no dia 5"</em>.</div></div>
-    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">📊 Como projetar gastos médios?</div><div class="faq-a">Fale no chat: <em>"Gasto em média R$200 por semana no mercado"</em>. O Gestor projeta até o final do mês.</div></div>
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">📊 Como projetar gastos médios?</div><div class="faq-a">Fale no chat: <em>"Registra uma projeção de R$200 por semana no mercado até o final do mês"</em>. O Gestor cria as parcelas futuras automaticamente para o cálculo ficar correto.</div></div>
     <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">⛽ Como registrar combustível?</div><div class="faq-a">Fale no chat: <em>"Abasteci R$150 hoje"</em>. O sistema calcula o % do faturamento gasto.</div></div>
     <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">🎯 Como mudar minha meta mensal?</div><div class="faq-a">No Dashboard, role até o card <strong>META MENSAL</strong> e toque em <strong>✏️ Editar</strong>.</div></div>
     <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">📄 Como gerar o PDF?</div><div class="faq-a">Vá em <strong>Fechamento</strong> na barra inferior → toque em <strong>📄 Baixar PDF</strong> → escolha o período.</div></div>
@@ -5153,10 +5153,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 </div>
 
 <script>
-const _TOUR_KEY='painel_tour_v2';
+// Tour key vinculada ao usuário — não reabre em sessões novas do mesmo usuário
+function _tourKey(){ return 'painel_tour_v2_'+(window.MID||'anon'); }
 const _tourPassos=[
   {icon:'👋',title:'Bem-vindo ao Painel.IA!',desc:'Para o app funcionar, você precisa <strong>alimentar o chat</strong> com suas contas, gastos e ganhos. Vamos ver como em alguns passos rápidos.',target:null},
-  {icon:'💬',title:'O Gestor IA — o coração do app',desc:'Aqui você fala naturalmente. Diga suas contas e gastos:<br><br><em>"Tenho conta de aluguel R$800 vencendo dia 10"</em><br><em>"Gasto em média R$200 por semana no mercado"</em><br><em>"Fiz R$300 na 99 hoje"</em>',target:'chat-msgs',pos:'top'},
+  {icon:'💬',title:'O Gestor IA — o coração do app',desc:'Aqui você fala naturalmente. Diga suas contas e gastos:<br><br><em>"Tenho conta de aluguel R$800 vencendo dia 10"</em><br><em>"Registra uma projeção de R$200 por semana no mercado até o final do mês"</em><br><em>"Fiz R$300 na 99 hoje"</em>',target:'chat-msgs',pos:'top'},
   {icon:'📊',title:'Dashboard — seu lucro em tempo real',desc:'Mostra lucro do mês, contas urgentes e gráficos. Tudo atualiza quando você registra algo no chat.',target:'ni-dashboard',pos:'top'},
   {icon:'📋',title:'Contas a pagar',desc:'Aqui ficam todas as suas contas. O app avisa quando estiver perto do vencimento.',target:'ni-contas',pos:'top'},
   {icon:'📖',title:'Histórico de lançamentos',desc:'Veja todos os ganhos e gastos registrados. Pode filtrar por tipo e mês.',target:'ni-historico',pos:'top'},
@@ -5167,7 +5168,7 @@ let _tourIdx=0;
 
 function iniciarTour(){
   _tourIdx=0;
-  localStorage.removeItem(_TOUR_KEY);
+  localStorage.removeItem(_tourKey());
   _renderTourPasso();
 }
 
@@ -5214,7 +5215,7 @@ function tourFinalizar(){
   ['tour-overlay','tour-highlight','tour-card'].forEach(id=>{document.getElementById(id).style.display='none';});
   const hb=document.getElementById('help-btn');
   hb.style.display='flex';
-  localStorage.setItem(_TOUR_KEY,'1');
+  localStorage.setItem(_tourKey(),'1');
 }
 
 function toggleHelp(){
@@ -5227,14 +5228,14 @@ function toggleFaq(el){ el.classList.toggle('open'); }
 // Auto-iniciar para novos usuários
 window.addEventListener('load',function(){
   setTimeout(function(){
-    if(localStorage.getItem(_TOUR_KEY)){
+    if(localStorage.getItem(_tourKey())){
       document.getElementById('help-btn').style.display='flex';
       return;
     }
     const check=setInterval(function(){
       if(window.MID){
         clearInterval(check);
-        if(!localStorage.getItem(_TOUR_KEY)) iniciarTour();
+        if(!localStorage.getItem(_tourKey())) iniciarTour();
         else document.getElementById('help-btn').style.display='flex';
       }
     },800);
