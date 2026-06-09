@@ -4990,6 +4990,36 @@ if('serviceWorker' in navigator){
 </script>
 <script>
 // ===== INSTALAR APP (PWA) =====
+
+// Detecta com certeza se o app está rodando como PWA instalado
+function isInstalado(){
+  // iOS: window.navigator.standalone = true quando aberto pelo ícone
+  if(window.navigator.standalone === true) return true;
+  // Todos os browsers modernos: display-mode standalone ou minimal-ui
+  if(window.matchMedia('(display-mode: standalone)').matches) return true;
+  if(window.matchMedia('(display-mode: minimal-ui)').matches) return true;
+  return false;
+}
+
+// Esconde todos os botões de instalar quando já está instalado
+function _atualizarBotoesInstall(){
+  const instalado = isInstalado();
+  // Banner de instalar
+  const banner = document.getElementById('install-banner');
+  if(banner && instalado) banner.style.display = 'none';
+  // Botões no perfil e ajuda (se estiverem abertos)
+  ['perfil-install-btn','ajuda-install-btn'].forEach(id=>{
+    const btn = document.getElementById(id);
+    if(btn) btn.style.display = instalado ? 'none' : '';
+  });
+}
+// Roda ao carregar
+document.addEventListener('DOMContentLoaded', _atualizarBotoesInstall);
+// Roda também se o display-mode mudar (app foi instalado durante a sessão)
+try {
+  window.matchMedia('(display-mode: standalone)').addEventListener('change', _atualizarBotoesInstall);
+} catch(e) {}
+
 let _installPrompt = null; // captura o evento nativo do Android
 
 // Captura o prompt nativo do Android assim que disponível
@@ -5163,13 +5193,18 @@ function abrirPerfil(nome, email, foto){
         <div style="font-size:12px;color:#64748b;margin-top:2px;text-align:center">${e}</div>
       </div>
       <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:14px;display:flex;flex-direction:column;gap:8px">
-        <button onclick="document.getElementById('modal-perfil').remove();instalarApp()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(99,102,241,.3);background:rgba(99,102,241,.08);color:#818cf8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Instalar na tela inicial</button>
+        <button id="perfil-install-btn" onclick="document.getElementById('modal-perfil').remove();instalarApp()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(99,102,241,.3);background:rgba(99,102,241,.08);color:#818cf8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Instalar na tela inicial</button>
         <button onclick="document.getElementById('modal-perfil').remove()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#94a3b8;font-size:13px;cursor:pointer;font-family:inherit">Fechar</button>
         <button onclick="document.getElementById('modal-perfil').remove();fazerLogout()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,77,106,.3);background:rgba(255,77,106,.08);color:#FF4D6A;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">⏻ Sair da conta</button>
       </div>
     </div>`;
   overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+  // Esconde botão de instalar se app já está instalado como PWA
+  if(typeof isInstalado === 'function' && isInstalado()){
+    const ib = document.getElementById('perfil-install-btn');
+    if(ib) ib.style.display = 'none';
+  }
 }
 
 async function checkAuth(){
@@ -5333,7 +5368,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">✅ Como marcar conta como paga?</div><div class="faq-a">Fale no chat: <em>"Paguei o aluguel hoje"</em>. Ou vá em <strong>Contas</strong> e toque em <strong>Abater</strong>.</div></div>
     <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">🗑️ Como apagar um lançamento errado?</div><div class="faq-a">Fale no chat: <em>"Cancele o último lançamento que você fez"</em>. Ou vá em <strong>Histórico</strong> e toque na lixeira.</div></div>
     <button onclick="toggleHelp();iniciarTour()" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1px solid rgba(99,102,241,.4);background:rgba(99,102,241,.1);color:#818cf8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🎯 Ver tour novamente</button>
-    <button onclick="toggleHelp();instalarApp()" style="width:100%;margin-top:6px;padding:10px;border-radius:10px;border:1px solid rgba(20,184,166,.4);background:rgba(20,184,166,.08);color:#14b8a6;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Instalar app na tela inicial</button>
+    <button id="ajuda-install-btn" onclick="toggleHelp();instalarApp()" style="width:100%;margin-top:6px;padding:10px;border-radius:10px;border:1px solid rgba(20,184,166,.4);background:rgba(20,184,166,.08);color:#14b8a6;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Instalar app na tela inicial</button>
   </div>
 </div>
 
@@ -5510,6 +5545,11 @@ function tourFinalizar(){
 function toggleHelp(){
   const p=document.getElementById('help-panel');
   p.style.display=p.style.display==='none'?'block':'none';
+  // Esconde botão de instalar se app já está instalado como PWA
+  if(p.style.display==='block' && typeof isInstalado==='function' && isInstalado()){
+    const ib=document.getElementById('ajuda-install-btn');
+    if(ib) ib.style.display='none';
+  }
 }
 
 function toggleFaq(el){ el.classList.toggle('open'); }

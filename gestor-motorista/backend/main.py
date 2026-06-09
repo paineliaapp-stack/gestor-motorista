@@ -1727,7 +1727,7 @@ Quando analisa situação geral:
 
     GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
     result = {}
-    modelos = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+    modelos = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"]
     async with httpx.AsyncClient(timeout=35) as client:
         for tentativa in range(3):
             modelo_atual = modelos[min(tentativa, len(modelos)-1)]
