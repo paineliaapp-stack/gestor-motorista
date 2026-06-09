@@ -5301,14 +5301,16 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 <!-- TOUR ONBOARDING -->
 <div id="tour-overlay" style="display:none;position:fixed;inset:0;z-index:99998;background:transparent;pointer-events:all"></div>
 <div id="tour-highlight" style="display:none;position:fixed;z-index:99999;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,0.75);pointer-events:none;transition:all .3s ease"></div>
-<div id="tour-card" style="display:none;position:fixed;z-index:100000;background:#1e1e2e;border:1px solid rgba(99,102,241,.5);border-radius:16px;padding:20px;width:290px;box-shadow:0 8px 32px rgba(0,0,0,.6)">
-  <div style="font-size:11px;color:#818cf8;margin-bottom:4px;font-weight:600;letter-spacing:.5px" id="tour-step-label">PASSO 1 DE 7</div>
-  <div style="font-size:22px;margin-bottom:6px" id="tour-icon">👋</div>
-  <div style="font-weight:700;font-size:15px;color:#fff;margin-bottom:8px" id="tour-title">Bem-vindo!</div>
-  <div style="font-size:13px;color:#94a3b8;line-height:1.6;margin-bottom:16px" id="tour-desc">Vamos fazer um tour rápido.</div>
-  <div style="display:flex;gap:8px">
-    <button onclick="tourPular()" style="flex:1;padding:9px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#64748b;font-size:12px;cursor:pointer;font-family:inherit">Pular</button>
-    <button onclick="tourProximo()" id="tour-btn-next" style="flex:2;padding:9px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Próximo →</button>
+<div id="tour-card" style="display:none;position:fixed;z-index:100000;background:#1e1e2e;border:1px solid rgba(99,102,241,.5);border-radius:16px;width:290px;box-shadow:0 8px 32px rgba(0,0,0,.6);overflow:hidden;display:none;flex-direction:column">
+  <div style="padding:18px 18px 12px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1">
+    <div style="font-size:11px;color:#818cf8;margin-bottom:4px;font-weight:600;letter-spacing:.5px" id="tour-step-label">PASSO 1 DE 7</div>
+    <div style="font-size:22px;margin-bottom:6px" id="tour-icon">👋</div>
+    <div style="font-weight:700;font-size:15px;color:#fff;margin-bottom:8px" id="tour-title">Bem-vindo!</div>
+    <div style="font-size:13px;color:#94a3b8;line-height:1.6" id="tour-desc">Vamos fazer um tour rápido.</div>
+  </div>
+  <div style="padding:10px 18px 16px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:8px;flex-shrink:0;background:#1e1e2e">
+    <button onclick="tourPular()" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#64748b;font-size:12px;cursor:pointer;font-family:inherit">Pular</button>
+    <button onclick="tourProximo()" id="tour-btn-next" style="flex:2;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Próximo →</button>
   </div>
 </div>
 
@@ -5358,7 +5360,6 @@ function iniciarTour(){
 function _renderTourPasso(){
   const p=_tourPassos[_tourIdx];
   document.getElementById('tour-overlay').style.display='block';
-  document.getElementById('tour-card').style.display='block';
   document.getElementById('tour-step-label').textContent=`PASSO ${_tourIdx+1} DE ${_tourPassos.length}`;
   document.getElementById('tour-icon').textContent=p.icon;
   document.getElementById('tour-title').textContent=p.title;
@@ -5367,22 +5368,51 @@ function _renderTourPasso(){
   const hl=document.getElementById('tour-highlight');
   const card=document.getElementById('tour-card');
   card.style.transform='';
+
+  const vW=window.innerWidth,vH=window.innerHeight;
+  // Card sempre usa largura relativa à tela, max 320px
+  const cW=Math.min(320,vW-24);
+  // Margem lateral centralizada
+  const cLeft=Math.round((vW-cW)/2);
+
   if(p.target){
     const el=document.getElementById(p.target);
     if(el){
       const r=el.getBoundingClientRect(),pad=8;
-      hl.style.cssText=`display:block;left:${r.left-pad}px;top:${r.top-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;position:fixed;z-index:99999;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,0.75);pointer-events:none;transition:all .3s ease`;
-      // Position card above or below
-      const cW=290,cH=220;
-      let top=r.top-cH-20,left=r.left+r.width/2-cW/2;
-      if(top<10) top=r.bottom+16;
-      left=Math.max(10,Math.min(left,window.innerWidth-cW-10));
-      top=Math.max(10,Math.min(top,window.innerHeight-cH-10));
-      card.style.cssText=`display:block;position:fixed;z-index:100000;background:#1e1e2e;border:1px solid rgba(99,102,241,.5);border-radius:16px;padding:20px;width:${cW}px;box-shadow:0 8px 32px rgba(0,0,0,.6);top:${top}px;left:${left}px`;
+      hl.style.cssText=`display:block;left:${r.left-pad}px;top:${r.top-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;position:fixed;z-index:99999;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,0.82);pointer-events:none;transition:all .3s ease`;
+
+      // Tenta posicionar acima do elemento; se não couber, embaixo; se ainda não couber, fixa no centro inferior
+      const spaceAbove=r.top-pad-20;
+      const spaceBelow=vH-(r.bottom+pad+20);
+      // Reserva espaço para o card: até 55% da altura da tela
+      const maxCardH=Math.round(vH*0.52);
+
+      let top;
+      if(spaceAbove>=140){
+        // Acima — ancora no bottom do card
+        top=r.top-pad-20-Math.min(maxCardH,200);
+        if(top<8)top=8;
+      } else if(spaceBelow>=130){
+        // Abaixo
+        top=r.bottom+pad+16;
+        if(top+maxCardH>vH-8)top=vH-maxCardH-8;
+      } else {
+        // Sem espaço bom — posiciona na metade inferior da tela
+        top=Math.round(vH*0.46);
+      }
+      top=Math.max(8,top);
+
+      card.style.cssText=`display:flex;flex-direction:column;position:fixed;z-index:100000;background:#1e1e2e;border:1px solid rgba(99,102,241,.5);border-radius:16px;width:${cW}px;max-height:${maxCardH}px;box-shadow:0 8px 32px rgba(0,0,0,.7);top:${top}px;left:${cLeft}px`;
+    } else {
+      // Elemento não encontrado — centro
+      hl.style.display='none';
+      card.style.cssText=`display:flex;flex-direction:column;position:fixed;z-index:100000;background:#1e1e2e;border:1px solid rgba(99,102,241,.5);border-radius:16px;width:${cW}px;max-height:${Math.round(vH*0.6)}px;box-shadow:0 8px 32px rgba(0,0,0,.7);top:50%;left:${cLeft}px;transform:translateY(-50%)`;
     }
   } else {
     hl.style.display='none';
-    card.style.cssText='display:block;position:fixed;z-index:100000;background:#1e1e2e;border:1px solid rgba(99,102,241,.5);border-radius:16px;padding:20px;width:290px;box-shadow:0 8px 32px rgba(0,0,0,.6);top:50%;left:50%;transform:translate(-50%,-50%)';
+    // Sem target (boas-vindas/encerramento) — centro absoluto
+    const maxCardH=Math.round(vH*0.6);
+    card.style.cssText=`display:flex;flex-direction:column;position:fixed;z-index:100000;background:#1e1e2e;border:1px solid rgba(99,102,241,.5);border-radius:16px;width:${cW}px;max-height:${maxCardH}px;box-shadow:0 8px 32px rgba(0,0,0,.7);top:50%;left:${cLeft}px;transform:translateY(-50%)`;
   }
 }
 
