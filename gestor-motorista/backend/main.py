@@ -1731,10 +1731,12 @@ Quando analisa situação geral:
 
     GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
     result = {}
-    modelos = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
+    # Rodízio de modelos: cada um tem cota independente na API Gemini
+    # 2.5-flash: 1000 RPM | 2.0-flash: 2000 RPM | 2.0-flash-lite: 4000 RPM
+    # Total teórico: 7000 RPM compartilhados entre todos os usuários
+    modelos = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"]
     async with httpx.AsyncClient(timeout=35) as client:
-        for tentativa in range(3):
-            modelo_atual = modelos[min(tentativa, len(modelos)-1)]
+        for tentativa, modelo_atual in enumerate(modelos):
             try:
                 resp = await client.post(
                     f"https://generativelanguage.googleapis.com/v1beta/models/{modelo_atual}:generateContent?key={GEMINI_KEY}",
@@ -1745,22 +1747,22 @@ Quando analisa situação geral:
                     }}
                 )
                 result = resp.json()
-                err_msg = result.get("error",{}).get("message","")
                 err_code = result.get("error",{}).get("code", 0)
+                err_msg = result.get("error",{}).get("message","")
                 if "error" not in result:
-                    print(f"Gemini OK com modelo {modelo_atual} na tentativa {tentativa+1}")
+                    print(f"Gemini OK: {modelo_atual}")
                     break
-                print(f"Gemini erro (tentativa {tentativa+1}, modelo {modelo_atual}): [{err_code}] {err_msg}")
-                if any(x in err_msg for x in ["high demand","overloaded","quota","RESOURCE_EXHAUSTED","503","502","429"]) or err_code in [429, 503, 502]:
-                    wait = (tentativa+1)*5
-                    print(f"Gemini ocupado, aguardando {wait}s...")
-                    await __import__("asyncio").sleep(wait)
-                else:
-                    # Erro diferente — tenta próximo modelo
-                    await __import__("asyncio").sleep(2)
+                eh_cota = err_code in [429, 503, 502] or any(x in err_msg for x in ["quota","RESOURCE_EXHAUSTED","overloaded","high demand"])
+                eh_nao_encontrado = err_code == 404 or "not found" in err_msg.lower()
+                print(f"Gemini {modelo_atual} erro {err_code}: {err_msg[:80]}")
+                if eh_cota or eh_nao_encontrado:
+                    # Troca imediatamente para o próximo modelo — sem esperar
+                    continue
+                # Erro desconhecido — espera 1s e tenta próximo
+                await __import__("asyncio").sleep(1)
             except Exception as e:
-                print(f"Timeout/erro na tentativa {tentativa+1}: {e}")
-                await __import__("asyncio").sleep(5)
+                print(f"Timeout {modelo_atual}: {e}")
+                # Timeout — tenta próximo modelo imediatamente
 
     if "error" in result:
         err_detail = result['error'].get('message','sem detalhes')
