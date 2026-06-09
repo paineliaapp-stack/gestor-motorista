@@ -2966,6 +2966,7 @@ async function init(){
 
   _initRodando = false;
   _initConcluido = true;
+  setTimeout(_registrarPush, 2000); // Pede permissão de notificações após login
 }
 // init() chamado após todos os scripts
 </script>
@@ -5635,6 +5636,50 @@ window.addEventListener('load',function(){
     }
   }, 1000);
 });
+
+// ── Push Notifications ────────────────────────────────────────────────────────
+const _VAPID_PUBLIC = "BCy8ETKpP9jIkSHcogzLDgCUlOq3ZuKQ84nnF9Td7Wya6K-q-TUH0NIloBgDPaArR6lhEVt-KhOevVWgG8PCg98";
+
+async function _registrarPush() {
+  try {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    const mid = MID || window.MID;
+    if (!mid) return;
+
+    // Registra o service worker
+    const reg = await navigator.serviceWorker.register("/static/sw.js");
+    await navigator.serviceWorker.ready;
+
+    // Pede permissão
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") return;
+
+    // Converte a VAPID key
+    const vapidKey = _urlBase64ToUint8Array(_VAPID_PUBLIC);
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidKey });
+    }
+
+    // Envia para o backend
+    await fetch(API + "/push-subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ motorista_id: mid, subscription: sub.toJSON() })
+    });
+    console.log("✅ Push registrado");
+  } catch(e) {
+    console.warn("Push setup falhou:", e);
+  }
+}
+
+function _urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
 </script>
 </body>
 </html>

@@ -63,6 +63,127 @@ def _match_conta(descricao_busca: str, contas: list) -> dict | None:
             melhor = c
     return melhor
 
+# ── Push Notifications ────────────────────────────────────────────────────────
+from pywebpush import webpush, WebPushException
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+import json as _push_json
+
+VAPID_PUBLIC_KEY  = os.getenv("VAPID_PUBLIC_KEY", "BCy8ETKpP9jIkSHcogzLDgCUlOq3ZuKQ84nnF9Td7Wya6K-q-TUH0NIloBgDPaArR6lhEVt-KhOevVWgG8PCg98")
+VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "MHcCAQEEIJRY2GzyzckkCKFiuCqMNYnJ+yNeLnXMjcklMTydxMq6oAoGCCqGSM49\nAwEHoUQDQgAELLwRMqk/2MiRIdyiDMsOAJSU6rdm4pDziecX1N3tbJror6r5NQfQ\n0iWgGAM9oCtHqWERW34qE569VaAbw8KD3w==")
+VAPID_EMAIL       = os.getenv("VAPID_EMAIL", "mailto:admin@painelia.app")
+
+def _enviar_push(subscription_info: dict, titulo: str, corpo: str, url: str = "/", tag: str = "painel"):
+    try:
+        payload = _push_json.dumps({"title": titulo, "body": corpo, "url": url, "tag": tag, "icon": "/static/icon-192.png"})
+        webpush(subscription_info=subscription_info, data=payload, vapid_private_key=VAPID_PRIVATE_KEY, vapid_claims={"sub": VAPID_EMAIL})
+        return True
+    except WebPushException as ex:
+        status = ex.response.status_code if ex.response else 0
+        if status in (404, 410): return "expired"
+        log_warn("push_falhou", status=status, err=str(ex)[:100])
+        return False
+    except Exception as ex:
+        log_warn("push_erro", err=str(ex)[:100])
+        return False
+
+async def _disparar_push_todos(titulo: str, corpo: str, url: str = "/", tag: str = "painel", apenas_motorista_id: str = None):
+    try:
+        q = supabase_admin.table("push_subscriptions").select("*")
+        if apenas_motorista_id:
+            q = q.eq("motorista_id", apenas_motorista_id)
+        res = q.execute()
+        subs = res.data or []
+        expiradas = []
+        for sub in subs:
+            resultado = _enviar_push(sub["subscription"], titulo, corpo, url, tag)
+            if resultado == "expired": expiradas.append(sub["id"])
+        for sid in expiradas:
+            supabase_admin.table("push_subscriptions").delete().eq("id", sid).execute()
+        log_info("push_disparado", total=len(subs), expiradas=len(expiradas))
+    except Exception as e:
+        log_erro("push_dispatch_erro", err=str(e)[:200])
+
+_scheduler = AsyncIOScheduler(timezone="America/Sao_Paulo")
+
+async def _notif_teste_0010():
+    await _disparar_push_todos("Painel.IA — Teste 🧪", "As notificacoes estao funcionando! Pode usar agora ✅", "/", "teste")
+
+async def _notif_lembrete_noite():
+    await _disparar_push_todos("Nao esquece! 📊", "Registre seus ganhos de hoje antes de dormir 💰", "/", "lembrete-noite")
+
+async def _notif_meta_manha():
+    await _disparar_push_todos("Bom dia, motorista! 🚀", "Hoje e um novo dia. Bora bater a meta! 💪", "/", "meta-manha")
+
+async def _notif_contas_urgentes():
+    try:
+        from datetime import date as _dc2, timedelta as _td2
+        hoje2 = _dc2.today().isoformat()
+        amanha2 = (_dc2.today() + _td2(days=1)).isoformat()
+        res2 = supabase_admin.table("contas").select("motorista_id,descricao,valor,vencimento").eq("pago", False).in_("vencimento", [hoje2, amanha2]).execute()
+        por_mid = {}
+        for c in (res2.data or []):
+            por_mid.setdefault(c["motorista_id"], []).append(c)
+        for mid, cs in por_mid.items():
+            nomes = ", ".join(c["descricao"] for c in cs[:2])
+            extra = f" +{len(cs)-2} mais" if len(cs) > 2 else ""
+            total = sum(float(c.get("valor", 0)) for c in cs)
+            await _disparar_push_todos(f"Conta(s) vencendo! ⚠️", f"{nomes}{extra} — R$ {total:.0f}", "/", "contas-urgentes", apenas_motorista_id=mid)
+    except Exception as e:
+        log_erro("notif_contas_urg", err=str(e)[:200])
+
+async def _notif_relatorio_domingo():
+    await _disparar_push_todos("Relatorio da semana 📈", "Veja como foi sua semana no Painel.IA 📊", "/", "relatorio-semana")
+
+@app.on_event("startup")
+async def startup_scheduler():
+    _scheduler.add_job(_notif_teste_0010,        CronTrigger(hour=0,  minute=10), id="teste_0010",     replace_existing=True)
+    _scheduler.add_job(_notif_meta_manha,         CronTrigger(hour=8,  minute=0),  id="meta_manha",     replace_existing=True)
+    _scheduler.add_job(_notif_contas_urgentes,    CronTrigger(hour=9,  minute=0),  id="contas_urg",     replace_existing=True)
+    _scheduler.add_job(_notif_lembrete_noite,     CronTrigger(hour=22, minute=0),  id="lembrete_noite", replace_existing=True)
+    _scheduler.add_job(_notif_relatorio_domingo,  CronTrigger(day_of_week="sun", hour=20, minute=0), id="relatorio_dom", replace_existing=True)
+    _scheduler.start()
+    log_info("scheduler_iniciado", jobs=5)
+
+@app.get("/vapid-public-key")
+def get_vapid_key():
+    return {"key": VAPID_PUBLIC_KEY}
+
+@app.post("/push-subscribe")
+async def push_subscribe(dados: dict = Body(...)):
+    motorista_id = dados.get("motorista_id")
+    subscription = dados.get("subscription")
+    if not motorista_id or not subscription:
+        return {"ok": False, "erro": "Dados incompletos"}
+    try:
+        endpoint = subscription.get("endpoint", "")[:500]
+        ex = supabase_admin.table("push_subscriptions").select("id").eq("motorista_id", motorista_id).eq("endpoint", endpoint).execute()
+        if ex.data:
+            supabase_admin.table("push_subscriptions").update({"subscription": subscription}).eq("id", ex.data[0]["id"]).execute()
+        else:
+            supabase_admin.table("push_subscriptions").insert({"motorista_id": motorista_id, "endpoint": endpoint, "subscription": subscription}).execute()
+        log_info("push_subscribe_ok", motorista_id=motorista_id)
+        return {"ok": True}
+    except Exception as e:
+        log_erro("push_subscribe_erro", err=str(e))
+        return {"ok": False, "erro": str(e)}
+
+@app.delete("/push-unsubscribe")
+async def push_unsubscribe(dados: dict = Body(...)):
+    try:
+        supabase_admin.table("push_subscriptions").delete().eq("motorista_id", dados.get("motorista_id")).eq("endpoint", dados.get("endpoint","")[:500]).execute()
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "erro": str(e)}
+
+@app.post("/push-teste")
+async def push_teste_manual(dados: dict = Body(...)):
+    mid = dados.get("motorista_id")
+    if not mid: return {"ok": False}
+    await _disparar_push_todos("Painel.IA — Teste 🧪", "Funcionou! Notificacoes ativas ✅", "/", "teste-manual", apenas_motorista_id=mid)
+    return {"ok": True}
+
+
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     return FileResponse("static/favicon.png")
