@@ -5736,7 +5736,11 @@ async function _registrarPush() {
     await navigator.serviceWorker.ready;
     console.log('[Push] SW pronto');
 
-    const perm = await Notification.requestPermission();
+    // Timeout de 15s para o requestPermission — iOS às vezes trava indefinidamente
+    const perm = await Promise.race([
+      Notification.requestPermission(),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout ao pedir permissão')), 15000))
+    ]);
     console.log('[Push] permissao:', perm);
     if (perm !== 'granted') { _atualizarBotaoNotif(); return; }
 
@@ -5764,7 +5768,15 @@ async function _registrarPush() {
     });
   } catch(e) {
     console.error('[Push] ERRO:', e);
-    toast('Erro ao ativar notificações: ' + e.message);
+    toast('Erro: ' + e.message);
+    // Restaura banner para estado clicável
+    const banner = document.getElementById('banner-notif');
+    if(banner) {
+      banner.innerHTML = banner.innerHTML.replace('⏳','🔔');
+      banner.style.display = '';
+    }
+    const btn = document.getElementById('btn-notif-push');
+    if(btn) btn.textContent = '🔔';
   }
 }
 
