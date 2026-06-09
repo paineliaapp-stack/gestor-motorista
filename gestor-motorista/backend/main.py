@@ -78,7 +78,8 @@ def _match_conta(descricao_busca: str, contas: list) -> dict | None:
 
 # ── Push Notifications ────────────────────────────────────────────────────────
 from pywebpush import webpush, WebPushException
-# push notifications removidas temporariamente
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 import json as _push_json
 
 VAPID_PUBLIC_KEY  = os.getenv("VAPID_PUBLIC_KEY", "BCy8ETKpP9jIkSHcogzLDgCUlOq3ZuKQ84nnF9Td7Wya6K-q-TUH0NIloBgDPaArR6lhEVt-KhOevVWgG8PCg98")
