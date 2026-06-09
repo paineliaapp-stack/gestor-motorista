@@ -86,25 +86,29 @@ def hoje_brasil():
     import datetime as _dt
     return (_dt.datetime.utcnow() - _dt.timedelta(hours=3)).date()
 
-import re as _re, time as _time
+import re as _re, time as _time, asyncio as _asyncio
 _UUID_RE = _re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', _re.I)
 def _valid_uuid(v: str) -> bool:
     return bool(v and _UUID_RE.match(str(v).strip()))
 
 # Rate limiting por motorista_id (em memória por worker)
 _chat_rate: dict = {}
-def _check_rate(mid: str, max_per_min: int = 60) -> bool:
+def _check_rate(mid: str, max_per_min: int = 20) -> bool:
+    """Limita a 20 mensagens/min por usuário (era 60 — muito permissivo)"""
     agora = _time.time()
     hist = [t for t in _chat_rate.get(mid, []) if agora - t < 60]
     if len(hist) >= max_per_min:
         return False
     hist.append(agora)
     _chat_rate[mid] = hist
-    # Limpa entradas antigas a cada 1000 requests (evita crescimento ilimitado)
     if len(_chat_rate) > 1000:
-        cutoff = agora - 120
         _chat_rate.clear()
     return True
+
+# Semáforo global: limita chamadas SIMULTÂNEAS ao Gemini
+# 1 worker async pode lidar com muitos requests, mas a API Gemini tem limites
+# 25 slots = até 25 chamadas Gemini ao mesmo tempo; o resto fica em fila assíncrona
+_gemini_sem = _asyncio.Semaphore(25)
 
 # Cache simples em memória com TTL (evita queries repetidas ao Supabase)
 _cache: dict = {}
@@ -1728,7 +1732,8 @@ Quando analisa situação geral:
     GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
     result = {}
     modelos = ["gemini-2.5-flash", "gemini-2.5-flash-preview-05-20", "gemini-1.5-pro-latest"]
-    async with httpx.AsyncClient(timeout=35) as client:
+    async with _gemini_sem:  # max 15 chamadas simultâneas por worker
+      async with httpx.AsyncClient(timeout=35) as client:
         for tentativa in range(3):
             modelo_atual = modelos[min(tentativa, len(modelos)-1)]
             try:
