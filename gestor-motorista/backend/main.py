@@ -78,8 +78,7 @@ def _match_conta(descricao_busca: str, contas: list) -> dict | None:
 
 # ── Push Notifications ────────────────────────────────────────────────────────
 from pywebpush import webpush, WebPushException
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
+# push notifications removidas temporariamente
 import json as _push_json
 
 VAPID_PUBLIC_KEY  = os.getenv("VAPID_PUBLIC_KEY", "BCy8ETKpP9jIkSHcogzLDgCUlOq3ZuKQ84nnF9Td7Wya6K-q-TUH0NIloBgDPaArR6lhEVt-KhOevVWgG8PCg98")
@@ -173,7 +172,7 @@ async def startup_scheduler():
     _scheduler.add_job(_notif_contas_urgentes,    CronTrigger(hour=9,  minute=0),  id="contas_urg",     replace_existing=True)
     _scheduler.add_job(_notif_lembrete_noite,     CronTrigger(hour=22, minute=0),  id="lembrete_noite", replace_existing=True)
     _scheduler.add_job(_notif_relatorio_domingo,  CronTrigger(day_of_week="sun", hour=20, minute=0), id="relatorio_dom", replace_existing=True)
-    _scheduler.start()
+    # _scheduler.start()  # push desativado temporariamente
     log_info("scheduler_iniciado", jobs=5)
 
 

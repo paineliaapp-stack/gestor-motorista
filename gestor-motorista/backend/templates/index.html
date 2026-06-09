@@ -481,19 +481,11 @@ const _supa = supabase.createClient(
       <div class="dot-on"></div>
     </div>
     <button class="voice-btn" id="voice-toggle" onclick="toggleVoice()" title="Voz da IA">🔇</button>
-    <button id="btn-notif-push" onclick="ativarNotificacoes()" title="Ativar notificações" style="background:rgba(255,200,0,.12);border:1px solid rgba(255,200,0,.3);border-radius:8px;color:#ffd700;font-size:15px;padding:7px 10px;cursor:pointer;flex-shrink:0;display:none">🔔</button>
+
     <button onclick="fazerLogout()" title="Sair" style="background:rgba(255,77,106,.12);border:1px solid rgba(255,77,106,.3);border-radius:8px;color:#FF4D6A;font-size:13px;font-weight:700;padding:7px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0">⏻</button>
   </div>
 </header>
-<script>
-// Esconde banner só se já tem permissão concedida — mantém visível no iOS mesmo sem PushManager
-(function(){
-  var b = document.getElementById('banner-notif');
-  if(!b) return;
-  // Só esconde se já aceitou — nunca esconde por falta de suporte (iOS pode ter suporte parcial)
-  if('Notification' in window && Notification.permission === 'granted') b.style.display='none';
-})();
-</script>
+
 <nav class="sidenav">
   <button id="ni-dashboard" class="ni active" onclick="goPage(this,'dashboard')"><span class="ni-icon">📊</span><span class="tip">Dashboard</span></button>
   <button id="ni-registrar" class="ni" onclick="goPage(this,'registrar')"><span class="ni-icon">➕</span><span class="tip">Registrar</span></button>
@@ -656,16 +648,7 @@ const _supa = supabase.createClient(
 
 
   <!-- Banner de notificações — aparece se permissão não foi dada -->
-  <div id="banner-notif" style="display:;background:linear-gradient(135deg,rgba(255,200,0,.15),rgba(255,150,0,.1));border:1px solid rgba(255,200,0,.4);border-radius:14px;padding:14px 16px;margin-bottom:14px;cursor:pointer;user-select:none" onclick="ativarNotificacoes()" class="banner-push-notif">
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:22px">🔔</span>
-      <div>
-        <div style="font-size:13px;font-weight:700;color:#ffd700">Ativar notificações</div>
-        <div style="font-size:11px;color:rgba(255,200,0,.8);margin-top:2px">Receba lembretes, alertas de contas e metas diárias</div>
-      </div>
-      <span style="margin-left:auto;font-size:18px;color:#ffd700">›</span>
-    </div>
-  </div>
+  <!-- banner-notif removido temporariamente -->
   <!-- CARD META MENSAL — sempre visível no dashboard -->
   <div id="card-meta-mensal" style="background:rgba(0,216,151,.08);border:1px solid rgba(0,216,151,.25);border-radius:16px;padding:16px 18px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
