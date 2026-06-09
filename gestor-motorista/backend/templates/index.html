@@ -3933,12 +3933,28 @@ async function sendChat() {
       }
     } catch(e) {}
 
-    const res = await fetch(API + '/chat', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({mid: MID||window.MID, mensagem: msg, historico: chatHistory.slice(-24), semana_relatorio: _semanaCtx})
-    });
-    const data = await res.json();
+    // Retry automático: até 3 tentativas com backoff se Gemini estiver sobrecarregado
+    let data = null;
+    const _chatPayload = JSON.stringify({mid: MID||window.MID, mensagem: msg, historico: chatHistory.slice(-24), semana_relatorio: _semanaCtx});
+    const _errosGemini = ['dificuldade para processar','Não entendi. Pode repetir','tenta de novo'];
+    for(let _tentativa = 0; _tentativa < 3; _tentativa++){
+      try {
+        const res = await fetch(API + '/chat', {
+          method: 'POST', headers: {'Content-Type':'application/json'}, body: _chatPayload
+        });
+        data = await res.json();
+        // Se a resposta é erro do Gemini, tenta de novo (exceto na última tentativa)
+        const _ehErroGemini = _errosGemini.some(e => (data.resposta||'').includes(e));
+        if(!_ehErroGemini) break;
+        if(_tentativa < 2){
+          const _espera = (_tentativa + 1) * 3000; // 3s, 6s
+          await new Promise(r => setTimeout(r, _espera));
+        }
+      } catch(e) {
+        if(_tentativa === 2) data = {resposta: 'Sem conexão. Verifique sua internet e tente novamente.'};
+        else await new Promise(r => setTimeout(r, 3000));
+      }
+    }
     document.getElementById('typing-indicator')?.remove();
     const reply = data.resposta || data.message || JSON.stringify(data);
     // Só mostra o reply de texto se NÃO estiver aguardando período (evita HTML quebrado do Gemini)

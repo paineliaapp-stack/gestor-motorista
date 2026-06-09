@@ -1731,9 +1731,8 @@ Quando analisa situação geral:
 
     GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
     result = {}
-    modelos = ["gemini-2.5-flash", "gemini-2.5-flash-preview-05-20", "gemini-1.5-pro-latest"]
-    async with _gemini_sem:  # max 15 chamadas simultâneas por worker
-      async with httpx.AsyncClient(timeout=35) as client:
+    modelos = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
+    async with httpx.AsyncClient(timeout=35) as client:
         for tentativa in range(3):
             modelo_atual = modelos[min(tentativa, len(modelos)-1)]
             try:
