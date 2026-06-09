@@ -485,6 +485,17 @@ const _supa = supabase.createClient(
     <button onclick="fazerLogout()" title="Sair" style="background:rgba(255,77,106,.12);border:1px solid rgba(255,77,106,.3);border-radius:8px;color:#FF4D6A;font-size:13px;font-weight:700;padding:7px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0">⏻</button>
   </div>
 </header>
+<script>
+// Esconde banner imediatamente se notificações já estão ativas ou bloqueadas
+(function(){
+  var b = document.getElementById('banner-notif');
+  if(!b) return;
+  if(!('Notification' in window) || !('PushManager' in window) || !('serviceWorker' in navigator)){
+    b.style.display='none'; return;
+  }
+  if(Notification.permission !== 'default') b.style.display='none';
+})();
+</script>
 <nav class="sidenav">
   <button id="ni-dashboard" class="ni active" onclick="goPage(this,'dashboard')"><span class="ni-icon">📊</span><span class="tip">Dashboard</span></button>
   <button id="ni-registrar" class="ni" onclick="goPage(this,'registrar')"><span class="ni-icon">➕</span><span class="tip">Registrar</span></button>
@@ -647,7 +658,7 @@ const _supa = supabase.createClient(
 
 
   <!-- Banner de notificações — aparece se permissão não foi dada -->
-  <div id="banner-notif" style="display:none;background:linear-gradient(135deg,rgba(255,200,0,.15),rgba(255,150,0,.1));border:1px solid rgba(255,200,0,.4);border-radius:14px;padding:14px 16px;margin-bottom:14px;cursor:pointer;user-select:none" onclick="ativarNotificacoes()" class="banner-push-notif">
+  <div id="banner-notif" style="display:;background:linear-gradient(135deg,rgba(255,200,0,.15),rgba(255,150,0,.1));border:1px solid rgba(255,200,0,.4);border-radius:14px;padding:14px 16px;margin-bottom:14px;cursor:pointer;user-select:none" onclick="ativarNotificacoes()" class="banner-push-notif">
     <div style="display:flex;align-items:center;gap:10px">
       <span style="font-size:22px">🔔</span>
       <div>
@@ -5712,37 +5723,48 @@ function _atualizarBotaoNotif() {
 }
 
 async function _registrarPush() {
-  // Chamada com gesto do usuário — pede permissão e subscribe
   try {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-    const mid = MID || window.MID;
-    if (!mid) return;
+    const mid = MID || window.MID || localStorage.getItem('mid');
+    console.log('[Push] iniciando, mid=', mid, 'SW=', 'serviceWorker' in navigator, 'Push=', 'PushManager' in window);
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      console.warn('[Push] sem suporte no browser'); return;
+    }
+    if (!mid) { console.warn('[Push] mid nao disponivel'); return; }
 
-    const reg = await navigator.serviceWorker.register("/static/sw.js");
+    const reg = await navigator.serviceWorker.register('/static/sw.js');
+    console.log('[Push] SW registrado:', reg.scope);
     await navigator.serviceWorker.ready;
+    console.log('[Push] SW pronto');
 
-    // requestPermission só funciona após gesto do usuário (clique no banner/botão)
     const perm = await Notification.requestPermission();
-    if (perm !== "granted") { _atualizarBotaoNotif(); return; }
+    console.log('[Push] permissao:', perm);
+    if (perm !== 'granted') { _atualizarBotaoNotif(); return; }
 
     const vapidKey = _urlBase64ToUint8Array(_VAPID_PUBLIC);
     let sub = await reg.pushManager.getSubscription();
     if (!sub) {
+      console.log('[Push] criando nova subscription...');
       sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidKey });
     }
+    console.log('[Push] subscription endpoint:', sub.endpoint.slice(0,60));
 
-    await fetch(API + "/push-subscribe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const resp = await fetch(API + '/push-subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ motorista_id: mid, subscription: sub.toJSON() })
     });
-    console.log("✅ Push registrado");
+    const result = await resp.json();
+    console.log('[Push] backend resp:', result);
+
     _atualizarBotaoNotif();
-    // Envia notificação de confirmação imediata
-    const midFinal = mid;
-    fetch(API + "/push-teste", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({motorista_id:midFinal})});
+    // Notificação de confirmação imediata
+    fetch(API + '/push-teste', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({motorista_id: mid})
+    });
   } catch(e) {
-    console.warn("Push setup falhou:", e);
+    console.error('[Push] ERRO:', e);
+    toast('Erro ao ativar notificações: ' + e.message);
   }
 }
 
