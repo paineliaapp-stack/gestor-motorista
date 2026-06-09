@@ -27,6 +27,11 @@ try{
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <style>
+.faq-item{border-radius:10px;border:1px solid rgba(255,255,255,.06);margin-bottom:6px;overflow:hidden;cursor:pointer}
+.faq-q{padding:10px 12px;font-size:12px;font-weight:600;color:#e2e8f0;background:rgba(255,255,255,.03)}
+.faq-a{display:none;padding:10px 12px;font-size:12px;color:#94a3b8;line-height:1.6;background:rgba(99,102,241,.05);border-top:1px solid rgba(255,255,255,.06)}
+.faq-item.open .faq-a{display:block}
+.faq-item.open .faq-q{color:#818cf8}
 *{box-sizing:border-box}html{height:100%;overflow:hidden}body{height:100%;overflow:hidden}:root{
   --bg:#07090d;
   --bg2:#0d1117;
@@ -5109,6 +5114,132 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     }
   });
 })();
+</script>
+
+<!-- TOUR ONBOARDING -->
+<div id="tour-overlay" style="display:none;position:fixed;inset:0;z-index:99998;background:transparent;pointer-events:all"></div>
+<div id="tour-highlight" style="display:none;position:fixed;z-index:99999;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,0.75);pointer-events:none;transition:all .3s ease"></div>
+<div id="tour-card" style="display:none;position:fixed;z-index:100000;background:#1e1e2e;border:1px solid rgba(99,102,241,.5);border-radius:16px;padding:20px;width:290px;box-shadow:0 8px 32px rgba(0,0,0,.6)">
+  <div style="font-size:11px;color:#818cf8;margin-bottom:4px;font-weight:600;letter-spacing:.5px" id="tour-step-label">PASSO 1 DE 7</div>
+  <div style="font-size:22px;margin-bottom:6px" id="tour-icon">👋</div>
+  <div style="font-weight:700;font-size:15px;color:#fff;margin-bottom:8px" id="tour-title">Bem-vindo!</div>
+  <div style="font-size:13px;color:#94a3b8;line-height:1.6;margin-bottom:16px" id="tour-desc">Vamos fazer um tour rápido.</div>
+  <div style="display:flex;gap:8px">
+    <button onclick="tourPular()" style="flex:1;padding:9px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#64748b;font-size:12px;cursor:pointer;font-family:inherit">Pular</button>
+    <button onclick="tourProximo()" id="tour-btn-next" style="flex:2;padding:9px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Próximo →</button>
+  </div>
+</div>
+
+<!-- BOTÃO FLUTUANTE AJUDA -->
+<div id="help-btn" style="display:none;position:fixed;bottom:80px;right:16px;z-index:9990;width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#818cf8);box-shadow:0 4px 16px rgba(99,102,241,.5);align-items:center;justify-content:center;cursor:pointer;font-size:19px" onclick="toggleHelp()">❓</div>
+
+<!-- PAINEL FAQ -->
+<div id="help-panel" style="display:none;position:fixed;bottom:138px;right:16px;z-index:9991;width:300px;background:#1e1e2e;border:1px solid rgba(99,102,241,.3);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.6);overflow:hidden">
+  <div style="background:linear-gradient(135deg,#6366f1,#818cf8);padding:14px 16px;display:flex;justify-content:space-between;align-items:center">
+    <div><div style="font-weight:700;color:#fff;font-size:14px">❓ Central de Ajuda</div><div style="color:rgba(255,255,255,.7);font-size:11px">Toque numa dúvida</div></div>
+    <button onclick="toggleHelp()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:4px 8px;cursor:pointer;font-size:12px">✕</button>
+  </div>
+  <div style="padding:10px;max-height:420px;overflow-y:auto">
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">💬 Como registrar meus ganhos?</div><div class="faq-a">No chat, fale: <em>"Fiz R$350 na Uber hoje"</em> ou <em>"Ganhei 280 na 99 ontem"</em>. O Gestor registra automaticamente.</div></div>
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">📋 Como cadastrar minhas contas?</div><div class="faq-a">Fale no chat: <em>"Tenho conta de aluguel R$800 vencendo dia 10"</em> ou <em>"Academia R$120 todo mês no dia 5"</em>.</div></div>
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">📊 Como projetar gastos médios?</div><div class="faq-a">Fale no chat: <em>"Gasto em média R$200 por semana no mercado"</em>. O Gestor projeta até o final do mês.</div></div>
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">⛽ Como registrar combustível?</div><div class="faq-a">Fale no chat: <em>"Abasteci R$150 hoje"</em>. O sistema calcula o % do faturamento gasto.</div></div>
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">🎯 Como mudar minha meta mensal?</div><div class="faq-a">No Dashboard, role até o card <strong>META MENSAL</strong> e toque em <strong>✏️ Editar</strong>.</div></div>
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">📄 Como gerar o PDF?</div><div class="faq-a">Vá em <strong>Fechamento</strong> na barra inferior → toque em <strong>📄 Baixar PDF</strong> → escolha o período.</div></div>
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">✅ Como marcar conta como paga?</div><div class="faq-a">Fale no chat: <em>"Paguei o aluguel hoje"</em>. Ou vá em <strong>Contas</strong> e toque em <strong>Abater</strong>.</div></div>
+    <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">🗑️ Como apagar um lançamento errado?</div><div class="faq-a">Fale no chat: <em>"Cancele o último lançamento que você fez"</em>. Ou vá em <strong>Histórico</strong> e toque na lixeira.</div></div>
+    <button onclick="toggleHelp();iniciarTour()" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1px solid rgba(99,102,241,.4);background:rgba(99,102,241,.1);color:#818cf8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🎯 Ver tour novamente</button>
+  </div>
+</div>
+
+<script>
+const _TOUR_KEY='painel_tour_v2';
+const _tourPassos=[
+  {icon:'👋',title:'Bem-vindo ao Painel.IA!',desc:'Para o app funcionar, você precisa <strong>alimentar o chat</strong> com suas contas, gastos e ganhos. Vamos ver como em alguns passos rápidos.',target:null},
+  {icon:'💬',title:'O Gestor IA — o coração do app',desc:'Aqui você fala naturalmente. Diga suas contas e gastos:<br><br><em>"Tenho conta de aluguel R$800 vencendo dia 10"</em><br><em>"Gasto em média R$200 por semana no mercado"</em><br><em>"Fiz R$300 na 99 hoje"</em>',target:'chat-msgs',pos:'top'},
+  {icon:'📊',title:'Dashboard — seu lucro em tempo real',desc:'Mostra lucro do mês, contas urgentes e gráficos. Tudo atualiza quando você registra algo no chat.',target:'ni-dashboard',pos:'top'},
+  {icon:'📋',title:'Contas a pagar',desc:'Aqui ficam todas as suas contas. O app avisa quando estiver perto do vencimento.',target:'ni-contas',pos:'top'},
+  {icon:'📖',title:'Histórico de lançamentos',desc:'Veja todos os ganhos e gastos registrados. Pode filtrar por tipo e mês.',target:'ni-historico',pos:'top'},
+  {icon:'🔒',title:'Fechamento',desc:'Confira se as contas fecham e gere o <strong>PDF do mês</strong> para guardar ou enviar.',target:'ni-fechamento',pos:'top'},
+  {icon:'🎯',title:'Pronto para começar!',desc:'Comece falando no chat suas principais contas e quanto gasta em média por semana. O Gestor faz o resto!',target:null,last:true}
+];
+let _tourIdx=0;
+
+function iniciarTour(){
+  _tourIdx=0;
+  localStorage.removeItem(_TOUR_KEY);
+  _renderTourPasso();
+}
+
+function _renderTourPasso(){
+  const p=_tourPassos[_tourIdx];
+  document.getElementById('tour-overlay').style.display='block';
+  document.getElementById('tour-card').style.display='block';
+  document.getElementById('tour-step-label').textContent=`PASSO ${_tourIdx+1} DE ${_tourPassos.length}`;
+  document.getElementById('tour-icon').textContent=p.icon;
+  document.getElementById('tour-title').textContent=p.title;
+  document.getElementById('tour-desc').innerHTML=p.desc;
+  document.getElementById('tour-btn-next').textContent=p.last?'✅ Começar!':'Próximo →';
+  const hl=document.getElementById('tour-highlight');
+  const card=document.getElementById('tour-card');
+  card.style.transform='';
+  if(p.target){
+    const el=document.getElementById(p.target);
+    if(el){
+      const r=el.getBoundingClientRect(),pad=8;
+      hl.style.cssText=`display:block;left:${r.left-pad}px;top:${r.top-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;position:fixed;z-index:99999;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,0.75);pointer-events:none;transition:all .3s ease`;
+      // Position card above or below
+      const cW=290,cH=220;
+      let top=r.top-cH-20,left=r.left+r.width/2-cW/2;
+      if(top<10) top=r.bottom+16;
+      left=Math.max(10,Math.min(left,window.innerWidth-cW-10));
+      top=Math.max(10,Math.min(top,window.innerHeight-cH-10));
+      card.style.cssText=`display:block;position:fixed;z-index:100000;background:#1e1e2e;border:1px solid rgba(99,102,241,.5);border-radius:16px;padding:20px;width:${cW}px;box-shadow:0 8px 32px rgba(0,0,0,.6);top:${top}px;left:${left}px`;
+    }
+  } else {
+    hl.style.display='none';
+    card.style.cssText='display:block;position:fixed;z-index:100000;background:#1e1e2e;border:1px solid rgba(99,102,241,.5);border-radius:16px;padding:20px;width:290px;box-shadow:0 8px 32px rgba(0,0,0,.6);top:50%;left:50%;transform:translate(-50%,-50%)';
+  }
+}
+
+function tourProximo(){
+  _tourIdx++;
+  if(_tourIdx>=_tourPassos.length) tourFinalizar();
+  else _renderTourPasso();
+}
+
+function tourPular(){ tourFinalizar(); }
+
+function tourFinalizar(){
+  ['tour-overlay','tour-highlight','tour-card'].forEach(id=>{document.getElementById(id).style.display='none';});
+  const hb=document.getElementById('help-btn');
+  hb.style.display='flex';
+  localStorage.setItem(_TOUR_KEY,'1');
+}
+
+function toggleHelp(){
+  const p=document.getElementById('help-panel');
+  p.style.display=p.style.display==='none'?'block':'none';
+}
+
+function toggleFaq(el){ el.classList.toggle('open'); }
+
+// Auto-iniciar para novos usuários
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    if(localStorage.getItem(_TOUR_KEY)){
+      document.getElementById('help-btn').style.display='flex';
+      return;
+    }
+    const check=setInterval(function(){
+      if(window.MID){
+        clearInterval(check);
+        if(!localStorage.getItem(_TOUR_KEY)) iniciarTour();
+        else document.getElementById('help-btn').style.display='flex';
+      }
+    },800);
+  },1800);
+});
 </script>
 </body>
 </html>
