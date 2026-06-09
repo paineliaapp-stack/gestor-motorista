@@ -19,6 +19,17 @@ load_dotenv()
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+import json as _json_log, datetime as _dt_log
+
+def log_info(evento: str, **kwargs):
+    print(_json_log.dumps({"ts": _dt_log.datetime.utcnow().isoformat(), "level": "INFO", "evento": evento, **{k: str(v)[:200] for k,v in kwargs.items()}}))
+
+def log_warn(evento: str, **kwargs):
+    print(_json_log.dumps({"ts": _dt_log.datetime.utcnow().isoformat(), "level": "WARN", "evento": evento, **{k: str(v)[:200] for k,v in kwargs.items()}}))
+
+def log_erro(evento: str, **kwargs):
+    print(_json_log.dumps({"ts": _dt_log.datetime.utcnow().isoformat(), "level": "ERRO", "evento": evento, **{k: str(v)[:200] for k,v in kwargs.items()}}))
+
 app = FastAPI(title="Painel.IA API", docs_url=None, redoc_url=None, openapi_url=None)
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
