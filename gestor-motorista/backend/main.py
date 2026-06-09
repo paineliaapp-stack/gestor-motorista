@@ -89,7 +89,7 @@ def _enviar_push(subscription_info: dict, titulo: str, corpo: str, url: str = "/
 
 async def _disparar_push_todos(titulo: str, corpo: str, url: str = "/", tag: str = "painel", apenas_motorista_id: str = None):
     try:
-        q = supabase_admin.table("push_subscriptions").select("*")
+        q = supabase.table("push_subscriptions").select("*")
         if apenas_motorista_id:
             q = q.eq("motorista_id", apenas_motorista_id)
         res = q.execute()
@@ -99,7 +99,7 @@ async def _disparar_push_todos(titulo: str, corpo: str, url: str = "/", tag: str
             resultado = _enviar_push(sub["subscription"], titulo, corpo, url, tag)
             if resultado == "expired": expiradas.append(sub["id"])
         for sid in expiradas:
-            supabase_admin.table("push_subscriptions").delete().eq("id", sid).execute()
+            supabase.table("push_subscriptions").delete().eq("id", sid).execute()
         log_info("push_disparado", total=len(subs), expiradas=len(expiradas))
     except Exception as e:
         log_erro("push_dispatch_erro", err=str(e)[:200])
@@ -120,7 +120,7 @@ async def _notif_contas_urgentes():
         from datetime import date as _dc2, timedelta as _td2
         hoje2 = _dc2.today().isoformat()
         amanha2 = (_dc2.today() + _td2(days=1)).isoformat()
-        res2 = supabase_admin.table("contas").select("motorista_id,descricao,valor,vencimento").eq("pago", False).in_("vencimento", [hoje2, amanha2]).execute()
+        res2 = supabase.table("contas").select("motorista_id,descricao,valor,vencimento").eq("pago", False).in_("vencimento", [hoje2, amanha2]).execute()
         por_mid = {}
         for c in (res2.data or []):
             por_mid.setdefault(c["motorista_id"], []).append(c)
@@ -137,6 +137,24 @@ async def _notif_relatorio_domingo():
 
 @app.on_event("startup")
 async def startup_scheduler():
+    # Garante que a tabela push_subscriptions existe
+    try:
+        supabase.table("push_subscriptions").select("id").limit(1).execute()
+    except Exception:
+        try:
+            supabase.rpc("exec_sql", {"query": """
+                CREATE TABLE IF NOT EXISTS push_subscriptions (
+                    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+                    motorista_id text NOT NULL,
+                    endpoint text NOT NULL,
+                    subscription jsonb NOT NULL,
+                    created_at timestamptz DEFAULT now()
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS push_subs_unique ON push_subscriptions (motorista_id, endpoint);
+            """}).execute()
+            log_info("push_table_criada")
+        except Exception as e:
+            log_warn("push_table_criar_erro", err=str(e)[:200])
     _scheduler.add_job(_notif_teste_0010,        CronTrigger(hour=0,  minute=15), id="teste_0015",     replace_existing=True)
     _scheduler.add_job(_notif_meta_manha,         CronTrigger(hour=8,  minute=0),  id="meta_manha",     replace_existing=True)
     _scheduler.add_job(_notif_contas_urgentes,    CronTrigger(hour=9,  minute=0),  id="contas_urg",     replace_existing=True)
@@ -152,9 +170,9 @@ async def push_diagnostico():
     resultado = {}
     # 1. Verifica tabela
     try:
-        r = supabase_admin.table("push_subscriptions").select("id").limit(1).execute()
+        r = supabase.table("push_subscriptions").select("id").limit(1).execute()
         resultado["tabela_push_subscriptions"] = "OK"
-        resultado["total_subscriptions"] = len(supabase_admin.table("push_subscriptions").select("id").execute().data or [])
+        resultado["total_subscriptions"] = len(supabase.table("push_subscriptions").select("id").execute().data or [])
     except Exception as e:
         resultado["tabela_push_subscriptions"] = f"ERRO: {str(e)[:100]}"
     # 2. Verifica VAPID
@@ -177,11 +195,11 @@ async def push_subscribe(dados: dict = Body(...)):
         return {"ok": False, "erro": "Dados incompletos"}
     try:
         endpoint = subscription.get("endpoint", "")[:500]
-        ex = supabase_admin.table("push_subscriptions").select("id").eq("motorista_id", motorista_id).eq("endpoint", endpoint).execute()
+        ex = supabase.table("push_subscriptions").select("id").eq("motorista_id", motorista_id).eq("endpoint", endpoint).execute()
         if ex.data:
-            supabase_admin.table("push_subscriptions").update({"subscription": subscription}).eq("id", ex.data[0]["id"]).execute()
+            supabase.table("push_subscriptions").update({"subscription": subscription}).eq("id", ex.data[0]["id"]).execute()
         else:
-            supabase_admin.table("push_subscriptions").insert({"motorista_id": motorista_id, "endpoint": endpoint, "subscription": subscription}).execute()
+            supabase.table("push_subscriptions").insert({"motorista_id": motorista_id, "endpoint": endpoint, "subscription": subscription}).execute()
         log_info("push_subscribe_ok", motorista_id=motorista_id)
         return {"ok": True}
     except Exception as e:
@@ -191,7 +209,7 @@ async def push_subscribe(dados: dict = Body(...)):
 @app.delete("/push-unsubscribe")
 async def push_unsubscribe(dados: dict = Body(...)):
     try:
-        supabase_admin.table("push_subscriptions").delete().eq("motorista_id", dados.get("motorista_id")).eq("endpoint", dados.get("endpoint","")[:500]).execute()
+        supabase.table("push_subscriptions").delete().eq("motorista_id", dados.get("motorista_id")).eq("endpoint", dados.get("endpoint","")[:500]).execute()
         return {"ok": True}
     except Exception as e:
         return {"ok": False, "erro": str(e)}
