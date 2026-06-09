@@ -393,7 +393,9 @@ def get_turnos(motorista_id: str):
 
 @app.get("/resumo/{motorista_id}")
 async def resumo(motorista_id: str, mes: Optional[int] = None, ano: Optional[int] = None, uid: str = Depends(get_uid_from_token)):
-    if motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
+    if motorista_id.lower().strip() != uid.lower().strip():
+        print(f"RESUMO 403: mid={motorista_id!r} uid={uid!r}")
+        raise HTTPException(status_code=403, detail="Acesso negado")
     if not _valid_uuid(motorista_id): return {"erro": "ID inválido"}
     hoje = hoje_brasil()
     mes = mes or hoje.month

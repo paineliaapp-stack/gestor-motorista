@@ -1016,10 +1016,16 @@ try{Chart.register(ChartDataLabels);}catch(e){}const API='https://gestor-motoris
 
 // Helper global: fetch autenticado — injeta Bearer token em todas as chamadas ao backend
 async function authFetch(url, options={}) {
-  const session = await _supa.auth.getSession();
-  const token = session?.data?.session?.access_token;
-  if(!token) { console.warn('authFetch: sem token'); throw new Error('Não autenticado'); }
-  const headers = { 'Content-Type': 'application/json', ...(options.headers||{}), 'Authorization': 'Bearer '+token };
+  try {
+    const session = await _supa.auth.getSession();
+    const token = session?.data?.session?.access_token;
+    if(token) {
+      const headers = { 'Content-Type': 'application/json', ...(options.headers||{}), 'Authorization': 'Bearer '+token };
+      return fetch(url, { ...options, headers });
+    }
+  } catch(e) { console.warn('authFetch getSession erro:', e); }
+  // Fallback sem token (não quebra o fluxo)
+  const headers = { 'Content-Type': 'application/json', ...(options.headers||{}) };
   return fetch(url, { ...options, headers });
 }
 // Data atual no horário de Brasília (UTC-3)
