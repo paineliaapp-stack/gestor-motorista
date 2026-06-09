@@ -486,14 +486,12 @@ const _supa = supabase.createClient(
   </div>
 </header>
 <script>
-// Esconde banner imediatamente se notificações já estão ativas ou bloqueadas
+// Esconde banner só se já tem permissão concedida — mantém visível no iOS mesmo sem PushManager
 (function(){
   var b = document.getElementById('banner-notif');
   if(!b) return;
-  if(!('Notification' in window) || !('PushManager' in window) || !('serviceWorker' in navigator)){
-    b.style.display='none'; return;
-  }
-  if(Notification.permission !== 'default') b.style.display='none';
+  // Só esconde se já aceitou — nunca esconde por falta de suporte (iOS pode ter suporte parcial)
+  if('Notification' in window && Notification.permission === 'granted') b.style.display='none';
 })();
 </script>
 <nav class="sidenav">
@@ -5699,7 +5697,8 @@ async function ativarNotificacoes() {
 function _atualizarBotaoNotif() {
   const btn = document.getElementById('btn-notif-push');
   const banner = document.getElementById('banner-notif');
-  const suporte = 'Notification' in window && 'PushManager' in window && 'serviceWorker' in navigator;
+  const suporte = 'Notification' in window && 'serviceWorker' in navigator;
+  const pushSupporte = 'PushManager' in window;
   if(!suporte) {
     if(btn) btn.style.display='none';
     if(banner) banner.style.display='none';

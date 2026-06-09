@@ -234,6 +234,13 @@ async def push_teste_manual(dados: dict = Body(...)):
     await _disparar_push_todos("Painel.IA — Teste 🧪", "Funcionou! Notificacoes ativas ✅", "/", "teste-manual", apenas_motorista_id=mid)
     return {"ok": True}
 
+@app.get("/push-teste-agora/{mid}")
+async def push_teste_agora(mid: str):
+    """Dispara notificacao de teste imediatamente para um motorista — so para debug"""
+    if not _valid_uuid(mid): return {"ok": False, "erro": "ID invalido"}
+    await _disparar_push_todos("Painel.IA — Teste 🧪", "Funcionou! Notificacoes ativas ✅", "/", "teste-agora", apenas_motorista_id=mid)
+    return {"ok": True, "mid": mid}
+
 
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
