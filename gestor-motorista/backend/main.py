@@ -145,6 +145,26 @@ async def startup_scheduler():
     _scheduler.start()
     log_info("scheduler_iniciado", jobs=5)
 
+
+@app.get("/push-diagnostico")
+async def push_diagnostico():
+    """Verifica se tudo está ok para push."""
+    resultado = {}
+    # 1. Verifica tabela
+    try:
+        r = supabase_admin.table("push_subscriptions").select("id").limit(1).execute()
+        resultado["tabela_push_subscriptions"] = "OK"
+        resultado["total_subscriptions"] = len(supabase_admin.table("push_subscriptions").select("id").execute().data or [])
+    except Exception as e:
+        resultado["tabela_push_subscriptions"] = f"ERRO: {str(e)[:100]}"
+    # 2. Verifica VAPID
+    resultado["vapid_public"] = VAPID_PUBLIC_KEY[:20] + "..."
+    resultado["vapid_email"] = VAPID_EMAIL
+    # 3. Scheduler
+    resultado["scheduler_rodando"] = _scheduler.running
+    resultado["jobs"] = [j.id for j in _scheduler.get_jobs()]
+    return resultado
+
 @app.get("/vapid-public-key")
 def get_vapid_key():
     return {"key": VAPID_PUBLIC_KEY}
