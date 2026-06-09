@@ -5347,6 +5347,13 @@ const _tourPassos=[
   {icon:'📋',title:'Contas a pagar',desc:'Aqui ficam todas as suas contas. O app avisa quando estiver perto do vencimento.',target:'ni-contas',pos:'top'},
   {icon:'📖',title:'Histórico de lançamentos',desc:'Veja todos os ganhos e gastos registrados. Pode filtrar por tipo e mês.',target:'ni-historico',pos:'top'},
   {icon:'🔒',title:'Fechamento',desc:'Confira se as contas fecham e gere o <strong>PDF do mês</strong> para guardar ou enviar.',target:'ni-fechamento',pos:'top'},
+  {icon:'📲',title:'Salve o app no celular',desc:(function(){
+    const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isStandalone=window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;
+    if(isStandalone) return '✅ O app já está instalado na sua tela inicial!';
+    if(isIOS) return 'Para abrir sem precisar do navegador:<br><br><strong>1.</strong> Toque no botão <strong>compartilhar ⎙</strong> na barra do Safari<br><strong>2.</strong> Role e toque em <strong>"Adicionar à Tela de Início"</strong><br><strong>3.</strong> Toque em <strong>"Adicionar"</strong><br><br>Depois é só abrir pelo ícone como qualquer app!';
+    return 'Para abrir com 1 toque na tela inicial:<br><br><strong>1.</strong> Toque nos <strong>3 pontinhos ⋮</strong> no topo do Chrome<br><strong>2.</strong> Toque em <strong>"Adicionar à tela inicial"</strong><br><strong>3.</strong> Toque em <strong>"Adicionar"</strong><br><br>No Android com Chrome, você também pode tocar no botão abaixo 👇';
+  })(),target:null,installBtn:true},
   {icon:'🎯',title:'Pronto para começar!',desc:'Comece falando no chat suas principais contas e quanto gasta em média por semana. O Gestor faz o resto!',target:null,last:true}
 ];
 let _tourIdx=0;
@@ -5365,6 +5372,20 @@ function _renderTourPasso(){
   document.getElementById('tour-title').textContent=p.title;
   document.getElementById('tour-desc').innerHTML=p.desc;
   document.getElementById('tour-btn-next').textContent=p.last?'✅ Começar!':'Próximo →';
+  // Botão instalar (só no passo de instalação)
+  const existingInstBtn=document.getElementById('tour-install-btn');
+  if(existingInstBtn) existingInstBtn.remove();
+  if(p.installBtn){
+    const isStandalone=window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;
+    if(!isStandalone){
+      const ib=document.createElement('button');
+      ib.id='tour-install-btn';
+      ib.textContent='📲 Instalar agora';
+      ib.style.cssText='width:100%;margin-top:14px;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit';
+      ib.onclick=()=>instalarApp();
+      document.getElementById('tour-desc').after(ib);
+    }
+  }
   const hl=document.getElementById('tour-highlight');
   const card=document.getElementById('tour-card');
   card.style.transform='';
