@@ -1015,16 +1015,25 @@ const _supa = supabase.createClient(
 try{Chart.register(ChartDataLabels);}catch(e){}const API='https://gestor-motorista-production.up.railway.app';
 
 // Helper global: fetch autenticado — injeta Bearer token em todas as chamadas ao backend
+let _sessionPromise = null;
+function _getSessionOnce() {
+  if(!_sessionPromise) _sessionPromise = _supa.auth.getSession();
+  return _sessionPromise;
+}
 async function authFetch(url, options={}) {
   try {
-    const session = await _supa.auth.getSession();
+    // Tenta sessão já disponível sem esperar
+    let session = await Promise.race([
+      _supa.auth.getSession(),
+      new Promise(res => setTimeout(() => res(null), 2000)) // timeout 2s
+    ]);
     const token = session?.data?.session?.access_token;
     if(token) {
       const headers = { 'Content-Type': 'application/json', ...(options.headers||{}), 'Authorization': 'Bearer '+token };
       return fetch(url, { ...options, headers });
     }
   } catch(e) { console.warn('authFetch getSession erro:', e); }
-  // Fallback sem token (não quebra o fluxo)
+  // Fallback sem token (não quebra o fluxo — backend retornará 401 se necessário)
   const headers = { 'Content-Type': 'application/json', ...(options.headers||{}) };
   return fetch(url, { ...options, headers });
 }

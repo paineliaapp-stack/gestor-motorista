@@ -134,41 +134,66 @@ def _cache_del(prefix: str):
             del _cache[k]
 
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
-# Cliente separado com service_role para operações admin (bypassa RLS)
 _supabase_url = os.getenv("SUPABASE_URL", "")
 _supabase_service_key = os.getenv("SUPABASE_KEY", "")
 
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import httpx as _httpx_auth
+import base64 as _b64, json as _json2, time as _time2
+
+# ── Cache de tokens: evita chamar Supabase a cada request ───────────────────
+from collections import OrderedDict
+class _TokenCache:
+    def __init__(self, maxsize=2000):
+        self._d: OrderedDict = OrderedDict()
+        self._n = maxsize
+    def get(self, tok):
+        e = self._d.get(tok)
+        if not e: return None
+        uid, exp = e
+        if exp < _time2.time(): self._d.pop(tok, None); return None
+        self._d.move_to_end(tok); return uid
+    def set(self, tok, uid, exp):
+        if len(self._d) >= self._n: self._d.popitem(last=False)
+        self._d[tok] = (uid, exp)
+
+_tok_cache = _TokenCache()
+
+def _jwt_exp(token):
+    try:
+        p = token.split(".")[1] + "=="
+        return float(_json2.loads(_b64.urlsafe_b64decode(p)).get("exp", 0))
+    except: return 0.0
 
 _bearer_scheme = HTTPBearer(auto_error=False)
 
 async def get_uid_from_token(
     credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme)
 ) -> str:
-    """Verifica JWT do Supabase e retorna o uid do usuário autenticado."""
+    """Verifica JWT do Supabase. Cache local — chama HTTP só na 1ª vez por token."""
     if not credentials or not credentials.credentials:
         raise HTTPException(status_code=401, detail="Token não fornecido")
     token = credentials.credentials
+    # Cache hit: sem chamada HTTP
+    cached = _tok_cache.get(token)
+    if cached: return cached
+    # Cache miss: verifica com Supabase
     try:
         async with _httpx_auth.AsyncClient(timeout=5) as c:
             r = await c.get(
                 f"{_supabase_url}/auth/v1/user",
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "apikey": _supabase_service_key,
-                }
+                headers={"Authorization": f"Bearer {token}", "apikey": _supabase_service_key}
             )
         if r.status_code != 200:
             raise HTTPException(status_code=401, detail="Token inválido ou expirado")
-        data = r.json()
-        uid = data.get("id")
+        uid = r.json().get("id")
         if not uid:
             raise HTTPException(status_code=401, detail="Usuário não encontrado")
+        exp = _jwt_exp(token)
+        _tok_cache.set(token, uid, exp if exp > 0 else _time2.time() + 3600)
         return uid
-    except HTTPException:
-        raise
+    except HTTPException: raise
     except Exception as e:
         print(f"Erro verificação token: {e}")
         raise HTTPException(status_code=401, detail="Erro ao verificar token")
