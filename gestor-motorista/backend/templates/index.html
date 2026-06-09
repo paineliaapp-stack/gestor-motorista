@@ -647,7 +647,7 @@ const _supa = supabase.createClient(
 
 
   <!-- Banner de notificações — aparece se permissão não foi dada -->
-  <div id="banner-notif" style="display:none;background:linear-gradient(135deg,rgba(255,200,0,.15),rgba(255,150,0,.1));border:1px solid rgba(255,200,0,.4);border-radius:14px;padding:14px 16px;margin-bottom:14px;cursor:pointer;user-select:none" onclick="ativarNotificacoes()">
+  <div id="banner-notif" style="display:none;background:linear-gradient(135deg,rgba(255,200,0,.15),rgba(255,150,0,.1));border:1px solid rgba(255,200,0,.4);border-radius:14px;padding:14px 16px;margin-bottom:14px;cursor:pointer;user-select:none" onclick="ativarNotificacoes()" class="banner-push-notif">
     <div style="display:flex;align-items:center;gap:10px">
       <span style="font-size:22px">🔔</span>
       <div>
@@ -2196,6 +2196,7 @@ async function atualizarMeta(novaMeta){
 }
 
 async function loadDash(){
+  try { _atualizarBotaoNotif(); } catch(e) {}
   if(!MID && window.MID) MID = window.MID;
   if(!MID)return;
   // Plano de faturamento desativado temporariamente — oculta cards relacionados
@@ -5662,20 +5663,22 @@ const _VAPID_PUBLIC = "BCy8ETKpP9jIkSHcogzLDgCUlOq3ZuKQ84nnF9Td7Wya6K-q-TUH0NIlo
 
 
 async function ativarNotificacoes() {
+  const banner = document.getElementById('banner-notif');
   const btn = document.getElementById('btn-notif-push');
   if(btn) btn.textContent = '⏳';
+  if(banner) banner.innerHTML = banner.innerHTML.replace('🔔','⏳');
+
   await _registrarPush();
-  // Check result
+
   const perm = Notification.permission;
   if(perm === 'granted') {
+    if(banner) banner.style.display = 'none';
     if(btn){ btn.textContent = '🔔'; btn.style.color = '#00D897'; btn.style.borderColor = 'rgba(0,216,151,.4)'; btn.title = 'Notificações ativas'; }
     toast('✅ Notificações ativadas!');
-    // Manda teste imediato
-    const mid = MID || window.MID;
-    if(mid) fetch(API+'/push-teste', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({motorista_id: mid})});
   } else {
+    if(banner) banner.style.display = 'none'; // esconde mesmo se negou
     if(btn) btn.textContent = '🔕';
-    toast('Permissão negada. Ative nas configurações do navegador.');
+    toast('Permissão negada — ative nas configurações do navegador.');
   }
 }
 
@@ -5700,8 +5703,12 @@ function _atualizarBotaoNotif() {
       btn.textContent = '🔔'; btn.style.color = '#ffd700'; btn.title = 'Ativar notificações';
     }
   }
-  // Banner no dashboard — só mostra se ainda não pediu permissão
-  if(banner) banner.style.display = (perm === 'default') ? '' : 'none';
+  // Banner no dashboard — mostra se nunca pediu permissão
+  if(banner) {
+    // Suporte a push? Mostra o banner se permissão ainda não foi dada
+    const temSuportePush = 'PushManager' in window && 'serviceWorker' in navigator;
+    banner.style.display = (temSuportePush && perm === 'default') ? '' : 'none';
+  }
 }
 
 async function _registrarPush() {
