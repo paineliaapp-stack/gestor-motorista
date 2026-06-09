@@ -5339,7 +5339,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
 <script>
 // Tour key vinculada ao usuário — não reabre em sessões novas do mesmo usuário
-function _tourKey(){ return 'painel_tour_v2_'+(window.MID||'anon'); }
+function _tourKey(){ 
+  const mid = window.MID;
+  if(!mid) return null; // sem MID não opera
+  return 'painel_tour_v2_'+mid; 
+}
 const _tourPassos=[
   {icon:'👋',title:'Bem-vindo ao Painel.IA!',desc:'Para o app funcionar, você precisa <strong>alimentar o chat</strong> com suas contas, gastos e ganhos. Vamos ver como em alguns passos rápidos.',target:null},
   {icon:'💬',title:'O Gestor IA — o coração do app',desc:'Aqui você fala naturalmente. Diga suas contas e gastos:<br><br><em>"Tenho conta de aluguel R$800 vencendo dia 10"</em><br><em>"Registra uma projeção de R$200 por semana no mercado até o final do mês"</em><br><em>"Fiz R$300 na 99 hoje"</em>',target:'chat-msgs',pos:'top'},
@@ -5360,7 +5364,9 @@ let _tourIdx=0;
 
 function iniciarTour(){
   _tourIdx=0;
-  localStorage.removeItem(_tourKey());
+  // Marca IMEDIATAMENTE que o tour foi visto — evita reabrir se o usuário fechar no meio
+  const k = _tourKey();
+  if(k) localStorage.setItem(k,'1');
   _renderTourPasso();
 }
 
@@ -5512,13 +5518,15 @@ function toggleFaq(el){ el.classList.toggle('open'); }
 window._tourCheckIniciado = false;
 function _checkTourParaUsuario(){
   if(window._tourCheckIniciado) return;
-  if(!window.MID) return;
+  if(!window.MID) return;  // sem MID, não opera
   window._tourCheckIniciado = true;
-  // Agora temos o MID real — checa se já viu o tour
-  if(localStorage.getItem(_tourKey())){
+  const _tk = _tourKey();
+  if(!_tk) return; // segurança extra
+  if(localStorage.getItem(_tk)){
+    // Já viu o tour — só mostra o botão de ajuda
     document.getElementById('help-btn').style.display='flex';
   } else {
-    // Novo usuário — mostra tour após 1.5s para o dashboard carregar
+    // Primeira vez — mostra tour após 1.5s para o dashboard carregar
     setTimeout(()=>{ iniciarTour(); }, 1500);
   }
 }
