@@ -546,7 +546,16 @@ const _supa = supabase.createClient(
         rec.lang='pt-BR'; rec.interimResults=false; rec.continuous=false; rec.maxAlternatives=1;
         rec.onstart = ()=>{ listening=true; btn.textContent='🔴'; btn.style.background='rgba(255,50,50,.25)'; btn.style.border='1px solid rgba(255,80,80,.5)'; };
         rec.onend   = ()=>{ listening=false; btn.textContent='🎤'; btn.style.background='rgba(255,255,255,.07)'; btn.style.border='1px solid rgba(255,255,255,.12)'; };
-        rec.onerror = ()=>{ listening=false; btn.textContent='🎤'; btn.style.background='rgba(255,255,255,.07)'; btn.style.border='1px solid rgba(255,255,255,.12)'; };
+        rec.onerror = (e)=>{
+          listening=false; btn.textContent='🎤'; btn.style.background='rgba(255,255,255,.07)'; btn.style.border='1px solid rgba(255,255,255,.12)';
+          if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+            inp.placeholder='🔒 Microfone bloqueado — ative nas configurações do navegador';
+            setTimeout(()=>{ inp.placeholder='Ex: fiz 350 na uber, paguei...'; },5000);
+          } else if(e.error==='no-speech'){
+            inp.placeholder='Não ouvi nada, tente de novo...';
+            setTimeout(()=>{ inp.placeholder='Ex: fiz 350 na uber, paguei...'; },3000);
+          }
+        };
         rec.onresult = (e)=>{ inp.value=e.results[0][0].transcript; rec.stop(); setTimeout(sendChat,300); };
         try{ rec.start(); } catch(ex){ console.warn('mic',ex); }
       };
