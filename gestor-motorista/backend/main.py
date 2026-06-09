@@ -2395,7 +2395,8 @@ async def generic_exception_handler(request, exc):
     print(f"ERRO GLOBAL: {exc}")
     traceback.print_exc()
     from fastapi.responses import JSONResponse
-    return JSONResponse(status_code=500, content={"resposta": "Tive um erro interno. Tente de novo em alguns segundos.", "acao": None, "erro": str(exc)})
+    tb = traceback.format_exc()
+    return JSONResponse(status_code=500, content={"resposta": f"Erro: {str(exc)[:200]}", "acao": None, "erro": str(exc), "trace": tb[-300:]})
 
 
 
