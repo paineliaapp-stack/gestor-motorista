@@ -647,8 +647,7 @@ const _supa = supabase.createClient(
   </div>
 
 
-  <!-- Banner de notificações — aparece se permissão não foi dada -->
-  <!-- banner-notif removido temporariamente -->
+
   <!-- CARD META MENSAL — sempre visível no dashboard -->
   <div id="card-meta-mensal" style="background:rgba(0,216,151,.08);border:1px solid rgba(0,216,151,.25);border-radius:16px;padding:16px 18px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -5040,7 +5039,6 @@ function quickDashChat(txt){ quickChat(txt); }
 
 
 <script>
-// Service worker mantido para push notifications — não desregistrar
 // Fallback: se o usuário já estava logado e init não vai rodar de novo,
 // tenta registrar push após 3s de qualquer forma
 window.addEventListener('load', () => {
@@ -5654,161 +5652,7 @@ window.addEventListener('load',function(){
 });
 
 // ── Push Notifications ────────────────────────────────────────────────────────
-const _VAPID_PUBLIC = "BCy8ETKpP9jIkSHcogzLDgCUlOq3ZuKQ84nnF9Td7Wya6K-q-TUH0NIloBgDPaArR6lhEVt-KhOevVWgG8PCg98";
 
-
-async function ativarNotificacoes() {
-  const banner = document.getElementById('banner-notif');
-  const btn = document.getElementById('btn-notif-push');
-  if(btn) btn.textContent = '⏳';
-  if(banner) banner.innerHTML = banner.innerHTML.replace('🔔','⏳');
-
-  await _registrarPush();
-
-  const perm = Notification.permission;
-  if(perm === 'granted') {
-    if(banner) banner.style.display = 'none';
-    if(btn){ btn.textContent = '🔔'; btn.style.color = '#00D897'; btn.style.borderColor = 'rgba(0,216,151,.4)'; btn.title = 'Notificações ativas'; }
-    toast('✅ Notificações ativadas!');
-  } else {
-    if(banner) banner.style.display = 'none'; // esconde mesmo se negou
-    if(btn) btn.textContent = '🔕';
-    toast('Permissão negada — ative nas configurações do navegador.');
-  }
-}
-
-function _atualizarBotaoNotif() {
-  const btn = document.getElementById('btn-notif-push');
-  const banner = document.getElementById('banner-notif');
-  const suporte = 'Notification' in window && 'serviceWorker' in navigator;
-  const pushSupporte = 'PushManager' in window;
-  if(!suporte) {
-    if(btn) btn.style.display='none';
-    if(banner) banner.style.display='none';
-    return;
-  }
-  const perm = Notification.permission;
-  // Botão header
-  if(btn) {
-    btn.style.display = '';
-    if(perm === 'granted') {
-      btn.textContent = '🔔'; btn.style.color = '#00D897'; btn.style.borderColor = 'rgba(0,216,151,.4)'; btn.title = 'Notificações ativas';
-    } else if(perm === 'denied') {
-      btn.textContent = '🔕'; btn.style.color = '#888'; btn.title = 'Notificações bloqueadas';
-    } else {
-      btn.textContent = '🔔'; btn.style.color = '#ffd700'; btn.title = 'Ativar notificações';
-    }
-  }
-  // Banner no dashboard — mostra se nunca pediu permissão
-  if(banner) {
-    // Suporte a push? Mostra o banner se permissão ainda não foi dada
-    const temSuportePush = 'PushManager' in window && 'serviceWorker' in navigator;
-    banner.style.display = (temSuportePush && perm === 'default') ? '' : 'none';
-  }
-}
-
-async function _registrarPush() {
-  try {
-    const mid = MID || window.MID || localStorage.getItem('mid');
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    console.log('[Push] iniciando, mid=', mid, 'SW=', 'serviceWorker' in navigator, 'Push=', 'PushManager' in window, 'iOS=', isIOS, 'standalone=', isStandalone);
-
-    if (!('serviceWorker' in navigator)) {
-      toast('⚠️ Seu navegador não suporta notificações');
-      console.warn('[Push] sem serviceWorker'); return;
-    }
-    if (!('PushManager' in window)) {
-      // iOS só tem PushManager quando instalado como PWA
-      if (isIOS && !isStandalone) {
-        // Mostra instrução para instalar o app
-        const banner = document.getElementById('banner-notif');
-        if(banner) banner.innerHTML = `<div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">📲</span><div><div style="font-size:13px;font-weight:700;color:#ffd700">Instale o app para ativar</div><div style="font-size:11px;color:rgba(255,200,0,.8);margin-top:2px">No Safari: toque em ⎙ → "Adicionar à Tela de Início" → abra o app instalado</div></div></div>`;
-        console.warn('[Push] iOS sem PWA — precisa instalar'); 
-      } else {
-        toast('⚠️ Notificações não suportadas neste navegador');
-        console.warn('[Push] sem PushManager');
-      }
-      return;
-    }
-    if (!mid) { toast('⚠️ Faça login primeiro'); console.warn('[Push] mid nao disponivel'); return; }
-
-    const reg = await navigator.serviceWorker.register('/static/sw.js');
-    console.log('[Push] SW registrado:', reg.scope);
-    await navigator.serviceWorker.ready;
-    console.log('[Push] SW pronto');
-
-    // Timeout de 15s para o requestPermission — iOS às vezes trava indefinidamente
-    const perm = await Promise.race([
-      Notification.requestPermission(),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout ao pedir permissão')), 15000))
-    ]);
-    console.log('[Push] permissao:', perm);
-    if (perm !== 'granted') { _atualizarBotaoNotif(); return; }
-
-    const vapidKey = _urlBase64ToUint8Array(_VAPID_PUBLIC);
-    let sub = await reg.pushManager.getSubscription();
-    if (!sub) {
-      console.log('[Push] criando nova subscription...');
-      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidKey });
-    }
-    console.log('[Push] subscription endpoint:', sub.endpoint.slice(0,60));
-
-    const resp = await fetch(API + '/push-subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ motorista_id: mid, subscription: sub.toJSON() })
-    });
-    const result = await resp.json();
-    console.log('[Push] backend resp:', result);
-
-    _atualizarBotaoNotif();
-    // Notificação de confirmação imediata
-    fetch(API + '/push-teste', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({motorista_id: mid})
-    });
-  } catch(e) {
-    console.error('[Push] ERRO:', e);
-    toast('Erro: ' + e.message);
-    // Restaura banner para estado clicável
-    const banner = document.getElementById('banner-notif');
-    if(banner) {
-      banner.innerHTML = banner.innerHTML.replace('⏳','🔔');
-      banner.style.display = '';
-    }
-    const btn = document.getElementById('btn-notif-push');
-    if(btn) btn.textContent = '🔔';
-  }
-}
-
-async function _registrarPushSilencioso() {
-  // Chamada automática — só renova subscription existente, NÃO pede permissão
-  try {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-    if (Notification.permission !== "granted") { _atualizarBotaoNotif(); return; }
-    const mid = MID || window.MID;
-    if (!mid) return;
-    const reg = await navigator.serviceWorker.register("/static/sw.js");
-    await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
-    if (sub) {
-      // Renova no backend (pode ter expirado)
-      await fetch(API + "/push-subscribe", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ motorista_id: mid, subscription: sub.toJSON() })
-      });
-    }
-    _atualizarBotaoNotif();
-  } catch(e) {}
-}
-
-function _urlBase64ToUint8Array(base64String) {
-  const padding = "=".repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(base64);
-  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
-}
 
 </script>
 </body>
