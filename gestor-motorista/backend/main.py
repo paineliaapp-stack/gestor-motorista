@@ -133,9 +133,12 @@ def _cache_del(prefix: str):
         if k.startswith(prefix):
             del _cache[k]
 
-supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+supabase = create_client(
+    os.getenv("SUPABASE_URL"),
+    os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY")  # service_role bypassa RLS
+)
 _supabase_url = os.getenv("SUPABASE_URL", "")
-_supabase_service_key = os.getenv("SUPABASE_KEY", "")
+_supabase_service_key = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY", "")
 
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
