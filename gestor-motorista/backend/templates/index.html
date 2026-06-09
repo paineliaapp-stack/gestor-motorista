@@ -4989,29 +4989,60 @@ if('serviceWorker' in navigator){
 
 </script>
 <script>
-// ===== BANNER INSTALAR APP =====
-(function(){
-  const INSTALL_KEY = 'painel_install_dismissed';
-  if(localStorage.getItem(INSTALL_KEY)) return;
-  // Detecta se já está instalado como PWA
-  const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-  if(isStandalone) return;
+// ===== INSTALAR APP (PWA) =====
+let _installPrompt = null; // captura o evento nativo do Android
 
+// Captura o prompt nativo do Android assim que disponível
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _installPrompt = e;
+  // Atualiza botões que dependem disso
+  _atualizarBotoesInstall();
+});
+
+// Quando instala com sucesso, some os botões
+window.addEventListener('appinstalled', () => {
+  _installPrompt = null;
+  const banner = document.getElementById('install-banner');
+  if(banner) banner.style.display = 'none';
+  localStorage.setItem('painel_install_dismissed','1');
+  toast('✅ App instalado! Abra pela tela inicial.');
+});
+
+function _atualizarBotoesInstall(){
+  // Atualiza texto do botão no banner se Android com prompt disponível
+  const btn = document.getElementById('install-action-btn');
+  if(btn && _installPrompt){
+    btn.textContent = 'Instalar agora';
+    btn.style.background = 'linear-gradient(135deg,#6366f1,#818cf8)';
+    btn.style.color = '#fff';
+    btn.style.border = 'none';
+  }
+}
+
+// Função principal — chama de qualquer botão do app
+async function instalarApp(){
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isAndroid = /Android/.test(navigator.userAgent);
-  if(!isIOS && !isAndroid) return;
+  const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+  if(isStandalone){ toast('O app já está instalado! 👍'); return; }
 
-  // Mostra banner após 5 segundos
-  setTimeout(()=>{
-    const banner = document.getElementById('install-banner');
-    const instrucao = document.getElementById('install-instrucao');
-    const btn = document.getElementById('install-action-btn');
-    if(!banner) return;
-    if(instrucao) instrucao.textContent = isIOS ? 'Safari → ⎙ → Adicionar à Tela de Início' : 'Chrome → ⋮ → Adicionar à tela inicial';
-    if(btn) btn.onclick = ()=>{ abrirInstrucaoInstall(isIOS); };
-    banner.style.display = 'flex';
-  }, 5000);
-})();
+  if(_installPrompt){
+    // Android com Chrome: usa o prompt nativo (1 clique)
+    _installPrompt.prompt();
+    const result = await _installPrompt.userChoice;
+    if(result.outcome === 'accepted'){
+      _installPrompt = null;
+      const banner = document.getElementById('install-banner');
+      if(banner) banner.style.display = 'none';
+    }
+  } else if(isIOS){
+    // iOS: mostra instruções passo a passo
+    abrirInstrucaoInstall(true);
+  } else {
+    // Android sem prompt (já instalado ou navegador diferente do Chrome)
+    abrirInstrucaoInstall(false);
+  }
+}
 
 function abrirInstrucaoInstall(isIOS){
   const modal = document.getElementById('modal-install');
@@ -5026,6 +5057,39 @@ function fecharBannerInstall(){
   if(banner) banner.style.display = 'none';
   localStorage.setItem('painel_install_dismissed','1');
 }
+
+// Mostra banner automaticamente (só uma vez por dispositivo)
+(function(){
+  const INSTALL_KEY = 'painel_install_dismissed';
+  if(localStorage.getItem(INSTALL_KEY)) return;
+  const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+  if(isStandalone) return;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/.test(navigator.userAgent);
+  if(!isIOS && !isAndroid) return;
+
+  setTimeout(()=>{
+    const banner = document.getElementById('install-banner');
+    const instrucao = document.getElementById('install-instrucao');
+    const btn = document.getElementById('install-action-btn');
+    if(!banner) return;
+    if(instrucao) instrucao.textContent = isIOS
+      ? 'Safari → ⎙ → Adicionar à Tela de Início'
+      : (_installPrompt ? 'Toque para instalar com 1 clique' : 'Chrome → ⋮ → Adicionar à tela inicial');
+    if(btn){
+      btn.onclick = ()=> instalarApp();
+      if(_installPrompt){
+        btn.textContent = 'Instalar agora ✨';
+        btn.style.background = 'linear-gradient(135deg,#6366f1,#818cf8)';
+        btn.style.color = '#fff';
+        btn.style.border = 'none';
+        btn.style.fontWeight = '700';
+        btn.style.padding = '7px 14px';
+      }
+    }
+    banner.style.display = 'flex';
+  }, 4000);
+})();
 
 async function loginGoogle(){
   await _supa.auth.signInWithOAuth({
@@ -5099,6 +5163,7 @@ function abrirPerfil(nome, email, foto){
         <div style="font-size:12px;color:#64748b;margin-top:2px;text-align:center">${e}</div>
       </div>
       <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:14px;display:flex;flex-direction:column;gap:8px">
+        <button onclick="document.getElementById('modal-perfil').remove();instalarApp()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(99,102,241,.3);background:rgba(99,102,241,.08);color:#818cf8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Instalar na tela inicial</button>
         <button onclick="document.getElementById('modal-perfil').remove()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#94a3b8;font-size:13px;cursor:pointer;font-family:inherit">Fechar</button>
         <button onclick="document.getElementById('modal-perfil').remove();fazerLogout()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,77,106,.3);background:rgba(255,77,106,.08);color:#FF4D6A;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">⏻ Sair da conta</button>
       </div>
@@ -5266,6 +5331,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">✅ Como marcar conta como paga?</div><div class="faq-a">Fale no chat: <em>"Paguei o aluguel hoje"</em>. Ou vá em <strong>Contas</strong> e toque em <strong>Abater</strong>.</div></div>
     <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">🗑️ Como apagar um lançamento errado?</div><div class="faq-a">Fale no chat: <em>"Cancele o último lançamento que você fez"</em>. Ou vá em <strong>Histórico</strong> e toque na lixeira.</div></div>
     <button onclick="toggleHelp();iniciarTour()" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1px solid rgba(99,102,241,.4);background:rgba(99,102,241,.1);color:#818cf8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🎯 Ver tour novamente</button>
+    <button onclick="toggleHelp();instalarApp()" style="width:100%;margin-top:6px;padding:10px;border-radius:10px;border:1px solid rgba(20,184,166,.4);background:rgba(20,184,166,.08);color:#14b8a6;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Instalar app na tela inicial</button>
   </div>
 </div>
 
