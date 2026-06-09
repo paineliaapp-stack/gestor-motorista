@@ -1,23 +1,36 @@
+# ── Imports ─────────────────────────────────────────────────────────────────
 from dotenv import load_dotenv
 load_dotenv()
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Body, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from dotenv import load_dotenv
-load_dotenv()
-from fastapi import Request, Body
+from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 from supabase import create_client
-from dotenv import load_dotenv
 from datetime import date
 from typing import Optional
-import os
+import os, logging, time as _time_module, json
 
-load_dotenv()
+# ── Logging estruturado JSON ─────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format='{"time":"%(asctime)s","level":"%(levelname)s","msg":%(message)s}',
+    datefmt='%Y-%m-%dT%H:%M:%S'
+)
+log = logging.getLogger("painelia")
 
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+def log_info(evento: str, **kw):
+    log.info(json.dumps({"ev": evento, **{k: str(v)[:200] for k,v in kw.items()}}, ensure_ascii=False))
+
+def log_erro(evento: str, erro=None, **kw):
+    d = {"ev": evento, **{k: str(v)[:200] for k,v in kw.items()}}
+    if erro: d["erro"] = str(erro)[:300]
+    log.error(json.dumps(d, ensure_ascii=False))
+
+def log_warn(evento: str, **kw):
+    log.warning(json.dumps({"ev": evento, **{k: str(v)[:200] for k,v in kw.items()}}, ensure_ascii=False))
 from starlette.middleware.base import BaseHTTPMiddleware
 import json as _json_log, datetime as _dt_log
 
@@ -233,6 +246,33 @@ _ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "http://localhost:3000",
 ]
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        t0 = _time_module.time()
+        try:
+            response = await call_next(request)
+        except Exception as e:
+            log_erro("requisicao_erro", erro=e, path=request.url.path)
+            raise
+        ms = int((_time_module.time() - t0) * 1000)
+        status = response.status_code
+        path = request.url.path
+        if ms > 3000:
+            log_warn("requisicao_lenta", path=path, ms=ms, status=status)
+        elif status >= 500:
+            log_erro("requisicao_500", path=path, ms=ms)
+        elif status >= 400 and path not in ("/favicon.ico", "/robots.txt"):
+            log_warn("requisicao_4xx", path=path, ms=ms, status=status)
+        else:
+            log_info("req", path=path, ms=ms, status=status)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["X-Response-Time"] = f"{ms}ms"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_ALLOWED_ORIGINS,
@@ -357,7 +397,7 @@ async def get_uid_from_token(
         return uid
     except HTTPException: raise
     except Exception as e:
-        print(f"Erro verificação token: {e}")
+        log_erro("token_verificacao_erro", erro=e)
         raise HTTPException(status_code=401, detail="Erro ao verificar token")
 
 class Motorista(BaseModel):
@@ -459,7 +499,7 @@ async def upsert_motorista(dados: dict = Body(...), uid: str = Depends(get_uid_f
         plataformas = res.data[0].get("plataformas")
         return {"ok": True, "meta_diaria": meta, "comb_diario": comb, "is_new": False, "setup_completo": setup_completo, "plataformas": plataformas}
     except Exception as e:
-        print(f"ERRO upsert_motorista: {e}")
+        log_erro("upsert_erro", erro=e)
         return {"ok": True, "meta_diaria": 150, "comb_diario": None, "is_new": False, "setup_completo": True}
 
 @app.post("/completar-setup")
@@ -493,7 +533,7 @@ async def salvar_meta_diaria(motorista_id: str, body: dict = Body(...)):
         supabase.table("motoristas").update(update).eq("id", motorista_id).execute()
         return {"ok": True, "meta_diaria": nova_meta, "comb_diario": novo_comb}
     except Exception as e:
-        print(f"ERRO meta: {e}")
+        log_erro("meta_erro", erro=e)
         return {"ok": False, "erro": "Erro interno"}
 
 @app.get("/meta-diaria/{motorista_id}")
@@ -582,7 +622,7 @@ async def get_turnos(motorista_id: str, uid: str = Depends(get_uid_from_token)):
 @app.get("/resumo/{motorista_id}")
 async def resumo(motorista_id: str, mes: Optional[int] = None, ano: Optional[int] = None, uid: str = Depends(get_uid_from_token)):
     if motorista_id.lower().strip() != uid.lower().strip():
-        print(f"RESUMO 403: mid={motorista_id!r} uid={uid!r}")
+        log_warn("resumo_403", mid=motorista_id[:8])
         raise HTTPException(status_code=403, detail="Acesso negado")
     if not _valid_uuid(motorista_id): return {"erro": "ID inválido"}
     hoje = hoje_brasil()
@@ -696,7 +736,7 @@ async def historico_semana(motorista_id: str, uid: str = Depends(get_uid_from_to
         dias_fracos = []
 
     import sys
-    print(f"DEBUG historico-semana: dias_com_dado={dias_com_dado}, dias_distintos={dias_semana_distintos}, tem_historico={tem_historico}, ganhos_filtrados={len(ganhos_filtrados)}, total_lancamentos={len(lancamentos)}, teto={teto}", file=sys.stderr)
+    log_info("hist_semana", dias=dias_com_dado, tem_historico=tem_historico)
 
     return {
         "tem_historico": tem_historico,
@@ -791,7 +831,7 @@ Se não entender, responda: {{"erro": true, "resposta": "mensagem pedindo para r
 
 async def enviar_whatsapp(numero: str, mensagem: str):
     if not EVOLUTION_URL:
-        print(f"[WA] {numero}: {mensagem}")
+        log_info("wa_enviado")
         return
     async with httpx.AsyncClient() as client:
         await client.post(
@@ -815,7 +855,7 @@ async def webhook_whatsapp(req: Request):
         texto = msg.get("conversation") or msg.get("extendedTextMessage", {}).get("text", "")
         numero_raw = body.get("data", {}).get("key", {}).get("remoteJid", "").replace("@s.whatsapp.net", "")
         numero = numero_raw if len(numero_raw) == 11 else (numero_raw[2:] if numero_raw.startswith("55") else numero_raw[1:] if len(numero_raw) == 12 else numero_raw)
-        print(f"WEBHOOK numero={numero} texto={texto}")
+        log_info("webhook_recv", texto_len=len(texto))
         if not texto or not numero:
             return {"ok": False}
 
@@ -852,7 +892,7 @@ async def webhook_whatsapp(req: Request):
         await enviar_whatsapp(numero, result["resposta"])
 
     except Exception as e:
-        print(f"Erro webhook: {e}")
+        log_erro("webhook_erro", erro=e)
     return {"ok": True}
 
 
@@ -948,9 +988,9 @@ async def _plano_financeiro_impl(dados: dict):
             if c.get("data") and c.get("meta_bruta"):
                 compromissos_dict[c["data"]] = float(c["meta_bruta"])
         if compromissos_dict:
-            print(f"DEBUG compromissos carregados: {compromissos_dict}")
+            log_info("compromissos_ok", qtd=len(compromissos_dict))
     except Exception as e:
-        print(f"DEBUG erro buscando compromissos: {e}")
+        log_erro("compromissos_erro", erro=e)
 
     # ── COMBUSTIVEL — hierarquia de prioridade ───────────────────────────────
     # 1. Valor configurado pelo motorista no perfil (mais confiável)
@@ -1404,8 +1444,8 @@ REGRAS ABSOLUTAS:
 - Linguagem simples, como WhatsApp mesmo"""
 
     GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
-    print(f"DEBUG plano v5: mid={motorista_id} max_manual={capacidade_max_manual:.0f} caixa={caixa_atual:.0f} tem_historico={tem_historico} cap_padrao={cap_padrao:.0f} dias_rest={dias_restantes} total_liq_possivel={total_liquido_possivel:.0f} poder={poder_total:.0f} urgente={total_urgente:.0f} semana={total_semana:.0f} negociar={total_negociar:.0f} media_dow={media_dow}")
-    print(f"DEBUG plano v5: request_dados={dados}")
+    log_info("plano_fin", dias_rest=dias_restantes, poder=round(poder_total,2))
+    # debug dados removido
 
     import asyncio as _asyncio
     _ERROS_SOBRECARGA = ["high demand","overloaded","quota","RESOURCE_EXHAUSTED","503","502","529","UNAVAILABLE"]
@@ -1437,7 +1477,7 @@ REGRAS ABSOLUTAS:
 
     if "error" in result:
         err_msg = result["error"].get("message", "")
-        print(f"GEMINI ERROR: {err_msg}")
+        log_erro("gemini_api_erro", msg=err_msg[:150])
         if any(x in err_msg for x in _ERROS_SOBRECARGA):
             return {"ok": False, "plano": "Muita demanda agora 😅 Aguarda 1 minuto e tenta de novo!"}
         return {"ok": False, "plano": f"Não consegui gerar o plano: {err_msg[:100]}"}
@@ -1592,7 +1632,7 @@ Quando setup_completo for true, a última "resposta" deve ser comemorativa e mot
             try:
                 supabase.table("motoristas").update(update).eq("id", uid).execute()
             except Exception as e:
-                print(f"Erro ao salvar setup: {e}")
+                log_erro("setup_salvar_erro", erro=e)
 
             # Registra contas coletadas
             contas_setup = setup_dados.get("contas", [])
@@ -1610,7 +1650,7 @@ Quando setup_completo for true, a última "resposta" deve ser comemorativa e mot
 
         return {"resposta": resposta, "setup_completo": setup_completo, "setup_dados": setup_dados}
     except Exception as e:
-        print(f"Erro parse setup: {e} | {repr(texto[:200])}")
+        log_erro("setup_parse_erro", erro=e)
         return {"resposta": "Não entendi bem. Me conta de novo?", "setup_completo": False}
 
 @app.post("/chat")
@@ -1667,9 +1707,9 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
     try:
         lr = supabase.table("lancamentos").select("id,tipo,valor,descricao,plataforma,data,horas_rodadas,km_rodados,created_at").eq("motorista_id", motorista_id).gte("data", inicio_mes).order("data", desc=True).execute()
         lancamentos_mes = lr.data or []
-        print(f"DEBUG chat context: motorista_id={motorista_id} inicio_mes={inicio_mes} lancamentos={len(lancamentos_mes)}")
+        log_info("chat_ctx", lancamentos=len(lancamentos_mes))
     except Exception as e:
-        print(f"ERRO ao buscar lancamentos no chat: {e}")
+        log_erro("chat_lanc_erro", erro=e)
 
     # Calcula totais para a IA responder perguntas diretamente
     ganhos_hoje = sum(float(l["valor"]) for l in lancamentos_mes if l["tipo"] == "ganho" and l["data"] == hoje_str)
@@ -1752,7 +1792,7 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
     else:
         cap_esforco_chat = 0
 
-    print(f"DEBUG totais: ganhos_hoje={ganhos_hoje} ganhos_mes={ganhos_mes} despesas_mes={despesas_mes}")
+    log_info("chat_totais", g_hoje=round(ganhos_hoje,2), g_mes=round(ganhos_mes,2))
     # Monta resumo dos lançamentos de hoje para detecção de duplicatas
     import json as _json
     lancamentos_hoje_lista = [l for l in lancamentos_mes if l.get("data") == hoje_str]
@@ -2009,33 +2049,33 @@ Quando analisa situação geral:
                 err_code = result.get("error",{}).get("code", 0)
                 err_msg = result.get("error",{}).get("message","")
                 if "error" not in result:
-                    print(f"Gemini OK: {modelo_atual}")
+                    log_info("gemini_ok", modelo=modelo_atual)
                     break
                 eh_cota = err_code in [429, 503, 502] or any(x in err_msg for x in ["quota","RESOURCE_EXHAUSTED","overloaded","high demand"])
                 eh_nao_encontrado = err_code == 404 or "not found" in err_msg.lower()
-                print(f"Gemini {modelo_atual} erro {err_code}: {err_msg[:80]}")
+                log_warn("gemini_err", modelo=modelo_atual, code=err_code)
                 if eh_cota or eh_nao_encontrado:
                     # Troca imediatamente para o próximo modelo — sem esperar
                     continue
                 # Erro desconhecido — espera 1s e tenta próximo
                 await __import__("asyncio").sleep(1)
             except Exception as e:
-                print(f"Timeout {modelo_atual}: {e}")
+                log_erro("gemini_timeout", modelo=modelo_atual, erro=e)
                 # Timeout — tenta próximo modelo imediatamente
 
     if "error" in result:
         err_detail = result['error'].get('message','sem detalhes')
-        print(f"GEMINI API ERROR: {err_detail}")
+        log_erro("gemini_api_err", msg=str(err_detail)[:150])
         log_erro("gemini_falhou", erro=err_detail)
         return {"resposta": "Estou com dificuldade para processar agora. Tenta de novo em alguns segundos! 🙏", "acao": None}
 
     candidates = result.get("candidates", [])
-    print(f"DEBUG candidates count: {len(candidates)}")
+    # candidates debug removido
     if candidates:
         finish = candidates[0].get("finishReason","")
-        print(f"DEBUG finishReason: {finish}")
+        # finishReason debug removido
         if finish in ("MAX_TOKENS", "RECITATION", "SAFETY"):
-            print(f"GEMINI finish={finish} — retrying sem histórico longo")
+            log_warn("gemini_retry", finish=finish)
             # Tenta de novo com histórico reduzido (só última mensagem)
             msgs_curto = [msgs[0], msgs[-1]]  # só system + mensagem atual
             try:
@@ -2049,16 +2089,16 @@ Quando analisa situação geral:
                         result = result2
                         candidates = result2.get("candidates",[])
             except Exception as e2:
-                print(f"Retry falhou: {e2}")
+                log_erro("gemini_retry_erro", erro=e2)
 
     texto = ""
     if candidates:
         parts = candidates[0].get("content", {}).get("parts", [])
         texto = parts[0].get("text","") if parts else ""
     
-    print(f"DEBUG texto len: {len(texto)} | FULL_RESPONSE: {repr(texto[:1000])}")
+    log_info("gemini_resp", texto_len=len(texto))
     if not texto:
-        print(f"DEBUG result completo: {repr(str(result)[:500])}")
+        log_warn("gemini_sem_candidatos")
         return {"resposta": "Não entendi. Pode repetir de outro jeito?", "acao": None}
 
     # Executa todas as ações retornadas pelo Gemini (JSON mode)
@@ -2101,9 +2141,9 @@ Quando analisa situação geral:
                     texto = "✅ Feito!"
             else:
                 texto = "Pode repetir? Não entendi bem o que você quis dizer."
-        print(f"DEBUG parse OK: acoes={lista_acoes}")
+        log_info("chat_parse_ok", qtd=len(lista_acoes))
     except Exception as e:
-        print(f"ERRO parse JSON Gemini: {e} | texto_raw_FULL: {repr(texto[:2000])}")
+        log_erro("chat_parse_erro", erro=e, texto=texto[:200])
         lista_acoes = []
         # Tenta extrair só o campo "resposta" com regex como fallback
         import re as _re
@@ -2114,7 +2154,7 @@ Quando analisa situação geral:
             pass  # texto já é texto puro, mantém
         else:
             texto = "Pode repetir? Não entendi bem."
-    print(f"DEBUG lista_acoes: {repr(lista_acoes)}")
+    log_info("chat_exec_acoes", qtd=len(lista_acoes))
     linhas_json = lista_acoes  # já são dicts, não precisa serializar
     acoes_executadas_count = 0
 
@@ -2137,7 +2177,7 @@ Quando analisa situação geral:
     if _ganho_alto_pendente:
         _valor_alto = float(_ganho_alto_pendente.get("valor", 0))
         _plat_alta = _ganho_alto_pendente.get("plataforma", "app")
-        print(f"DEBUG valor_alto detectado: R${_valor_alto} plataforma={_plat_alta} limiar={_LIMIAR_PERIODO}")
+        log_info("valor_alto", valor=_valor_alto, plataforma=_plat_alta)
         # Separa ações: executa tudo EXCETO o ganho alto suspeito
         _acoes_nao_ganho_alto = [_a for _a in linhas_json if not (
             isinstance(_a, dict)
@@ -2180,31 +2220,31 @@ Quando analisa situação geral:
                         _vfiltro_ng = _a_ng.get("valor_filtro")
                         _pend_ng2 = [c for c in _matches_ng if not c.get("pago")]
                         _alvo_ng2 = None
-                        print(f"DEBUG editar_vencimento: desc={_a_ng.get('descricao')} valor_filtro={_vfiltro_ng} venc_alvo={_venc_ng2} novo={_novo_ng} pendentes={[(c['descricao'],c.get('valor'),c['vencimento']) for c in _pend_ng2]}")
+                        log_info("editar_venc", desc=_a_ng.get("descricao"), novo=_novo_ng)
                         if _vfiltro_ng and _pend_ng2:
                             try:
                                 _vf = float(_vfiltro_ng)
                                 _por_valor = [c for c in _pend_ng2 if abs(float(c.get("valor",0) or 0) - _vf) < 1]
                                 _alvo_ng2 = _por_valor[0] if _por_valor else None
-                                print(f"DEBUG valor_filtro={_vf} achou={_alvo_ng2['id'] if _alvo_ng2 else 'NENHUM'}")
-                            except Exception as _ef: print(f"DEBUG vf erro: {_ef}")
+                                log_info("vfiltro_resultado", achou=bool(_alvo_ng2))
+                            except Exception as _ef: log_erro("vfiltro_err", erro=_ef)
                         if not _alvo_ng2 and _venc_ng2 and _pend_ng2:
                             try:
                                 from datetime import date as _dn2; _vd2=_dn2.fromisoformat(str(_venc_ng2))
                                 _pend_ng2.sort(key=lambda c: abs((_dn2.fromisoformat(c["vencimento"])-_vd2).days))
                                 _alvo_ng2 = _pend_ng2[0]
-                                print(f"DEBUG venc_alvo fallback={_alvo_ng2['id']}")
+                                log_info("venc_fallback")
                             except: pass
                         if not _alvo_ng2 and _pend_ng2:
                             _pend_ng2.sort(key=lambda c: c.get("vencimento",""))
                             _alvo_ng2 = _pend_ng2[0]
-                            print(f"DEBUG fallback final={_alvo_ng2['id']} venc={_alvo_ng2['vencimento']}")
+                            log_info("venc_fallback_final", venc=_alvo_ng2["vencimento"])
                         if _alvo_ng2:
-                            print(f"DEBUG SALVANDO id={_alvo_ng2['id']} desc={_alvo_ng2['descricao']} val={_alvo_ng2.get('valor')} novo_venc={_novo_ng}")
+                            log_info("editar_venc_ok", desc=_alvo_ng2["descricao"], novo_venc=_novo_ng)
                             supabase.table("contas").update({"vencimento": str(_novo_ng)}).eq("id", _alvo_ng2["id"]).execute()
                             acoes_executadas.append("conta_editada")
             except Exception as _eng_e:
-                print(f"ERRO ao executar ação não-ganho: {_eng_e}")
+                log_erro("acao_nganho_erro", erro=_eng_e)
         return {
             "resposta": texto,
             "acao": "conta_editada" if "conta_editada" in acoes_executadas else None,
@@ -2222,7 +2262,7 @@ Quando analisa situação geral:
     for linha in linhas_json:
         try:
             acao = linha if isinstance(linha, dict) else json.loads(linha)
-            print(f"DEBUG acao={acao} motorista_id={motorista_id}")
+            log_info("chat_acao", acao=acao.get("acao","?"))
             if acao.get("acao") == "registrar_lancamento":
                 import datetime as _dt
                 hoje = hoje_brasil()
@@ -2441,7 +2481,7 @@ Quando analisa situação geral:
                     if horas_turno > 0 and ganhos_dia > 0:
                         texto = f"✅ Turno registrado! {horas_turno:.1f}h de trabalho. Você fez R$ {ganhos_dia:.2f} hoje = R$ {ganhos_dia/horas_turno:.2f}/hora 💰"
                 except Exception as e:
-                    print(f"Erro ao salvar turno: {e}")
+                    log_erro("turno_erro", erro=e)
 
             elif acao.get("acao") == "editar_ultimo_lancamento":
                 tipo = acao.get("tipo", "despesa")
@@ -2650,17 +2690,17 @@ Quando analisa situação geral:
                         else:
                             supabase.table("plano_compromissos").insert({"motorista_id": motorista_id, "data": data, "meta_bruta": meta_bruta, "nota": nota, "status": "pendente"}).execute()
                     except Exception as ce:
-                        print(f"ERRO salvar compromisso {data}: {ce}")
+                        log_erro("compromisso_err", erro=ce)
                 acoes_executadas.append("compromissos_salvos")
         except Exception as e:
             import traceback
-            print(f"ERRO ACAO: {e} | linha: {linha}")
+            log_erro("acao_err", erro=e)
             traceback.print_exc()
     acao_executada = acoes_executadas[0] if acoes_executadas else None
     # texto já atualizado pelo JSON mode
     # Se a IA disse que registrou mas nenhuma ação foi executada, avisa
     if lista_acoes and not acoes_executadas:
-        print(f"AVISO: IA gerou {len(lista_acoes)} ações mas nenhuma foi executada. acoes={lista_acoes}")
+        log_warn("acoes_nao_exec", qtd=len(lista_acoes))
 
     return {"resposta": texto, "acao": acao_executada, "acoes_count": len(acoes_executadas), "acoes_esperadas": len(lista_acoes)}
 
@@ -2668,7 +2708,7 @@ Quando analisa situação geral:
 @app.exception_handler(Exception)
 async def generic_exception_handler(request, exc):
     import traceback
-    print(f"ERRO GLOBAL: {exc}")
+    log_erro("erro_global", erro=exc)
     traceback.print_exc()
     from fastapi.responses import JSONResponse
     tb = traceback.format_exc()
@@ -3310,5 +3350,5 @@ async def gerar_relatorio_pdf(dados: dict = Body(...), uid: str = Depends(get_ui
             })
     except Exception as e:
         import traceback
-        print(f"ERRO PDF: {traceback.format_exc()}")
+        log_erro("pdf_erro", erro=e)
         return {"erro": "Erro interno ao gerar relatório"}
