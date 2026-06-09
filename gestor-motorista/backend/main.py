@@ -1727,7 +1727,7 @@ Quando analisa situação geral:
 
     GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
     result = {}
-    modelos = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"]
+    modelos = ["gemini-2.5-flash", "gemini-2.5-flash-preview-05-20", "gemini-1.5-pro-latest"]
     async with httpx.AsyncClient(timeout=35) as client:
         for tentativa in range(3):
             modelo_atual = modelos[min(tentativa, len(modelos)-1)]
@@ -1762,7 +1762,7 @@ Quando analisa situação geral:
         err_detail = result['error'].get('message','sem detalhes')
         print(f"GEMINI API ERROR: {err_detail}")
         log_erro("gemini_falhou", erro=err_detail)
-        return {"resposta": f"Erro Gemini: {err_detail[:120]}", "acao": None}
+        return {"resposta": "Estou com dificuldade para processar agora. Tenta de novo em alguns segundos! 🙏", "acao": None}
 
     candidates = result.get("candidates", [])
     print(f"DEBUG candidates count: {len(candidates)}")
