@@ -137,7 +137,7 @@ async def _notif_relatorio_domingo():
 
 @app.on_event("startup")
 async def startup_scheduler():
-    _scheduler.add_job(_notif_teste_0010,        CronTrigger(hour=0,  minute=10), id="teste_0010",     replace_existing=True)
+    _scheduler.add_job(_notif_teste_0010,        CronTrigger(hour=0,  minute=15), id="teste_0015",     replace_existing=True)
     _scheduler.add_job(_notif_meta_manha,         CronTrigger(hour=8,  minute=0),  id="meta_manha",     replace_existing=True)
     _scheduler.add_job(_notif_contas_urgentes,    CronTrigger(hour=9,  minute=0),  id="contas_urg",     replace_existing=True)
     _scheduler.add_job(_notif_lembrete_noite,     CronTrigger(hour=22, minute=0),  id="lembrete_noite", replace_existing=True)
