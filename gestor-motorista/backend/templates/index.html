@@ -308,67 +308,56 @@ const _supa = supabase.createClient(
 
 </head>
 <body>
-<div id="splash" onclick="window._splashTap()" style="position:fixed;inset:0;z-index:99999;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none">
-  <!-- Fundo com brilho sutil -->
-  <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(240,180,41,.08) 0%,transparent 70%)"></div>
-  <!-- Video escondido, carrega em background -->
+<div id="splash" style="position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center">
+  <!-- Fundo com a logo -->
+  <div style="position:absolute;inset:0;background:url('/static/welcome-bg.jpg') center/cover no-repeat"></div>
+  <!-- Overlay escuro suave no fundo -->
+  <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.15) 0%,rgba(0,0,0,.6) 100%)"></div>
+  <!-- Video escondido -->
   <video id="sv" playsinline webkit-playsinline preload="auto" style="display:none">
     <source src="/static/splash-v3.mp4" type="video/mp4">
   </video>
-  <!-- Conteúdo centralizado -->
-  <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:0">
-    <!-- Logo P -->
-    <div style="width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,#f0b429,#e09000);display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:900;color:#0a0a0a;font-family:sans-serif;box-shadow:0 0 60px rgba(240,180,41,.3);margin-bottom:24px">P</div>
-    <div style="color:#fff;font-size:28px;font-weight:700;font-family:sans-serif;letter-spacing:-.5px;margin-bottom:6px">Painel.IA</div>
-    <div style="color:rgba(255,255,255,.4);font-size:14px;font-family:sans-serif;letter-spacing:.3px;margin-bottom:64px">Gestão financeira para motoristas</div>
-  </div>
-  <!-- Toque para entrar -->
-  <div style="position:absolute;bottom:60px;display:flex;flex-direction:column;align-items:center;gap:12px">
-    <div style="display:flex;gap:6px">
-      <div class="sp-dot" style="width:6px;height:6px;border-radius:50%;background:rgba(240,180,41,.8);animation:sp-pulse 1.4s ease-in-out infinite"></div>
-      <div class="sp-dot" style="width:6px;height:6px;border-radius:50%;background:rgba(240,180,41,.5);animation:sp-pulse 1.4s ease-in-out .2s infinite"></div>
-      <div class="sp-dot" style="width:6px;height:6px;border-radius:50%;background:rgba(240,180,41,.3);animation:sp-pulse 1.4s ease-in-out .4s infinite"></div>
-    </div>
-    <div style="color:rgba(255,255,255,.35);font-size:13px;font-family:sans-serif;letter-spacing:.5px">toque para entrar</div>
+  <!-- Botão Começar na parte de baixo -->
+  <div style="position:absolute;bottom:64px;display:flex;flex-direction:column;align-items:center;gap:16px">
+    <button id="sp-start" style="background:linear-gradient(135deg,#f0b429,#e09000);border:none;border-radius:50px;padding:18px 64px;color:#0a0a0a;font-size:18px;font-weight:800;font-family:sans-serif;letter-spacing:.3px;cursor:pointer;box-shadow:0 0 40px rgba(240,180,41,.5),0 4px 24px rgba(0,0,0,.4);-webkit-tap-highlight-color:transparent">
+      Começar
+    </button>
+    <div style="color:rgba(255,255,255,.4);font-size:12px;font-family:sans-serif;letter-spacing:.5px">Painel.IA · Gestão para motoristas</div>
   </div>
 </div>
-<style>
-@keyframes sp-pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
-</style>
 <script>
 !function(){
   var sp=document.getElementById('splash');
   var v=document.getElementById('sv');
-  var tocado=false;
+  var btn=document.getElementById('sp-start');
 
   function fechar(){
     if(!sp) return;
-    sp.style.transition='opacity .6s ease';
+    sp.style.transition='opacity .5s ease';
     sp.style.opacity='0';
-    setTimeout(function(){sp&&sp.remove()},650);
+    setTimeout(function(){sp&&sp.remove()},550);
   }
 
-  window._splashTap=function(){
-    if(tocado) return; tocado=true;
-    // Faz fade out da tela de boas-vindas
-    sp.style.transition='opacity .4s ease';
+  btn.addEventListener('click', function(){
+    // Esconde o splash imediatamente
+    sp.style.transition='opacity .3s ease';
     sp.style.opacity='0';
-    // Mostra o vídeo por cima antes de remover o splash
+    // Coloca o vídeo por cima
     v.style.cssText='position:fixed;inset:0;z-index:99998;width:100%;height:100%;object-fit:cover;background:#000';
     v.style.display='block';
     document.body.appendChild(v);
+    // Play com som — gesto do clique no botão garante isso no iOS
     v.muted=false;
     var p=v.play();
-    if(p) p.catch(function(){v.muted=true;v.play()});
-    v.addEventListener('ended',function(){
+    if(p) p.catch(function(){ v.muted=true; v.play(); });
+    v.addEventListener('ended', function(){
       v.style.transition='opacity .5s';
       v.style.opacity='0';
-      setTimeout(function(){v.remove()},550);
+      setTimeout(function(){ v.remove(); }, 550);
     });
-    setTimeout(function(){sp&&sp.remove()},450);
-    // Segurança: remove o vídeo após 18s mesmo que não termine
-    setTimeout(function(){v.remove()},18000);
-  };
+    setTimeout(function(){ sp&&sp.remove(); }, 350);
+    setTimeout(function(){ v.remove(); }, 20000);
+  });
 }();
 </script>
 
