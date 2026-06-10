@@ -10,8 +10,11 @@ templates = Jinja2Templates(directory="templates")
 
 @router.get("/", response_class=HTMLResponse)
 def root(request: Request):
+    # Sem Jinja: o index.html tem CSS/JS com sequências tipo "{#" que o Jinja
+    # interpreta como sintaxe de template e derruba o app inteiro.
     from fastapi.responses import Response
-    content = templates.get_template("index.html").render({"request": request})
+    with open("templates/index.html", encoding="utf-8") as f:
+        content = f.read()
     return Response(
         content=content,
         media_type="text/html",
