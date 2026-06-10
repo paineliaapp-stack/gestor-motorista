@@ -13,7 +13,7 @@ class Motorista(BaseModel):
     telefone: str
 
 @router.post("/motoristas")
-def criar_motorista(m: Motorista):
+def criar_motorista(m: Motorista, uid: str = Depends(get_uid_from_token)):
     res = supabase.table("motoristas").insert(m.dict()).execute()
     return res.data
 
@@ -62,9 +62,9 @@ async def upsert_motorista(dados: dict = Body(...), uid: str = Depends(get_uid_f
         return {"ok": True, "meta_diaria": 150, "comb_diario": None, "is_new": False, "setup_completo": True}
 
 @router.post("/completar-setup")
-async def completar_setup(dados: dict = Body(...)):
+async def completar_setup(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
     """Marca setup como completo e salva dados coletados pelo Gestor."""
-    uid = dados.get("id")
+    # uid vem do token — ignora qualquer id do body
     if not _valid_uuid(uid):
         return {"ok": False, "erro": "ID inválido"}
     meta = dados.get("meta_diaria")
@@ -82,8 +82,11 @@ async def completar_setup(dados: dict = Body(...)):
         return {"ok": False, "erro": "Erro interno"}
 
 @router.get("/motoristas/{telefone}")
-def buscar_motorista(telefone: str):
+def buscar_motorista(telefone: str, uid: str = Depends(get_uid_from_token)):
     res = supabase.table("motoristas").select("*").eq("telefone", telefone).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Motorista não encontrado")
+    # Só retorna se o registro pertence ao usuário autenticado
+    if str(res.data[0].get("id")) != uid:
+        raise HTTPException(status_code=403, detail="Acesso negado")
     return res.data[0]

@@ -2,7 +2,9 @@
 from typing import Optional
 from fastapi import APIRouter, Body
 from pydantic import BaseModel
+from fastapi import Depends, HTTPException
 from core.supabase_client import supabase
+from core.security import get_uid_from_token
 from core.logging import log_erro
 
 router = APIRouter()
@@ -14,7 +16,8 @@ class Meta(BaseModel):
     valor_mensal: Optional[float] = None
 
 @router.post("/meta-diaria/{motorista_id}")
-async def salvar_meta_diaria(motorista_id: str, body: dict = Body(...)):
+async def salvar_meta_diaria(motorista_id: str, body: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    if motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     nova_meta = body.get("meta")
     novo_comb = body.get("comb_diario")  # opcional
     try:
@@ -28,7 +31,8 @@ async def salvar_meta_diaria(motorista_id: str, body: dict = Body(...)):
         return {"ok": False, "erro": "Erro interno"}
 
 @router.get("/meta-diaria/{motorista_id}")
-async def buscar_meta_diaria(motorista_id: str):
+async def buscar_meta_diaria(motorista_id: str, uid: str = Depends(get_uid_from_token)):
+    if motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     try:
         res = supabase.table("motoristas").select("meta_diaria,comb_diario").eq("id", motorista_id).execute()
         meta = res.data[0].get("meta_diaria", 150) if res.data else 150
@@ -39,7 +43,8 @@ async def buscar_meta_diaria(motorista_id: str):
 
 
 @router.post("/meta-mensal/{motorista_id}")
-def salvar_meta_mensal(motorista_id: str, body: dict = Body(...)):
+def salvar_meta_mensal(motorista_id: str, body: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    if motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     meta = body.get("meta_mensal")
     if not meta or float(meta) < 100:
         return {"ok": False, "erro": "Valor inválido"}
@@ -51,7 +56,8 @@ def salvar_meta_mensal(motorista_id: str, body: dict = Body(...)):
         return {"ok": False, "erro": "Erro interno"}
 
 @router.get("/meta-mensal/{motorista_id}")
-def buscar_meta_mensal(motorista_id: str):
+def buscar_meta_mensal(motorista_id: str, uid: str = Depends(get_uid_from_token)):
+    if motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     try:
         res = supabase.table("motoristas").select("meta_mensal").eq("id", motorista_id).execute()
         meta = res.data[0].get("meta_mensal") if res.data else None
@@ -61,11 +67,13 @@ def buscar_meta_mensal(motorista_id: str):
 
 
 @router.post("/metas")
-def criar_meta(m: Meta):
+def criar_meta(m: Meta, uid: str = Depends(get_uid_from_token)):
+    if m.motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     res = supabase.table("metas").insert(m.dict()).execute()
     return res.data
 
 @router.get("/metas/{motorista_id}")
-def buscar_meta(motorista_id: str):
+def buscar_meta(motorista_id: str, uid: str = Depends(get_uid_from_token)):
+    if motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     res = supabase.table("metas").select("*").eq("motorista_id", motorista_id).execute()
     return res.data

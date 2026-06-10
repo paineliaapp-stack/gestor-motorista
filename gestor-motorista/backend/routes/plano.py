@@ -598,6 +598,7 @@ async def buscar_compromissos(mid: str, uid: str = Depends(get_uid_from_token)):
 @router.post("/plano-ativo")
 async def salvar_plano_ativo(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
     """Salva o plano completo."""
+    import datetime as _dt_pa
     mid = uid  # sempre do token
     try:
         plano = {
@@ -605,9 +606,10 @@ async def salvar_plano_ativo(dados: dict = Body(...), uid: str = Depends(get_uid
             "total_contas": dados.get("total_contas", 0),
             "caixa_inicial": dados.get("caixa_inicial", 0),
             "comb_ajustado": dados.get("comb_ajustado"),
-            # NOTA (bug pré-existente preservado): datetime e TZ_BR nunca foram
-            # definidos no main.py original — NameError capturado pelo except.
-            "criado_em": datetime.now(TZ_BR).isoformat(),
+            # FIX: o original usava datetime.now(TZ_BR) com ambos indefinidos —
+            # NameError silencioso fazia o plano NUNCA ser salvo. Corrigido com
+            # timestamp em horário de Brasília (UTC-3), consistente com hoje_brasil().
+            "criado_em": (_dt_pa.datetime.utcnow() - _dt_pa.timedelta(hours=3)).isoformat(),
             "status": "ativo"
         }
         existente = supabase.table("plano_ativo").select("id").eq("motorista_id", mid).eq("status", "ativo").execute()

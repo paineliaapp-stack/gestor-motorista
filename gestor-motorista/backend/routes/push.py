@@ -2,14 +2,15 @@
 from fastapi import APIRouter, Body
 from core.supabase_client import supabase
 from core.config import VAPID_PUBLIC_KEY, VAPID_EMAIL
-from core.security import _valid_uuid
+from fastapi import Depends, HTTPException
+from core.security import _valid_uuid, get_uid_from_token
 from core.logging import log_info, log_erro
 from services.push_service import _disparar_push_todos, _scheduler
 
 router = APIRouter()
 
 @router.get("/push-diagnostico")
-async def push_diagnostico():
+async def push_diagnostico(uid: str = Depends(get_uid_from_token)):
     """Verifica se tudo está ok para push."""
     resultado = {}
     # 1. Verifica tabela
@@ -32,8 +33,8 @@ def get_vapid_key():
     return {"key": VAPID_PUBLIC_KEY}
 
 @router.post("/push-subscribe")
-async def push_subscribe(dados: dict = Body(...)):
-    motorista_id = dados.get("motorista_id")
+async def push_subscribe(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    motorista_id = uid  # sempre do token
     subscription = dados.get("subscription")
     if not motorista_id or not subscription:
         return {"ok": False, "erro": "Dados incompletos"}
@@ -51,23 +52,24 @@ async def push_subscribe(dados: dict = Body(...)):
         return {"ok": False, "erro": str(e)}
 
 @router.delete("/push-unsubscribe")
-async def push_unsubscribe(dados: dict = Body(...)):
+async def push_unsubscribe(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
     try:
-        supabase.table("push_subscriptions").delete().eq("motorista_id", dados.get("motorista_id")).eq("endpoint", dados.get("endpoint","")[:500]).execute()
+        supabase.table("push_subscriptions").delete().eq("motorista_id", uid).eq("endpoint", dados.get("endpoint","")[:500]).execute()
         return {"ok": True}
     except Exception as e:
         return {"ok": False, "erro": str(e)}
 
 @router.post("/push-teste")
-async def push_teste_manual(dados: dict = Body(...)):
-    mid = dados.get("motorista_id")
+async def push_teste_manual(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    mid = uid  # sempre do token
     if not mid: return {"ok": False}
     await _disparar_push_todos("Painel.IA — Teste 🧪", "Funcionou! Notificacoes ativas ✅", "/", "teste-manual", apenas_motorista_id=mid)
     return {"ok": True}
 
 @router.get("/push-teste-agora/{mid}")
-async def push_teste_agora(mid: str):
+async def push_teste_agora(mid: str, uid: str = Depends(get_uid_from_token)):
     """Dispara notificacao de teste imediatamente para um motorista — so para debug"""
+    if mid != uid: return {"ok": False, "erro": "Acesso negado"}
     if not _valid_uuid(mid): return {"ok": False, "erro": "ID invalido"}
     await _disparar_push_todos("Painel.IA — Teste 🧪", "Funcionou! Notificacoes ativas ✅", "/", "teste-agora", apenas_motorista_id=mid)
     return {"ok": True, "mid": mid}

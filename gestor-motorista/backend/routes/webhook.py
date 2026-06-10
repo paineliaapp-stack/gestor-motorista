@@ -7,13 +7,12 @@ from core.logging import log_info, log_erro
 
 router = APIRouter()
 
-# NOTA (bug pré-existente preservado): interpretar_mensagem referencia GEMINI_KEY,
-# que nunca foi definido no escopo global do main.py original. A chamada gera
-# NameError, capturado pelo try/except do webhook. Mantido idêntico para não
-# alterar comportamento — corrigir em tarefa separada.
 
 async def interpretar_mensagem(texto: str, motorista_id: str) -> dict:
     import json
+    # FIX: GEMINI_KEY nunca existiu no escopo global do main.py original —
+    # toda mensagem do webhook morria em NameError silencioso. Corrigido.
+    GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
     prompt = f"""Você é um assistente financeiro inteligente para motoristas de app (Uber, 99, inDrive).
 O motorista mandou: "{texto}"
 

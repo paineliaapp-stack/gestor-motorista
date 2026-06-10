@@ -16,7 +16,8 @@ async def listar_contas(motorista_id: str, uid: str = Depends(get_uid_from_token
     return res.data
 
 @router.post("/contas")
-async def criar_conta(c: dict = Body(...)):
+async def criar_conta(c: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    c["motorista_id"] = uid  # sempre do token, nunca do body
     res = supabase.table("contas").insert(c).execute()
     _cache_del(f"contas:{c.get('motorista_id','')}")
     _cache_del(f"resumo:{c.get('motorista_id','')}")
