@@ -331,24 +331,22 @@ const _supa = supabase.createClient(
   v.addEventListener('ended',fechar);
   v.addEventListener('playing',()=>{tocou=true;tap.style.display='none'});
 
-  // 1ª tentativa: com som → 2ª: mudo → 3ª: overlay "toque para abrir"
-  v.muted=false;
+  // iOS nunca deixa autoplay com som — começa mudo, destrava no toque
+  v.muted=true; v.defaultMuted=true;
   v.play().catch(()=>{
-    v.muted=true; v.defaultMuted=true;
-    v.play().catch(()=>{
-      // Autoplay totalmente bloqueado (ex: Modo Pouca Energia do iPhone)
-      tap.style.display='flex';
-    });
+    // Autoplay totalmente bloqueado (Modo Pouca Energia)
+    tap.style.display='flex';
   });
 
-  // Toque em qualquer lugar: toca COM SOM (gesto do usuário libera o áudio)
+  // Toque em qualquer lugar: reinicia COM SOM (gesto do usuário libera o áudio)
   s.addEventListener('click',(e)=>{
-    if(e.target.id==='splash-skip')return;
-    if(tap.style.display!=='none' || v.paused){
-      v.muted=false;
-      v.play().catch(()=>{v.muted=true;v.play().catch(fechar)});
-      tap.style.display='none';
-    }
+    if(e.target.id==='splash-skip') return;
+    // Pausar, desmutar e dar play do início — único jeito garantido no iOS
+    v.pause();
+    v.muted=false;
+    v.currentTime=0;
+    v.play().catch(()=>{v.muted=true; v.play().catch(fechar)});
+    tap.style.display='none';
   });
 
   setTimeout(()=>{const b=document.getElementById('splash-skip');if(b)b.style.opacity='1'},1500);
