@@ -308,36 +308,35 @@ const _supa = supabase.createClient(
 
 </head>
 <body>
-<div id="splash" style="position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center">
-  <video id="sv" playsinline webkit-playsinline preload="auto" poster="/static/splash-v3-poster.jpg" style="width:100%;height:100%;object-fit:cover;pointer-events:none">
+<div id="splash" onclick="window._splashTap()" style="position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;cursor:pointer">
+  <video id="sv" playsinline webkit-playsinline preload="auto" style="width:100%;height:100%;object-fit:cover;display:none">
     <source src="/static/splash-v3.mp4" type="video/mp4">
   </video>
+  <img src="/static/splash-v3-poster.jpg" id="sp-poster" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">
+  <div id="sp-btn" style="position:absolute;bottom:48px;left:50%;transform:translateX(-50%);background:rgba(240,180,41,.15);border:1.5px solid rgba(240,180,41,.6);border-radius:32px;padding:12px 36px;color:#f0b429;font-size:15px;font-weight:700;letter-spacing:.5px;font-family:sans-serif">
+    ▶ &nbsp;Toque para abrir
+  </div>
 </div>
 <script>
 !function(){
   var sp=document.getElementById('splash');
   var v=document.getElementById('sv');
-  var somAtivado=false;
+  var poster=document.getElementById('sp-poster');
+  var btn=document.getElementById('sp-btn');
+  var tocado=false;
   function fechar(){sp&&(sp.style.transition='opacity .5s',sp.style.opacity=0,setTimeout(function(){sp&&sp.remove()},550))}
   v.addEventListener('ended',fechar);
-  setTimeout(fechar,15000);
+  setTimeout(fechar,18000);
 
-  // Inicia mudo (iOS sempre deixa)
-  v.muted=true;
-  v.play().catch(function(){});
-
-  // Qualquer toque na tela reinicia com som — sem overlay, sem botão
-  function ativarSom(){
-    if(somAtivado) return;
-    somAtivado=true;
-    v.pause();
-    v.currentTime=0;
+  window._splashTap=function(){
+    if(tocado) return; tocado=true;
+    poster.style.display='none';
+    btn.style.display='none';
+    v.style.display='block';
     v.muted=false;
     var p=v.play();
     if(p) p.catch(function(){v.muted=true;v.play().catch(fechar)});
-  }
-  sp.addEventListener('touchstart', ativarSom, {once:true});
-  sp.addEventListener('click', ativarSom, {once:true});
+  };
 }();
 </script>
 
