@@ -117,6 +117,10 @@ Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}
 - Ganho substituindo total do dia: {{"acao":"registrar_lancamento","tipo":"ganho","valor":N,"plataforma":"uber","data":"YYYY-MM-DD","substituir":true}} — use quando motorista diz "total na X foi Y" ou "atualize para Y" (deleta lançamentos anteriores da plataforma nesse dia antes de inserir)
 - Renda extra: {{"acao":"registrar_lancamento","tipo":"ganho","valor":N,"plataforma":"renda_extra","descricao":"seguro-desemprego","data":"YYYY-MM-DD"}}
 - Despesa: {{"acao":"registrar_lancamento","tipo":"despesa","valor":N,"descricao":"categoria","data":"YYYY-MM-DD"}}
+- REGRA GANHO vs DESPESA (atenção — erro comum):
+  * "VENDI X", "fiz X na lojinha/venda/bico", "recebi X" → SEMPRE tipo:"ganho", plataforma:"renda_extra", descricao do que vendeu. Vender NUNCA é despesa.
+  * "COMPREI estoque/mercadoria/produto para vender" → tipo:"despesa", descricao:"estoque" (nunca "outros").
+  * Ex: "comprei 200 de estoque pra lojinha" → despesa "estoque" | "vendi 20 na lojinha do carro" → ganho renda_extra "lojinha do carro"
 - Conta futura: {{"acao":"registrar_conta","descricao":"nome","valor":N,"vencimento":"YYYY-MM-DD"}}
 - Pagar conta: {{"acao":"marcar_pago","descricao":"nome"}}
 - Abater parcial: {{"acao":"abater_conta","descricao":"nome","valor_pago":N}}

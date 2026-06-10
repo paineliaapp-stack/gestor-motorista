@@ -87,7 +87,11 @@ async def previsao_tempo(lat: float = None, lon: float = None, cidade: str = Non
         ini_str = j["ini"].strftime("%Hh")
         # fim sempre pelo menos 1h depois do ini para evitar "09h às 09h"
         fim_real = j["fim"] if j["fim"] > j["ini"] else j["ini"] + _dt.timedelta(hours=3)
-        fim_str = fim_real.strftime("%Hh")
+        # Se o fim escapou para o dia seguinte (ex: 12h às 09h), trava em meia-noite
+        if fim_real.date() != j["ini"].date():
+            fim_str = "meia-noite"
+        else:
+            fim_str = fim_real.strftime("%Hh")
         return {
             "dia": _NOMES_DIA.get(dia_idx, j["ini"].strftime("%d/%m")),
             "ini": ini_str,
