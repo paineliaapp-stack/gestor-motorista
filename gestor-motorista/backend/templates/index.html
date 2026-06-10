@@ -451,13 +451,25 @@ const _supa = supabase.createClient(
     <div id="widget-potencial" onclick="document.getElementById('card-meta-mensal').scrollIntoView({behavior:'smooth',block:'center'})" style="display:none;cursor:pointer;text-align:center;background:linear-gradient(135deg,rgba(0,216,151,.12),rgba(0,216,151,.04));border:1.5px solid rgba(0,216,151,.35);border-radius:14px;padding:10px 12px;min-width:100px;flex-shrink:0">
       <div style="font-size:9px;color:rgba(0,216,151,.8);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">🏆 META</div>
       <div id="widget-potencial-valor" style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:#00D897;line-height:1">—</div>
-      <div style="font-size:9px;color:rgba(0,216,151,.6);margin-top:2px">no bolso</div>
+      <div style="font-size:9px;color:rgba(0,216,151,.6);margin-top:2px;line-height:1.3">após pagar<br>todas as contas</div>
       <div style="margin-top:6px;font-size:9px;color:rgba(0,216,151,.7);background:rgba(0,216,151,.12);border-radius:6px;padding:3px 6px">ver mais ↓</div>
     </div>
   </div>
 
   <!-- ALERTA CONTAS VENCENDO -->
   <div id="alerta-contas" style="display:none;background:rgba(255,77,106,.07);border:1px solid rgba(255,77,106,.25);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:13px;gap:8px;align-items:center;flex-wrap:wrap"></div>
+
+  <!-- NUDGE: tem meta mas não tem contas cadastradas -->
+  <div id="nudge-contas" style="display:none;background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.3);border-radius:12px;padding:12px 14px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-size:22px">📋</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:2px">Projete quanto vai sobrar no mês</div>
+        <div style="font-size:11px;color:var(--mt);line-height:1.4">Cadastre suas contas fixas — semanal do carro, aluguel, financiamento — e o app calcula automaticamente quanto sobra se você bater a meta.</div>
+      </div>
+    </div>
+    <button onclick="goPage(document.querySelector('[onclick*=contas]'),'contas')" style="width:100%;margin-top:10px;padding:10px;background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);border-radius:10px;color:rgba(99,102,241,1);font-size:13px;font-weight:700;cursor:pointer">➕ Cadastrar contas do mês</button>
+  </div>
 
   <!-- GESTOR FINANCEIRO UNIFICADO — CEREBRO DO SISTEMA -->
   <div style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(99,102,241,.02));border:1px solid rgba(99,102,241,.25);border-radius:18px;padding:16px;margin-bottom:18px">
@@ -1178,10 +1190,17 @@ function renderMetaMensal(){
   // Atualiza widget lateral do hero
   const _wp = document.getElementById('widget-potencial');
   const _wv = document.getElementById('widget-potencial-valor');
-  if(_wp && _wv && META_MENSAL > 0 && liquidoReal > 0){
+  const _temMeta = META_MENSAL > 0;
+  const _temContas = totalContas > 0;
+  const _temFaturamento = faturadoAte > 0;
+  // Widget potencial: só aparece com meta + contas + faturamento
+  if(_wp && _wv && _temMeta && _temContas && _temFaturamento && liquidoReal > 0){
     _wv.textContent = 'R$'+Math.round(liquidoReal).toLocaleString('pt-BR');
     _wp.style.display = 'block';
   } else if(_wp){ _wp.style.display = 'none'; }
+  // Nudge para cadastrar contas: aparece quando tem meta + faturamento mas AINDA não tem contas
+  const _nudge = document.getElementById('nudge-contas');
+  if(_nudge) _nudge.style.display = (_temMeta && _temFaturamento && !_temContas) ? 'block' : 'none';
 
   el.innerHTML = `
     <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
