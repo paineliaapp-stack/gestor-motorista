@@ -280,21 +280,8 @@ select option{background:#141820}
 }
 @keyframes typing-b{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
 /* Modal Começar o dia */
-.modal-dia-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:flex-end;justify-content:center;padding:0;animation:fadeIn .2s ease}
-.modal-dia-overlay.hidden{display:none}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.modal-dia{background:#0d1117;border:1px solid rgba(245,166,35,.3);border-radius:24px 24px 0 0;padding:28px 24px 36px;width:100%;max-width:480px;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1)}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.modal-dia-header{display:flex;align-items:center;gap:12px;margin-bottom:6px}
-.modal-dia-emoji{font-size:32px;line-height:1}
-.modal-dia-saudacao{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--am);letter-spacing:-.5px}
-.modal-dia-sub{font-size:13px;color:var(--mt);margin-bottom:24px;padding-left:44px}
-.modal-dia-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
-.modal-dia-field label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--mt);font-weight:600;margin-bottom:6px}
-.modal-dia-field input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:13px 14px;color:var(--tx);font-size:17px;font-family:'Outfit',sans-serif;text-align:center;-webkit-appearance:none}
-.modal-dia-field input:focus{outline:none;border-color:rgba(245,166,35,.5);background:rgba(245,166,35,.04)}
-.modal-dia-btn{width:100%;padding:16px;background:linear-gradient(135deg,#F0B429,#C47A0A);border:none;border-radius:14px;color:#000;font-size:16px;font-weight:700;font-family:'Barlow Condensed',sans-serif;cursor:pointer;letter-spacing:.3px}
-.modal-dia-skip{width:100%;padding:10px;background:transparent;border:none;color:var(--mt);font-size:13px;font-family:'Outfit',sans-serif;cursor:pointer;margin-top:8px}
 
 .bt-info{flex:1;min-width:0}
 .bt-titulo{font-size:12px;font-weight:700;color:var(--gn);margin-bottom:1px}
@@ -413,52 +400,7 @@ const _supa = supabase.createClient(
   <div class="cel-sub" id="cel-sub">Você arrasou hoje!</div>
 </div>
 <!-- MODAL BOAS-VINDAS / COMEÇAR O DIA -->
-<div class="modal-dia-overlay hidden" id="modal-dia">
-  <div class="modal-dia">
-    <div class="modal-dia-header">
-      <span class="modal-dia-emoji" id="modal-emoji">☀️</span>
-      <div class="modal-dia-saudacao" id="modal-saudacao">Bom dia!</div>
-    </div>
-    <div class="modal-dia-sub" id="modal-nome-sub">Vamos registrar seu turno de hoje?</div>
-    <div class="modal-dia-row">
-      <div class="modal-dia-field">
-        <label>Hora de início</label>
-        <input type="time" id="modal-inicio" value="07:00">
-      </div>
-      <div class="modal-dia-field">
-        <label>Meta de término</label>
-        <input type="time" id="modal-fim" value="15:00">
-      </div>
-    </div>
-    <button class="modal-dia-btn" onclick="confirmarModalDia()">▶ Começar o dia</button>
-    <button class="modal-dia-skip" onclick="fecharModalDia()">Pular por agora</button>
-  </div>
-</div>
 
-<!-- BANNER INSTALAR APP -->
-<div id="install-banner" style="display:none;background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(99,102,241,.05));border-bottom:1px solid rgba(99,102,241,.2);padding:10px 16px;align-items:center;gap:10px">
-  <div style="font-size:20px">📱</div>
-  <div style="flex:1">
-    <div style="font-size:12px;font-weight:700;color:#e2e8f0">Adicione à tela inicial</div>
-    <div style="font-size:11px;color:#64748b" id="install-instrucao">Use como um app de verdade</div>
-  </div>
-  <button id="install-action-btn" style="background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.3);border-radius:8px;color:#818cf8;font-size:11px;padding:5px 10px;cursor:pointer;font-family:inherit;white-space:nowrap">Ver como</button>
-  <button onclick="fecharBannerInstall()" style="background:transparent;border:none;color:#475569;font-size:16px;cursor:pointer;padding:2px 6px">✕</button>
-</div>
-
-<!-- MODAL INSTRUÇÃO INSTALAR -->
-<div id="modal-install" style="display:none;position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,.75);align-items:flex-end;justify-content:center">
-  <div style="background:#1e1e2e;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:420px;border:1px solid rgba(255,255,255,.1)">
-    <div style="text-align:center;margin-bottom:16px">
-      <div style="font-size:32px;margin-bottom:6px">📱</div>
-      <div style="font-weight:700;font-size:16px;color:#fff">Instale o Painel.IA</div>
-      <div style="font-size:12px;color:#64748b;margin-top:4px">Use como app na tela inicial do celular</div>
-    </div>
-    <div id="install-steps-ios" style="display:none">
-      <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:center"><div style="font-size:18px">1️⃣</div><div style="font-size:13px;color:#e2e8f0">Toque no botão <strong>compartilhar ⎙</strong> na barra do Safari</div></div>
-      <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:center"><div style="font-size:18px">2️⃣</div><div style="font-size:13px;color:#e2e8f0">Role e toque em <strong>"Adicionar à Tela de Início"</strong></div></div>
-      <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center"><div style="font-size:18px">3️⃣</div><div style="font-size:13px;color:#e2e8f0">Toque em <strong>"Adicionar"</strong> no canto superior direito</div></div>
-    </div>
     <div id="install-steps-android" style="display:none">
       <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:center"><div style="font-size:18px">1️⃣</div><div style="font-size:13px;color:#e2e8f0">Toque no menu <strong>⋮</strong> no canto superior direito do Chrome</div></div>
       <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:center"><div style="font-size:18px">2️⃣</div><div style="font-size:13px;color:#e2e8f0">Toque em <strong>"Adicionar à tela inicial"</strong></div></div>
@@ -2094,8 +2036,6 @@ async function deletar(id){
   }catch(e){toast('Sem conexão',false)}
 }
 
-// TURNO
-let turnoAtivo = null;
 // RESUMO SEMANAL
 async function resumoSemanal(){
   if(!MID) return;
@@ -2161,33 +2101,6 @@ function celebrarMeta(ganhoHoje){
   setTimeout(()=>{msg.classList.remove('show');setTimeout(()=>{cel.style.display='none';cel.innerHTML='';},400);},4000);
 }
 
-async function toggleTurno(){
-  const btn = document.getElementById('btn-turno');
-  if(!turnoAtivo){
-    turnoAtivo = {inicio: new Date().toTimeString().slice(0,5), data: hojeStr()};
-    btn.textContent = '⏹ Encerrar turno';
-    btn.style.background = 'rgba(255,77,106,.12)';
-    btn.style.borderColor = 'rgba(255,77,106,.3)';
-    btn.style.color = '#FF4D6A';
-    toast('Turno iniciado! ▶');
-  } else {
-    const fim = new Date().toTimeString().slice(0,5);
-    const [h1,m1] = turnoAtivo.inicio.split(':').map(Number);
-    const [h2,m2] = fim.split(':').map(Number);
-    const horas = Math.round(((h2*60+m2)-(h1*60+m1))/60*10)/10;
-    try {
-      await authFetch(API+'/turno',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({motorista_id:MID,data:turnoAtivo.data,inicio:turnoAtivo.inicio,fim,horas})});
-      toast('Turno encerrado! '+horas+'h registradas ✓');
-    } catch(e){ toast('Erro ao salvar turno',false); }
-    turnoAtivo = null;
-    btn.textContent = '▶ Iniciar turno';
-    btn.style.background = 'rgba(46,204,143,.12)';
-    btn.style.borderColor = 'rgba(46,204,143,.3)';
-    btn.style.color = '#2ECC8F';
-    loadDash();
-  }
-}
 
 async function atualizarMeta(novaMeta){
   const m = parseFloat(novaMeta);
@@ -4972,77 +4885,7 @@ function falarIA(texto){
   synth.speak(u);
 }
 
-// === MODAL BOAS-VINDAS ===
-let turnoFimPrevisto = null;
 
-function abrirModalDia(){
-  const h = new Date().getHours();
-  const emoji = h < 12 ? '☀️' : h < 18 ? '🌤️' : '🌙';
-  const saudacao = h < 12 ? 'Bom dia!' : h < 18 ? 'Boa tarde!' : 'Boa noite!';
-  document.getElementById('modal-emoji').textContent = emoji;
-  document.getElementById('modal-saudacao').textContent = saudacao;
-  const nomeEl = document.getElementById('modal-nome-sub');
-  if(nomeEl && NOME) nomeEl.textContent = NOME.split(' ')[0] + ', vamos registrar seu turno de hoje?';
-  // Sugerir horário baseado na hora atual
-  const agora = new Date();
-  const hh = String(agora.getHours()).padStart(2,'0');
-  const mm = String(agora.getMinutes()).padStart(2,'0');
-  document.getElementById('modal-inicio').value = hh + ':' + mm;
-  // Sugerir término 8h depois
-  const fim = new Date(agora.getTime() + 8*60*60000);
-  document.getElementById('modal-fim').value = String(fim.getHours()).padStart(2,'0') + ':' + String(fim.getMinutes()).padStart(2,'0');
-  document.getElementById('modal-dia').classList.remove('hidden');
-}
-
-function fecharModalDia(){
-  document.getElementById('modal-dia').classList.add('hidden');
-  // Marcar que já foi exibido hoje
-  localStorage.setItem('modal_dia_'+new Date().toISOString().slice(0,10), '1');
-}
-
-function confirmarModalDia(){
-  const inicio = document.getElementById('modal-inicio').value;
-  const fim = document.getElementById('modal-fim').value;
-  if(!inicio){ toast('Informe o horário de início'); return; }
-  fecharModalDia();
-  // Iniciar turno com horário informado
-  turnoAtivo = {inicio: inicio, data: hojeStr()};
-  turnoFimPrevisto = fim;
-  // Atualizar botão turno na UI
-  const btn = document.getElementById('btn-turno');
-  if(btn){
-    btn.textContent = '⏹ Encerrar';
-    btn.style.background = 'rgba(255,77,106,.12)';
-    btn.style.borderColor = 'rgba(255,77,106,.3)';
-    btn.style.color = '#FF4D6A';
-  }
-  // Mostrar mini banner com info
-  atualizarBannerAtivo();
-  toast('Turno iniciado às ' + inicio + ' ▶');
-}
-
-
-
-
-// Detector de retorno ao app (visibilitychange)
-// Se o app ficou em background por mais de 4h e não tem turno ativo → abre modal
-let _ultimaVisita = Date.now();
-document.addEventListener('visibilitychange', () => {
-  if(document.visibilityState === 'visible'){
-    const diff = Date.now() - _ultimaVisita;
-    const quatroHoras = 4 * 60 * 60 * 1000;
-    if(diff >= quatroHoras && !turnoAtivo && MID){
-      // Resetar chave do dia se mudou de dia
-      const chaveHoje = 'modal_dia_'+new Date().toISOString().slice(0,10);
-      // Abrir modal se ainda não mostrou hoje
-      if(!localStorage.getItem(chaveHoje)){
-        setTimeout(abrirModalDia, 600);
-      }
-    }
-  } else {
-    _ultimaVisita = Date.now();
-  }
-});
 
 // sendDashChat e quickDashChat agora são aliases do chat unificado
 function sendDashChat(){ sendChat(); }
@@ -5115,16 +4958,7 @@ window.addEventListener('appinstalled', () => {
   toast('✅ App instalado! Abra pela tela inicial.');
 });
 
-function _atualizarBotoesInstall(){
-  // Atualiza texto do botão no banner se Android com prompt disponível
-  const btn = document.getElementById('install-action-btn');
-  if(btn && _installPrompt){
-    btn.textContent = 'Instalar agora';
-    btn.style.background = 'linear-gradient(135deg,#6366f1,#818cf8)';
-    btn.style.color = '#fff';
-    btn.style.border = 'none';
-  }
-}
+// _atualizarBotoesInstall: definição única mantida acima (linha ~5081)
 
 // Função principal — chama de qualquer botão do app
 async function instalarApp(){
