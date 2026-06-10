@@ -460,15 +460,16 @@ const _supa = supabase.createClient(
   <div id="alerta-contas" style="display:none;background:rgba(255,77,106,.07);border:1px solid rgba(255,77,106,.25);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:13px;gap:8px;align-items:center;flex-wrap:wrap"></div>
 
   <!-- NUDGE: tem meta mas não tem contas cadastradas -->
-  <div id="nudge-contas" style="display:none;background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.3);border-radius:12px;padding:12px 14px;margin-bottom:14px">
-    <div style="display:flex;align-items:center;gap:10px">
-      <div style="font-size:22px">📋</div>
+  <div id="nudge-contas" style="display:none;background:linear-gradient(135deg,rgba(0,216,151,.08),rgba(0,216,151,.03));border:1.5px solid rgba(0,216,151,.3);border-radius:14px;padding:14px 16px;margin-bottom:14px">
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
+      <div style="font-size:24px;line-height:1;margin-top:1px">🏆</div>
       <div style="flex:1">
-        <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:2px">Projete quanto vai sobrar no mês</div>
-        <div style="font-size:11px;color:var(--mt);line-height:1.4">Cadastre suas contas fixas — semanal do carro, aluguel, financiamento — e o app calcula automaticamente quanto sobra se você bater a meta.</div>
+        <div style="font-size:13px;font-weight:800;color:var(--tx);margin-bottom:3px">Descubra quanto vai sobrar no bolso</div>
+        <div style="font-size:12px;color:var(--mt);line-height:1.5">Me fala suas contas fixas — semanal do carro, aluguel, financiamento — e eu mostro <strong style="color:#00D897">exatamente quanto sobra</strong> se você bater a meta.</div>
       </div>
     </div>
-    <button onclick="goPage(document.querySelector('[onclick*=contas]'),'contas')" style="width:100%;margin-top:10px;padding:10px;background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);border-radius:10px;color:rgba(99,102,241,1);font-size:13px;font-weight:700;cursor:pointer">➕ Cadastrar contas do mês</button>
+    <button onclick="_nudgeContas()" style="width:100%;padding:12px;background:linear-gradient(135deg,#00D897,#00b07d);border:none;border-radius:10px;color:#04130d;font-size:14px;font-weight:800;cursor:pointer">💬 Me falar minhas contas agora</button>
+    <button onclick="document.getElementById('nudge-contas').style.display='none';sessionStorage.setItem('nudgeContasDismiss','1')" style="width:100%;margin-top:6px;padding:8px;background:none;border:none;color:rgba(255,255,255,.3);font-size:11px;cursor:pointer">Cadastrar depois</button>
   </div>
 
   <!-- GESTOR FINANCEIRO UNIFICADO — CEREBRO DO SISTEMA -->
@@ -5570,5 +5571,28 @@ async function carregarClima(){
 }
 setTimeout(carregarClima, 3500);
 
+</script>
+<script>
+function _nudgeContas(){
+  // Vai para o chat e injeta a pergunta do Gestor automaticamente
+  const chatEl = document.getElementById('chat-input') || document.querySelector('input[placeholder*="fiz"]') || document.querySelector('textarea');
+  // Abre o chat (primeira aba ou scroll)
+  const chatSection = document.querySelector('.chat-wrap') || document.getElementById('chat-msgs');
+  if(chatSection) chatSection.scrollIntoView({behavior:'smooth'});
+  // Injeta texto sugestivo no input
+  setTimeout(()=>{
+    const inp = document.getElementById('chat-input') || document.querySelector('input[placeholder*="fiz"]');
+    if(inp){
+      inp.value = '';
+      inp.focus();
+      inp.placeholder = 'Ex: semanal 800, aluguel 1200, luz 150...';
+    }
+    // Envia mensagem automática do Gestor no chat
+    if(typeof enviarMensagemSistema === 'function'){
+      enviarMensagemSistema('Para mostrar quanto vai sobrar no bolso se você bater a meta, me fala suas contas fixas do mês. Pode jogar tudo de uma vez: "semanal 800, aluguel 1200, luz 150". Ou fala "pular" se quiser fazer depois 😊');
+    }
+    document.getElementById('nudge-contas').style.display='none';
+  }, 600);
+}
 </script>
 </body>
