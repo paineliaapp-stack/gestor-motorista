@@ -104,5 +104,5 @@ async def previsao_tempo(lat: float = None, lon: float = None, cidade: str = Non
         "chuva_36h": bool(janelas),
         "janelas": [_fmt_janela(j) for j in janelas[:3]],
     }
-    _cache_set(cache_key, resp, ttl=1800)  # 30 min
+    _cache_set(cache_key, resp, ttl=60)  # 1 min — temporário para limpar cache
     return resp
