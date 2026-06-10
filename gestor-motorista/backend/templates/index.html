@@ -5118,11 +5118,7 @@ function abrirPerfil(nome, email, foto){
 }
 
 async function checkAuth(){
-  console.log('checkAuth chamado');
-  console.log('hash:', window.location.hash);
-  console.log('search:', window.location.search);
   const {data:{session}} = await _supa.auth.getSession();
-  console.log('session:', JSON.stringify(session));
   if(session && session.user){
     window.MID = session.user.id;
     MID = session.user.id;
@@ -5136,7 +5132,6 @@ async function checkAuth(){
     // Verifica tour agora que temos o MID real
     setTimeout(()=>_checkTourParaUsuario(), 2000);
   } else {
-    console.log('sem sessao, mostrando login');
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.style.display='flex';
   }
