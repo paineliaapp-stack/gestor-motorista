@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<link rel="preload" as="video" href="/static/splash.mp4" type="video/mp4">
+<link rel="preload" as="video" href="/static/splash.mp4?v=3" type="video/mp4">
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#ffcc00">
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
@@ -309,10 +309,14 @@ const _supa = supabase.createClient(
 </head>
 <body>
 <div id="splash" style="position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;transition:opacity .6s ease">
-  <video id="splash-vid" autoplay playsinline preload="auto" style="width:100%;height:100%;object-fit:cover">
-    <source src="/static/splash.mp4" type="video/mp4">
+  <video id="splash-vid" autoplay playsinline preload="auto" poster="/static/splash-poster.jpg" style="width:100%;height:100%;object-fit:cover">
+    <source src="/static/splash.mp4?v=3" type="video/mp4">
   </video>
-  <button id="splash-skip" onclick="window._fecharSplash&&window._fecharSplash()" style="position:absolute;bottom:calc(30px + env(safe-area-inset-bottom));right:24px;background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:8px 18px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;opacity:0;transition:opacity .4s">Pular ›</button>
+  <div id="splash-tap" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:rgba(0,0,0,.35)">
+    <div style="width:74px;height:74px;border-radius:50%;background:rgba(240,180,41,.95);display:flex;align-items:center;justify-content:center;font-size:30px;color:#0a0a0a;box-shadow:0 0 40px rgba(240,180,41,.5)">▶</div>
+    <div style="color:#fff;font-size:14px;font-weight:600;letter-spacing:.3px">Toque para abrir</div>
+  </div>
+  <button id="splash-skip" onclick="window._fecharSplash&&window._fecharSplash()" style="position:absolute;bottom:calc(30px + env(safe-area-inset-bottom));right:24px;background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:8px 18px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;opacity:0;transition:opacity .4s;z-index:2">Pular ›</button>
 </div>
 <style>@media (prefers-reduced-motion: reduce){ #splash{display:none!important} }</style>
 <script>
@@ -320,15 +324,38 @@ const _supa = supabase.createClient(
   const s=document.getElementById('splash');
   if(!s) return;
   const v=document.getElementById('splash-vid');
+  const tap=document.getElementById('splash-tap');
+  let tocou=false;
   const fechar=()=>{if(!s.parentNode)return;try{v.pause()}catch(e){};s.style.opacity='0';setTimeout(()=>s.remove(),650)};
   window._fecharSplash=fechar;
   v.addEventListener('ended',fechar);
-  v.addEventListener('error',fechar);
-  // Tenta COM SOM; se o navegador bloquear, cai para mudo
+  v.addEventListener('playing',()=>{tocou=true;tap.style.display='none'});
+
+  // 1ª tentativa: com som → 2ª: mudo → 3ª: overlay "toque para abrir"
   v.muted=false;
-  v.play().catch(()=>{ v.muted=true; v.play().catch(fechar); });
+  v.play().catch(()=>{
+    v.muted=true; v.defaultMuted=true;
+    v.play().catch(()=>{
+      // Autoplay totalmente bloqueado (ex: Modo Pouca Energia do iPhone)
+      tap.style.display='flex';
+    });
+  });
+
+  // Toque em qualquer lugar: toca COM SOM (gesto do usuário libera o áudio)
+  s.addEventListener('click',(e)=>{
+    if(e.target.id==='splash-skip')return;
+    if(tap.style.display!=='none' || v.paused){
+      v.muted=false;
+      v.play().catch(()=>{v.muted=true;v.play().catch(fechar)});
+      tap.style.display='none';
+    }
+  });
+
   setTimeout(()=>{const b=document.getElementById('splash-skip');if(b)b.style.opacity='1'},1500);
-  setTimeout(fechar,11000); // trava de segurança
+  // Trava de segurança: se em 7s nada tocou e o usuário não interagiu, libera o app
+  setTimeout(()=>{ if(!tocou && tap.style.display==='none') fechar(); },7000);
+  // Trava final absoluta: 25s (cobre o caso do overlay de toque ignorado)
+  setTimeout(fechar,25000);
 })();
 </script>
 
