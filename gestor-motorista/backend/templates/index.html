@@ -308,20 +308,20 @@ const _supa = supabase.createClient(
 
 </head>
 <body>
-<div id="splash" style="position:fixed;inset:0;z-index:99999;background:#000;overflow:hidden">
-  <!-- Imagem estática de fundo — WebP com fallback JPG -->
+<div id="splash" onclick="window._splashTap()"
+  style="position:fixed;inset:0;z-index:99999;background:#000;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent">
+  <!-- Imagem de fundo full screen -->
   <picture style="position:absolute;inset:0;width:100%;height:100%">
-    <source srcset="/static/splash-bg.webp" type="image/webp">
-    <img src="/static/splash-bg.jpg" style="width:100%;height:100%;object-fit:cover;object-position:center">
+    <source srcset="/static/splash-bg.webp?v=2" type="image/webp">
+    <img src="/static/splash-bg.jpg?v=2" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block">
   </picture>
-  <!-- Vídeo do splash pré-carregado, oculto -->
+  <!-- Vídeo pré-carregado, inicia escondido -->
   <video id="sv" playsinline webkit-playsinline preload="auto"
-    style="display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:99998;background:#000">
+    style="display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;background:#000;opacity:0;transition:opacity .35s ease">
     <source src="/static/splash-v4.mp4" type="video/mp4">
   </video>
-  <!-- Toque para entrar -->
-  <div id="sp-bottom" onclick="window._splashTap()"
-    style="position:absolute;bottom:52px;width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;cursor:pointer;-webkit-tap-highlight-color:transparent">
+  <!-- Bolinhas e toque para entrar -->
+  <div style="position:absolute;bottom:52px;width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none">
     <div style="display:flex;gap:8px">
       <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out infinite"></div>
       <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out .22s infinite"></div>
@@ -338,27 +338,26 @@ const _supa = supabase.createClient(
   var sp=document.getElementById('splash');
   var v=document.getElementById('sv');
   var tocado=false;
-
-  // Pré-carregar o vídeo em background enquanto usuário vê a tela estática
   v.load();
-
-  function fecharSplash(){
-    sp.style.transition='opacity .3s ease';
-    sp.style.opacity='0';
-    setTimeout(function(){sp&&sp.remove()},320);
-  }
 
   window._splashTap=function(){
     if(tocado) return; tocado=true;
-    // Mostrar vídeo por cima imediatamente
+    // Mostrar vídeo preto (opacity 0) por cima imediatamente
     v.style.display='block';
     document.body.appendChild(v);
     v.muted=false;
     var p=v.play();
     if(p) p.catch(function(){ v.muted=true; v.play(); });
-    // Sumir a tela estática enquanto vídeo já está rodando
-    fecharSplash();
-    // Remover vídeo ao terminar
+    // Fade in rápido do vídeo — esconde o delay visualmente
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        v.style.opacity='1';
+      });
+    });
+    // Sumir a tela estática junto
+    sp.style.transition='opacity .35s ease';
+    sp.style.opacity='0';
+    setTimeout(function(){sp&&sp.remove()},380);
     v.addEventListener('ended',function(){
       v.style.transition='opacity .5s';
       v.style.opacity='0';
