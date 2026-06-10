@@ -447,6 +447,13 @@ const _supa = supabase.createClient(
       <div id="hero-lucro" style="font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:700;letter-spacing:.5px;line-height:1;color:var(--am)">R$ 0,00</div>
       <div class="sub" id="dash-sub" style="margin-top:4px;font-size:12px;color:var(--mt)">Carregando...</div>
     </div>
+    <!-- POTENCIAL DA META — widget lateral -->
+    <div id="widget-potencial" onclick="document.getElementById('card-meta-mensal').scrollIntoView({behavior:'smooth',block:'center'})" style="display:none;cursor:pointer;text-align:center;background:linear-gradient(135deg,rgba(0,216,151,.12),rgba(0,216,151,.04));border:1.5px solid rgba(0,216,151,.35);border-radius:14px;padding:10px 12px;min-width:100px;flex-shrink:0">
+      <div style="font-size:9px;color:rgba(0,216,151,.8);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">🏆 META</div>
+      <div id="widget-potencial-valor" style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:#00D897;line-height:1">—</div>
+      <div style="font-size:9px;color:rgba(0,216,151,.6);margin-top:2px">no bolso</div>
+      <div style="margin-top:6px;font-size:9px;color:rgba(0,216,151,.7);background:rgba(0,216,151,.12);border-radius:6px;padding:3px 6px">ver mais ↓</div>
+    </div>
   </div>
 
   <!-- ALERTA CONTAS VENCENDO -->
@@ -1168,6 +1175,13 @@ function renderMetaMensal(){
   const combEstMM = META_MENSAL * (pctCombMM / 100);
   const liquidoReal = META_MENSAL - combEstMM - totalContas;
   const pctProgresso = Math.min(100, Math.round(faturadoAte/META_MENSAL*100));
+  // Atualiza widget lateral do hero
+  const _wp = document.getElementById('widget-potencial');
+  const _wv = document.getElementById('widget-potencial-valor');
+  if(_wp && _wv && META_MENSAL > 0 && liquidoReal > 0){
+    _wv.textContent = 'R$'+Math.round(liquidoReal).toLocaleString('pt-BR');
+    _wp.style.display = 'block';
+  } else if(_wp){ _wp.style.display = 'none'; }
 
   el.innerHTML = `
     <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
