@@ -5520,7 +5520,11 @@ async function carregarClima(){
         }catch(e){}
         document.getElementById('clima-cidade').textContent = d.cidade || '';
         document.getElementById('clima-msg').innerHTML =
-          `<b>${j.dia.charAt(0).toUpperCase()+j.dia.slice(1)}: ${j.descricao} das ${j.ini} às ${j.fim}</b> (${j.probabilidade}% de chance). ${extra}`;
+          (()=>{
+            const ini = j.ini;
+            const fim = j.fim === j.ini ? (parseInt(j.ini)+3)+'h' : j.fim;
+            return `<b>${j.dia.charAt(0).toUpperCase()+j.dia.slice(1)}: ${j.descricao} das ${ini} às ${fim}</b> (${j.probabilidade}% de chance). ${extra}`;
+          })()
         document.getElementById('card-clima').style.display = 'block';
       }catch(e){console.warn('clima:',e)}
     }, ()=>{}, {timeout:8000, maximumAge:1800000});
