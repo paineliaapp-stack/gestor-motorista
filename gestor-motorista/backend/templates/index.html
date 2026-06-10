@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<link rel="preload" as="video" href="/static/splash.mp4?v=3" type="video/mp4">
+<link rel="preload" as="video" href="/static/splash-v3.mp4" type="video/mp4">
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#ffcc00">
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
@@ -309,8 +309,8 @@ const _supa = supabase.createClient(
 </head>
 <body>
 <div id="splash" style="position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;transition:opacity .6s ease">
-  <video id="splash-vid" autoplay playsinline preload="auto" poster="/static/splash-poster.jpg" style="width:100%;height:100%;object-fit:cover">
-    <source src="/static/splash.mp4?v=3" type="video/mp4">
+  <video id="splash-vid" autoplay playsinline preload="auto" poster="/static/splash-v3-poster.jpg" style="width:100%;height:100%;object-fit:cover">
+    <source src="/static/splash-v3.mp4" type="video/mp4">
   </video>
   <div id="splash-tap" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:rgba(0,0,0,.35)">
     <div style="width:74px;height:74px;border-radius:50%;background:rgba(240,180,41,.95);display:flex;align-items:center;justify-content:center;font-size:30px;color:#0a0a0a;box-shadow:0 0 40px rgba(240,180,41,.5)">▶</div>
