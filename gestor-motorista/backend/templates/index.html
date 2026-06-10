@@ -648,6 +648,18 @@ const _supa = supabase.createClient(
 
 
 
+  <!-- CARD PREVISÃO DO TEMPO — só aparece quando há chuva relevante nas próximas 36h -->
+  <div id="card-clima" style="display:none;background:linear-gradient(135deg,rgba(56,139,253,.10),rgba(56,139,253,.03));border:1px solid rgba(56,139,253,.3);border-radius:16px;padding:14px 16px">
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <div style="font-size:22px;line-height:1">🌧️</div>
+      <div style="flex:1">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:rgba(56,139,253,.95);font-weight:700;margin-bottom:3px">Previsão do tempo · <span id="clima-cidade"></span></div>
+        <div id="clima-msg" style="font-size:12.5px;color:var(--tx);line-height:1.5"></div>
+      </div>
+      <button onclick="document.getElementById('card-clima').style.display='none';sessionStorage.setItem('climaDispensado','1')" style="background:none;border:none;color:var(--mt);font-size:14px;cursor:pointer;padding:0 2px">✕</button>
+    </div>
+  </div>
+
   <!-- CARD META MENSAL — sempre visível no dashboard -->
   <div id="card-meta-mensal" style="background:rgba(0,216,151,.08);border:1px solid rgba(0,216,151,.25);border-radius:16px;padding:16px 18px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -723,6 +735,7 @@ const _supa = supabase.createClient(
           </div>
           <button onclick="editarMeta()" style="background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);border-radius:8px;padding:6px 12px;color:rgba(99,102,241,1);font-size:12px;font-weight:600;cursor:pointer">✏️ Editar</button>
         </div>
+        <button id="btn-turno" onclick="iniciarTurno()" style="width:100%;margin-bottom:10px;padding:12px;background:linear-gradient(135deg,#00D897,#00b07d);border:none;border-radius:12px;color:#04130d;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px">▶️ INICIAR TURNO</button>
         <!-- Formulário de edição (oculto por padrão) -->
         <div id="form-meta" style="display:none;background:rgba(255,255,255,.05);border:1px solid rgba(99,102,241,.4);border-radius:12px;padding:12px;margin-bottom:10px">
           <div style="font-size:11px;color:var(--mt);margin-bottom:8px">Configure sua capacidade de faturamento:</div>
@@ -5654,6 +5667,201 @@ window.addEventListener('load',function(){
 // ── Push Notifications ────────────────────────────────────────────────────────
 
 
+</script>
+
+<!-- ════════ MODO TURNO — overlay de tela cheia com wake lock ════════ -->
+<div id="turno-overlay" style="display:none;position:fixed;inset:0;z-index:9000;background:linear-gradient(180deg,#07090d 0%,#0a1410 100%);flex-direction:column;padding:20px 18px calc(20px + env(safe-area-inset-bottom));overflow-y:auto">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+    <div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#00D897;font-weight:800">🟢 Turno ativo</div>
+      <div id="turno-tempo" style="font-size:13px;color:var(--mt);margin-top:2px">0h00</div>
+    </div>
+    <button onclick="encerrarTurno()" style="background:rgba(255,82,82,.15);border:1px solid rgba(255,82,82,.4);border-radius:10px;padding:8px 14px;color:#ff6b6b;font-size:12px;font-weight:700;cursor:pointer">⏹ Encerrar</button>
+  </div>
+
+  <div style="text-align:center;margin:8px 0 4px">
+    <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.6px">Ganho no turno</div>
+    <div id="turno-ganho" style="font-size:52px;font-weight:900;color:#00D897;line-height:1.1;font-variant-numeric:tabular-nums">R$ 0</div>
+    <div id="turno-corridas" style="font-size:14px;color:var(--tx);margin-top:4px">0 corridas</div>
+  </div>
+
+  <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px;margin:16px 0">
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mt);margin-bottom:6px">
+      <span>Meta do dia</span><span id="turno-meta-label">R$ 0 de R$ 0</span>
+    </div>
+    <div style="height:10px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden">
+      <div id="turno-barra" style="height:100%;width:0%;background:linear-gradient(90deg,#00D897,#F5A623);border-radius:6px;transition:width .6s"></div>
+    </div>
+    <div id="turno-falta" style="font-size:12.5px;color:var(--tx);margin-top:8px;text-align:center"></div>
+  </div>
+
+  <button onclick="abrirRegistroRapido()" style="padding:16px;background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:10px">＋ Registrar corrida</button>
+
+  <div id="turno-registro" style="display:none;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.35);border-radius:14px;padding:14px;margin-bottom:10px">
+    <div style="font-size:11px;color:var(--mt);margin-bottom:8px">Valor da corrida:</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <span style="color:var(--mt);font-size:14px">R$</span>
+      <input id="turno-valor" type="number" inputmode="decimal" min="1" step="0.01" placeholder="0,00" style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(99,102,241,.4);border-radius:10px;padding:12px;color:var(--tx);font-size:20px;font-weight:800;text-align:center;outline:none">
+    </div>
+    <div id="turno-plats" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="salvarCorridaTurno()" style="flex:1;padding:12px;background:#00D897;border:none;border-radius:10px;color:#04130d;font-size:14px;font-weight:800;cursor:pointer">✅ Salvar</button>
+      <button onclick="document.getElementById('turno-registro').style.display='none'" style="padding:12px 16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:var(--mt);font-size:14px;cursor:pointer">✕</button>
+    </div>
+  </div>
+  <div id="turno-feedback" style="text-align:center;font-size:12px;color:#00D897;min-height:16px"></div>
+</div>
+
+<script>
+/* ════════ PREVISÃO DO TEMPO ════════ */
+async function carregarClima(){
+  try{
+    if(sessionStorage.getItem('climaDispensado')) return;
+    if(!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      try{
+        const r = await authFetch(API+`/api/weather?lat=${pos.coords.latitude.toFixed(3)}&lon=${pos.coords.longitude.toFixed(3)}`);
+        if(!r || !r.ok) return;
+        const d = await r.json();
+        if(!d.ok || !d.chuva_36h || !d.janelas.length) return;
+        const j = d.janelas[0];
+        // Cruza com a média do dia da semana do próprio motorista, se já carregada
+        let extra = 'Chuva costuma aumentar a demanda de corridas — vale considerar trabalhar nesse horário. 🚗💰';
+        try{
+          const h = window._historicoSemana;
+          if(h && h.tem_historico && h.media_geral > 0){
+            extra = `Sua média é R$ ${Math.round(h.media_geral)}/dia — dias de chuva costumam render acima disso. Vale considerar trabalhar nesse horário. 🚗💰`;
+          }
+        }catch(e){}
+        document.getElementById('clima-cidade').textContent = d.cidade || '';
+        document.getElementById('clima-msg').innerHTML =
+          `<b>${j.dia.charAt(0).toUpperCase()+j.dia.slice(1)}: ${j.descricao} das ${j.ini} às ${j.fim}</b> (${j.probabilidade}% de chance). ${extra}`;
+        document.getElementById('card-clima').style.display = 'block';
+      }catch(e){console.warn('clima:',e)}
+    }, ()=>{}, {timeout:8000, maximumAge:1800000});
+  }catch(e){}
+}
+setTimeout(carregarClima, 3500);
+
+/* ════════ MODO TURNO ════════ */
+let _turnoTimer=null, _turnoPoll=null, _wakeLock=null;
+const _TURNO_KEY='pia_turno_v1';
+const _TURNO_PLATAFORMAS=['uber','99','indrive','ifood','rappi','outras'];
+let _turnoPlatSel = localStorage.getItem('pia_plat_padrao') || 'uber';
+
+function _turnoState(){ try{return JSON.parse(localStorage.getItem(_TURNO_KEY))}catch(e){return null} }
+
+async function _pedirWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      _wakeLock = await navigator.wakeLock.request('screen');
+      _wakeLock.addEventListener('release',()=>{_wakeLock=null});
+    }
+  }catch(e){console.warn('wakeLock:',e)}
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible' && _turnoState() && !_wakeLock) _pedirWakeLock();
+});
+
+async function iniciarTurno(){
+  if(!MID){alert('Faça login primeiro');return}
+  let g0=0,c0=0;
+  try{
+    const r=await authFetch(API+'/turno-live/'+MID); const d=await r.json();
+    g0=d.ganhos_hoje||0; c0=d.corridas_hoje||0;
+  }catch(e){}
+  localStorage.setItem(_TURNO_KEY,JSON.stringify({inicio:Date.now(),g0,c0}));
+  _abrirOverlayTurno();
+}
+
+function _abrirOverlayTurno(){
+  document.getElementById('turno-overlay').style.display='flex';
+  _pedirWakeLock();
+  _renderPlatsTurno();
+  _atualizarTurno();
+  _turnoTimer=setInterval(_tickTempo,1000);
+  _turnoPoll=setInterval(_atualizarTurno,30000); // polling 30s
+}
+
+function _tickTempo(){
+  const s=_turnoState(); if(!s) return;
+  const min=Math.floor((Date.now()-s.inicio)/60000);
+  document.getElementById('turno-tempo').textContent=`${Math.floor(min/60)}h${String(min%60).padStart(2,'0')} de turno`;
+}
+
+async function _atualizarTurno(){
+  const s=_turnoState(); if(!s||!MID) return;
+  try{
+    const r=await authFetch(API+'/turno-live/'+MID); const d=await r.json();
+    const ganhoTurno=Math.max(0,(d.ganhos_hoje||0)-s.g0);
+    const corridasTurno=Math.max(0,(d.corridas_hoje||0)-s.c0);
+    document.getElementById('turno-ganho').textContent='R$ '+ganhoTurno.toFixed(0);
+    const falta=d.falta||0;
+    const ticket=corridasTurno>0?ganhoTurno/corridasTurno:25;
+    const corridasRestantes=falta>0?Math.ceil(falta/Math.max(ticket,5)):0;
+    document.getElementById('turno-corridas').textContent=
+      corridasTurno+(corridasTurno===1?' corrida':' corridas')+(corridasRestantes>0?` · faltam ~${corridasRestantes} para a meta`:'');
+    const pct=d.meta_diaria>0?Math.min(100,(d.ganhos_hoje/d.meta_diaria)*100):0;
+    document.getElementById('turno-barra').style.width=pct.toFixed(0)+'%';
+    document.getElementById('turno-meta-label').textContent=`R$ ${(d.ganhos_hoje||0).toFixed(0)} de R$ ${(d.meta_diaria||0).toFixed(0)}`;
+    document.getElementById('turno-falta').textContent=
+      falta>0?`Faltam R$ ${falta.toFixed(0)} para bater a meta de hoje 💪`:'🎉 META DO DIA BATIDA!';
+  }catch(e){console.warn('turno-live:',e)}
+}
+
+function _renderPlatsTurno(){
+  const box=document.getElementById('turno-plats'); box.innerHTML='';
+  _TURNO_PLATAFORMAS.forEach(p=>{
+    const b=document.createElement('button');
+    b.textContent=p; b.dataset.p=p;
+    b.style.cssText='padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid '+(p===_turnoPlatSel?'#6366f1;background:#6366f1;color:#fff':'rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:var(--mt)');
+    b.onclick=()=>{_turnoPlatSel=p;localStorage.setItem('pia_plat_padrao',p);_renderPlatsTurno()};
+    box.appendChild(b);
+  });
+}
+
+function abrirRegistroRapido(){
+  document.getElementById('turno-registro').style.display='block';
+  document.getElementById('turno-valor').value='';
+  document.getElementById('turno-valor').focus();
+}
+
+async function salvarCorridaTurno(){
+  const v=parseFloat((document.getElementById('turno-valor').value||'').replace(',','.'));
+  if(!v||v<=0){alert('Informe o valor');return}
+  try{
+    const r=await authFetch(API+'/lancamentos',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({motorista_id:MID,tipo:'ganho',valor:v,plataforma:_turnoPlatSel})});
+    if(r&&r.ok){
+      document.getElementById('turno-registro').style.display='none';
+      const fb=document.getElementById('turno-feedback');
+      fb.textContent=`✅ R$ ${v.toFixed(2).replace('.',',')} na ${_turnoPlatSel} registrado!`;
+      setTimeout(()=>{fb.textContent=''},3000);
+      _atualizarTurno();
+      if(typeof carregarResumo==='function'){try{carregarResumo()}catch(e){}}
+    } else alert('Erro ao registrar — tente de novo');
+  }catch(e){alert('Sem conexão — tente de novo')}
+}
+
+async function encerrarTurno(){
+  const s=_turnoState();
+  if(s){
+    try{
+      const f=d=>String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+      await authFetch(API+'/turno',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({inicio:f(new Date(s.inicio)),fim:f(new Date())})});
+    }catch(e){}
+  }
+  localStorage.removeItem(_TURNO_KEY);
+  clearInterval(_turnoTimer);clearInterval(_turnoPoll);
+  if(_wakeLock){try{_wakeLock.release()}catch(e){} _wakeLock=null}
+  document.getElementById('turno-overlay').style.display='none';
+}
+
+// Retoma turno ativo após reload/reabertura do PWA
+document.addEventListener('DOMContentLoaded',()=>{
+  setTimeout(()=>{ if(_turnoState() && MID) _abrirOverlayTurno(); },2500);
+});
 </script>
 </body>
 </html>

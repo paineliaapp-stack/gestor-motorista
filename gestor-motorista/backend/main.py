@@ -88,7 +88,7 @@ async def generic_exception_handler(request, exc):
 # ── Routers por domínio ──────────────────────────────────────────────────────
 from routes import (
     sistema, push, motoristas, metas, lancamentos, resumo,
-    contas, plano, chat, webhook, relatorios,
+    contas, plano, chat, webhook, relatorios, clima,
 )
 
 app.include_router(push.router)
@@ -102,3 +102,4 @@ app.include_router(plano.router)
 app.include_router(chat.router)
 app.include_router(webhook.router)
 app.include_router(relatorios.router)
+app.include_router(clima.router)
