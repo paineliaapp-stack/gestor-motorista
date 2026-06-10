@@ -308,34 +308,66 @@ const _supa = supabase.createClient(
 
 </head>
 <body>
-<div id="splash" onclick="window._splashTap()" style="position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;cursor:pointer">
-  <video id="sv" playsinline webkit-playsinline preload="auto" style="width:100%;height:100%;object-fit:cover;display:none">
+<div id="splash" onclick="window._splashTap()" style="position:fixed;inset:0;z-index:99999;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none">
+  <!-- Fundo com brilho sutil -->
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(240,180,41,.08) 0%,transparent 70%)"></div>
+  <!-- Video escondido, carrega em background -->
+  <video id="sv" playsinline webkit-playsinline preload="auto" style="display:none">
     <source src="/static/splash-v3.mp4" type="video/mp4">
   </video>
-  <img src="/static/splash-v3-poster.jpg" id="sp-poster" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">
-  <div id="sp-btn" style="position:absolute;bottom:48px;left:50%;transform:translateX(-50%);background:rgba(240,180,41,.15);border:1.5px solid rgba(240,180,41,.6);border-radius:32px;padding:12px 36px;color:#f0b429;font-size:15px;font-weight:700;letter-spacing:.5px;font-family:sans-serif">
-    ▶ &nbsp;Toque para abrir
+  <!-- Conteúdo centralizado -->
+  <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:0">
+    <!-- Logo P -->
+    <div style="width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,#f0b429,#e09000);display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:900;color:#0a0a0a;font-family:sans-serif;box-shadow:0 0 60px rgba(240,180,41,.3);margin-bottom:24px">P</div>
+    <div style="color:#fff;font-size:28px;font-weight:700;font-family:sans-serif;letter-spacing:-.5px;margin-bottom:6px">Painel.IA</div>
+    <div style="color:rgba(255,255,255,.4);font-size:14px;font-family:sans-serif;letter-spacing:.3px;margin-bottom:64px">Gestão financeira para motoristas</div>
+  </div>
+  <!-- Toque para entrar -->
+  <div style="position:absolute;bottom:60px;display:flex;flex-direction:column;align-items:center;gap:12px">
+    <div style="display:flex;gap:6px">
+      <div class="sp-dot" style="width:6px;height:6px;border-radius:50%;background:rgba(240,180,41,.8);animation:sp-pulse 1.4s ease-in-out infinite"></div>
+      <div class="sp-dot" style="width:6px;height:6px;border-radius:50%;background:rgba(240,180,41,.5);animation:sp-pulse 1.4s ease-in-out .2s infinite"></div>
+      <div class="sp-dot" style="width:6px;height:6px;border-radius:50%;background:rgba(240,180,41,.3);animation:sp-pulse 1.4s ease-in-out .4s infinite"></div>
+    </div>
+    <div style="color:rgba(255,255,255,.35);font-size:13px;font-family:sans-serif;letter-spacing:.5px">toque para entrar</div>
   </div>
 </div>
+<style>
+@keyframes sp-pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+</style>
 <script>
 !function(){
   var sp=document.getElementById('splash');
   var v=document.getElementById('sv');
-  var poster=document.getElementById('sp-poster');
-  var btn=document.getElementById('sp-btn');
   var tocado=false;
-  function fechar(){sp&&(sp.style.transition='opacity .5s',sp.style.opacity=0,setTimeout(function(){sp&&sp.remove()},550))}
-  v.addEventListener('ended',fechar);
-  setTimeout(fechar,18000);
+
+  function fechar(){
+    if(!sp) return;
+    sp.style.transition='opacity .6s ease';
+    sp.style.opacity='0';
+    setTimeout(function(){sp&&sp.remove()},650);
+  }
 
   window._splashTap=function(){
     if(tocado) return; tocado=true;
-    poster.style.display='none';
-    btn.style.display='none';
+    // Faz fade out da tela de boas-vindas
+    sp.style.transition='opacity .4s ease';
+    sp.style.opacity='0';
+    // Mostra o vídeo por cima antes de remover o splash
+    v.style.cssText='position:fixed;inset:0;z-index:99998;width:100%;height:100%;object-fit:cover;background:#000';
     v.style.display='block';
+    document.body.appendChild(v);
     v.muted=false;
     var p=v.play();
-    if(p) p.catch(function(){v.muted=true;v.play().catch(fechar)});
+    if(p) p.catch(function(){v.muted=true;v.play()});
+    v.addEventListener('ended',function(){
+      v.style.transition='opacity .5s';
+      v.style.opacity='0';
+      setTimeout(function(){v.remove()},550);
+    });
+    setTimeout(function(){sp&&sp.remove()},450);
+    // Segurança: remove o vídeo após 18s mesmo que não termine
+    setTimeout(function(){v.remove()},18000);
   };
 }();
 </script>
