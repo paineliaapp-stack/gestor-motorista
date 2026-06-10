@@ -1222,10 +1222,15 @@ function renderMetaMensal(){
         <span style="color:var(--mt)">💳 Contas a pagar</span>
         <span style="font-weight:600;color:var(--rd)">- ${fmt(totalContas)}</span>
       </div>` : ''}
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:2px;padding-top:6px;border-top:1px solid rgba(255,255,255,.1)">
-        <span style="font-weight:700">🏆 Sobra se bater a meta</span>
-        <span style="font-weight:700;color:${liquidoReal>=0?'var(--gn)':'var(--rd)'};font-size:15px">${fmt(liquidoReal)}</span>
-      </div>
+      ${liquidoReal > 0 ? `
+      <div style="margin-top:8px;background:linear-gradient(135deg,rgba(0,216,151,.13),rgba(0,216,151,.05));border:1.5px solid rgba(0,216,151,.4);border-radius:12px;padding:12px 14px;text-align:center">
+        <div style="font-size:10px;color:rgba(0,216,151,.8);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">🏆 Se bater R$ ${(META_MENSAL/1000).toFixed(0)}k este mês</div>
+        <div style="font-size:32px;font-weight:900;color:#00D897;line-height:1;font-family:'Barlow Condensed',sans-serif">${fmt(liquidoReal)}</div>
+        <div style="font-size:11px;color:rgba(0,216,151,.7);margin-top:3px">ficam no seu bolso 💰</div>
+      </div>` : `
+      <div style="margin-top:8px;background:rgba(255,69,96,.07);border:1px solid rgba(255,69,96,.3);border-radius:12px;padding:10px 14px;text-align:center">
+        <div style="font-size:11px;color:#ff6b6b;font-weight:700">⚠️ Meta abaixo das contas — ajuste a meta ou negocie as contas</div>
+      </div>`}
     </div>
   `;
 }
