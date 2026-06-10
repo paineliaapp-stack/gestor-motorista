@@ -115,32 +115,3 @@ async def limpar_duplicatas(dados: dict = Body(...), uid: str = Depends(get_uid_
     r2 = supabase.table("lancamentos").select("valor").eq("motorista_id", mid).eq("tipo", "ganho").eq("plataforma", "99").gte("data", "2026-05-01").execute()
     novo_total = sum(float(l["valor"]) for l in (r2.data or []))
     return {"ok": True, "removidos": len(removidos), "detalhes": removidos, "novo_total_99": round(novo_total, 2)}
-
-# ── MODO TURNO — status ao vivo (polling do frontend a cada 30s) ─────────────
-@router.get("/turno-live/{motorista_id}")
-async def turno_live(motorista_id: str, uid: str = Depends(get_uid_from_token)):
-    """Resumo leve do dia para o Modo Turno: ganhos, nº de corridas e meta."""
-    if motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
-    hoje = hoje_brasil().isoformat()
-    try:
-        lr = supabase.table("lancamentos").select("tipo,valor").eq("motorista_id", motorista_id).eq("data", hoje).execute()
-        lancs = lr.data or []
-    except:
-        lancs = []
-    ganhos = sum(float(l["valor"]) for l in lancs if l["tipo"] == "ganho")
-    corridas = sum(1 for l in lancs if l["tipo"] == "ganho")
-    despesas = sum(float(l["valor"]) for l in lancs if l["tipo"] == "despesa")
-    try:
-        m = supabase.table("motoristas").select("meta_diaria,comb_diario").eq("id", motorista_id).execute()
-        meta = float((m.data or [{}])[0].get("meta_diaria") or 300)
-        comb = float((m.data or [{}])[0].get("comb_diario") or 0)
-    except:
-        meta, comb = 300.0, 0.0
-    return {
-        "ganhos_hoje": round(ganhos, 2),
-        "corridas_hoje": corridas,
-        "despesas_hoje": round(despesas, 2),
-        "meta_diaria": meta,
-        "comb_diario": comb,
-        "falta": round(max(0, meta - ganhos), 2),
-    }
