@@ -307,30 +307,24 @@ const _supa = supabase.createClient(
 
 </head>
 <body>
-<div id="splash" style="position:fixed;inset:0;z-index:99999;background:#07090d;display:flex;align-items:center;justify-content:center;transition:opacity .5s ease .1s">
-  <div id="splash-logo" style="position:relative;width:110px;height:110px">
-    <div style="position:absolute;inset:0;border-radius:50%;background:#F0B429;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:58px;font-weight:900;color:#0a0a0a;animation:splashPulse 1.1s ease">P<span style="font-size:20px;position:absolute;top:18px;right:24px">´</span></div>
-    <div class="sp-frag" style="--dx:-90px;--dy:-70px"></div>
-    <div class="sp-frag" style="--dx:95px;--dy:-55px"></div>
-    <div class="sp-frag" style="--dx:-70px;--dy:85px"></div>
-    <div class="sp-frag" style="--dx:80px;--dy:75px"></div>
-    <div class="sp-frag" style="--dx:0px;--dy:-100px"></div>
-    <div class="sp-frag" style="--dx:-105px;--dy:10px"></div>
-    <div class="sp-frag" style="--dx:105px;--dy:15px"></div>
-    <div class="sp-frag" style="--dx:10px;--dy:100px"></div>
-  </div>
+<div id="splash" style="position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;transition:opacity .6s ease">
+  <video id="splash-vid" autoplay muted playsinline preload="auto" style="width:100%;height:100%;object-fit:contain;max-width:540px">
+    <source src="/static/splash.mp4" type="video/mp4">
+  </video>
 </div>
-<style>
-@keyframes splashPulse{0%{transform:scale(.4);opacity:0}45%{transform:scale(1.08);opacity:1}65%{transform:scale(1)}82%{transform:scale(1.18)}100%{transform:scale(1)}}
-.sp-frag{position:absolute;top:50%;left:50%;width:10px;height:10px;border-radius:3px;background:#F0B429;opacity:0;animation:splashFrag .55s ease .95s forwards}
-@keyframes splashFrag{0%{transform:translate(-50%,-50%) scale(1);opacity:.95}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.2) rotate(140deg);opacity:0}}
-@media (prefers-reduced-motion: reduce){#splash{display:none!important}}
-</style>
+<style>@media (prefers-reduced-motion: reduce){#splash{display:none!important}}</style>
 <script>
 (function(){
-  if(sessionStorage.getItem('pia_splash')){document.getElementById('splash').remove();return}
+  const s=document.getElementById('splash');
+  if(!s) return;
+  if(sessionStorage.getItem('pia_splash')){s.remove();return}
   sessionStorage.setItem('pia_splash','1');
-  setTimeout(()=>{const s=document.getElementById('splash');if(s){s.style.opacity='0';setTimeout(()=>s.remove(),600)}},1500);
+  const v=document.getElementById('splash-vid');
+  const fechar=()=>{if(!s.parentNode)return;s.style.opacity='0';setTimeout(()=>s.remove(),650)};
+  v.addEventListener('ended',fechar);
+  v.addEventListener('error',fechar);
+  v.play().catch(fechar);          // autoplay bloqueado → entra direto
+  setTimeout(fechar,4200);          // trava de segurança
 })();
 </script>
 

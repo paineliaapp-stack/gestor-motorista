@@ -24,7 +24,9 @@ def root(request: Request):
 
 @router.get("/landing", response_class=HTMLResponse)
 def landing(request: Request):
-    return templates.TemplateResponse("landing.html", {"request": request})
+    # FileResponse puro: o CSS/JS da landing tem sequências como "{#" que o
+    # Jinja interpreta como comentário de template e quebra com TemplateSyntaxError
+    return FileResponse("templates/landing.html", media_type="text/html")
 
 @router.get("/status")
 async def status():
