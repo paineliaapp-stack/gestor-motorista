@@ -648,6 +648,8 @@ const _supa = supabase.createClient(
 
 
 
+  <button id="btn-modo-turno" onclick="iniciarTurno()" style="width:100%;padding:14px;background:linear-gradient(135deg,#00D897,#00b07d);border:none;border-radius:14px;color:#04130d;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.3px">▶️ INICIAR TURNO</button>
+
   <!-- CARD PREVISÃO DO TEMPO — só aparece quando há chuva relevante nas próximas 36h -->
   <div id="card-clima" style="display:none;background:linear-gradient(135deg,rgba(56,139,253,.10),rgba(56,139,253,.03));border:1px solid rgba(56,139,253,.3);border-radius:16px;padding:14px 16px">
     <div style="display:flex;align-items:flex-start;gap:10px">
@@ -735,7 +737,6 @@ const _supa = supabase.createClient(
           </div>
           <button onclick="editarMeta()" style="background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);border-radius:8px;padding:6px 12px;color:rgba(99,102,241,1);font-size:12px;font-weight:600;cursor:pointer">✏️ Editar</button>
         </div>
-        <button id="btn-turno" onclick="iniciarTurno()" style="width:100%;margin-bottom:10px;padding:12px;background:linear-gradient(135deg,#00D897,#00b07d);border:none;border-radius:12px;color:#04130d;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px">▶️ INICIAR TURNO</button>
         <!-- Formulário de edição (oculto por padrão) -->
         <div id="form-meta" style="display:none;background:rgba(255,255,255,.05);border:1px solid rgba(99,102,241,.4);border-radius:12px;padding:12px;margin-bottom:10px">
           <div style="font-size:11px;color:var(--mt);margin-bottom:8px">Configure sua capacidade de faturamento:</div>
