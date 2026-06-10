@@ -590,25 +590,6 @@ const _supa = supabase.createClient(
 
 
 
-  <!-- FECHAR O DIA — registro de fim de dia em 10 segundos -->
-  <button onclick="document.getElementById('fd-modal').style.display='block'" style="width:100%;padding:14px;background:linear-gradient(135deg,#00D897,#00b07d);border:none;border-radius:14px;color:#04130d;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.3px">✅ FECHAR O DIA</button>
-  <div id="fd-modal" style="display:none;background:rgba(0,216,151,.07);border:1px solid rgba(0,216,151,.3);border-radius:16px;padding:16px">
-    <div style="font-size:11px;color:var(--mt);margin-bottom:10px">Como foi o dia? Só o essencial:</div>
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      <div style="flex:1"><div style="font-size:10px;color:#00D897;font-weight:700;margin-bottom:3px">💰 FATUREI</div>
-        <input id="fd-ganho" type="number" inputmode="decimal" placeholder="0,00" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(0,216,151,.4);border-radius:10px;padding:11px;color:var(--tx);font-size:18px;font-weight:800;text-align:center;outline:none"></div>
-      <div style="flex:1"><div style="font-size:10px;color:#ff6b6b;font-weight:700;margin-bottom:3px">⛽ GASTEI</div>
-        <input id="fd-gasto" type="number" inputmode="decimal" placeholder="0,00" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,82,82,.4);border-radius:10px;padding:11px;color:var(--tx);font-size:18px;font-weight:800;text-align:center;outline:none"></div>
-      <div style="width:74px"><div style="font-size:10px;color:var(--mt);font-weight:700;margin-bottom:3px">🕐 HORAS</div>
-        <input id="fd-horas" type="number" inputmode="decimal" placeholder="—" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:11px;color:var(--tx);font-size:18px;font-weight:800;text-align:center;outline:none"></div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="fecharDia()" id="fd-btn" style="flex:1;padding:12px;background:#00D897;border:none;border-radius:10px;color:#04130d;font-size:14px;font-weight:800;cursor:pointer">Salvar dia ✅</button>
-      <button onclick="document.getElementById('fd-modal').style.display='none'" style="padding:12px 16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:var(--mt);cursor:pointer">✕</button>
-    </div>
-    <div id="fd-msg" style="text-align:center;font-size:12px;color:#00D897;min-height:14px;margin-top:6px"></div>
-  </div>
-
   <!-- CARD PREVISÃO DO TEMPO — só aparece quando há chuva relevante nas próximas 36h -->
   <div id="card-clima" style="display:none;background:linear-gradient(135deg,rgba(56,139,253,.10),rgba(56,139,253,.03));border:1px solid rgba(56,139,253,.3);border-radius:16px;padding:14px 16px">
     <div style="display:flex;align-items:flex-start;gap:10px">
@@ -5552,23 +5533,4 @@ async function carregarClima(){
 setTimeout(carregarClima, 3500);
 
 </script>
-<script>
-async function fecharDia(){
-  const g=parseFloat((document.getElementById('fd-ganho').value||'0').replace(',','.'))||0;
-  const d=parseFloat((document.getElementById('fd-gasto').value||'0').replace(',','.'))||0;
-  const h=parseFloat((document.getElementById('fd-horas').value||'0').replace(',','.'))||0;
-  if(g<=0&&d<=0){alert('Informe pelo menos o faturamento ou o gasto');return}
-  const btn=document.getElementById('fd-btn');btn.disabled=true;btn.textContent='Salvando...';
-  try{
-    if(g>0) await authFetch(API+'/lancamentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({motorista_id:MID,tipo:'ganho',valor:g,horas_rodadas:h>0?h:null})});
-    if(d>0) await authFetch(API+'/lancamentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({motorista_id:MID,tipo:'despesa',descricao:'combustível',valor:d})});
-    document.getElementById('fd-msg').textContent='✅ Dia fechado! Lucro: R$ '+(g-d).toFixed(2).replace('.',',');
-    document.getElementById('fd-ganho').value='';document.getElementById('fd-gasto').value='';document.getElementById('fd-horas').value='';
-    setTimeout(()=>{document.getElementById('fd-modal').style.display='none';document.getElementById('fd-msg').textContent=''},2500);
-    if(typeof carregarResumo==='function'){try{carregarResumo()}catch(e){}}
-  }catch(e){alert('Erro ao salvar — tente de novo')}
-  btn.disabled=false;btn.textContent='Salvar dia ✅';
-}
-</script>
 </body>
-</html>
