@@ -338,6 +338,13 @@ const _supa = supabase.createClient(
   var sp=document.getElementById('splash');
   var v=document.getElementById('sv');
   var tocado=false;
+  // Se vier do logout (?nosplash=1), remove o splash imediatamente
+  if(location.search.indexOf('nosplash=1')!==-1){
+    sp&&sp.remove();
+    // Limpa o parâmetro da URL sem recarregar
+    history.replaceState(null,'',location.pathname);
+    return;
+  }
   v.load();
 
   window._splashTap=function(){
@@ -5174,7 +5181,8 @@ async function fazerLogout(){
     );
     keys.forEach(k => localStorage.removeItem(k));
   } catch(e){}
-  location.href = location.origin + location.pathname;
+  // Vai direto para login sem mostrar o splash novamente
+  location.href = location.origin + location.pathname + '?nosplash=1';
 }
 
 function setUserUI(session){
