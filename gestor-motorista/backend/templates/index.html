@@ -342,7 +342,8 @@ const _supa = supabase.createClient(
   }
 
   function _fecharSplash(){
-    if(v){ v.style.transition='opacity .4s'; v.style.opacity='0'; setTimeout(function(){v&&v.remove();},420); }
+    window._splashDone=true;
+    document.dispatchEvent(new Event('splashDone'));
   }
 
   // ⚠️ REGRA iOS — NÃO ALTERAR SEM LER:
@@ -380,7 +381,6 @@ const _supa = supabase.createClient(
 
     v.play().catch(function(){clearTimeout(guard);v.remove();_fecharSplash();});
 
-    var dummy=0; // placeholder
     }
 
     v.addEventListener('ended', _fecharSplash);
