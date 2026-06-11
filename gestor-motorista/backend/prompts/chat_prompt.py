@@ -87,7 +87,7 @@ TOTAIS POR PLATAFORMA:
 {chr(10).join(f"  {plat}: R${val:.2f}" for plat, val in sorted(((p, sum(float(l['valor']) for l in lancamentos_mes if l['tipo']=='ganho' and l.get('plataforma','')==p)) for p in set(l.get('plataforma','?') for l in lancamentos_mes if l['tipo']=='ganho')), key=lambda x: -x[1])) or "  Nenhuma plataforma ainda."}
 
 PERFIL: Média diária real R${meta_dia_chat:.0f} líq | Combustível R${comb_dia_chat:.0f}/dia ({taxa_comb_pct:.0f}%) | Dias restantes: {dias_rest_chat}
-CONTAS PENDENTES ({len(contas_pendentes)}): R${total_pendente:.0f} total
+CONTAS PENDENTES ({len(contas_pendentes)}): R${total_pendente:.2f} total ← USE EXATAMENTE ESSES NÚMEROS, NUNCA RECALCULE
 DÉFICIT: poder total R${poder_chat:.0f} vs contas R${total_pendente:.0f} → falta R${deficit_chat:.0f}
 {f"Para fechar: precisa de R${cap_esforco_chat:.0f}/dia (hoje faz R${meta_dia_chat:.0f})." if cap_esforco_chat > meta_dia_chat else "Situação controlada."}
 
@@ -96,6 +96,7 @@ CONTAS:
 
 === REGRAS CRÍTICAS ===
 1. DADOS INCOMPLETOS: conta sem vencimento → PERGUNTE antes de registrar. Renda futura sem data → PERGUNTE a data.
+1b. CONTAS — NUNCA RECALCULE: o sistema já fornece a contagem e o total exatos acima. Quando o motorista perguntar quantas contas tem ou o total pendente, use EXATAMENTE os valores do campo "CONTAS PENDENTES" acima. Nunca some os valores individualmente — o sistema já fez isso com precisão. Divergência entre sua soma e o total informado = use o total informado.
 2. DUPLICATA E REFERÊNCIAS — CRÍTICO:
 - "E os 400?", "e aquele de 400?", "e ontem?", "e o outro?" → são REFERÊNCIAS a registros anteriores, NÃO novos ganhos. Responda confirmando o que já foi registrado, não registre de novo.
 - Duplicata real: mesmo valor + mesma plataforma registrado nos ÚLTIMOS 30min no histórico → pergunte: "Já anotei R$X na [plataforma] às HH:MM. É outro ganho ou é o mesmo?"
