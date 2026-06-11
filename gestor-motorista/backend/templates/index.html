@@ -310,12 +310,10 @@ const _supa = supabase.createClient(
 <body>
 <div id="splash" onclick="window._splashTap()"
   style="position:fixed;inset:0;z-index:999999;background:#000;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent">
-  <!-- Imagem de fundo full screen -->
   <picture style="position:absolute;inset:0;width:100%;height:100%">
     <source srcset="/static/splash-bg.webp?v=2" type="image/webp">
     <img src="/static/splash-bg.jpg?v=2" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block">
   </picture>
-  <!-- Bolinhas e toque para entrar -->
   <div style="position:absolute;bottom:52px;width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none">
     <div style="display:flex;gap:8px">
       <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out infinite"></div>
@@ -325,10 +323,10 @@ const _supa = supabase.createClient(
     <div style="color:rgba(255,255,255,.55);font-size:13px;font-family:-apple-system,sans-serif;letter-spacing:1.2px">toque para entrar</div>
   </div>
 </div>
-<!-- Vídeo do splash — opacity:0 em vez de display:none para iOS fazer buffer -->
+<!-- Video LOCAL — muted no HTML para buffer, desmutado no toque (regra iOS) -->
 <video id="sv" playsinline webkit-playsinline preload="auto" muted
-  style="position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:999998;background:#000;opacity:0;pointer-events:none;transition:opacity .4s ease">
-  <source src="https://xtihcmzjwklfsfgsdpww.supabase.co/storage/v1/object/public/static/splash.mp4" type="video/mp4">
+  style="display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:999998;background:#000;opacity:0;transition:opacity .35s ease">
+  <source src="/static/splash-v4.mp4" type="video/mp4">
 </video>
 <style>
 @keyframes sp-p{0%,100%{opacity:.2;transform:scale(.65)}50%{opacity:1;transform:scale(1.2)}}
@@ -338,58 +336,56 @@ const _supa = supabase.createClient(
   var sp=document.getElementById('splash');
   var v=document.getElementById('sv');
   var tocado=false;
-  // Se vier do logout (?nosplash=1), remove o splash imediatamente
+
   if(location.search.indexOf('nosplash=1')!==-1){
-    sp&&sp.remove();
-    // Limpa o parâmetro da URL sem recarregar
+    sp&&sp.remove(); v&&v.remove();
     history.replaceState(null,'',location.pathname);
+    window._splashDone=true;
+    document.dispatchEvent(new Event('splashDone'));
     return;
   }
+
+  // Pre-carrega em background enquanto usuario ve a tela estatica
   v.load();
 
-  function _fecharSplash(){
-    if(v){ v.style.transition='opacity .4s'; v.style.opacity='0'; setTimeout(function(){v&&v.remove();},420); }
+  function _fecharVideo(){
+    v.style.transition='opacity .5s';
+    v.style.opacity='0';
+    setTimeout(function(){v&&v.remove();},550);
+    window._splashDone=true;
+    document.dispatchEvent(new Event('splashDone'));
   }
 
-  // ⚠️ REGRA iOS — NÃO ALTERAR SEM LER:
-  // O iOS bloqueia áudio em qualquer play() que não seja síncrono com gesto do usuário.
-  // ORDEM OBRIGATÓRIA dentro do handler de clique/toque:
-  //   1. v.muted = false
-  //   2. v.volume = 1
-  //   3. v.play()   ← sem await, sem setTimeout, sem .then() antes disso
-  // O elemento <video> DEVE ter muted no HTML para o preload funcionar.
-  // O muted=false só acontece aqui dentro, no gesto. Nunca antes.
-  // Qualquer mudança nessa ordem quebra o áudio no iOS Safari/PWA.
   window._splashTap=function(){
     if(tocado) return; tocado=true;
 
-    // Sumir tela estática
-    sp.style.transition='opacity .35s ease';
+    // Fade out da tela estatica
+    sp.style.transition='opacity .3s ease';
     sp.style.opacity='0';
-    setTimeout(function(){sp&&sp.remove();},380);
+    setTimeout(function(){sp&&sp.remove();},320);
 
-    // muted obrigatório no iOS — sem isso o play() falha silenciosamente
-    v.muted=true;
-    v.style.opacity='0';
+    // Mostrar video
+    v.style.display='block';
+    document.body.appendChild(v);
 
-    // Mostra o vídeo só quando tiver dados suficientes para rodar
-    function _mostrar(){ v.style.opacity='1'; }
-    v.addEventListener('canplay', _mostrar, {once:true});
-    v.addEventListener('ended', _fecharSplash, {once:true});
-
+    // REGRA IOS: muted=false + play() SINCRONO no gesto = som garantido
+    v.muted=false;
     var p=v.play();
-    if(p){
-      p.catch(function(){
-        // Play bloqueado — pula direto pro dashboard
-        _fecharSplash();
-      });
-    }
+    if(p) p.catch(function(){ v.muted=true; v.play().catch(_fecharVideo); });
 
-    // Fallback: se não iniciar em 10s, fecha sozinho
-    setTimeout(function(){
-      if(parseFloat(v.style.opacity||0) < 1) _fecharSplash();
-    }, 10000);
+    // Fade in rapido para esconder delay de decodificacao
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ v.style.opacity='1'; });
+    });
+
+    v.addEventListener('ended', _fecharVideo, {once:true});
+    setTimeout(_fecharVideo, 20000);
   };
+
+  // Seguranca: se nao tocou em 60s, remove o splash silenciosamente
+  setTimeout(function(){
+    if(!tocado){ sp&&sp.remove(); v&&v.remove(); window._splashDone=true; document.dispatchEvent(new Event('splashDone')); }
+  }, 60000);
 }();
 </script>
 
@@ -5334,11 +5330,11 @@ async function checkAuth(){
     setUserUI(session);
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.style.display='none';
-    if(typeof init === 'function') init();
-    // Resumo semanal toda segunda
-    setTimeout(()=>resumoSemanal(), 3000);
-    // Verifica tour agora que temos o MID real
-    setTimeout(()=>_checkTourParaUsuario(), 2000);
+    // Aguarda splash terminar antes de carregar o dashboard
+    var _runInit1=function(){ if(typeof init==='function') init(); setTimeout(()=>resumoSemanal(),3000); setTimeout(()=>_checkTourParaUsuario(),2000); };
+    if(window._splashDone){ _runInit1(); }
+    else{ document.addEventListener('splashDone',_runInit1,{once:true}); }
+
   } else {
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.style.display='flex';
@@ -5365,7 +5361,9 @@ _supa.auth.onAuthStateChange((event, session)=>{
       });
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.remove();
-    if(typeof init === 'function') init();
+    var _runInit2=function(){ if(typeof init==='function') init(); };
+    if(window._splashDone){ _runInit2(); }
+    else{ document.addEventListener('splashDone',_runInit2,{once:true}); }
   }
   if(event === 'SIGNED_OUT'){
     window.MID = null;
@@ -5402,7 +5400,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(upData.comb_diario){ atualizarExibicaoMeta(META_DIARIA, upData.comb_diario); }
     const tl = document.getElementById('tela-login');
     if(tl) tl.remove();
-    if(typeof init === 'function') init();
+    var _runInit3=function(){ if(typeof init==='function') init(); };
+    if(window._splashDone){ _runInit3(); }
+    else{ document.addEventListener('splashDone',_runInit3,{once:true}); }
     // Detecta novo usuário ou setup incompleto (via DOMContentLoaded)
     // Só ativa setup se explicitamente false E não tem histórico de uso
     const _temHistChat2 = window.chatHistory && window.chatHistory.length > 0;
