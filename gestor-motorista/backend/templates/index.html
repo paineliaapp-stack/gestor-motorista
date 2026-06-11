@@ -5812,7 +5812,7 @@ async function _trocarVeiculo(tipo){
 
 /* ── Trial 24h — contador no header ── */
 (function(){
-  function _initTrial(){
+  function _initTrial(){ return; // BILLING PENDENTE — reativar quando pronto
     const key='pia_trial_inicio_'+(window.MID||'local');
     let inicio=localStorage.getItem(key);
     if(!inicio){inicio=Date.now().toString();localStorage.setItem(key,inicio);}
