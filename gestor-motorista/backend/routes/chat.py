@@ -167,12 +167,14 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
     # Calcula déficit real para o gestor poder ser proativo
     import datetime as _dt
     try:
-        perf_chat = supabase.table("motoristas").select("meta_diaria,comb_diario").eq("id", motorista_id).execute()
+        perf_chat = supabase.table("motoristas").select("meta_diaria,comb_diario,tipo_veiculo").eq("id", motorista_id).execute()
         meta_dia_config = float((perf_chat.data or [{}])[0].get("meta_diaria") or 300)
         comb_dia_chat = float((perf_chat.data or [{}])[0].get("comb_diario") or 0)
+        tipo_veiculo = (perf_chat.data or [{}])[0].get("tipo_veiculo") or "carro"
     except:
         meta_dia_config = 300
         comb_dia_chat = 0
+        tipo_veiculo = "carro"
     # Usa média real do histórico quando disponível (mais preciso que a meta configurada)
     ganhos_dias_trabalhados = [l for l in lancamentos_mes if l["tipo"] == "ganho"]
     dias_com_ganho = len(set(l["data"] for l in ganhos_dias_trabalhados))
@@ -270,7 +272,7 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
         _sem_fim = semana_relatorio["fim"]
         _semana_ctx_str = f"\n\n⚠️ CONTEXTO ESPECIAL: Esta conversa é sobre o RELATÓRIO DA SEMANA {_sem_ini} a {_sem_fim}. Ao responder perguntas sobre ganhos, despesas, dias trabalhados ou qualquer dado dessa semana, use SOMENTE os lançamentos desse intervalo de datas — não da semana atual (que começa em {hoje_str})."
 
-    contexto = montar_contexto_chat(_semana_ctx_str=_semana_ctx_str, amanha_str=amanha_str, cap_esforco_chat=cap_esforco_chat, comb_dia_chat=comb_dia_chat, contas_json=contas_json, contas_pendentes=contas_pendentes, daqui2_str=daqui2_str, daqui3_str=daqui3_str, daqui7_str=daqui7_str, deficit_chat=deficit_chat, despesas_hoje=despesas_hoje, despesas_hoje_detalhe=despesas_hoje_detalhe, despesas_mes=despesas_mes, dias_rest_chat=dias_rest_chat, ganhos_hoje=ganhos_hoje, ganhos_hoje_detalhe=ganhos_hoje_detalhe, ganhos_mes=ganhos_mes, ganhos_ontem_detalhe=ganhos_ontem_detalhe, hoje_str=hoje_str, horas_mes=horas_mes, inicio_mes=inicio_mes, lancamentos_mes=lancamentos_mes, lucro_mes=lucro_mes, meta_dia_chat=meta_dia_chat, ontem_str=ontem_str, ontem_str_ctx=ontem_str_ctx, poder_chat=poder_chat, projecao_liq_chat=projecao_liq_chat, proximo_sabado_str=proximo_sabado_str, renda_extra_ctx=renda_extra_ctx, sabado_que_vem_str=sabado_que_vem_str, sabado_str=sabado_str, taxa_comb_pct=taxa_comb_pct, total_pendente=total_pendente)
+    contexto = montar_contexto_chat(_semana_ctx_str=_semana_ctx_str, amanha_str=amanha_str, cap_esforco_chat=cap_esforco_chat, comb_dia_chat=comb_dia_chat, contas_json=contas_json, contas_pendentes=contas_pendentes, daqui2_str=daqui2_str, daqui3_str=daqui3_str, daqui7_str=daqui7_str, deficit_chat=deficit_chat, despesas_hoje=despesas_hoje, despesas_hoje_detalhe=despesas_hoje_detalhe, despesas_mes=despesas_mes, dias_rest_chat=dias_rest_chat, ganhos_hoje=ganhos_hoje, ganhos_hoje_detalhe=ganhos_hoje_detalhe, ganhos_mes=ganhos_mes, ganhos_ontem_detalhe=ganhos_ontem_detalhe, hoje_str=hoje_str, horas_mes=horas_mes, inicio_mes=inicio_mes, lancamentos_mes=lancamentos_mes, lucro_mes=lucro_mes, meta_dia_chat=meta_dia_chat, ontem_str=ontem_str, ontem_str_ctx=ontem_str_ctx, poder_chat=poder_chat, projecao_liq_chat=projecao_liq_chat, proximo_sabado_str=proximo_sabado_str, renda_extra_ctx=renda_extra_ctx, sabado_que_vem_str=sabado_que_vem_str, sabado_str=sabado_str, taxa_comb_pct=taxa_comb_pct, tipo_veiculo=tipo_veiculo, total_pendente=total_pendente)
 
     # Separa prompt em system_instruction (estático, cacheável) + contexto dinâmico
     # A seção AÇÕES nunca muda → vai para system_instruction → Gemini 2.5 Flash
