@@ -5235,7 +5235,7 @@ async function checkAuth(){
     setUserUI(session);
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.style.display='none';
-    if(typeof init === 'function') init();
+    _initAposSplash();
     // Resumo semanal toda segunda
     setTimeout(()=>resumoSemanal(), 3000);
     // Verifica tour agora que temos o MID real
@@ -5243,6 +5243,30 @@ async function checkAuth(){
   } else {
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.style.display='flex';
+  }
+}
+
+
+// Garante que o dashboard só aparece DEPOIS do splash terminar
+function _initAposSplash(){
+  var _sv = document.getElementById('sv');
+  var _sp = document.getElementById('splash');
+  if(_sv || _sp){
+    // Splash ainda visível — espera ended ou remoção
+    if(_sv){
+      _sv.addEventListener('ended', function(){ setTimeout(function(){ if(typeof init==='function') init(); }, 450); }, {once:true});
+    }
+    // Fallback: verifica a cada 300ms se splash sumiu
+    var _chk = setInterval(function(){
+      if(!document.getElementById('sv') && !document.getElementById('splash')){
+        clearInterval(_chk);
+        if(typeof init==='function') init();
+      }
+    }, 300);
+    // Fallback máximo: 13s
+    setTimeout(function(){ clearInterval(_chk); if(typeof init==='function') init(); }, 13000);
+  } else {
+    if(typeof init==='function') init();
   }
 }
 
@@ -5266,7 +5290,7 @@ _supa.auth.onAuthStateChange((event, session)=>{
       });
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.remove();
-    if(typeof init === 'function') init();
+    _initAposSplash();
   }
   if(event === 'SIGNED_OUT'){
     window.MID = null;
@@ -5303,7 +5327,29 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(upData.comb_diario){ atualizarExibicaoMeta(META_DIARIA, upData.comb_diario); }
     const tl = document.getElementById('tela-login');
     if(tl) tl.remove();
-    if(typeof init === 'function') init();
+    // Aguarda splash terminar antes de mostrar o dashboard
+    function _initAposSplash(){
+      if(typeof init === 'function') init();
+    }
+    var _svCheck = document.getElementById('sv');
+    if(_svCheck){
+      // Splash ainda está na tela — espera o vídeo terminar ou ser removido
+      _svCheck.addEventListener('ended', function(){ setTimeout(_initAposSplash, 450); }, {once:true});
+      // Fallback: se splash demorar mais de 12s, init de qualquer jeito
+      setTimeout(function(){
+        if(document.getElementById('sv')) return; // ainda rodando
+        _initAposSplash();
+      }, 12000);
+      // Fallback 2: splash já foi removido antes desse código rodar
+      setTimeout(function(){
+        if(!document.getElementById('splash') && !document.getElementById('sv')){
+          _initAposSplash();
+        }
+      }, 500);
+    } else {
+      // Sem splash — init imediato
+      _initAposSplash();
+    }
     // Detecta novo usuário ou setup incompleto (via DOMContentLoaded)
     // Só ativa setup se explicitamente false E não tem histórico de uso
     const _temHistChat2 = window.chatHistory && window.chatHistory.length > 0;
