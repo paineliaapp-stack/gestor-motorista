@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<link rel="preload" as="video" href="/static/splash-v3.mp4" type="video/mp4">
+<link rel="preload" as="video" href="/static/splash-v5.mp4" type="video/mp4">
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#ffcc00">
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
@@ -328,13 +328,14 @@ const _supa = supabase.createClient(
 </head>
 <body>
 
+
 <!-- ════ SPLASH:INICIO — NÃO REMOVER NEM EDITAR ESTE BLOCO ════
-     Vídeo de abertura. Regras: (1) arquivo local /static/splash-v3.mp4 — nunca URL
+     Vídeo de abertura. Regras: (1) arquivo local /static/splash-v5.mp4 — nunca URL
      externa; (2) só roda no MOBILE; (3) nunca bloqueia o app: se o vídeo não estiver
      pronto em 2.5s, é pulado. Qualquer mudança futura no app NÃO deve tocar aqui. -->
 <div id="splash" style="display:none;position:fixed;inset:0;z-index:99999;background:#000;align-items:center;justify-content:center;transition:opacity .55s ease">
-  <video id="splash-vid" playsinline preload="auto" poster="/static/splash-v3-poster.jpg" style="width:100%;height:100%;object-fit:cover">
-    <source src="/static/splash-v3.mp4" type="video/mp4">
+  <video id="splash-vid" playsinline preload="auto" poster="/static/splash-v5-poster.jpg" style="width:100%;height:100%;object-fit:cover">
+    <source src="/static/splash-v5.mp4" type="video/mp4">
   </video>
   <button onclick="window._fecharSplash&&window._fecharSplash()" style="position:absolute;bottom:calc(28px + env(safe-area-inset-bottom));right:22px;background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:8px 18px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;z-index:2">Pular ›</button>
 </div>
@@ -379,6 +380,7 @@ const _supa = supabase.createClient(
   // Trava absoluta: 12s
   setTimeout(fechar, 12000);
 })();
+
 </script>
 <!-- ════ SPLASH:FIM ════ -->
 
@@ -5338,11 +5340,11 @@ async function checkAuth(){
     setUserUI(session);
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.style.display='none';
-    if(typeof init === 'function') init();
-    // Resumo semanal toda segunda
-    setTimeout(()=>resumoSemanal(), 3000);
-    // Verifica tour agora que temos o MID real
-    setTimeout(()=>_checkTourParaUsuario(), 2000);
+    // Aguarda splash terminar antes de carregar o dashboard
+    var _runInit1=function(){ if(typeof init==='function') init(); setTimeout(()=>resumoSemanal(),3000); setTimeout(()=>_checkTourParaUsuario(),2000); };
+    if(window._splashDone){ _runInit1(); }
+    else{ document.addEventListener('splashDone',_runInit1,{once:true}); }
+
   } else {
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.style.display='flex';
@@ -5369,7 +5371,9 @@ _supa.auth.onAuthStateChange((event, session)=>{
       });
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.remove();
-    if(typeof init === 'function') init();
+    var _runInit2=function(){ if(typeof init==='function') init(); };
+    if(window._splashDone){ _runInit2(); }
+    else{ document.addEventListener('splashDone',_runInit2,{once:true}); }
   }
   if(event === 'SIGNED_OUT'){
     window.MID = null;
@@ -5423,7 +5427,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(upData.comb_diario){ atualizarExibicaoMeta(META_DIARIA, upData.comb_diario); }
     const tl = document.getElementById('tela-login');
     if(tl) tl.remove();
-    if(typeof init === 'function') init();
+    var _runInit3=function(){ if(typeof init==='function') init(); };
+    if(window._splashDone){ _runInit3(); }
+    else{ document.addEventListener('splashDone',_runInit3,{once:true}); }
     // Detecta novo usuário ou setup incompleto (via DOMContentLoaded)
     // Só ativa setup se explicitamente false E não tem histórico de uso
     const _temHistChat2 = window.chatHistory && window.chatHistory.length > 0;
@@ -5756,10 +5762,28 @@ async function carregarClima(){
           })()
         document.getElementById('card-clima').style.display = 'block';
       }catch(e){console.warn('clima:',e)}
-    }, ()=>{}, {timeout:8000, maximumAge:1800000});
+    }, function(err){
+      // Permissão negada ou erro — silencioso, card de clima não aparece
+      console.info('clima: geo indisponível, código '+err.code);
+    }, {timeout:8000, maximumAge:1800000});
   }catch(e){}
 }
-setTimeout(carregarClima, 3500);
+// Só pede localização depois que o vídeo do splash terminar
+// para não interromper a reprodução com o alerta de permissão
+(function(){
+  var _sv = document.getElementById('sv');
+  if(_sv){
+    _sv.addEventListener('ended', function(){ setTimeout(carregarClima, 1000); }, {once:true});
+    // Fallback: se o vídeo não existir mais após 15s, carrega normalmente
+    setTimeout(function(){
+      if(document.getElementById('sv')) return; // ainda rodando
+      carregarClima();
+    }, 15000);
+  } else {
+    // Sem vídeo — carrega normalmente após 3.5s
+    setTimeout(carregarClima, 3500);
+  }
+})();
 
 </script>
 <script>
@@ -5828,7 +5852,7 @@ async function _trocarVeiculo(tipo){
 
 /* ── Trial 24h — contador no header ── */
 (function(){
-  function _initTrial(){
+  function _initTrial(){ return; // BILLING PENDENTE — reativar quando pronto
     const key='pia_trial_inicio_'+(window.MID||'local');
     let inicio=localStorage.getItem(key);
     if(!inicio){inicio=Date.now().toString();localStorage.setItem(key,inicio);}
