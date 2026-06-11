@@ -5149,6 +5149,8 @@ async function fazerLogout(){
     );
     keys.forEach(k => localStorage.removeItem(k));
   } catch(e){}
+  // Limpa sessionStorage para splash aparecer no próximo acesso
+  try { sessionStorage.removeItem('splash_visto'); } catch(e){}
   location.href = location.origin + location.pathname;
 }
 
