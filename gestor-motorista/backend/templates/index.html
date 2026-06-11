@@ -308,6 +308,14 @@ const _supa = supabase.createClient(
 
 </head>
 <body>
+<!-- ============================================================
+  SPLASH SCREEN — NÃO REMOVER / NÃO ALTERAR SEM LER:
+  - Vídeo hospedado no Supabase Storage (imune a deploy do Railway)
+  - iOS exige: v.muted=false + v.volume=1 ANTES do v.play()
+  - Qualquer setTimeout ou await antes do play() quebra o som no iOS
+  - O elemento <video id="sv"> DEVE ter muted no HTML para o preload
+  - Para desativar temporariamente: adicione ?nosplash=1 na URL
+============================================================ -->
 <div id="splash" onclick="window._splashTap()"
   style="position:fixed;inset:0;z-index:999999;background:#000;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent">
   <!-- Fundo com ícone centralizado — splash-bg não existe no static -->
