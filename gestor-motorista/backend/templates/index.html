@@ -456,18 +456,37 @@ const _supa = supabase.createClient(
       <button class="ob-btn" onclick="obNext(1)">Continuar →</button>
     </div>
     <div class="ob-step" id="ob-step1">
+      <div class="ob-title">Como você trabalha? 🚗🏍️</div>
+      <div class="ob-sub">Isso personaliza o app para a sua realidade.</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin:20px 0">
+        <button class="ob-plat ob-veiculo" onclick="selVeiculo(this,'carro')" style="padding:16px;font-size:15px;display:flex;align-items:center;gap:12px;text-align:left">
+          <span style="font-size:28px">🚗</span>
+          <div><div style="font-weight:700">Motorista de app</div><div style="font-size:12px;opacity:.7;margin-top:2px">Uber, 99, InDrive</div></div>
+        </button>
+        <button class="ob-plat ob-veiculo" onclick="selVeiculo(this,'moto')" style="padding:16px;font-size:15px;display:flex;align-items:center;gap:12px;text-align:left">
+          <span style="font-size:28px">🏍️</span>
+          <div><div style="font-weight:700">Motoboy / entregador</div><div style="font-size:12px;opacity:.7;margin-top:2px">iFood, Rappi, Loggi, restaurante</div></div>
+        </button>
+        <button class="ob-plat ob-veiculo" onclick="selVeiculo(this,'ambos')" style="padding:16px;font-size:15px;display:flex;align-items:center;gap:12px;text-align:left">
+          <span style="font-size:28px">🚗🏍️</span>
+          <div><div style="font-weight:700">Os dois</div><div style="font-size:12px;opacity:.7;margin-top:2px">Trabalho com carro e moto</div></div>
+        </button>
+      </div>
+      <button class="ob-btn" id="ob-btn-veiculo" onclick="obNext(2)" disabled style="opacity:.4">Continuar →</button>
+    </div>
+    <div class="ob-step" id="ob-step2">
       <div class="ob-title">Qual plataforma? 🚗</div>
       <div class="ob-sub">Selecione as plataformas que você usa.</div>
-      <div class="ob-plats">
+      <div class="ob-plats" id="ob-plats-grid">
         <button class="ob-plat" onclick="togglePlat(this,'uber')">🖤 Uber</button>
         <button class="ob-plat" onclick="togglePlat(this,'99')">🟡 99</button>
         <button class="ob-plat" onclick="togglePlat(this,'indrive')">🟢 InDrive</button>
         <button class="ob-plat" onclick="togglePlat(this,'outras')">🔵 Outras</button>
         <button class="ob-plat" onclick="togglePlat(this,'outro')">➕ Outro</button>
       </div>
-      <button class="ob-btn" onclick="obNext(2)">Continuar →</button>
+      <button class="ob-btn" onclick="obNext(3)">Continuar →</button>
     </div>
-    <div class="ob-step" id="ob-step2">
+    <div class="ob-step" id="ob-step3">
       <div class="ob-title">Sua meta diária 🎯</div>
       <div class="ob-sub">Quanto quer ganhar por dia?</div>
       <div class="ob-meta-opts">
@@ -2052,9 +2071,39 @@ function obNext(step){
     if(!n){alert('Informe seu nome');return}
     if(!t){alert('Informe seu WhatsApp');return}
   }
+  // Adapta plataformas baseado no tipo de veículo selecionado
+  if(step===2 && window._obVeiculo){
+    const grid=document.getElementById('ob-plats-grid');
+    if(grid){
+      if(window._obVeiculo==='moto'){
+        grid.innerHTML=`
+          <button class="ob-plat" onclick="togglePlat(this,'ifood')">🟠 iFood</button>
+          <button class="ob-plat" onclick="togglePlat(this,'rappi')">🟣 Rappi</button>
+          <button class="ob-plat" onclick="togglePlat(this,'loggi')">🔵 Loggi</button>
+          <button class="ob-plat" onclick="togglePlat(this,'lalamove')">🟡 Lalamove</button>
+          <button class="ob-plat" onclick="togglePlat(this,'restaurante_fixo')">🍽️ Restaurante fixo</button>
+          <button class="ob-plat" onclick="togglePlat(this,'outro')">➕ Outro</button>`;
+      } else if(window._obVeiculo==='ambos'){
+        grid.innerHTML=`
+          <button class="ob-plat" onclick="togglePlat(this,'uber')">🖤 Uber</button>
+          <button class="ob-plat" onclick="togglePlat(this,'99')">🟡 99</button>
+          <button class="ob-plat" onclick="togglePlat(this,'ifood')">🟠 iFood</button>
+          <button class="ob-plat" onclick="togglePlat(this,'rappi')">🟣 Rappi</button>
+          <button class="ob-plat" onclick="togglePlat(this,'loggi')">🔵 Loggi</button>
+          <button class="ob-plat" onclick="togglePlat(this,'outro')">➕ Outro</button>`;
+      }
+    }
+  }
   document.querySelectorAll('.ob-step').forEach(x=>x.classList.remove('active'));
   document.getElementById('ob-step'+step).classList.add('active');
   document.querySelectorAll('.ob-dot').forEach((x,i)=>x.classList.toggle('active',i<=step));
+}
+function selVeiculo(el, tipo){
+  document.querySelectorAll('.ob-veiculo').forEach(x=>x.classList.remove('sel'));
+  el.classList.add('sel');
+  window._obVeiculo = tipo;
+  const btn=document.getElementById('ob-btn-veiculo');
+  btn.disabled=false; btn.style.opacity='1';
 }
 function togglePlat(el,p){
   el.classList.toggle('sel');
@@ -2074,16 +2123,18 @@ async function obFim(){
   if(!obMeta){alert('Escolha sua meta');return}
   const nome=document.getElementById('ob-nome').value.trim();
   const tel=document.getElementById('ob-tel').value.trim();
+  const tipoVeiculo=window._obVeiculo||'carro';
   document.getElementById('ob-btn-fim').disabled=true;
   try{
     const r=await authFetch(API+'/motoristas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,telefone:tel})});
     const data=await r.json();
     MID=data[0].id;
-    // mid agora vem do Google Auth
     localStorage.setItem('nome',nome);
     localStorage.setItem('meta',obMeta);
     META_DIARIA=obMeta;
     NOME=nome;
+    // Salva tipo_veiculo no perfil
+    await authFetch(API+'/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tipo_veiculo:tipoVeiculo,meta_diaria:obMeta,plataformas:obPlats})});
     document.getElementById('onboarding').style.display='none';
     const _nEl=document.getElementById('user-nome'); if(_nEl) _nEl.textContent=NOME.split(' ')[0];
     const _aEl=document.getElementById('user-av'); if(_aEl) _aEl.textContent=NOME[0].toUpperCase();

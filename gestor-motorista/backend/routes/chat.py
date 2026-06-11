@@ -64,6 +64,7 @@ async def chat_setup(dados: dict = Body(...), uid: str = Depends(get_uid_from_to
             if setup_dados.get("meta_diaria"): update["meta_diaria"] = float(setup_dados["meta_diaria"])
             if setup_dados.get("comb_diario"): update["comb_diario"] = float(setup_dados["comb_diario"])
             if setup_dados.get("plataformas"): update["plataformas"] = ",".join(setup_dados["plataformas"])
+            if setup_dados.get("tipo_veiculo"): update["tipo_veiculo"] = setup_dados["tipo_veiculo"]
             try:
                 supabase.table("motoristas").update(update).eq("id", uid).execute()
             except Exception as e:
