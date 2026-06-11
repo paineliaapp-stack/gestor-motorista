@@ -336,13 +336,23 @@ const _supa = supabase.createClient(
   var sp=document.getElementById('splash');
   var v=document.getElementById('sv');
   var tocado=false;
-  // Se vier do logout (?nosplash=1), remove imediatamente
-  if(location.search.indexOf('nosplash=1')!==-1){
+
+  // Pula splash se: veio do logout OU já viu hoje na mesma sessão
+  var _skip = location.search.indexOf('nosplash=1')!==-1 || sessionStorage.getItem('splash_visto');
+
+  if(_skip){
     sp&&sp.remove();
     v&&v.remove();
-    history.replaceState(null,'',location.pathname);
+    // Limpa parâmetro da URL sem recarregar
+    if(location.search.indexOf('nosplash=1')!==-1){
+      history.replaceState(null,'',location.pathname);
+    }
     return;
   }
+
+  // Marca que já viu nessa sessão (não repete se recarregar a página)
+  sessionStorage.setItem('splash_visto','1');
+
   v.load();
 
   function _fecharSplash(){
@@ -350,15 +360,10 @@ const _supa = supabase.createClient(
   }
 
   // ⚠️ REGRA iOS — NÃO ALTERAR SEM LER:
-  // O iOS bloqueia áudio em qualquer play() que não seja síncrono com gesto do usuário.
-  // ORDEM OBRIGATÓRIA dentro do handler de clique/toque:
-  //   1. v.muted = true  (mantém mudo para garantir autoplay)
-  //   2. v.play()        ← sem await, sem setTimeout, sem .then() antes disso
-  // O elemento <video> DEVE ter muted no HTML para o preload funcionar.
+  // play() DEVE ser síncrono com o gesto do usuário para ter som no iOS
   window._splashTap=function(){
     if(tocado) return; tocado=true;
 
-    // Sumir tela estática
     sp.style.transition='opacity .35s ease';
     sp.style.opacity='0';
     setTimeout(function(){sp&&sp.remove();},380);
@@ -372,12 +377,10 @@ const _supa = supabase.createClient(
 
     var p=v.play();
     if(p){
-      p.catch(function(){
-        _fecharSplash();
-      });
+      p.catch(function(){ _fecharSplash(); });
     }
 
-    // Fallback: se não iniciar em 8s, fecha sozinho
+    // Fallback: 8s sem carregar → pula
     setTimeout(function(){
       if(parseFloat(v.style.opacity||0) < 1) _fecharSplash();
     }, 8000);
