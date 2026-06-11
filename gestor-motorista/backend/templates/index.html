@@ -337,21 +337,14 @@ const _supa = supabase.createClient(
   var v=document.getElementById('sv');
   var tocado=false;
 
-  // Pula splash se: veio do logout OU já viu hoje na mesma sessão
-  var _skip = location.search.indexOf('nosplash=1')!==-1 || sessionStorage.getItem('splash_visto');
-
-  if(_skip){
+  // Pula splash se: veio do logout (?nosplash=1)
+  // NÃO usa sessionStorage — no iOS fechar e reabrir aba mantém sessionStorage
+  if(location.search.indexOf('nosplash=1')!==-1){
     sp&&sp.remove();
     v&&v.remove();
-    // Limpa parâmetro da URL sem recarregar
-    if(location.search.indexOf('nosplash=1')!==-1){
-      history.replaceState(null,'',location.pathname);
-    }
+    history.replaceState(null,'',location.pathname);
     return;
   }
-
-  // Marca que já viu nessa sessão (não repete se recarregar a página)
-  sessionStorage.setItem('splash_visto','1');
 
   v.load();
 
@@ -360,15 +353,23 @@ const _supa = supabase.createClient(
   }
 
   // ⚠️ REGRA iOS — NÃO ALTERAR SEM LER:
-  // play() DEVE ser síncrono com o gesto do usuário para ter som no iOS
+  // Para ter SOM no iOS, dentro do handler de toque DEVE ser:
+  //   1. v.muted = false   ← desmuta PRIMEIRO, dentro do gesto
+  //   2. v.currentTime = 0
+  //   3. v.play()          ← síncrono, sem await/setTimeout antes
+  // Se muted=false vier DEPOIS do play(), iOS bloqueia o áudio silenciosamente.
   window._splashTap=function(){
     if(tocado) return; tocado=true;
 
+    // Some a tela estática
     sp.style.transition='opacity .35s ease';
     sp.style.opacity='0';
     setTimeout(function(){sp&&sp.remove();},380);
 
-    v.muted=true;
+    // ← ORDEM CRÍTICA: desmuta ANTES do play()
+    v.muted=false;
+    v.volume=1;
+    v.currentTime=0;
     v.style.opacity='0';
 
     function _mostrar(){ v.style.opacity='1'; }
@@ -377,7 +378,12 @@ const _supa = supabase.createClient(
 
     var p=v.play();
     if(p){
-      p.catch(function(){ _fecharSplash(); });
+      p.catch(function(){
+        // Play bloqueado (ex: Low Power Mode) — tenta mudo como fallback
+        v.muted=true;
+        var p2=v.play();
+        if(p2) p2.catch(function(){ _fecharSplash(); });
+      });
     }
 
     // Fallback: 8s sem carregar → pula
@@ -5149,8 +5155,8 @@ async function fazerLogout(){
     );
     keys.forEach(k => localStorage.removeItem(k));
   } catch(e){}
-  // Limpa sessionStorage para splash aparecer no próximo acesso
-  try { sessionStorage.removeItem('splash_visto'); } catch(e){}
+  // Limpa sessionStorage também
+  try { sessionStorage.clear(); } catch(e){}
   location.href = location.origin + location.pathname;
 }
 
