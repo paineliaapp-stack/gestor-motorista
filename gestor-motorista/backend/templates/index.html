@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<link rel="preload" as="video" href="https://xtihcmzjwklfsfgsdpww.supabase.co/storage/v1/object/public/static/splash.mp4" type="video/mp4">
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#ffcc00">
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
@@ -307,6 +308,82 @@ const _supa = supabase.createClient(
 
 </head>
 <body>
+<div id="splash" onclick="window._splashTap()"
+  style="position:fixed;inset:0;z-index:999999;background:#000;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent">
+  <picture style="position:absolute;inset:0;width:100%;height:100%">
+    <source srcset="/static/splash-bg.webp?v=2" type="image/webp">
+    <img src="/static/splash-bg.jpg?v=2" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block" onerror="this.style.display='none'">
+  </picture>
+  <div style="position:absolute;bottom:52px;width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none">
+    <div style="display:flex;gap:8px">
+      <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out infinite"></div>
+      <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out .22s infinite"></div>
+      <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out .44s infinite"></div>
+    </div>
+    <div style="color:rgba(255,255,255,.55);font-size:13px;font-family:-apple-system,sans-serif;letter-spacing:1.2px">toque para entrar</div>
+  </div>
+</div>
+<!-- Vídeo do splash — opacity:0 em vez de display:none para iOS fazer buffer -->
+<video id="sv" playsinline webkit-playsinline preload="auto" muted
+  style="position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:999998;background:#000;opacity:0;pointer-events:none;transition:opacity .4s ease">
+  <source src="https://xtihcmzjwklfsfgsdpww.supabase.co/storage/v1/object/public/static/splash.mp4" type="video/mp4">
+</video>
+<style>
+@keyframes sp-p{0%,100%{opacity:.2;transform:scale(.65)}50%{opacity:1;transform:scale(1.2)}}
+</style>
+<script>
+!function(){
+  var sp=document.getElementById('splash');
+  var v=document.getElementById('sv');
+  var tocado=false;
+  // Se vier do logout (?nosplash=1), remove imediatamente
+  if(location.search.indexOf('nosplash=1')!==-1){
+    sp&&sp.remove();
+    v&&v.remove();
+    history.replaceState(null,'',location.pathname);
+    return;
+  }
+  v.load();
+
+  function _fecharSplash(){
+    if(v){ v.style.transition='opacity .4s'; v.style.opacity='0'; setTimeout(function(){v&&v.remove();},420); }
+  }
+
+  // ⚠️ REGRA iOS — NÃO ALTERAR SEM LER:
+  // O iOS bloqueia áudio em qualquer play() que não seja síncrono com gesto do usuário.
+  // ORDEM OBRIGATÓRIA dentro do handler de clique/toque:
+  //   1. v.muted = true  (mantém mudo para garantir autoplay)
+  //   2. v.play()        ← sem await, sem setTimeout, sem .then() antes disso
+  // O elemento <video> DEVE ter muted no HTML para o preload funcionar.
+  window._splashTap=function(){
+    if(tocado) return; tocado=true;
+
+    // Sumir tela estática
+    sp.style.transition='opacity .35s ease';
+    sp.style.opacity='0';
+    setTimeout(function(){sp&&sp.remove();},380);
+
+    v.muted=true;
+    v.style.opacity='0';
+
+    function _mostrar(){ v.style.opacity='1'; }
+    v.addEventListener('canplay', _mostrar, {once:true});
+    v.addEventListener('ended', _fecharSplash, {once:true});
+
+    var p=v.play();
+    if(p){
+      p.catch(function(){
+        _fecharSplash();
+      });
+    }
+
+    // Fallback: se não iniciar em 8s, fecha sozinho
+    setTimeout(function(){
+      if(parseFloat(v.style.opacity||0) < 1) _fecharSplash();
+    }, 8000);
+  };
+}();
+</script>
 <div id="tela-login" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:0">
   <div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 100%,rgba(240,180,41,.08) 0%,transparent 70%);pointer-events:none"></div>
   <div style="position:relative;text-align:center;padding:0 32px;max-width:340px">
@@ -5542,6 +5619,14 @@ async function carregarClima(){
 }
 setTimeout(carregarClima, 3500);
 
+</script>
+<script>
+// Registra Service Worker para Push Notifications
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/static/sw.js')
+    .then(reg => { window._swReg = reg; console.log('SW registrado'); })
+    .catch(e => console.warn('SW erro:', e));
+}
 </script>
 </body>
 </html>
