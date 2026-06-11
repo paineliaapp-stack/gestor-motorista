@@ -315,7 +315,9 @@ const _supa = supabase.createClient(
     <source srcset="/static/splash-bg.webp?v=2" type="image/webp">
     <img src="/static/splash-bg.jpg?v=2" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block">
   </picture>
+  <!-- Glow animado ao redor da logo -->
   <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-62%);width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,transparent 38%,rgba(255,185,0,.35) 55%,transparent 75%);animation:sp-glow 2.6s ease-in-out infinite;pointer-events:none"></div>
+  <!-- Bolinhas e texto embaixo -->
   <div style="position:absolute;bottom:52px;width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none">
     <div style="display:flex;gap:8px">
       <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out infinite"></div>
@@ -342,47 +344,25 @@ const _supa = supabase.createClient(
     return;
   }
 
-  function _done(){
-    window._splashDone=true;
-    document.dispatchEvent(new Event('splashDone'));
-  }
-
   window._splashTap=function(){
     if(tocado) return; tocado=true;
-
-    // Esconde a imagem
-    sp.style.transition='opacity .25s ease';
+    sp.style.transition='opacity .4s ease';
     sp.style.opacity='0';
-    setTimeout(function(){sp&&sp.remove();},270);
-
-    // Cria o video DENTRO DO GESTO — unica forma garantida de som no iOS
-    var v=document.createElement('video');
-    v.setAttribute('playsinline','');
-    v.setAttribute('webkit-playsinline','');
-    v.style.cssText='position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:999998;background:#000';
-    v.src='/static/splash-v4.mp4';
-    document.body.appendChild(v);
-
-    v.addEventListener('ended',function(){
-      v.style.transition='opacity .5s';
-      v.style.opacity='0';
-      setTimeout(function(){v.remove();_done();},520);
-    });
-
-    // Fallback: se nao tocar em 3s ou falhar, vai pro dashboard
-    var fallback=setTimeout(function(){v.remove();_done();},18000);
-    v.addEventListener('error',function(){clearTimeout(fallback);v.remove();_done();});
-
-    v.play().catch(function(){
-      // iOS bloqueou mesmo assim — vai pro dashboard direto
-      clearTimeout(fallback);
-      v.remove();_done();
-    });
+    setTimeout(function(){
+      sp&&sp.remove();
+      window._splashDone=true;
+      document.dispatchEvent(new Event('splashDone'));
+    }, 420);
   };
 
+  // Seguranca: remove apos 60s se nao tocou
   setTimeout(function(){
-    if(!tocado){sp&&sp.remove();_done();}
-  },60000);
+    if(!tocado){
+      sp&&sp.remove();
+      window._splashDone=true;
+      document.dispatchEvent(new Event('splashDone'));
+    }
+  }, 60000);
 }();
 </script>
 
