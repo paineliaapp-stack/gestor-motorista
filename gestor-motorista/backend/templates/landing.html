@@ -208,6 +208,23 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
   .float-cta{display:block}
   .garantia{flex-direction:column;text-align:center}
 }
+
+.btn-am{position:relative;overflow:hidden}
+.btn-am::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);animation:btn-shimmer 3.2s ease-in-out infinite;animation-delay:2s}
+@keyframes btn-shimmer{0%{left:-100%}100%{left:200%}}
+.palavra-destaque{background:linear-gradient(95deg,#F0B429,#00D897,#F0B429);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gflow 4s linear infinite}
+@keyframes gflow{0%{background-position:0% center}100%{background-position:200% center}}
+.timeline .era:nth-of-type(1) .era-vid{filter:sepia(.55) contrast(1.08)}
+.timeline .era:nth-of-type(2) .era-vid{filter:saturate(.7) contrast(1.15)}
+.timeline .era:nth-of-type(3) .era-vid{filter:saturate(.85)}
+.timeline .era:nth-of-type(3) .era-vid{position:relative}
+.road span:nth-child(1){animation:mesh1 22s ease-in-out infinite alternate}
+.road span:nth-child(2){animation:mesh2 27s ease-in-out infinite alternate}
+.road span:nth-child(3){animation:mesh3 19s ease-in-out infinite alternate-reverse}
+@keyframes mesh1{0%{top:-20%;left:-15%}100%{top:8%;left:4%}}
+@keyframes mesh2{0%{top:30%;right:-20%}100%{top:52%;right:-2%}}
+@keyframes mesh3{0%{bottom:-25%;left:20%}100%{bottom:-8%;left:38%}}
+@media(prefers-reduced-motion:reduce){.btn-am::after,.palavra-destaque,.road span{animation:none!important}}
 </style>
 </head>
 <body>
@@ -543,6 +560,37 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
 </div>
 
 <!-- CTA FINAL -->
+<section id="planos" style="position:relative;z-index:1">
+  <div class="wrap">
+    <div style="text-align:center">
+      <div class="sec-eyebrow" style="display:inline-block">Planos</div>
+      <h2>Menos que um café por dia.<br>Controle do mês inteiro.</h2>
+      <p class="sec-sub" style="margin:0 auto 36px">Comece com <b style="color:#00D897">24h grátis</b> — sem cartão. Fundadores travam o preço por 1 ano.</p>
+    </div>
+    <div style="max-width:420px;margin:0 auto 36px;text-align:center">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:7px">Vagas de Fundador restantes</div>
+      <div style="height:8px;background:rgba(255,255,255,.07);border-radius:6px;overflow:hidden"><div id="vagas-fill" style="height:100%;width:0;background:linear-gradient(90deg,#F0B429,#00D897);border-radius:6px;transition:width 1.3s cubic-bezier(.2,.8,.2,1)"></div></div>
+      <div id="vagas-num" style="font-size:12px;color:#F0B429;margin-top:7px;font-weight:700">carregando…</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;max-width:640px;margin:0 auto">
+      <div style="border:1.5px solid rgba(240,180,41,.55);border-radius:20px;padding:26px 22px;position:relative;background:linear-gradient(135deg,rgba(240,180,41,.08),transparent)">
+        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#F0B429;color:#000;font-size:10.5px;font-weight:800;padding:4px 14px;border-radius:20px;white-space:nowrap">🔥 FUNDADOR</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin:8px 0 4px"><span style="font-size:14px;color:var(--faint);text-decoration:line-through">R$29</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;color:#F0B429">R$19</span><span style="font-size:13px;color:var(--muted)">/mês</span></div>
+        <div style="font-size:11.5px;color:#00D897;margin-bottom:14px">preço travado por 1 ano</div>
+        <div style="font-size:13px;color:var(--muted);line-height:2">✓ Gestor com IA ilimitado<br>✓ Histórico completo<br>✓ Plano financeiro inteligente<br>✓ Previsão do tempo<br>✓ Modo motoboy<br>✓ Alertas de vencimento</div>
+        <a href="/" class="btn btn-am" style="display:block;text-align:center;margin-top:16px;padding:14px">Começar com 24h grátis</a>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:20px;padding:26px 22px;background:var(--card)">
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px">Pro</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:14px"><span style="font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:900">R$29</span><span style="font-size:13px;color:var(--muted)">/mês</span></div>
+        <div style="font-size:13px;color:var(--muted);line-height:2">✓ Tudo do Fundador<br>✓ Sem limite de vagas<br>✓ Para quem chegou depois</div>
+        <a href="/" class="btn btn-ghost" style="display:block;text-align:center;margin-top:16px;padding:14px">Começar com 24h grátis</a>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:12px;color:var(--faint);margin-top:22px">✅ 24h de teste grátis · sem cartão · cancele quando quiser · seus dados são sempre seus</div>
+  </div>
+</section>
+
 <div class="final">
   <div class="sec-eyebrow" style="text-align:center">Chega de dirigir no escuro</div>
   <h2>Quanto sobrou<br>do seu mês passado?</h2>
@@ -626,6 +674,13 @@ const vidObs=new IntersectionObserver(es=>{es.forEach(e=>{
 })},{threshold:.2});
 document.querySelectorAll('.era-vid').forEach(v=>vidObs.observe(v));
 document.addEventListener('touchstart',()=>{document.querySelectorAll('.era-vid').forEach(v=>{if(v.paused)v.play().catch(()=>{})})},{once:true,passive:true});
+
+/* Vagas Fundador ao vivo */
+fetch('/billing/vagas-fundador').then(r=>r.json()).then(d=>{
+  const v = d.vagas ?? 50;
+  document.getElementById('vagas-num').textContent = v + ' de 50 vagas restantes';
+  setTimeout(()=>{ document.getElementById('vagas-fill').style.width = ((50-v)/50*100)+'%'; }, 300);
+}).catch(()=>{ document.getElementById('vagas-num').textContent = 'vagas limitadas'; });
 
 /* Reveals */
 const obs=new IntersectionObserver(es=>{es.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*60);obs.unobserve(e.target)}})},{threshold:.1});

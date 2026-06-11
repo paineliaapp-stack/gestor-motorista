@@ -88,7 +88,7 @@ async def generic_exception_handler(request, exc):
 # ── Routers por domínio ──────────────────────────────────────────────────────
 from routes import (
     sistema, push, motoristas, metas, lancamentos, resumo,
-    contas, plano, chat, webhook, relatorios, clima, integracoes,
+    contas, plano, chat, webhook, relatorios, clima, integracoes, billing, admin,
 )
 
 app.include_router(push.router)
@@ -104,3 +104,5 @@ app.include_router(webhook.router)
 app.include_router(relatorios.router)
 app.include_router(clima.router)
 app.include_router(integracoes.router)  # desligado por flag INTEGRACOES_ATIVAS
+app.include_router(billing.router)
+app.include_router(admin.router)

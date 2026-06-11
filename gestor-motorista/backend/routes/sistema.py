@@ -47,6 +47,11 @@ async def status():
         "ts": datetime.datetime.utcnow().isoformat()
     }
 
+@router.get("/admin", response_class=HTMLResponse)
+def admin_page(request: Request):
+    return FileResponse("templates/admin.html", media_type="text/html")
+
+
 @router.get("/favicon.ico", include_in_schema=False)
 def favicon():
     return FileResponse("static/favicon.png")

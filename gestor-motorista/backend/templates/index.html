@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<link rel="preload" as="video" href="https://xtihcmzjwklfsfgsdpww.supabase.co/storage/v1/object/public/static/splash.mp4" type="video/mp4">
+<link rel="preload" as="video" href="/static/splash-v3.mp4" type="video/mp4">
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#ffcc00">
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
@@ -291,6 +291,25 @@ select option{background:#141820}
 .bt-btn.encerrar{background:rgba(255,77,106,.15);color:#FF4D6A;border:1px solid rgba(255,77,106,.3)}
 .voice-btn{background:rgba(255,255,255,.05);border:1px solid var(--b);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px;flex-shrink:0;transition:all .2s;color:var(--mt)}
 .voice-btn.on{background:rgba(245,166,35,.15);border-color:rgba(245,166,35,.4);color:var(--am)}
+
+/* ════ CAMADA VISUAL PREMIUM ════ */
+body::before{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.032;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:200px 200px}
+body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.5;background-image:radial-gradient(circle,rgba(255,255,255,.035) 1px,transparent 1px);background-size:30px 30px}
+.sc{background:linear-gradient(135deg,rgba(255,255,255,.045) 0%,rgba(255,255,255,.012) 100%)!important;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 4px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.06);transition:border-color .3s,transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s!important}
+.sc:hover{box-shadow:0 12px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)!important}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.14),transparent)}
+.meta-fill{position:relative;overflow:hidden}
+.meta-fill::after{content:'';position:absolute;top:0;right:0;width:36px;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:liquid 2.2s ease-in-out infinite}
+@keyframes liquid{0%,100%{transform:translateX(-36px);opacity:0}50%{transform:translateX(0);opacity:1}}
+.toast{transition:transform .42s cubic-bezier(.34,1.56,.64,1),opacity .3s ease!important}
+#alerta-contas{animation:urgency-pulse 2.6s ease-in-out infinite}
+@keyframes urgency-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,69,96,0)}50%{box-shadow:0 0 0 5px rgba(255,69,96,.12)}}
+#card-meta-mensal{position:relative}
+#card-meta-mensal::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--card-glow,#F0B429),transparent);opacity:.65}
+#hero-lucro{filter:drop-shadow(0 0 18px rgba(240,180,41,.1))}
+@keyframes shimmer-sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skeleton{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.09) 50%,rgba(255,255,255,.04) 75%)!important;background-size:200% 100%!important;animation:shimmer-sk 1.4s infinite;border-radius:8px;color:transparent!important}
+@media (prefers-reduced-motion: reduce){body::before,body::after{display:none}.meta-fill::after,#alerta-contas{animation:none}}
 </style>
 <script>
 // Bloqueia zoom por pinça e duplo-toque em qualquer browser embutido
@@ -308,95 +327,61 @@ const _supa = supabase.createClient(
 
 </head>
 <body>
-<div id="splash" onclick="window._splashTap()"
-  style="position:fixed;inset:0;z-index:999999;background:#000;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent">
-  <!-- Imagem de fundo full screen -->
-  <picture style="position:absolute;inset:0;width:100%;height:100%">
-    <source srcset="/static/splash-bg.webp?v=2" type="image/webp">
-    <img src="/static/splash-bg.jpg?v=2" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block">
-  </picture>
-  <!-- Bolinhas e toque para entrar -->
-  <div style="position:absolute;bottom:52px;width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none">
-    <div style="display:flex;gap:8px">
-      <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out infinite"></div>
-      <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out .22s infinite"></div>
-      <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out .44s infinite"></div>
-    </div>
-    <div style="color:rgba(255,255,255,.55);font-size:13px;font-family:-apple-system,sans-serif;letter-spacing:1.2px">toque para entrar</div>
-  </div>
+
+<!-- ════ SPLASH:INICIO — NÃO REMOVER NEM EDITAR ESTE BLOCO ════
+     Vídeo de abertura. Regras: (1) arquivo local /static/splash-v3.mp4 — nunca URL
+     externa; (2) só roda no MOBILE; (3) nunca bloqueia o app: se o vídeo não estiver
+     pronto em 2.5s, é pulado. Qualquer mudança futura no app NÃO deve tocar aqui. -->
+<div id="splash" style="display:none;position:fixed;inset:0;z-index:99999;background:#000;align-items:center;justify-content:center;transition:opacity .55s ease">
+  <video id="splash-vid" playsinline preload="auto" poster="/static/splash-v3-poster.jpg" style="width:100%;height:100%;object-fit:cover">
+    <source src="/static/splash-v3.mp4" type="video/mp4">
+  </video>
+  <button onclick="window._fecharSplash&&window._fecharSplash()" style="position:absolute;bottom:calc(28px + env(safe-area-inset-bottom));right:22px;background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:8px 18px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;z-index:2">Pular ›</button>
 </div>
-<!-- Vídeo do splash — fora do #splash para não ser removido junto -->
-<video id="sv" playsinline webkit-playsinline preload="auto" muted
-  style="display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:999998;background:#000;opacity:0;transition:opacity .4s ease">
-  <source src="https://xtihcmzjwklfsfgsdpww.supabase.co/storage/v1/object/public/static/splash.mp4" type="video/mp4">
-</video>
-<style>
-@keyframes sp-p{0%,100%{opacity:.2;transform:scale(.65)}50%{opacity:1;transform:scale(1.2)}}
-</style>
 <script>
-!function(){
-  var sp=document.getElementById('splash');
-  var v=document.getElementById('sv');
-  var tocado=false;
-  // Se vier do logout (?nosplash=1), remove o splash imediatamente
-  if(location.search.indexOf('nosplash=1')!==-1){
-    sp&&sp.remove();
-    // Limpa o parâmetro da URL sem recarregar
-    history.replaceState(null,'',location.pathname);
-    return;
-  }
-  v.load();
+(function(){
+  const s = document.getElementById('splash');
+  if (!s) return;
+  // Só mobile: desktop entra direto
+  const isMobile = window.matchMedia('(max-width: 820px)').matches || /iPhone|Android/i.test(navigator.userAgent);
+  const reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!isMobile || reduz) { s.remove(); return; }
 
-  function _fecharSplash(){
-    if(v){ v.style.transition='opacity .4s'; v.style.opacity='0'; setTimeout(function(){v&&v.remove();},420); }
-  }
-
-  // ⚠️ REGRA iOS — NÃO ALTERAR SEM LER:
-  // O iOS bloqueia áudio em qualquer play() que não seja síncrono com gesto do usuário.
-  // ORDEM OBRIGATÓRIA dentro do handler de clique/toque:
-  //   1. v.muted = false
-  //   2. v.volume = 1
-  //   3. v.play()   ← sem await, sem setTimeout, sem .then() antes disso
-  // O elemento <video> DEVE ter muted no HTML para o preload funcionar.
-  // O muted=false só acontece aqui dentro, no gesto. Nunca antes.
-  // Qualquer mudança nessa ordem quebra o áudio no iOS Safari/PWA.
-  window._splashTap=function(){
-    if(tocado) return; tocado=true;
-
-    // Sumir tela estática
-    sp.style.transition='opacity .35s ease';
-    sp.style.opacity='0';
-    setTimeout(function(){sp&&sp.remove();},380);
-
-    // Desmuta ANTES do play — dentro do gesto do usuário é o único jeito no iOS
-    v.muted=false;
-    v.volume=1;
-    v.style.display='block';
-    v.style.opacity='0';
-
-    var p=v.play();
-    if(p){
-      p.then(function(){
-        requestAnimationFrame(function(){
-          requestAnimationFrame(function(){ v.style.opacity='1'; });
-        });
-      }).catch(function(){
-        // Play bloqueado pelo browser — pula o vídeo
-        _fecharSplash();
-      });
-    } else {
-      requestAnimationFrame(function(){
-        requestAnimationFrame(function(){ v.style.opacity='1'; });
-      });
-    }
-
-    v.addEventListener('ended', _fecharSplash);
-
-    // Fallback: se travar mais de 8s, fecha sozinho
-    setTimeout(_fecharSplash, 8000);
+  const v = document.getElementById('splash-vid');
+  let fechado = false;
+  const fechar = () => {
+    if (fechado) return; fechado = true;
+    try { v.pause(); } catch(e) {}
+    s.style.opacity = '0';
+    setTimeout(() => s.remove(), 600);
   };
-}();
+  window._fecharSplash = fechar;
+
+  // Mostra o splash SÓ quando o vídeo estiver pronto — senão pula sem travar
+  let mostrou = false;
+  const tentarMostrar = () => {
+    if (mostrou || fechado) return;
+    mostrou = true;
+    s.style.display = 'flex';
+    v.muted = false;
+    v.play().catch(() => { v.muted = true; v.play().catch(fechar); });
+  };
+  v.addEventListener('canplaythrough', tentarMostrar, { once: true });
+  v.addEventListener('ended', fechar);
+  v.addEventListener('error', fechar);
+  // Toque em qualquer lugar tenta com som (gesto libera áudio)
+  s.addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON') return;
+    if (v.paused) { v.muted = false; v.play().catch(()=>{ v.muted=true; v.play().catch(fechar); }); }
+  });
+  // Se em 2.5s o vídeo não carregou, pula a abertura — o app nunca espera
+  setTimeout(() => { if (!mostrou) fechar(); }, 2500);
+  // Trava absoluta: 12s
+  setTimeout(fechar, 12000);
+})();
 </script>
+<!-- ════ SPLASH:FIM ════ -->
+
 
 <div id="tela-login" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:0">
   <div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 100%,rgba(240,180,41,.08) 0%,transparent 70%);pointer-events:none"></div>
@@ -1303,6 +1288,12 @@ function renderMetaMensal(){
   const combEstMM = META_MENSAL * (pctCombMM / 100);
   const liquidoReal = META_MENSAL - combEstMM - totalContas;
   const pctProgresso = Math.min(100, Math.round(faturadoAte/META_MENSAL*100));
+  // Glow do topo do card conforme progresso (vermelho→amarelo→verde)
+  try{
+    const _hue = pctProgresso >= 100 ? '#00D897' : pctProgresso > 50 ? '#F0B429' : '#FF4560';
+    const _cmm = document.getElementById('card-meta-mensal');
+    if(_cmm) _cmm.style.setProperty('--card-glow', _hue);
+  }catch(e){}
   // Atualiza widget lateral do hero
   const _wp = document.getElementById('widget-potencial');
   const _wv = document.getElementById('widget-potencial-valor');
@@ -2351,11 +2342,11 @@ async function loadDash(){
       rendaExtraPrevista = df.total_renda_extra_prevista || 0;
       lancFuturos = df.lancamentos || [];
     } catch(e) {}
-    document.getElementById('c-ganhos').textContent=fmt(d.ganhos);
-    document.getElementById('c-despesas').textContent=fmt(d.despesas);
-    document.getElementById('c-lucro').textContent=fmt(d.lucro);
+    animarValor('c-ganhos', d.ganhos);
+    animarValor('c-despesas', d.despesas);
+    animarValor('c-lucro', d.lucro);
     const heroLucro=document.getElementById('hero-lucro');
-    if(heroLucro){heroLucro.textContent=fmt(d.lucro);heroLucro.style.color=d.lucro>=0?'var(--am)':'var(--rd)';}
+    if(heroLucro){animarValor(heroLucro, d.lucro);heroLucro.style.color=d.lucro>=0?'var(--am)':'var(--rd)';}
     const hoje=hojeStr();
     const ganhoHoje=todosLanc.filter(l=>l.data===hoje&&l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
     const pct=Math.min(100,Math.round(ganhoHoje/META_DIARIA*100));
@@ -3942,6 +3933,8 @@ function _mdToHtml(text) {
 }
 
 function appendMsg(role, text, skipScroll, dateOverride) {
+  // Háptico ao confirmar registro
+  try{ if(role!=='user' && /Anotei|✅/.test(String(text)) && navigator.vibrate) navigator.vibrate([10,30,60]); }catch(e){}
   const box = document.getElementById('chat-msgs');
   const hora = _horaAgora();
 
@@ -4010,6 +4003,12 @@ function limparChat() {
 
 let _chatSending = false;
 async function sendChat() {
+  // ── BILLING: bloqueia o chat com trial expirado ──
+  if(window._billingStatus && !window._billingStatus.pode_usar){
+    appendMsg('assistant', '⏱ Seu trial de 24h acabou — mas tudo que você registrou está salvo. Assine o Plano Fundador por R$19/mês para continuar. 👉 Toque no contador no topo da tela para ver os planos.');
+    _abrirModalPlanos();
+    return;
+  }
   if (_chatSending) return;
   // Se estiver em modo setup, redireciona para o chat de setup
   if (_setupMode) {
@@ -5389,6 +5388,23 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     localStorage.setItem('mid', MID);
     NOME = setUserUI(session);
     const upRes = await authFetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})});
+    // ── BILLING: status do plano/trial ──
+    try{
+      const _bRes = await authFetch(API+'/billing/status');
+      window._billingStatus = await _bRes.json();
+      const _bs = window._billingStatus;
+      // Sincroniza o contador 24h com o valor REAL do servidor
+      if(_bs && typeof _bs.trial_restante_ms === 'number'){
+        const inicioReal = Date.now() - (24*3600000 - _bs.trial_restante_ms);
+        localStorage.setItem('pia_trial_inicio_'+MID, String(inicioReal));
+      }
+      if(_bs && _bs.status === 'active'){
+        const tc = document.getElementById('trial-counter');
+        if(tc){ tc.textContent = '⭐ ' + (_bs.plano === 'fundador' ? 'Fundador' : 'Pro'); tc.style.cursor = 'default'; }
+        window._planoAtivo = true;
+      }
+      if(_bs && !_bs.pode_usar){ _mostrarOverlayUpgrade(); }
+    }catch(e){ console.warn('billing:', e); }
     const upData = await upRes.json();
     if(upData.meta_diaria && upData.meta_diaria !== 150){
       META_DIARIA=upData.meta_diaria; localStorage.setItem('meta',META_DIARIA);
@@ -5847,6 +5863,139 @@ async function _trocarVeiculo(tipo){
   }
   // Aguarda o MID estar disponível
   let _t=setInterval(()=>{if(window.MID){clearInterval(_t);_initTrial();}},500);
+})();
+</script>
+<script>
+/* ════ BILLING: overlay, modal de planos e bloqueio do chat ════ */
+async function _mostrarOverlayUpgrade(){
+  if(document.getElementById('upgrade-overlay')) return;
+  let nLanc=0, totalReg=0, dias=0;
+  try{
+    const r = await authFetch(API+'/turnos/'+MID); // leve; fallback abaixo cobre
+  }catch(e){}
+  try{
+    const r2 = await authFetch(API+'/resumo/'+MID);
+    const d = await r2.json();
+    totalReg = (d.ganhos||0)+(d.despesas||0);
+    nLanc = (d.lancamentos||[]).length || 0;
+  }catch(e){}
+  let vagas = '—';
+  try{ const v = await fetch(API+'/billing/vagas-fundador'); vagas = (await v.json()).vagas; }catch(e){}
+  const ov = document.createElement('div');
+  ov.id = 'upgrade-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9800;background:linear-gradient(180deg,#07090d 0%,#0d1410 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;overflow-y:auto';
+  ov.innerHTML = `
+    <div style="width:64px;height:64px;border-radius:50%;background:#F0B429;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;color:#000;margin-bottom:22px;box-shadow:0 0 50px rgba(240,180,41,.3)">P</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;text-transform:uppercase;line-height:1.1;margin-bottom:10px">Seu trial de 24h acabou</div>
+    <div style="font-size:14px;color:rgba(238,233,224,.55);max-width:300px;line-height:1.6;margin-bottom:18px">Mas relaxa — <b style="color:#00D897">tudo que você registrou está salvo</b>. ${totalReg>0?`Já são <b style=\"color:#F0B429\">R$ ${totalReg.toFixed(0)}</b> movimentados aqui dentro.`:''}</div>
+    <button onclick="_abrirModalPlanos()" style="width:100%;max-width:320px;padding:17px;background:#F0B429;border:none;border-radius:14px;color:#0a0a0a;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:10px">Assinar por R$19/mês — Fundador</button>
+    <div style="font-size:11.5px;color:rgba(240,180,41,.7);margin-bottom:18px">🔥 ${vagas} vagas restantes com esse preço</div>
+    <button onclick="document.getElementById('upgrade-overlay').remove();window._modoLeitura=true" style="background:none;border:none;color:rgba(255,255,255,.35);font-size:12.5px;cursor:pointer;text-decoration:underline">Ver apenas o dashboard (somente leitura)</button>`;
+  document.body.appendChild(ov);
+}
+
+function _abrirModalPlanos(){
+  if(document.getElementById('modal-planos')) return;
+  const m = document.createElement('div');
+  m.id = 'modal-planos';
+  m.style.cssText = 'position:fixed;inset:0;z-index:9900;background:rgba(0,0,0,.82);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:18px;overflow-y:auto';
+  m.innerHTML = `
+    <div style="background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:26px 22px;max-width:380px;width:100%;max-height:92vh;overflow-y:auto">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;text-transform:uppercase;margin-bottom:4px">Escolha seu plano</div>
+      <div style="font-size:12px;color:rgba(238,233,224,.45);margin-bottom:20px">Cancele quando quiser. Seus dados são sempre seus.</div>
+      <div style="border:1.5px solid rgba(240,180,41,.55);border-radius:16px;padding:18px;margin-bottom:12px;position:relative;background:linear-gradient(135deg,rgba(240,180,41,.08),transparent)">
+        <div style="position:absolute;top:-11px;left:18px;background:#F0B429;color:#000;font-size:10px;font-weight:800;padding:3px 12px;border-radius:20px">🔥 FUNDADOR</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin:6px 0 4px"><span style="font-size:13px;color:rgba(255,255,255,.3);text-decoration:line-through">R$29</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:900;color:#F0B429">R$19</span><span style="font-size:12px;color:rgba(238,233,224,.5)">/mês</span></div>
+        <div style="font-size:11px;color:#00D897;margin-bottom:12px">✓ preço travado por 1 ano · vagas limitadas</div>
+        <div style="font-size:12px;color:rgba(238,233,224,.6);line-height:1.9">✓ Chat com o Gestor ilimitado<br>✓ Histórico completo<br>✓ Plano financeiro com IA<br>✓ Previsão do tempo + modo motoboy<br>✓ Alertas de vencimento</div>
+        <button onclick="_irCheckout('fundador')" style="width:100%;margin-top:14px;padding:13px;background:#F0B429;border:none;border-radius:11px;color:#0a0a0a;font-size:14px;font-weight:800;cursor:pointer">Garantir vaga Fundador</button>
+      </div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px;margin-bottom:14px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">Pro</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:10px"><span style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900">R$29</span><span style="font-size:12px;color:rgba(238,233,224,.5)">/mês</span></div>
+        <button onclick="_irCheckout('pro')" style="width:100%;padding:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:11px;color:#EEE9E0;font-size:13px;font-weight:700;cursor:pointer">Assinar Pro</button>
+      </div>
+      <button onclick="document.getElementById('modal-planos').remove()" style="width:100%;padding:9px;background:none;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer">Fechar</button>
+    </div>`;
+  document.body.appendChild(m);
+}
+
+async function _irCheckout(plano){
+  let email = '';
+  try{ const {data} = await window.sb.auth.getUser(); email = data?.user?.email || ''; }catch(e){}
+  if(!email){ email = prompt('Seu email para o pagamento:') || ''; }
+  if(!email || !email.includes('@')){ alert('Email inválido'); return; }
+  try{
+    const r = await authFetch(API+'/billing/criar-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plano_id:plano,email})});
+    const d = await r.json();
+    if(d.init_point){ window.location.href = d.init_point; }
+    else{ alert(d.erro || 'Erro ao iniciar pagamento'); }
+  }catch(e){ alert('Falha de conexão — tente de novo'); }
+}
+
+// Trial counter clicável → modal de planos
+(function(){
+  const iv = setInterval(()=>{
+    const tc = document.getElementById('trial-counter');
+    if(tc){ clearInterval(iv); tc.style.cursor='pointer'; tc.addEventListener('click',()=>{ if(!window._planoAtivo) _abrirModalPlanos(); }); }
+  }, 800);
+})();
+</script>
+<script>
+/* ════ ANIMAÇÃO NUMÉRICA ════ */
+function animarValor(elId, valorFinal, dur=750){
+  const el = typeof elId==='string' ? document.getElementById(elId) : elId;
+  if(!el) return;
+  el.classList.remove('skeleton');
+  const ini = performance.now();
+  const easeOut = x => 1 - Math.pow(1-x, 4);
+  function frame(now){
+    const p = Math.min(1, (now-ini)/dur);
+    el.textContent = fmt(valorFinal * easeOut(p));
+    if(p < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+/* Skeleton inicial nos números até os dados chegarem */
+document.addEventListener('DOMContentLoaded', ()=>{
+  ['hero-lucro','c-ganhos','c-despesas','c-lucro','c-contas-pend'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && el.textContent.includes('R$ 0')) el.classList.add('skeleton');
+  });
+  setTimeout(()=>document.querySelectorAll('.skeleton').forEach(e=>e.classList.remove('skeleton')), 6000);
+});
+
+/* ════ NEBULOSA DE FUNDO (Canvas, 24fps, pausa quando oculto) ════ */
+(function(){
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const c = document.createElement('canvas');
+  c.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5';
+  document.body.insertBefore(c, document.body.firstChild);
+  const ctx = c.getContext('2d');
+  const orbs = [
+    {cor:'240,180,41', a:.05, r:230, sx:.00021, sy:.00017, fx:.25, fy:.3},
+    {cor:'0,216,151',  a:.04, r:200, sx:.00017, sy:.00023, fx:.75, fy:.65},
+    {cor:'99,102,241', a:.035,r:260, sx:.00013, sy:.00019, fx:.5,  fy:.85},
+  ];
+  function size(){ c.width = innerWidth; c.height = innerHeight; }
+  size(); addEventListener('resize', size);
+  let last = 0;
+  function draw(now){
+    requestAnimationFrame(draw);
+    if(document.hidden || now-last < 41) return; // ~24fps
+    last = now;
+    ctx.clearRect(0,0,c.width,c.height);
+    orbs.forEach(o=>{
+      const x = c.width*o.fx + Math.sin(now*o.sx)*c.width*.14;
+      const y = c.height*o.fy + Math.cos(now*o.sy)*c.height*.11;
+      const g = ctx.createRadialGradient(x,y,0,x,y,o.r);
+      g.addColorStop(0, `rgba(${o.cor},${o.a})`);
+      g.addColorStop(1, `rgba(${o.cor},0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(x-o.r, y-o.r, o.r*2, o.r*2);
+    });
+  }
+  requestAnimationFrame(draw);
 })();
 </script>
 </body>
