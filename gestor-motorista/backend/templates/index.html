@@ -351,6 +351,15 @@ const _supa = supabase.createClient(
     if(v){ v.style.transition='opacity .4s'; v.style.opacity='0'; setTimeout(function(){v&&v.remove();},420); }
   }
 
+  // ⚠️ REGRA iOS — NÃO ALTERAR SEM LER:
+  // O iOS bloqueia áudio em qualquer play() que não seja síncrono com gesto do usuário.
+  // ORDEM OBRIGATÓRIA dentro do handler de clique/toque:
+  //   1. v.muted = false
+  //   2. v.volume = 1
+  //   3. v.play()   ← sem await, sem setTimeout, sem .then() antes disso
+  // O elemento <video> DEVE ter muted no HTML para o preload funcionar.
+  // O muted=false só acontece aqui dentro, no gesto. Nunca antes.
+  // Qualquer mudança nessa ordem quebra o áudio no iOS Safari/PWA.
   window._splashTap=function(){
     if(tocado) return; tocado=true;
 
