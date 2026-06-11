@@ -309,7 +309,7 @@ const _supa = supabase.createClient(
 </head>
 <body>
 <div id="splash" onclick="window._splashTap()"
-  style="position:fixed;inset:0;z-index:99999;background:#000;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent">
+  style="position:fixed;inset:0;z-index:999999;background:#000;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent">
   <!-- Imagem de fundo full screen -->
   <picture style="position:absolute;inset:0;width:100%;height:100%">
     <source srcset="/static/splash-bg.webp?v=2" type="image/webp">
@@ -317,7 +317,7 @@ const _supa = supabase.createClient(
   </picture>
   <!-- Vídeo pré-carregado, inicia escondido -->
   <video id="sv" playsinline webkit-playsinline preload="auto"
-    style="display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;background:#000;opacity:0;transition:opacity .35s ease">
+    style="display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:999998;background:#000;opacity:0;transition:opacity .35s ease">
     <source src="/static/splash-v4.mp4" type="video/mp4">
   </video>
   <!-- Bolinhas e toque para entrar -->
