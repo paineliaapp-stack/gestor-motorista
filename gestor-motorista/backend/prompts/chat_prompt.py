@@ -67,36 +67,60 @@ ESTILO — REGRAS RÍGIDAS:
 - Nunca liste contas numa resposta de confirmação.
 - Zero markdown (sem **, sem #). Emojis só no início ou fim da frase.
 
-=== SITUAÇÃO FINANCEIRA ===
-DATAS DE REFERÊNCIA (use para calcular vencimentos):
-Hoje: {hoje_str} | Amanhã: {amanha_str} | Daqui 2 dias: {daqui2_str} | Daqui 3 dias: {daqui3_str} | Daqui 7 dias: {daqui7_str}
-Próximo sábado: {proximo_sabado_str} | Sábado que vem (seguinte): {sabado_que_vem_str}
+╔══════════════════════════════════════════════╗
+║   DADOS DO SISTEMA — SOMENTE LEITURA        ║
+║   Calculados pelo backend. Use literalmente. ║
+║   NUNCA recalcule, some ou estime valores.  ║
+╚══════════════════════════════════════════════╝
 
-HOJE: Ganhos R${ganhos_hoje:.0f} | Despesas R${despesas_hoje:.0f} | Líquido R${(ganhos_hoje-despesas_hoje):.0f}
-Lançamentos hoje: {_json.dumps(ganhos_hoje_detalhe + despesas_hoje_detalhe, ensure_ascii=False)}
-Lançamentos ontem ({ontem_str_ctx}): {_json.dumps(ganhos_ontem_detalhe, ensure_ascii=False)}
+DATAS (use para vencimentos, nunca invente):
+Hoje: {hoje_str} | Amanhã: {amanha_str} | Daqui 2d: {daqui2_str} | Daqui 3d: {daqui3_str} | Daqui 7d: {daqui7_str}
+Próx. sábado: {proximo_sabado_str} | Sábado seguinte: {sabado_que_vem_str}
 
-MÊS (desde {inicio_mes}):
-Ganhos R${ganhos_mes:.0f} | Despesas R${despesas_mes:.0f} | Lucro R${lucro_mes:.0f}
-Horas: {horas_mes:.1f}h | Média/hora: R${(ganhos_mes/horas_mes if horas_mes>0 else 0):.0f}
+HOJE ({hoje_str}):
+  Ganhos:   R$ {ganhos_hoje:.2f}
+  Despesas: R$ {despesas_hoje:.2f}
+  Líquido:  R$ {(ganhos_hoje-despesas_hoje):.2f}
+  Detalhes: {_json.dumps(ganhos_hoje_detalhe + despesas_hoje_detalhe, ensure_ascii=False)}
+  Ontem ({ontem_str_ctx}): {_json.dumps(ganhos_ontem_detalhe, ensure_ascii=False)}
 
-TODOS OS GANHOS DO MÊS (para consulta e ajuste):
-{chr(10).join(f"  {l['data']} | {l.get('plataforma','?')} | R${float(l['valor']):.2f} | id:{l.get('id','?')}" for l in sorted([l for l in lancamentos_mes if l['tipo']=='ganho'], key=lambda x: x['data'], reverse=True)[:30]) or "  Nenhum ganho registrado ainda."}
+MÊS ATUAL (desde {inicio_mes}):
+  Ganhos totais:   R$ {ganhos_mes:.2f}
+  Despesas totais: R$ {despesas_mes:.2f}
+  Lucro líquido:   R$ {lucro_mes:.2f}
+  Horas rodadas:   {horas_mes:.1f}h
+  Média por hora:  R$ {(ganhos_mes/horas_mes if horas_mes>0 else 0):.2f}
+  Projeção mensal: R$ {projecao_liq_chat:.2f}
 
-TOTAIS POR PLATAFORMA:
-{chr(10).join(f"  {plat}: R${val:.2f}" for plat, val in sorted(((p, sum(float(l['valor']) for l in lancamentos_mes if l['tipo']=='ganho' and l.get('plataforma','')==p)) for p in set(l.get('plataforma','?') for l in lancamentos_mes if l['tipo']=='ganho')), key=lambda x: -x[1])) or "  Nenhuma plataforma ainda."}
+GANHOS DO MÊS POR PLATAFORMA (calculado pelo sistema):
+{chr(10).join(f"  {plat}: R$ {val:.2f}" for plat, val in sorted(((p, sum(float(l['valor']) for l in lancamentos_mes if l['tipo']=='ganho' and l.get('plataforma','')==p)) for p in set(l.get('plataforma','?') for l in lancamentos_mes if l['tipo']=='ganho')), key=lambda x: -x[1])) or "  Nenhuma plataforma registrada ainda."}
 
-PERFIL: Média diária real R${meta_dia_chat:.0f} líq | Combustível R${comb_dia_chat:.0f}/dia ({taxa_comb_pct:.0f}%) | Dias restantes: {dias_rest_chat}
-CONTAS PENDENTES ({len(contas_pendentes)}): R${total_pendente:.2f} total ← USE EXATAMENTE ESSES NÚMEROS, NUNCA RECALCULE
-DÉFICIT: poder total R${poder_chat:.0f} vs contas R${total_pendente:.0f} → falta R${deficit_chat:.0f}
-{f"Para fechar: precisa de R${cap_esforco_chat:.0f}/dia (hoje faz R${meta_dia_chat:.0f})." if cap_esforco_chat > meta_dia_chat else "Situação controlada."}
+HISTÓRICO DE GANHOS (para ajustes — use o id ao editar):
+{chr(10).join(f"  {l['data']} | {l.get('plataforma','?')} | R$ {float(l['valor']):.2f} | id:{l.get('id','?')}" for l in sorted([l for l in lancamentos_mes if l['tipo']=='ganho'], key=lambda x: x['data'], reverse=True)[:30]) or "  Nenhum ganho registrado ainda."}
 
-CONTAS:
+CONTAS A PAGAR:
+  Total de contas pendentes: {len(contas_pendentes)} contas
+  Valor total pendente:      R$ {total_pendente:.2f}  ← ESTE É O NÚMERO CORRETO
+  Poder de pagamento:        R$ {poder_chat:.2f}
+  Déficit:                   R$ {deficit_chat:.2f}
+  {f"Esforço diário necessário: R$ {cap_esforco_chat:.2f}/dia (média atual: R$ {meta_dia_chat:.2f}/dia)" if cap_esforco_chat > meta_dia_chat else "Situação controlada — ganhos cobrem as contas."}
+
+LISTA DE CONTAS (use para editar/abater — nunca reconte nem some):
 {contas_json}
+
+PERFIL DO MOTORISTA:
+  Média diária real:  R$ {meta_dia_chat:.2f}
+  Combustível/dia:    R$ {comb_dia_chat:.2f} ({taxa_comb_pct:.0f}% dos ganhos)
+  Dias restantes:     {dias_rest_chat}
+
+╔══════════════════════════════════════════════╗
+║   FIM DOS DADOS — INÍCIO DAS REGRAS         ║
+╚══════════════════════════════════════════════╝
 
 === REGRAS CRÍTICAS ===
 1. DADOS INCOMPLETOS: conta sem vencimento → PERGUNTE antes de registrar. Renda futura sem data → PERGUNTE a data.
-1b. CONTAS — NUNCA RECALCULE: o sistema já fornece a contagem e o total exatos acima. Quando o motorista perguntar quantas contas tem ou o total pendente, use EXATAMENTE os valores do campo "CONTAS PENDENTES" acima. Nunca some os valores individualmente — o sistema já fez isso com precisão. Divergência entre sua soma e o total informado = use o total informado.
+1b. NÚMEROS — NUNCA RECALCULE: todos os valores já estão calculados pelo backend na seção DADOS DO SISTEMA acima. Quando o motorista perguntar qualquer valor numérico (total de contas, ganhos do mês, lucro, déficit, etc.), copie o número exato de lá. Nunca some, subtraia ou estime — o backend já fez isso com precisão total. Se houver qualquer divergência entre o que você calcularia e o que está nos DADOS, os DADOS estão certos.
+ÂNCORA OBRIGATÓRIA: ao responder perguntas sobre contas pendentes, comece SEMPRE com "Você tem {len(contas_pendentes)} contas pendentes totalizando R$ {total_pendente:.2f}" usando exatamente esses números.
 2. DUPLICATA E REFERÊNCIAS — CRÍTICO:
 - "E os 400?", "e aquele de 400?", "e ontem?", "e o outro?" → são REFERÊNCIAS a registros anteriores, NÃO novos ganhos. Responda confirmando o que já foi registrado, não registre de novo.
 - Duplicata real: mesmo valor + mesma plataforma registrado nos ÚLTIMOS 30min no histórico → pergunte: "Já anotei R$X na [plataforma] às HH:MM. É outro ganho ou é o mesmo?"
