@@ -5104,6 +5104,12 @@ async function instalarApp(){
     // iOS: mostra instruções passo a passo
     abrirInstrucaoInstall(true);
   } else {
+    const isAndroid = /Android/.test(navigator.userAgent);
+    if(!isIOS && !isAndroid){
+      // Desktop — não faz nada, PWA install só funciona em mobile
+      toast('Instale pelo celular para usar como app 📱');
+      return;
+    }
     // Android sem prompt (já instalado ou navegador diferente do Chrome)
     abrirInstrucaoInstall(false);
   }
@@ -5345,29 +5351,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(upData.comb_diario){ atualizarExibicaoMeta(META_DIARIA, upData.comb_diario); }
     const tl = document.getElementById('tela-login');
     if(tl) tl.remove();
-    // Aguarda splash terminar antes de mostrar o dashboard
-    function _initAposSplash(){
-      if(typeof init === 'function') init();
-    }
-    var _svCheck = document.getElementById('sv');
-    if(_svCheck){
-      // Splash ainda está na tela — espera o vídeo terminar ou ser removido
-      _svCheck.addEventListener('ended', function(){ setTimeout(_initAposSplash, 450); }, {once:true});
-      // Fallback: se splash demorar mais de 12s, init de qualquer jeito
-      setTimeout(function(){
-        if(document.getElementById('sv')) return; // ainda rodando
-        _initAposSplash();
-      }, 12000);
-      // Fallback 2: splash já foi removido antes desse código rodar
-      setTimeout(function(){
-        if(!document.getElementById('splash') && !document.getElementById('sv')){
-          _initAposSplash();
-        }
-      }, 500);
-    } else {
-      // Sem splash — init imediato
-      _initAposSplash();
-    }
+    _initAposSplash();
     // Detecta novo usuário ou setup incompleto (via DOMContentLoaded)
     // Só ativa setup se explicitamente false E não tem histórico de uso
     const _temHistChat2 = window.chatHistory && window.chatHistory.length > 0;
