@@ -308,8 +308,9 @@ const _supa = supabase.createClient(
 
 </head>
 <body>
-<div id="splash" onclick="window._splashTap()"
-  style="position:fixed;inset:0;z-index:999999;background:#000;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent">
+<div id="splash"
+  style="position:fixed;inset:0;z-index:999999;background:#000;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent"
+  onclick="window._splashTap()">
   <picture style="position:absolute;inset:0;width:100%;height:100%">
     <source srcset="/static/splash-bg.webp?v=2" type="image/webp">
     <img src="/static/splash-bg.jpg?v=2" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block">
@@ -323,35 +324,23 @@ const _supa = supabase.createClient(
     <div style="color:rgba(255,255,255,.55);font-size:13px;font-family:-apple-system,sans-serif;letter-spacing:1.2px">toque para entrar</div>
   </div>
 </div>
-<!-- Video LOCAL — muted no HTML para buffer, desmutado no toque (regra iOS) -->
-<video id="sv" playsinline webkit-playsinline preload="auto" muted
-  style="display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:999998;background:#000;opacity:0;transition:opacity .35s ease">
-  <source src="/static/splash-v4.mp4" type="video/mp4">
-</video>
 <style>
 @keyframes sp-p{0%,100%{opacity:.2;transform:scale(.65)}50%{opacity:1;transform:scale(1.2)}}
 </style>
 <script>
 !function(){
   var sp=document.getElementById('splash');
-  var v=document.getElementById('sv');
   var tocado=false;
 
   if(location.search.indexOf('nosplash=1')!==-1){
-    sp&&sp.remove(); v&&v.remove();
+    sp&&sp.remove();
     history.replaceState(null,'',location.pathname);
     window._splashDone=true;
     document.dispatchEvent(new Event('splashDone'));
     return;
   }
 
-  // Pre-carrega em background enquanto usuario ve a tela estatica
-  v.load();
-
-  function _fecharVideo(){
-    v.style.transition='opacity .5s';
-    v.style.opacity='0';
-    setTimeout(function(){v&&v.remove();},550);
+  function _done(){
     window._splashDone=true;
     document.dispatchEvent(new Event('splashDone'));
   }
@@ -359,33 +348,32 @@ const _supa = supabase.createClient(
   window._splashTap=function(){
     if(tocado) return; tocado=true;
 
-    // Fade out da tela estatica
-    sp.style.transition='opacity .3s ease';
+    // Imagem some
+    sp.style.transition='opacity .2s';
     sp.style.opacity='0';
-    setTimeout(function(){sp&&sp.remove();},320);
+    setTimeout(function(){sp&&sp.remove();},220);
 
-    // Mostrar video
-    v.style.display='block';
+    // Video criado AGORA dentro do gesto — iOS libera som assim
+    var v=document.createElement('video');
+    v.setAttribute('playsinline','');
+    v.setAttribute('webkit-playsinline','');
+    v.style.cssText='position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:999998;background:#000';
+    v.src='/static/splash-v4.mp4';
     document.body.appendChild(v);
 
-    // REGRA IOS: muted=false + play() SINCRONO no gesto = som garantido
-    v.muted=false;
-    var p=v.play();
-    if(p) p.catch(function(){ v.muted=true; v.play().catch(_fecharVideo); });
-
-    // Fade in rapido para esconder delay de decodificacao
-    requestAnimationFrame(function(){
-      requestAnimationFrame(function(){ v.style.opacity='1'; });
+    v.addEventListener('ended',function(){
+      v.style.transition='opacity .4s';
+      v.style.opacity='0';
+      setTimeout(function(){v.remove();_done();},420);
     });
+    setTimeout(function(){v.remove();_done();},20000);
 
-    v.addEventListener('ended', _fecharVideo, {once:true});
-    setTimeout(_fecharVideo, 20000);
+    v.play().catch(function(){v.remove();_done();});
   };
 
-  // Seguranca: se nao tocou em 60s, remove o splash silenciosamente
   setTimeout(function(){
-    if(!tocado){ sp&&sp.remove(); v&&v.remove(); window._splashDone=true; document.dispatchEvent(new Event('splashDone')); }
-  }, 60000);
+    if(!tocado){sp&&sp.remove();_done();}
+  },60000);
 }();
 </script>
 
