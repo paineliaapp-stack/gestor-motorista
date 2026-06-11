@@ -315,11 +315,6 @@ const _supa = supabase.createClient(
     <source srcset="/static/splash-bg.webp?v=2" type="image/webp">
     <img src="/static/splash-bg.jpg?v=2" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block">
   </picture>
-  <!-- Vídeo pré-carregado, inicia escondido -->
-  <video id="sv" playsinline webkit-playsinline preload="auto"
-    style="display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:999998;background:#000;opacity:0;transition:opacity .35s ease">
-    <source src="/static/splash-v4.mp4" type="video/mp4">
-  </video>
   <!-- Bolinhas e toque para entrar -->
   <div style="position:absolute;bottom:52px;width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none">
     <div style="display:flex;gap:8px">
@@ -330,6 +325,11 @@ const _supa = supabase.createClient(
     <div style="color:rgba(255,255,255,.55);font-size:13px;font-family:-apple-system,sans-serif;letter-spacing:1.2px">toque para entrar</div>
   </div>
 </div>
+<!-- Vídeo do splash — fora do #splash para não ser removido junto -->
+<video id="sv" playsinline webkit-playsinline preload="auto"
+  style="display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:999998;background:#000;opacity:0;transition:opacity .4s ease">
+  <source src="/static/splash-v4.mp4" type="video/mp4">
+</video>
 <style>
 @keyframes sp-p{0%,100%{opacity:.2;transform:scale(.65)}50%{opacity:1;transform:scale(1.2)}}
 </style>
