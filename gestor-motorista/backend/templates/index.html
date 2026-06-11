@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<link rel="preload" as="video" href="/static/splash-v3.mp4" type="video/mp4">
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#ffcc00">
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
@@ -307,6 +308,85 @@ const _supa = supabase.createClient(
 
 </head>
 <body>
+<div id="splash" onclick="window._splashTap()"
+  style="position:fixed;inset:0;z-index:999999;background:#000;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent">
+  <!-- Imagem de fundo full screen -->
+  <picture style="position:absolute;inset:0;width:100%;height:100%">
+    <source srcset="/static/splash-bg.webp?v=2" type="image/webp">
+    <img src="/static/splash-bg.jpg?v=2" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block">
+  </picture>
+  <!-- Vídeo pré-carregado, inicia escondido -->
+  <video id="sv" playsinline webkit-playsinline preload="auto"
+    style="display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:999998;background:#000;opacity:0;transition:opacity .35s ease">
+    <source src="/static/splash-v4.mp4" type="video/mp4">
+  </video>
+  <!-- Bolinhas e toque para entrar -->
+  <div style="position:absolute;bottom:52px;width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none">
+    <div style="display:flex;gap:8px">
+      <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out infinite"></div>
+      <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out .22s infinite"></div>
+      <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out .44s infinite"></div>
+    </div>
+    <div style="color:rgba(255,255,255,.55);font-size:13px;font-family:-apple-system,sans-serif;letter-spacing:1.2px">toque para entrar</div>
+  </div>
+</div>
+<style>
+@keyframes sp-p{0%,100%{opacity:.2;transform:scale(.65)}50%{opacity:1;transform:scale(1.2)}}
+</style>
+<script>
+!function(){
+  var sp=document.getElementById('splash');
+  var v=document.getElementById('sv');
+  var tocado=false;
+  v.load();
+
+  // Função chamada quando o vídeo (ou timeout) termina — libera o app
+  function _splashFim(){
+    v.style.transition='opacity .5s';
+    v.style.opacity='0';
+    setTimeout(function(){
+      v.remove();
+      // Retomar o fluxo normal: checkAuth decide login ou dashboard
+      if(typeof checkAuth==='function') checkAuth();
+    },550);
+  }
+
+  window._splashTap=function(){
+    if(tocado) return; tocado=true;
+    // Mostrar vídeo preto (opacity 0) por cima imediatamente
+    v.style.display='block';
+    document.body.appendChild(v);
+    v.muted=false;
+    var p=v.play();
+    if(p) p.catch(function(){ v.muted=true; v.play(); });
+    // Fade in rápido do vídeo — esconde o delay visualmente
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        v.style.opacity='1';
+      });
+    });
+    // Sumir a tela estática junto
+    sp.style.transition='opacity .35s ease';
+    sp.style.opacity='0';
+    setTimeout(function(){sp&&sp.remove()},380);
+    // Ao terminar o vídeo → libera o app
+    v.addEventListener('ended', _splashFim);
+    // Segurança: se vídeo travar, libera em 20s
+    setTimeout(function(){if(v&&v.parentNode) _splashFim();},20000);
+  };
+
+  // Botão pular — aparece após 3s para quem está com pressa
+  setTimeout(function(){
+    if(tocado) return;
+    var skip=document.createElement('button');
+    skip.textContent='Pular ›';
+    skip.style.cssText='position:absolute;top:20px;right:20px;background:rgba(255,255,255,.15);border:none;border-radius:20px;color:rgba(255,255,255,.7);font-size:13px;padding:7px 16px;cursor:pointer;font-family:-apple-system,sans-serif;letter-spacing:.5px;backdrop-filter:blur(4px)';
+    skip.onclick=function(e){ e.stopPropagation(); window._splashTap(); };
+    sp.appendChild(skip);
+  }, 3000);
+}();
+</script>
+
 <div id="tela-login" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:0">
   <div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 100%,rgba(240,180,41,.08) 0%,transparent 70%);pointer-events:none"></div>
   <div style="position:relative;text-align:center;padding:0 32px;max-width:340px">
@@ -447,13 +527,33 @@ const _supa = supabase.createClient(
       <div id="hero-lucro" style="font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:700;letter-spacing:.5px;line-height:1;color:var(--am)">R$ 0,00</div>
       <div class="sub" id="dash-sub" style="margin-top:4px;font-size:12px;color:var(--mt)">Carregando...</div>
     </div>
+    <!-- POTENCIAL DA META — widget lateral -->
+    <div id="widget-potencial" onclick="document.getElementById('card-meta-mensal').scrollIntoView({behavior:'smooth',block:'center'})" style="display:none;cursor:pointer;text-align:center;background:linear-gradient(135deg,rgba(0,216,151,.12),rgba(0,216,151,.04));border:1.5px solid rgba(0,216,151,.35);border-radius:14px;padding:10px 12px;min-width:100px;flex-shrink:0">
+      <div style="font-size:9px;color:rgba(0,216,151,.8);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">🏆 META</div>
+      <div id="widget-potencial-valor" style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:#00D897;line-height:1">—</div>
+      <div style="font-size:9px;color:rgba(0,216,151,.6);margin-top:2px;line-height:1.3">após pagar<br>todas as contas</div>
+      <div style="margin-top:6px;font-size:9px;color:rgba(0,216,151,.7);background:rgba(0,216,151,.12);border-radius:6px;padding:3px 6px">ver mais ↓</div>
+    </div>
   </div>
 
   <!-- ALERTA CONTAS VENCENDO -->
   <div id="alerta-contas" style="display:none;background:rgba(255,77,106,.07);border:1px solid rgba(255,77,106,.25);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:13px;gap:8px;align-items:center;flex-wrap:wrap"></div>
 
+  <!-- NUDGE: tem meta mas não tem contas cadastradas -->
+  <div id="nudge-contas" style="display:none;background:linear-gradient(135deg,rgba(0,216,151,.08),rgba(0,216,151,.03));border:1.5px solid rgba(0,216,151,.3);border-radius:14px;padding:14px 16px;margin-bottom:14px">
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
+      <div style="font-size:24px;line-height:1;margin-top:1px">🏆</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:800;color:var(--tx);margin-bottom:3px">Descubra quanto vai sobrar no bolso</div>
+        <div style="font-size:12px;color:var(--mt);line-height:1.5">Me fala suas contas fixas — semanal do carro, aluguel, financiamento — e eu mostro <strong style="color:#00D897">exatamente quanto sobra</strong> se você bater a meta.</div>
+      </div>
+    </div>
+    <button onclick="_nudgeContas()" style="width:100%;padding:12px;background:linear-gradient(135deg,#00D897,#00b07d);border:none;border-radius:10px;color:#04130d;font-size:14px;font-weight:800;cursor:pointer">💬 Me falar minhas contas agora</button>
+    <button onclick="document.getElementById('nudge-contas').style.display='none';sessionStorage.setItem('nudgeContasDismiss','1')" style="width:100%;margin-top:6px;padding:8px;background:none;border:none;color:rgba(255,255,255,.3);font-size:11px;cursor:pointer">Cadastrar depois</button>
+  </div>
+
   <!-- GESTOR FINANCEIRO UNIFICADO — CEREBRO DO SISTEMA -->
-  <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:16px;margin-bottom:18px">
+  <div style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(99,102,241,.02));border:1px solid rgba(99,102,241,.25);border-radius:18px;padding:16px;margin-bottom:18px">
     <!-- Header -->
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
       <div style="position:relative;flex-shrink:0">
@@ -758,19 +858,11 @@ const _supa = supabase.createClient(
       <div class="fr">
         <div class="fg"><label>Plataforma</label>
           <select id="f-plat">
-            <optgroup label="🚗 Carro — Passageiros">
+            <optgroup label="🚗 Plataformas">
               <option value="uber">Uber</option>
               <option value="99">99</option>
               <option value="indrive">InDrive</option>
               <option value="outro">Outra plataforma</option>
-            </optgroup>
-            <optgroup label="🏍️ Moto — Entregas">
-              <option value="ifood">iFood</option>
-              <option value="rappi">Rappi</option>
-              <option value="loggi">Loggi</option>
-              <option value="lalamove">Lalamove</option>
-              <option value="ubereats">Uber Eats</option>
-              <option value="shopper">Shopper</option>
             </optgroup>
             <optgroup label="💼 Renda Extra">
               <option value="seguro_desemprego">Seguro-desemprego</option>
@@ -1030,11 +1122,6 @@ const CATS=[
   {k:'taxa_app',e:'💸',n:'Taxa/Comissão App'},
   {k:'cooperativa',e:'🤝',n:'Cooperativa/Associação'},
   {k:'estoque_loja',e:'🏪',n:'Estoque/Loja'},
-  // Moto
-  {k:'manutencao_moto',e:'🏍️',n:'Manutenção Moto'},{k:'pneu_moto',e:'🔵',n:'Pneu/Câmara'},
-  {k:'capacete_epi',e:'⛑️',n:'Capacete/EPI'},{k:'aluguel_moto',e:'🏍️',n:'Aluguel Moto'},
-  {k:'financiamento_moto',e:'💳',n:'Financ. Moto'},{k:'seguro_moto',e:'🛡️',n:'Seguro Moto'},
-  {k:'baú_bolsa',e:'📦',n:'Baú/Bolsa Térmica'},{k:'cnh_moto',e:'📋',n:'CNH/Habilitação'},
   // Alimentação
   {k:'mercado',e:'🛒',n:'Mercado'},{k:'restaurante',e:'🍔',n:'Restaurante'},
   {k:'lanche',e:'☕',n:'Lanche/Café'},
@@ -1168,6 +1255,10 @@ function renderMetaMensal(){
   const projecao = faturadoAte + mediaDia * diasRestantes;
   const faltaMeta = Math.max(0, META_MENSAL - faturadoAte);
   const necessarioPorDia = diasRestantes > 0 ? faltaMeta / diasRestantes : faltaMeta;
+  // Exposição para o card de meta por hora
+  window._necessarioPorDiaHoje = necessarioPorDia;
+  window._ganhosHojeApp = (todosLanc||[]).filter(l=>l.tipo==='ganho'&&l.data===new Date(Date.now()-3*3600000).toISOString().slice(0,10)).reduce((s,l)=>s+parseFloat(l.valor),0);
+  setTimeout(_renderMetaHora, 100);
   const bateuMeta = faturadoAte >= META_MENSAL;
   const projecaoBate = projecao >= META_MENSAL;
 
@@ -1181,6 +1272,20 @@ function renderMetaMensal(){
   const combEstMM = META_MENSAL * (pctCombMM / 100);
   const liquidoReal = META_MENSAL - combEstMM - totalContas;
   const pctProgresso = Math.min(100, Math.round(faturadoAte/META_MENSAL*100));
+  // Atualiza widget lateral do hero
+  const _wp = document.getElementById('widget-potencial');
+  const _wv = document.getElementById('widget-potencial-valor');
+  const _temMeta = META_MENSAL > 0;
+  const _temContas = totalContas > 0;
+  const _temFaturamento = faturadoAte > 0;
+  // Widget potencial: só aparece com meta + contas + faturamento
+  if(_wp && _wv && _temMeta && _temContas && _temFaturamento && liquidoReal > 0){
+    _wv.textContent = 'R$'+Math.round(liquidoReal).toLocaleString('pt-BR');
+    _wp.style.display = 'block';
+  } else if(_wp){ _wp.style.display = 'none'; }
+  // Nudge para cadastrar contas: aparece quando tem meta + faturamento mas AINDA não tem contas
+  const _nudge = document.getElementById('nudge-contas');
+  if(_nudge) _nudge.style.display = (_temMeta && _temFaturamento && !_temContas) ? 'block' : 'none';
 
   el.innerHTML = `
     <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
@@ -1204,6 +1309,20 @@ function renderMetaMensal(){
         <div style="font-size:10px;color:var(--mt)">${diasLabel}</div>
       </div>
       <div style="font-size:22px;font-weight:700;color:var(--am);font-family:'Barlow Condensed',sans-serif">${fmt(necessarioPorDia)}</div>
+    </div>
+    <div id="card-meta-hora" style="background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.25);border-radius:10px;padding:10px 14px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:10px;color:rgba(140,140,255,.9);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px">⚡ Ritmo de hoje</div>
+          <div style="font-size:10px;color:var(--mt)">falta <b id="mh-falta">—</b> hoje · trabalhando até
+            <select id="mh-fim" onchange="localStorage.setItem('pia_fim_dia',this.value);_renderMetaHora()" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.35);border-radius:6px;color:var(--tx);font-size:11px;font-weight:700;padding:2px 4px;outline:none;cursor:pointer"></select>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div id="mh-valor" style="font-size:22px;font-weight:700;color:#8c8cff;font-family:'Barlow Condensed',sans-serif">—</div>
+          <div style="font-size:9px;color:var(--mt)">por hora</div>
+        </div>
+      </div>
     </div>` : `
     <div style="background:rgba(0,216,151,.08);border:1px solid rgba(0,216,151,.25);border-radius:10px;padding:10px 14px;margin-bottom:8px;text-align:center">
       <div style="font-size:13px;font-weight:700;color:var(--gn)">🎉 Meta batida! Você está acima do objetivo.</div>
@@ -1235,10 +1354,15 @@ function renderMetaMensal(){
         <span style="color:var(--mt)">💳 Contas a pagar</span>
         <span style="font-weight:600;color:var(--rd)">- ${fmt(totalContas)}</span>
       </div>` : ''}
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:2px;padding-top:6px;border-top:1px solid rgba(255,255,255,.1)">
-        <span style="font-weight:700">💵 Sobra líquida real</span>
-        <span style="font-weight:700;color:${liquidoReal>=0?'var(--gn)':'var(--rd)'};font-size:15px">${fmt(liquidoReal)}</span>
-      </div>
+      ${liquidoReal > 0 ? `
+      <div style="margin-top:8px;background:linear-gradient(135deg,rgba(0,216,151,.13),rgba(0,216,151,.05));border:1.5px solid rgba(0,216,151,.4);border-radius:12px;padding:12px 14px;text-align:center">
+        <div style="font-size:10px;color:rgba(0,216,151,.8);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">🏆 Se bater R$ ${(META_MENSAL/1000).toFixed(0)}k este mês</div>
+        <div style="font-size:32px;font-weight:900;color:#00D897;line-height:1;font-family:'Barlow Condensed',sans-serif">${fmt(liquidoReal)}</div>
+        <div style="font-size:11px;color:rgba(0,216,151,.7);margin-top:3px">ficam no seu bolso 💰</div>
+      </div>` : `
+      <div style="margin-top:8px;background:rgba(255,69,96,.07);border:1px solid rgba(255,69,96,.3);border-radius:12px;padding:10px 14px;text-align:center">
+        <div style="font-size:11px;color:#ff6b6b;font-weight:700">⚠️ Meta abaixo das contas — ajuste a meta ou negocie as contas</div>
+      </div>`}
     </div>
   `;
 }
@@ -5478,18 +5602,18 @@ function toggleFaq(el){ el.classList.toggle('open'); }
 // Auto-iniciar para novos usuários — só roda DEPOIS do MID estar disponível
 window._tourCheckIniciado = false;
 function _checkTourParaUsuario(){
-  if(!window.MID) return;
+  if(window._tourCheckIniciado) return;
+  if(!window.MID) return;  // sem MID, não opera
+  window._tourCheckIniciado = true;
   const _tk = _tourKey();
-  if(!_tk) return;
-  // Se já marcou como visto para este MID, nunca mais mostra
+  if(!_tk) return; // segurança extra
   if(localStorage.getItem(_tk)){
+    // Já viu o tour — só mostra o botão de ajuda
     document.getElementById('help-btn').style.display='flex';
-    return;
+  } else {
+    // Primeira vez — mostra tour após 1.5s para o dashboard carregar
+    setTimeout(()=>{ iniciarTour(); }, 1500);
   }
-  // Evita disparar duas vezes na mesma sessão de página
-  if(window._tourJaAgendado) return;
-  window._tourJaAgendado = true;
-  setTimeout(()=>{ iniciarTour(); }, 1500);
 }
 // Chamado pelo checkAuth quando o login é confirmado
 window.addEventListener('load',function(){
@@ -5499,9 +5623,8 @@ window.addEventListener('load',function(){
     tentativas++;
     if(window.MID || tentativas > 15){
       clearInterval(chk);
-      // checkAuth já chamou _checkTourParaUsuario — só aciona se não foi chamado ainda
-      if(window.MID && !window._tourJaAgendado) _checkTourParaUsuario();
-      else if(!window.MID) document.getElementById('help-btn').style.display='flex';
+      if(window.MID) _checkTourParaUsuario();
+      else document.getElementById('help-btn').style.display='flex';
     }
   }, 1000);
 });
@@ -5534,7 +5657,11 @@ async function carregarClima(){
         }catch(e){}
         document.getElementById('clima-cidade').textContent = d.cidade || '';
         document.getElementById('clima-msg').innerHTML =
-          `<b>${j.dia.charAt(0).toUpperCase()+j.dia.slice(1)}: ${j.descricao} das ${j.ini} às ${j.fim}</b> (${j.probabilidade}% de chance). ${extra}`;
+          (()=>{
+            const ini = j.ini;
+            const fim = j.fim === j.ini ? (parseInt(j.ini)+3)+'h' : j.fim;
+            return `<b>${j.dia.charAt(0).toUpperCase()+j.dia.slice(1)}: ${j.descricao} das ${ini} às ${fim}</b> (${j.probabilidade}% de chance). ${extra}`;
+          })()
         document.getElementById('card-clima').style.display = 'block';
       }catch(e){console.warn('clima:',e)}
     }, ()=>{}, {timeout:8000, maximumAge:1800000});
@@ -5543,5 +5670,56 @@ async function carregarClima(){
 setTimeout(carregarClima, 3500);
 
 </script>
+<script>
+function _nudgeContas(){
+  // Vai para o chat e injeta a pergunta do Gestor automaticamente
+  const chatEl = document.getElementById('chat-input') || document.querySelector('input[placeholder*="fiz"]') || document.querySelector('textarea');
+  // Abre o chat (primeira aba ou scroll)
+  const chatSection = document.querySelector('.chat-wrap') || document.getElementById('chat-msgs');
+  if(chatSection) chatSection.scrollIntoView({behavior:'smooth'});
+  // Injeta texto sugestivo no input
+  setTimeout(()=>{
+    const inp = document.getElementById('chat-input') || document.querySelector('input[placeholder*="fiz"]');
+    if(inp){
+      inp.value = '';
+      inp.focus();
+      inp.placeholder = 'Ex: semanal 800, aluguel 1200, luz 150...';
+    }
+    // Envia mensagem automática do Gestor no chat
+    if(typeof enviarMensagemSistema === 'function'){
+      enviarMensagemSistema('Para mostrar quanto vai sobrar no bolso se você bater a meta, me fala suas contas fixas do mês. Pode jogar tudo de uma vez: "semanal 800, aluguel 1200, luz 150". Ou fala "pular" se quiser fazer depois 😊');
+    }
+    document.getElementById('nudge-contas').style.display='none';
+  }, 600);
+}
+</script>
+<script>
+/* ════ META POR HORA — ritmo necessário até o horário de parada ════ */
+function _renderMetaHora(){
+  try{
+    const card=document.getElementById('card-meta-hora'); if(!card) return;
+    const sel=document.getElementById('mh-fim');
+    // Popula opções 14h..23h59 uma vez
+    if(sel && !sel.options.length){
+      const salvo=localStorage.getItem('pia_fim_dia')||'24';
+      [['14','14h'],['15','15h'],['16','16h'],['17','17h'],['18','18h'],['19','19h'],['20','20h'],['21','21h'],['22','22h'],['23','23h'],['24','meia-noite']].forEach(([v,l])=>{
+        const o=document.createElement('option');o.value=v;o.textContent=l;if(v===salvo)o.selected=true;sel.appendChild(o);
+      });
+    }
+    // Meta do dia = necessário/dia do card acima (recalcula igual)
+    const meta=window._necessarioPorDiaHoje||0;
+    const ganhoHoje=window._ganhosHojeApp||0;
+    const falta=Math.max(0,meta-ganhoHoje);
+    const agora=new Date();
+    const fimH=parseInt((sel&&sel.value)||localStorage.getItem('pia_fim_dia')||'24');
+    const fim=new Date(agora); fim.setHours(fimH===24?23:fimH, fimH===24?59:0, 0, 0);
+    const horasRest=Math.max(0.25,(fim-agora)/3600000);
+    const porHora=falta/horasRest;
+    document.getElementById('mh-falta').textContent='R$ '+falta.toFixed(0);
+    document.getElementById('mh-valor').textContent=falta<=0?'✅ feito':'R$ '+porHora.toFixed(0);
+    if(falta<=0) document.getElementById('mh-valor').style.color='#00D897';
+  }catch(e){console.warn('metaHora:',e)}
+}
+setInterval(_renderMetaHora, 60000); // recalcula a cada minuto — o ritmo sobe conforme o dia passa
+</script>
 </body>
-</html>
