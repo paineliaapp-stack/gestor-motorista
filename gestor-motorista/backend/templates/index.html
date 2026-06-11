@@ -5735,7 +5735,10 @@ async function carregarClima(){
           })()
         document.getElementById('card-clima').style.display = 'block';
       }catch(e){console.warn('clima:',e)}
-    }, ()=>{}, {timeout:8000, maximumAge:1800000});
+    }, function(err){
+      // Permissão negada ou erro — silencioso, card de clima não aparece
+      console.info('clima: geo indisponível, código '+err.code);
+    }, {timeout:8000, maximumAge:1800000});
   }catch(e){}
 }
 setTimeout(carregarClima, 3500);
