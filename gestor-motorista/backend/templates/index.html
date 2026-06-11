@@ -5741,7 +5741,22 @@ async function carregarClima(){
     }, {timeout:8000, maximumAge:1800000});
   }catch(e){}
 }
-setTimeout(carregarClima, 3500);
+// Só pede localização depois que o vídeo do splash terminar
+// para não interromper a reprodução com o alerta de permissão
+(function(){
+  var _sv = document.getElementById('sv');
+  if(_sv){
+    _sv.addEventListener('ended', function(){ setTimeout(carregarClima, 1000); }, {once:true});
+    // Fallback: se o vídeo não existir mais após 15s, carrega normalmente
+    setTimeout(function(){
+      if(document.getElementById('sv')) return; // ainda rodando
+      carregarClima();
+    }, 15000);
+  } else {
+    // Sem vídeo — carrega normalmente após 3.5s
+    setTimeout(carregarClima, 3500);
+  }
+})();
 
 </script>
 <script>
