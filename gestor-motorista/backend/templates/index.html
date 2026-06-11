@@ -310,12 +310,10 @@ const _supa = supabase.createClient(
 <body>
 <div id="splash" onclick="window._splashTap()"
   style="position:fixed;inset:0;z-index:999999;background:#000;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent">
-  <!-- Imagem de fundo full screen -->
   <picture style="position:absolute;inset:0;width:100%;height:100%">
     <source srcset="/static/splash-bg.webp?v=2" type="image/webp">
     <img src="/static/splash-bg.jpg?v=2" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block">
   </picture>
-  <!-- Bolinhas e toque para entrar -->
   <div style="position:absolute;bottom:52px;width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none">
     <div style="display:flex;gap:8px">
       <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out infinite"></div>
@@ -325,7 +323,6 @@ const _supa = supabase.createClient(
     <div style="color:rgba(255,255,255,.55);font-size:13px;font-family:-apple-system,sans-serif;letter-spacing:1.2px">toque para entrar</div>
   </div>
 </div>
-<!-- Vídeo do splash — fora do #splash para não ser removido junto -->
 <style>
 @keyframes sp-p{0%,100%{opacity:.2;transform:scale(.65)}50%{opacity:1;transform:scale(1.2)}}
 </style>
@@ -333,28 +330,20 @@ const _supa = supabase.createClient(
 !function(){
   var sp=document.getElementById('splash');
   var tocado=false;
-  // Se vier do logout (?nosplash=1), remove o splash imediatamente
+
   if(location.search.indexOf('nosplash=1')!==-1){
     sp&&sp.remove();
-    // Limpa o parâmetro da URL sem recarregar
     history.replaceState(null,'',location.pathname);
+    window._splashDone=true;
+    document.dispatchEvent(new Event('splashDone'));
     return;
   }
 
-  function _fecharSplash(){
+  function _done(){
     window._splashDone=true;
     document.dispatchEvent(new Event('splashDone'));
   }
 
-  // ⚠️ REGRA iOS — NÃO ALTERAR SEM LER:
-  // O iOS bloqueia áudio em qualquer play() que não seja síncrono com gesto do usuário.
-  // ORDEM OBRIGATÓRIA dentro do handler de clique/toque:
-  //   1. v.muted = false
-  //   2. v.volume = 1
-  //   3. v.play()   ← sem await, sem setTimeout, sem .then() antes disso
-  // O elemento <video> DEVE ter muted no HTML para o preload funcionar.
-  // O muted=false só acontece aqui dentro, no gesto. Nunca antes.
-  // Qualquer mudança nessa ordem quebra o áudio no iOS Safari/PWA.
   window._splashTap=function(){
     if(tocado) return; tocado=true;
 
@@ -362,7 +351,6 @@ const _supa = supabase.createClient(
     sp.style.opacity='0';
     setTimeout(function(){sp&&sp.remove();},270);
 
-    // Cria video dentro do gesto - unico jeito de ter som no iOS
     var v=document.createElement('video');
     v.setAttribute('playsinline','');
     v.setAttribute('webkit-playsinline','');
@@ -373,21 +361,17 @@ const _supa = supabase.createClient(
     v.addEventListener('ended',function(){
       v.style.transition='opacity .4s';
       v.style.opacity='0';
-      setTimeout(function(){v.remove();_fecharSplash();},420);
+      setTimeout(function(){v.remove();_done();},420);
     },{once:true});
 
-    var guard=setTimeout(function(){v.remove();_fecharSplash();},15000);
+    var guard=setTimeout(function(){v.remove();_done();},15000);
     v.addEventListener('playing',function(){clearTimeout(guard);},{once:true});
-
-    v.play().catch(function(){clearTimeout(guard);v.remove();_fecharSplash();});
-
-    }
-
-    v.addEventListener('ended', _fecharSplash);
-
-    // Fallback: se travar mais de 8s, fecha sozinho
-    setTimeout(_fecharSplash, 8000);
+    v.play().catch(function(){clearTimeout(guard);v.remove();_done();});
   };
+
+  setTimeout(function(){
+    if(!tocado){sp&&sp.remove();_done();}
+  },60000);
 }();
 </script>
 
