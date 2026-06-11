@@ -5617,7 +5617,20 @@ async function carregarClima(){
     }, ()=>{}, {timeout:8000, maximumAge:1800000});
   }catch(e){}
 }
-setTimeout(carregarClima, 3500);
+// Geolocalização só depois que o splash terminar (evita popup em cima do vídeo no iOS)
+var _svEl = document.getElementById('sv');
+if(_svEl){
+  // Aguarda o vídeo terminar
+  _svEl.addEventListener('ended', function(){ setTimeout(carregarClima, 1000); }, {once:true});
+  // Fallback: se o vídeo já foi removido ou não existir em 12s, carrega de qualquer jeito
+  setTimeout(function(){
+    if(document.getElementById('sv')) return; // ainda rodando
+    carregarClima();
+  }, 12000);
+} else {
+  // Sem splash (ex: logout), carrega normalmente
+  setTimeout(carregarClima, 3500);
+}
 
 </script>
 <script>
