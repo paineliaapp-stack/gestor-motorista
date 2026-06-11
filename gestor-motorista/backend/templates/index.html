@@ -528,6 +528,7 @@ const _supa = supabase.createClient(
       <div class="meta-track"><div class="meta-fill" id="meta-fill" style="width:0%"></div></div>
       <span class="meta-pct" id="meta-pct">0%</span>
     </div>
+    <div id="trial-counter" style="display:none;background:rgba(0,216,151,.1);border:1px solid rgba(0,216,151,.3);border-radius:20px;padding:4px 9px;font-size:10px;font-weight:700;color:#00D897;white-space:nowrap">⏱ 24:00:00</div>
     <div class="chip">
       <div class="av" id="user-av" style="overflow:hidden;padding:0">?</div>
       <div class="dot-on"></div>
@@ -5302,7 +5303,15 @@ function abrirPerfil(nome, email, foto){
         <div style="font-weight:700;font-size:15px;color:#fff;text-align:center">${n}</div>
         <div style="font-size:12px;color:#64748b;margin-top:2px;text-align:center">${e}</div>
       </div>
-      <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:14px;display:flex;flex-direction:column;gap:8px">
+      <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:14px;margin-bottom:10px">
+        <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Meu veículo</div>
+        <div style="display:flex;gap:6px">
+          <button onclick="_trocarVeiculo('carro')" id="pv-carro" style="flex:1;padding:9px 4px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#94a3b8;transition:.2s">🚗 Carro</button>
+          <button onclick="_trocarVeiculo('moto')" id="pv-moto" style="flex:1;padding:9px 4px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#94a3b8;transition:.2s">🏍️ Moto</button>
+          <button onclick="_trocarVeiculo('ambos')" id="pv-ambos" style="flex:1;padding:9px 4px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#94a3b8;transition:.2s">Ambos</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
         <button id="perfil-install-btn" onclick="document.getElementById('modal-perfil').remove();instalarApp()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(99,102,241,.3);background:rgba(99,102,241,.08);color:#818cf8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Instalar na tela inicial</button>
         <button onclick="document.getElementById('modal-perfil').remove()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#94a3b8;font-size:13px;cursor:pointer;font-family:inherit">Fechar</button>
         <button onclick="document.getElementById('modal-perfil').remove();fazerLogout()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,77,106,.3);background:rgba(255,77,106,.08);color:#FF4D6A;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">⏻ Sair da conta</button>
@@ -5310,6 +5319,10 @@ function abrirPerfil(nome, email, foto){
     </div>`;
   overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+  // Pinta o botão do veículo ativo
+  const _vAtual = localStorage.getItem('pia_veiculo_'+(window.MID||'')) || 'carro';
+  const _pintarV = (v)=>{['carro','moto','ambos'].forEach(x=>{const b=document.getElementById('pv-'+x);if(!b)return;b.style.background=x===v?'rgba(240,180,41,.2)':'rgba(255,255,255,.04)';b.style.border=x===v?'1.5px solid rgba(240,180,41,.5)':'1px solid rgba(255,255,255,.1)';b.style.color=x===v?'#F0B429':'#94a3b8';})};
+  _pintarV(_vAtual);window._pintarVeiculo=_pintarV;
   // Esconde botão de instalar se app já está instalado como PWA
   if(typeof isInstalado === 'function' && isInstalado()){
     const ib = document.getElementById('perfil-install-btn');
@@ -5784,5 +5797,56 @@ function _renderMetaHora(){
   }catch(e){console.warn('metaHora:',e)}
 }
 setInterval(_renderMetaHora, 60000); // recalcula a cada minuto — o ritmo sobe conforme o dia passa
+</script>
+<script>
+/* ── Troca de veículo no perfil ── */
+async function _trocarVeiculo(tipo){
+  try{
+    await authFetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tipo_veiculo:tipo})});
+    localStorage.setItem('pia_veiculo_'+(window.MID||''),tipo);
+    if(window._pintarVeiculo)window._pintarVeiculo(tipo);
+    const btn=document.getElementById('pv-'+tipo);
+    if(btn){const orig=btn.textContent;btn.textContent='✅';setTimeout(()=>{btn.textContent=orig},1200);}
+  }catch(e){alert('Erro ao salvar. Tente de novo.');}
+}
+
+/* ── Trial 24h — contador no header ── */
+(function(){
+  function _initTrial(){
+    const key='pia_trial_inicio_'+(window.MID||'local');
+    let inicio=localStorage.getItem(key);
+    if(!inicio){inicio=Date.now().toString();localStorage.setItem(key,inicio);}
+    const DURACAO=24*60*60*1000; // 24h em ms
+    function _tick(){
+      const restante=DURACAO-(Date.now()-parseInt(inicio));
+      const el=document.getElementById('trial-counter');
+      if(!el)return;
+      el.style.display='block';
+      if(restante<=0){
+        el.textContent='⏱ Expirado';
+        el.style.background='rgba(255,69,96,.15)';
+        el.style.borderColor='rgba(255,69,96,.4)';
+        el.style.color='#ff6b6b';
+        clearInterval(_iv);
+        return;
+      }
+      const h=Math.floor(restante/3600000);
+      const m=Math.floor((restante%3600000)/60000);
+      const s=Math.floor((restante%60000)/1000);
+      // Fica vermelho nas últimas 2h
+      if(restante < 2*3600000){
+        el.style.background='rgba(255,180,41,.12)';
+        el.style.borderColor='rgba(255,180,41,.4)';
+        el.style.color='#F0B429';
+      }
+      el.textContent=`⏱ ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      el.title='Tempo restante de trial gratuito';
+    }
+    _tick();
+    var _iv=setInterval(_tick,1000);
+  }
+  // Aguarda o MID estar disponível
+  let _t=setInterval(()=>{if(window.MID){clearInterval(_t);_initTrial();}},500);
+})();
 </script>
 </body>
