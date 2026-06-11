@@ -347,30 +347,44 @@ const _supa = supabase.createClient(
   }
   v.load();
 
+  function _fecharSplash(){
+    if(v){ v.style.transition='opacity .4s'; v.style.opacity='0'; setTimeout(function(){v&&v.remove();},420); }
+  }
+
   window._splashTap=function(){
     if(tocado) return; tocado=true;
-    // Mostrar vídeo preto (opacity 0) por cima imediatamente
-    v.style.display='block';
-    document.body.appendChild(v);
-    v.muted=false;
-    var p=v.play();
-    if(p) p.catch(function(){ v.muted=true; v.play(); });
-    // Fade in rápido do vídeo — esconde o delay visualmente
-    requestAnimationFrame(function(){
-      requestAnimationFrame(function(){
-        v.style.opacity='1';
-      });
-    });
-    // Sumir a tela estática junto
+
+    // Sumir tela estática
     sp.style.transition='opacity .35s ease';
     sp.style.opacity='0';
-    setTimeout(function(){sp&&sp.remove()},380);
-    v.addEventListener('ended',function(){
-      v.style.transition='opacity .5s';
-      v.style.opacity='0';
-      setTimeout(function(){v.remove()},550);
-    });
-    setTimeout(function(){v&&v.remove()},20000);
+    setTimeout(function(){sp&&sp.remove();},380);
+
+    // iOS exige muted=true para autoplay funcionar
+    v.muted=true;
+    v.style.display='block';
+    v.style.opacity='0';
+    // Não mover com appendChild — interrompe o buffer no iOS
+
+    var p=v.play();
+    if(p){
+      p.then(function(){
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){ v.style.opacity='1'; });
+        });
+      }).catch(function(){
+        // Play bloqueado pelo browser — pula o vídeo
+        _fecharSplash();
+      });
+    } else {
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){ v.style.opacity='1'; });
+      });
+    }
+
+    v.addEventListener('ended', _fecharSplash);
+
+    // Fallback: se travar mais de 8s, fecha sozinho
+    setTimeout(_fecharSplash, 8000);
   };
 }();
 </script>
