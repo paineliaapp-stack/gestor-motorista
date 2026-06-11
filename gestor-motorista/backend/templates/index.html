@@ -347,6 +347,7 @@ const _supa = supabase.createClient(
 
   window._splashTap=function(){
     if(tocado) return; tocado=true;
+    sp.onclick=null; // remove handler para nao disparar duas vezes
 
     // Imagem some
     sp.style.transition='opacity .2s';
