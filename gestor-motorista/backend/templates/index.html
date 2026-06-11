@@ -758,11 +758,19 @@ const _supa = supabase.createClient(
       <div class="fr">
         <div class="fg"><label>Plataforma</label>
           <select id="f-plat">
-            <optgroup label="🚗 Plataformas">
+            <optgroup label="🚗 Carro — Passageiros">
               <option value="uber">Uber</option>
               <option value="99">99</option>
               <option value="indrive">InDrive</option>
               <option value="outro">Outra plataforma</option>
+            </optgroup>
+            <optgroup label="🏍️ Moto — Entregas">
+              <option value="ifood">iFood</option>
+              <option value="rappi">Rappi</option>
+              <option value="loggi">Loggi</option>
+              <option value="lalamove">Lalamove</option>
+              <option value="ubereats">Uber Eats</option>
+              <option value="shopper">Shopper</option>
             </optgroup>
             <optgroup label="💼 Renda Extra">
               <option value="seguro_desemprego">Seguro-desemprego</option>
@@ -1022,6 +1030,11 @@ const CATS=[
   {k:'taxa_app',e:'💸',n:'Taxa/Comissão App'},
   {k:'cooperativa',e:'🤝',n:'Cooperativa/Associação'},
   {k:'estoque_loja',e:'🏪',n:'Estoque/Loja'},
+  // Moto
+  {k:'manutencao_moto',e:'🏍️',n:'Manutenção Moto'},{k:'pneu_moto',e:'🔵',n:'Pneu/Câmara'},
+  {k:'capacete_epi',e:'⛑️',n:'Capacete/EPI'},{k:'aluguel_moto',e:'🏍️',n:'Aluguel Moto'},
+  {k:'financiamento_moto',e:'💳',n:'Financ. Moto'},{k:'seguro_moto',e:'🛡️',n:'Seguro Moto'},
+  {k:'baú_bolsa',e:'📦',n:'Baú/Bolsa Térmica'},{k:'cnh_moto',e:'📋',n:'CNH/Habilitação'},
   // Alimentação
   {k:'mercado',e:'🛒',n:'Mercado'},{k:'restaurante',e:'🍔',n:'Restaurante'},
   {k:'lanche',e:'☕',n:'Lanche/Café'},
@@ -5465,18 +5478,18 @@ function toggleFaq(el){ el.classList.toggle('open'); }
 // Auto-iniciar para novos usuários — só roda DEPOIS do MID estar disponível
 window._tourCheckIniciado = false;
 function _checkTourParaUsuario(){
-  if(window._tourCheckIniciado) return;
-  if(!window.MID) return;  // sem MID, não opera
-  window._tourCheckIniciado = true;
+  if(!window.MID) return;
   const _tk = _tourKey();
-  if(!_tk) return; // segurança extra
+  if(!_tk) return;
+  // Se já marcou como visto para este MID, nunca mais mostra
   if(localStorage.getItem(_tk)){
-    // Já viu o tour — só mostra o botão de ajuda
     document.getElementById('help-btn').style.display='flex';
-  } else {
-    // Primeira vez — mostra tour após 1.5s para o dashboard carregar
-    setTimeout(()=>{ iniciarTour(); }, 1500);
+    return;
   }
+  // Evita disparar duas vezes na mesma sessão de página
+  if(window._tourJaAgendado) return;
+  window._tourJaAgendado = true;
+  setTimeout(()=>{ iniciarTour(); }, 1500);
 }
 // Chamado pelo checkAuth quando o login é confirmado
 window.addEventListener('load',function(){
@@ -5486,8 +5499,9 @@ window.addEventListener('load',function(){
     tentativas++;
     if(window.MID || tentativas > 15){
       clearInterval(chk);
-      if(window.MID) _checkTourParaUsuario();
-      else document.getElementById('help-btn').style.display='flex';
+      // checkAuth já chamou _checkTourParaUsuario — só aciona se não foi chamado ainda
+      if(window.MID && !window._tourJaAgendado) _checkTourParaUsuario();
+      else if(!window.MID) document.getElementById('help-btn').style.display='flex';
     }
   }, 1000);
 });

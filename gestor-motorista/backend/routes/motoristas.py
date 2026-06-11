@@ -26,7 +26,7 @@ async def upsert_motorista(dados: dict = Body(...), uid: str = Depends(get_uid_f
     # Sanitiza nome — máximo 100 chars, sem HTML
     nome = str(nome)[:100].replace("<", "").replace(">", "").strip() or "Usuário"
     try:
-        res = supabase.table("motoristas").select("id,meta_diaria,comb_diario,setup_completo,plataformas").eq("id", uid).execute()
+        res = supabase.table("motoristas").select("id,meta_diaria,comb_diario,setup_completo,plataformas,tipo_veiculo").eq("id", uid).execute()
         if not res.data:
             # Usuário novo — cria registro e sinaliza is_new
             try:
@@ -56,7 +56,8 @@ async def upsert_motorista(dados: dict = Body(...), uid: str = Depends(get_uid_f
             except:
                 pass
         plataformas = res.data[0].get("plataformas")
-        return {"ok": True, "meta_diaria": meta, "comb_diario": comb, "is_new": False, "setup_completo": setup_completo, "plataformas": plataformas}
+        tipo_veiculo = res.data[0].get("tipo_veiculo") or "carro"
+        return {"ok": True, "meta_diaria": meta, "comb_diario": comb, "is_new": False, "setup_completo": setup_completo, "plataformas": plataformas, "tipo_veiculo": tipo_veiculo}
     except Exception as e:
         log_erro("upsert_erro", erro=e)
         return {"ok": True, "meta_diaria": 150, "comb_diario": None, "is_new": False, "setup_completo": True}

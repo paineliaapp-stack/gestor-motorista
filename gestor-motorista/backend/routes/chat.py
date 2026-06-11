@@ -64,6 +64,13 @@ async def chat_setup(dados: dict = Body(...), uid: str = Depends(get_uid_from_to
             if setup_dados.get("meta_diaria"): update["meta_diaria"] = float(setup_dados["meta_diaria"])
             if setup_dados.get("comb_diario"): update["comb_diario"] = float(setup_dados["comb_diario"])
             if setup_dados.get("plataformas"): update["plataformas"] = ",".join(setup_dados["plataformas"])
+            # Infere tipo_veiculo pelas plataformas: moto se tiver ifood/rappi/loggi/lalamove
+            PLATS_MOTO = {"ifood", "rappi", "loggi", "lalamove", "ubereats", "shopper"}
+            plats = set(p.lower() for p in (setup_dados.get("plataformas") or []))
+            if plats & PLATS_MOTO:
+                update["tipo_veiculo"] = "moto"
+            elif plats - PLATS_MOTO:  # tem pelo menos uma plataforma de carro
+                update["tipo_veiculo"] = "carro"
             try:
                 supabase.table("motoristas").update(update).eq("id", uid).execute()
             except Exception as e:
