@@ -5190,7 +5190,7 @@ async function fazerLogout(){
   try {
     const keys = Object.keys(localStorage).filter(k => 
       k.startsWith('sb-') || k.startsWith('supabase') || 
-      k.startsWith('painel_') || k.startsWith('pct_comb_') ||
+      (k.startsWith('painel_') && !k.startsWith('painel_tour_v2_')) || k.startsWith('pct_comb_') ||
       k.startsWith('dashHistory_')
     );
     keys.forEach(k => localStorage.removeItem(k));
