@@ -372,26 +372,23 @@ const _supa = supabase.createClient(
     v.muted=true;
     v.style.opacity='0';
 
+    // Mostra o vídeo só quando tiver dados suficientes para rodar
+    function _mostrar(){ v.style.opacity='1'; }
+    v.addEventListener('canplay', _mostrar, {once:true});
+    v.addEventListener('ended', _fecharSplash, {once:true});
+
     var p=v.play();
     if(p){
-      p.then(function(){
-        requestAnimationFrame(function(){
-          requestAnimationFrame(function(){ v.style.opacity='1'; });
-        });
-      }).catch(function(){
-        // Play bloqueado pelo browser — pula o vídeo
+      p.catch(function(){
+        // Play bloqueado — pula direto pro dashboard
         _fecharSplash();
-      });
-    } else {
-      requestAnimationFrame(function(){
-        requestAnimationFrame(function(){ v.style.opacity='1'; });
       });
     }
 
-    v.addEventListener('ended', _fecharSplash);
-
-    // Fallback: se travar mais de 8s, fecha sozinho
-    setTimeout(_fecharSplash, 8000);
+    // Fallback: se não iniciar em 10s, fecha sozinho
+    setTimeout(function(){
+      if(parseFloat(v.style.opacity||0) < 1) _fecharSplash();
+    }, 10000);
   };
 }();
 </script>
