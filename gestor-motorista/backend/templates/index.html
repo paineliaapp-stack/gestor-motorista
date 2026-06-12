@@ -594,17 +594,16 @@ const _supa = supabase.createClient(
 <header class="topbar">
   <div class="brand"><div class="brand-mark"><img src="/static/icon-192.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>Painel<em>.IA</em></div>
   <div class="topbar-r">
-    <div class="meta-wrap">
+    <div id="trial-chip" onclick="_abrirModalPlanos()" style="display:none;cursor:pointer;background:rgba(0,216,151,.1);border:1px solid rgba(0,216,151,.3);border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;color:#00D897;white-space:nowrap;flex-shrink:0">⏱ trial</div>
+    <div class="meta-wrap" id="meta-wrap-top">
       <div class="meta-track"><div class="meta-fill" id="meta-fill" style="width:0%"></div></div>
       <span class="meta-pct" id="meta-pct">0%</span>
     </div>
-    <div id="trial-chip" onclick="_abrirModalPlanos()" style="display:none;cursor:pointer;background:rgba(0,216,151,.1);border:1px solid rgba(0,216,151,.3);border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:700;color:#00D897;white-space:nowrap">⏱ trial</div>
-    <div class="chip">
+    <button onclick="abrirPerfil()" class="chip" style="border:none;cursor:pointer;padding:0;background:none" title="Perfil">
       <div class="av" id="user-av" style="overflow:hidden;padding:0">?</div>
       <div class="dot-on"></div>
-    </div>
+    </button>
     <button class="voice-btn" id="voice-toggle" onclick="toggleVoice()" title="Voz da IA">🔇</button>
-
     <button onclick="fazerLogout()" title="Sair" style="background:rgba(255,77,106,.12);border:1px solid rgba(255,77,106,.3);border-radius:8px;color:#FF4D6A;font-size:13px;font-weight:700;padding:7px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0">⏻</button>
   </div>
 </header>

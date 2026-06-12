@@ -280,14 +280,12 @@ function irPara(id, el) {
 }
 
 async function iniciar() {
-  try {
-    await carregarTudo();
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    carregarUsuarios();
-  } catch(e) {
-    if (e.message !== 'Não autorizado') console.error(e);
-  }
+  // Entra no painel PRIMEIRO, depois carrega os dados — se algum bloco falhar,
+  // o admin ainda abre (não fica preso na tela de login).
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  try { await carregarTudo(); } catch(e) { console.error('métricas:', e); }
+  try { carregarUsuarios(); } catch(e) { console.error('usuários:', e); }
 }
 
 async function carregarTudo() {
