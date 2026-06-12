@@ -355,6 +355,12 @@ const _supa = supabase.createClient(
     setTimeout(function(){ sp.style.display = 'none'; }, 420);
   }
 
+  // PWA standalone: ao reabrir o app (atalho na tela inicial), iOS congela a página.
+  // Força reload para o splash e vídeo sempre funcionarem do zero.
+  window.addEventListener('pageshow', function(ev){
+    if(ev.persisted){ window.location.reload(); }
+  });
+
   sp.addEventListener('click', function(){
     if(tocado) return;
     tocado = true;
