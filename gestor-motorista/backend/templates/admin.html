@@ -143,7 +143,7 @@ tr:hover td { background: #1e2240; }
       </div>
       <!-- Top usuários -->
       <div class="table-wrap" style="margin-bottom:24px">
-        <div style="padding:14px 16px;border-bottom:1px solid #1e2435;font-size:0.85rem;font-weight:600;color:#fff">🏆 Mais ativos (por lançamentos)</div>
+        <div style="padding:14px 16px;border-bottom:1px solid #1e2435;font-size:0.85rem;font-weight:600;color:#fff">🏆 Mais ativos (por uso da IA)</div>
         <div id="topUsuariosWrap"><div class="loading"><div class="spin"></div></div></div>
       </div>
     </div>
@@ -297,7 +297,7 @@ async function carregarTudo() {
   document.getElementById('m-ativos').textContent  = m.ativos ?? '—';
   document.getElementById('m-exp').textContent     = m.expirados ?? '—';
   document.getElementById('m-sem').textContent     = m.sem_assinatura ?? '—';
-  document.getElementById('m-receita').textContent = 'R$ ' + (m.receita_total || 0).toFixed(2);
+  document.getElementById('m-receita').textContent = 'R$ ' + (Number(m.receita_total) || 0).toFixed(2);
   document.getElementById('m-novos').textContent   = m.novos_7_dias ?? '—';
   const usadas = (m.vagas_fundador_total ?? 50) - (m.vagas_fundador_restantes ?? 50);
   document.getElementById('m-vagas').textContent = usadas + ' / ' + (m.vagas_fundador_total ?? 50);
@@ -313,15 +313,19 @@ async function carregarTudo() {
 
 function renderTopUsuarios(top) {
   const el = document.getElementById('topUsuariosWrap');
-  if (!top.length) { el.innerHTML = '<div class="empty">Nenhum lançamento ainda</div>'; return; }
-  const rows = top.map((u, i) => `
+  if (!top.length) { el.innerHTML = '<div class="empty">Nenhum uso ainda</div>'; return; }
+  const rows = top.map((u, i) => {
+    const medalha = ['🥇','🥈','🥉','4°','5°','6°','7°','8°'][i] || (i+1)+'°';
+    const apiCalls = (u.chamadas_api ?? 0);
+    const lanc = (u.lancamentos ?? 0);
+    return `
     <tr>
-      <td style="color:#fbbf24;font-weight:700;width:32px">${['🥇','🥈','🥉','4°','5°'][i]}</td>
-      <td style="color:#60a5fa">${u.email}</td>
-      <td style="color:#4ade80;font-weight:600">${u.lancamentos} lançamentos</td>
-      <td style="color:#a78bfa">R$ ${u.receita.toFixed(2)}</td>
-    </tr>
-  `).join('');
+      <td style="color:#fbbf24;font-weight:700;width:32px">${medalha}</td>
+      <td style="color:#60a5fa">${u.email || '—'}</td>
+      <td style="color:#a78bfa;font-weight:600">${apiCalls} chamadas IA</td>
+      <td style="color:#4ade80">${lanc} lançamentos</td>
+    </tr>`;
+  }).join('');
   el.innerHTML = `<table><tbody>${rows}</tbody></table>`;
 }
 
