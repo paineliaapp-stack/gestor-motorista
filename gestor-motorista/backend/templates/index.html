@@ -368,7 +368,7 @@ const _supa = supabase.createClient(
     localStorage.setItem(KEY, Date.now());
   });
   // Se passou mais de 3 segundos desde o ultimo registro = reabertura = reload
-  if(last > 0 && (now - last) > 3000){
+  if(last > 0 && (now - last) > 1000){
     location.reload(true);
   }
 })();
