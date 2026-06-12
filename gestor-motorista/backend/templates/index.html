@@ -373,7 +373,20 @@ const _supa = supabase.createClient(
 
   // Reload ao reabrir pelo atalho (pageshow persisted)
   window.addEventListener('pageshow', function(ev){
-    if(ev.persisted){ window.location.reload(); }
+    if(ev.persisted){
+      // Reset completo do estado
+      tocado = false;
+      sp.style.display = 'flex';
+      sp.style.opacity = '1';
+      sp.style.transition = 'none';
+      ui.style.display = 'flex';
+      v.style.display = 'none';
+      try{ v.pause(); v.currentTime = 0; v.load(); }catch(e){}
+      try{ a.pause(); a.currentTime = 0; a.load(); }catch(e){}
+      // Remove botao pular se existir
+      var b = sp.querySelector('button');
+      if(b) b.remove();
+    }
   });
 
   sp.addEventListener('click', function(){
