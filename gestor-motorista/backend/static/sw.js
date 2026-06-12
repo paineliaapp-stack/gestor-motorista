@@ -1,5 +1,5 @@
-// Service Worker — Painel.IA v5
-const CACHE_NAME = 'painel-ia-v5';
+// Service Worker — Painel.IA v6
+const CACHE_NAME = 'painel-ia-v6';
 const SPLASH_FILES = ['/static/splash.mp4', '/static/splash.mp3'];
 
 self.addEventListener('install', e => {
@@ -20,9 +20,22 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Intercepta requisições dos arquivos do splash — serve do cache se disponível
 self.addEventListener('fetch', e => {
-  if(SPLASH_FILES.includes(new URL(e.request.url).pathname)){
+  const url = new URL(e.request.url);
+
+  // Pagina principal — SEMPRE busca da rede (never cache)
+  // Isso impede o iOS de servir a pagina congelada do cache
+  if(url.pathname === '/' || url.pathname === '/index.html'){
+    e.respondWith(
+      fetch(e.request, { cache: 'no-store' }).catch(() =>
+        caches.match(e.request) // fallback offline
+      )
+    );
+    return;
+  }
+
+  // Splash assets — cache first
+  if(SPLASH_FILES.includes(url.pathname)){
     e.respondWith(
       caches.open(CACHE_NAME).then(cache =>
         cache.match(e.request).then(cached => {
@@ -34,6 +47,7 @@ self.addEventListener('fetch', e => {
         })
       )
     );
+    return;
   }
 });
 
@@ -66,7 +80,6 @@ self.addEventListener('push', e => {
   );
 });
 
-// Clique na notificação
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || '/';
