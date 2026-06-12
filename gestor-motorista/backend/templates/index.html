@@ -354,20 +354,23 @@ const _supa = supabase.createClient(
 @keyframes sp-p{0%,100%{opacity:.2;transform:scale(.65)}50%{opacity:1;transform:scale(1.2)}}
 </style>
 <script>
-// iOS PWA standalone: ao reabrir o app (nao e' primeira visita),
-// forca reload para garantir que o video funciona.
-// sessionStorage persiste dentro da sessao mas e' limpo ao fechar o app.
-// Portanto: primeira abertura = sem sessionStorage = deixa passar.
-// Reabrir = sessionStorage existe = reload.
+// iOS PWA standalone: forca reload ao reabrir o app.
+// localStorage guarda o timestamp do ultimo fechamento.
+// Se a pagina carregou mas o timestamp e' "velho" (>3s), e' uma reabertura — reload.
 (function(){
-  var KEY = 'pwa_loaded';
-  if(sessionStorage.getItem(KEY)){
-    // Ja' foi aberto antes nesta sessao — recarrega limpo
-    sessionStorage.removeItem(KEY);
+  var KEY = 'pwa_ts';
+  var now = Date.now();
+  var last = parseInt(localStorage.getItem(KEY) || '0', 10);
+  // Salva timestamp agora
+  localStorage.setItem(KEY, now);
+  // Atualiza timestamp ao fechar/sair
+  window.addEventListener('pagehide', function(){
+    localStorage.setItem(KEY, Date.now());
+  });
+  // Se passou mais de 3 segundos desde o ultimo registro = reabertura = reload
+  if(last > 0 && (now - last) > 3000){
     location.reload(true);
-    return;
   }
-  sessionStorage.setItem(KEY, '1');
 })();
 </script>
 <script>
