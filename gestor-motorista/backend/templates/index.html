@@ -349,8 +349,8 @@ const _supa = supabase.createClient(
   var ui = document.getElementById('splash-ui');
   var tocado = false;
 
-  // Chrome: "CriOS" no iOS, "Chrome" no Android. Safari puro não tem nenhum dos dois.
-  var isChrome = /CriOS|Chrome/.test(navigator.userAgent) && !/Edg|OPR/.test(navigator.userAgent);
+  // Safari puro: tem "Safari" mas NÃO tem "Chrome" nem "CriOS"
+  var isSafariOnly = /Safari/.test(navigator.userAgent) && !/Chrome|CriOS/.test(navigator.userAgent);
 
   function _fim(){
     sp.style.transition = 'opacity .4s';
@@ -362,10 +362,10 @@ const _supa = supabase.createClient(
     if(tocado) return;
     tocado = true;
 
-    // Safari iOS — pula direto pro app sem vídeo
-    if(!isChrome){ _fim(); return; }
+    // Safari puro — pula direto pro app sem vídeo
+    if(isSafariOnly){ _fim(); return; }
 
-    // Chrome iOS — esconde UI e toca vídeo
+    // Chrome iOS, Chrome Android, qualquer outro — toca vídeo
     ui.style.display = 'none';
 
     // Cria vídeo do zero no gesto — iOS exige isso para autoplay+som
