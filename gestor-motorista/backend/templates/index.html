@@ -374,21 +374,28 @@ const _supa = supabase.createClient(
   sp.addEventListener('click', function(){
     if(done) return;
 
-    // Tenta tocar o vídeo se já carregou o suficiente
-    var pronto = v.readyState >= 3; // HAVE_FUTURE_DATA
+    var pronto = v.readyState >= 2;
     if(pronto){
-      // Mostra vídeo, esconde conteúdo estático
       sp.querySelector('div').style.display = 'none';
       v.style.display = 'block';
-      v.muted  = false;
-      v.volume = 1;
+
+      // Safari iOS: sempre começa mudo, depois tenta desmutar
+      v.muted = true;
       var p = v.play();
-      if(p) p.catch(function(){ v.muted = true; v.play(); });
+      if(p){
+        p.then(function(){
+          // Play funcionou — tenta ligar o som
+          v.muted  = false;
+          v.volume = 1;
+        }).catch(function(){
+          // Falhou mesmo mudo — vai direto pro app
+          _fim();
+        });
+      }
+
       v.addEventListener('ended', _fim);
-      // Segurança: fecha em 15s se travar
       setTimeout(_fim, 15000);
     } else {
-      // Vídeo ainda não carregou — pula direto para o app
       _fim();
     }
 
