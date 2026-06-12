@@ -362,36 +362,53 @@ const _supa = supabase.createClient(
   var a   = document.getElementById('sa');
   var tocado = false;
 
+  // Log panel — mostra o que esta acontecendo no iOS
+  var log = document.createElement('div');
+  log.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,.85);color:#0f0;font-size:11px;padding:8px;z-index:9999999;font-family:monospace;max-height:160px;overflow-y:auto';
+  document.body.appendChild(log);
+  function L(msg){ log.innerHTML += Date.now()%100000 + ' ' + msg + '<br>'; log.scrollTop=9999; }
+
+  L('standalone='+!!(navigator.standalone||matchMedia('(display-mode:standalone)').matches));
+  L('readyState='+document.readyState);
+  L('v.readyState='+v.readyState);
+  L('sp.display='+sp.style.display);
+
+  document.addEventListener('visibilitychange', function(){ L('visibility='+document.visibilityState); });
+  window.addEventListener('pageshow', function(e){ L('pageshow persisted='+e.persisted); });
+
   v.load();
   a.load();
 
   function _fim(){
+    L('_fim called');
     sp.style.transition = 'opacity .4s';
     sp.style.opacity = '0';
     setTimeout(function(){ sp.style.display = 'none'; }, 420);
   }
 
   sp.addEventListener('click', function(){
+    L('click! tocado='+tocado);
     if(tocado) return;
     tocado = true;
 
     v.style.display = 'block';
     ui.style.display = 'none';
 
-    // Reseta src no gesto para destravar o iOS
     v.pause();
     v.removeAttribute('src');
     v.load();
     v.src = '/static/splash.mp4';
+    L('v.src set, readyState='+v.readyState);
 
     a.pause();
     a.currentTime = 0;
 
-    v.play().catch(function(){ _fim(); });
-    a.play().catch(function(){});
+    v.play().then(function(){ L('v.play OK'); }).catch(function(e){ L('v.play ERR: '+e.name+' '+e.message); _fim(); });
+    a.play().catch(function(e){ L('a.play ERR: '+e.name); });
 
-    v.addEventListener('ended', _fim, {once:true});
-    setTimeout(_fim, 15000);
+    v.addEventListener('ended', function(){ L('video ended'); _fim(); }, {once:true});
+    v.addEventListener('error', function(){ L('video error: '+v.error?.code); _fim(); }, {once:true});
+    setTimeout(function(){ L('fallback 15s'); _fim(); }, 15000);
 
     setTimeout(function(){
       if(sp.style.display === 'none') return;
