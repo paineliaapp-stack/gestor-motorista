@@ -1,6 +1,6 @@
 // Service Worker — Painel.IA v3
 const CACHE_NAME = 'painel-ia-v3';
-const SPLASH_VIDEO = 'https://xtihcmzjwklfsfgsdpww.supabase.co/storage/v1/object/public/static/splash.mp4';
+const SPLASH_VIDEO = '/static/splash.mp4';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
