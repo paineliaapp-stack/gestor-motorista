@@ -349,8 +349,8 @@ const _supa = supabase.createClient(
   var ui = document.getElementById('splash-ui');
   var tocado = false;
 
-  // Chrome no iOS: tem "CriOS" no userAgent. Safari não tem.
-  var isChrome = /CriOS/.test(navigator.userAgent);
+  // Chrome: "CriOS" no iOS, "Chrome" no Android. Safari puro não tem nenhum dos dois.
+  var isChrome = /CriOS|Chrome/.test(navigator.userAgent) && !/Edg|OPR/.test(navigator.userAgent);
 
   function _fim(){
     sp.style.transition = 'opacity .4s';
