@@ -117,6 +117,44 @@ async def billing_status(uid: str = Depends(get_uid_from_token)):
     }
 
 
+@router.post("/billing/checkout-publico")
+async def checkout_publico(dados: dict = Body(...)):
+    """Compra direta da landing — sem login. Vincula pelo email após o pagamento."""
+    plano_id = "fundador"  # landing vende só o Fundador
+    email = (dados.get("email") or "").strip().lower()
+    if not email or "@" not in email:
+        return {"erro": "Informe um email válido"}
+    if _vagas_fundador() <= 0:
+        return {"erro": "Vagas do Plano Fundador esgotadas"}
+    token = os.getenv("MP_ACCESS_TOKEN", "")
+    if not token:
+        return {"erro": "Pagamento ainda não configurado — tente em instantes"}
+    payload = {
+        "reason": f"Painel.IA — {_NOMES[plano_id]}",
+        "external_reference": f"email:{email}|{plano_id}",  # vincula por email
+        "payer_email": email,
+        "auto_recurring": {
+            "frequency": 1, "frequency_type": "months",
+            "transaction_amount": _PRECOS[plano_id], "currency_id": "BRL",
+        },
+        "back_url": f"{_APP_URL}/?pagamento=ok&email={email}",
+        "status": "pending",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.post(f"{_MP_API}/preapproval",
+                             headers={"Authorization": f"Bearer {token}"}, json=payload)
+            data = r.json()
+        if r.status_code >= 400 or "init_point" not in data:
+            log_warn("checkout_publico_falhou", status=r.status_code, body=str(data)[:300])
+            return {"erro": "Não foi possível iniciar o pagamento — tente novamente"}
+        log_info("checkout_publico_criado", email=email)
+        return {"init_point": data["init_point"]}
+    except Exception as e:
+        log_erro("checkout_publico_erro", erro=e)
+        return {"erro": "Falha de conexão"}
+
+
 @router.post("/billing/criar-checkout")
 async def criar_checkout(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
     plano_id = dados.get("plano_id", "fundador")
@@ -191,7 +229,32 @@ async def billing_webhook(request: Request):
             ext = pre.get("external_reference", "")
             mp_status = pre.get("status", "")
             if "|" in ext:
-                uid, plano_id = ext.split("|", 1)
+                ref, plano_id = ext.split("|", 1)
+                # ref = uid direto, ou "email:x@y" (compra na landing → vincula por email)
+                if ref.startswith("email:"):
+                    _email = ref[6:]
+                    uid = None
+                    try:
+                        # Tenta achar o usuário que já criou conta com esse email
+                        _r = supabase.table("motoristas").select("id,email_pagamento").eq("email_pagamento", _email).limit(1).execute()
+                        if _r.data:
+                            uid = _r.data[0]["id"]
+                    except Exception:
+                        pass
+                    # Registra o pagamento por email para vincular quando logar
+                    try:
+                        supabase.table("assinaturas").upsert({
+                            "motorista_id": uid, "plano_id": plano_id,
+                            "status": "active" if mp_status == "authorized" else "pending",
+                            "email_pagamento": _email, "mp_subscription_id": str(rid),
+                            "atualizado_em": _agora().isoformat(),
+                        }).execute() if uid else None
+                    except Exception:
+                        pass
+                    if not uid:
+                        return {"ok": True}  # vincula no login
+                else:
+                    uid = ref
                 if mp_status == "authorized":
                     # Ativa — decrementa vaga só na transição
                     try:

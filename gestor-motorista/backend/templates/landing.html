@@ -578,6 +578,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
         <div style="font-size:12px;color:#00D897;margin-bottom:20px;text-align:center">🔒 preço travado por 1 ano — para sempre fundador</div>
         <div style="font-size:14px;color:var(--muted);line-height:2.1">✓ Gestor com IA ilimitado<br>✓ Histórico financeiro completo<br>✓ Plano financeiro inteligente<br>✓ Previsão do tempo na sua região<br>✓ Modo carro e moto<br>✓ Alertas de vencimento de contas<br>✓ Card do Dia para compartilhar</div>
         <a href="/" class="btn btn-am" style="display:block;text-align:center;margin-top:22px;padding:16px;font-size:16px">Começar com 24h grátis</a>
+        <button onclick="comprarDireto()" style="display:block;width:100%;text-align:center;margin-top:10px;padding:13px;font-size:14px;background:none;border:1px solid rgba(240,180,41,.4);border-radius:12px;color:#F0B429;font-weight:700;cursor:pointer;font-family:inherit">Já quero assinar — pular o teste</button>
       </div>
     </div>
     <div style="text-align:center;font-size:12px;color:var(--faint);margin-top:22px">✅ 24h de teste grátis · sem cartão · cancele quando quiser · seus dados são sempre seus</div>
@@ -688,6 +689,21 @@ document.addEventListener('touchstart',()=>{document.querySelectorAll('.era-vid'
 /* Reveals */
 const obs=new IntersectionObserver(es=>{es.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*60);obs.unobserve(e.target)}})},{threshold:.1});
 document.querySelectorAll('.reveal,.era').forEach(r=>obs.observe(r));
+</script>
+<script>
+async function comprarDireto(){
+  const email = prompt('Seu email para a assinatura:');
+  if(!email || !email.includes('@')){ if(email!==null) alert('Email inválido'); return; }
+  try{
+    const r = await fetch('/billing/checkout-publico', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email: email.trim().toLowerCase()})
+    });
+    const d = await r.json();
+    if(d.init_point){ window.location.href = d.init_point; }
+    else { alert(d.erro || 'Não foi possível iniciar o pagamento. Tente o teste grátis.'); }
+  }catch(e){ alert('Falha de conexão. Tente de novo.'); }
+}
 </script>
 </body>
 </html>

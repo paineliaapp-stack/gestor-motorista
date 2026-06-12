@@ -378,6 +378,10 @@ const _supa = supabase.createClient(
   var ui  = document.getElementById('splash-ui');
   var tocado = false;
 
+  // Splash SÓ no mobile — no desktop fica feio, entra direto no app
+  var ehMobile = window.matchMedia('(max-width: 820px)').matches || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (!ehMobile) { if(sp) sp.remove(); return; }
+
   // FORÇA atualização do service worker: a v6 cacheava o vídeo sem Range e
   // travava o iOS. Registrar de novo faz o navegador baixar a v7 (que limpa tudo).
   if ('serviceWorker' in navigator) {
