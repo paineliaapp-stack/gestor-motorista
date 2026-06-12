@@ -4,571 +4,183 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Painel.IA — Admin</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0c14; color: #e2e8f0; min-height: 100vh; }
-
-.login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-.login-box { background: #1a1d2e; border: 1px solid #2d3748; border-radius: 16px; padding: 40px; width: 360px; text-align: center; }
-.login-box h1 { font-size: 1.4rem; margin-bottom: 8px; }
-.login-box p { color: #718096; font-size: 0.85rem; margin-bottom: 24px; }
-.login-box input { width: 100%; background: #0a0c14; border: 1px solid #2d3748; border-radius: 8px; padding: 12px 16px; color: #e2e8f0; font-size: 1rem; margin-bottom: 12px; }
-.login-box input:focus { outline: none; border-color: #6366f1; }
-
-.app { display: none; }
-.sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 200px; background: #111320; border-right: 1px solid #1e2435; padding: 24px 0; z-index: 10; }
-.sidebar .logo { padding: 0 20px 24px; font-size: 1rem; font-weight: 700; color: #fff; border-bottom: 1px solid #1e2435; margin-bottom: 16px; }
-.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; color: #718096; font-size: 0.85rem; transition: all .15s; border-left: 3px solid transparent; }
-.nav-item:hover { color: #e2e8f0; background: #1a1d2e; }
-.nav-item.ativo { color: #fff; background: #1e2240; border-left-color: #6366f1; }
-.nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
-.main { margin-left: 200px; padding: 28px 32px; max-width: 1400px; }
-.page { display: none; }
-.page.ativo { display: block; }
-
-.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
-.page-header h1 { font-size: 1.3rem; color: #fff; }
-.page-header .sub { font-size: 0.8rem; color: #4a5568; margin-top: 2px; }
-
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 28px; }
-.card { background: #1a1d2e; border: 1px solid #1e2435; border-radius: 12px; padding: 18px; }
-.card .lbl { font-size: 0.7rem; color: #4a5568; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
-.card .val { font-size: 1.8rem; font-weight: 700; color: #fff; line-height: 1; }
-.card .val.g { color: #4ade80; }
-.card .val.b { color: #60a5fa; }
-.card .val.y { color: #fbbf24; }
-.card .val.r { color: #f87171; }
-.card .val.p { color: #a78bfa; }
-
-.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: opacity .15s; }
-.btn:hover { opacity: .82; }
-.btn:disabled { opacity: .4; cursor: not-allowed; }
-.btn-primary { background: #6366f1; color: #fff; }
-.btn-green  { background: #16a34a; color: #fff; }
-.btn-red    { background: #dc2626; color: #fff; }
-.btn-gray   { background: #374151; color: #e2e8f0; }
-.btn-sm { padding: 5px 10px; font-size: 0.75rem; border-radius: 6px; }
-.btn-full { width: 100%; justify-content: center; padding: 12px; }
-
-.table-wrap { background: #1a1d2e; border: 1px solid #1e2435; border-radius: 12px; overflow: hidden; }
-.table-toolbar { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid #1e2435; flex-wrap: wrap; }
-.search-input { background: #0a0c14; border: 1px solid #2d3748; border-radius: 8px; padding: 7px 12px; color: #e2e8f0; font-size: 0.85rem; width: 240px; }
-.search-input:focus { outline: none; border-color: #6366f1; }
-.filter-btn { background: #0a0c14; border: 1px solid #2d3748; border-radius: 6px; padding: 6px 12px; color: #718096; font-size: 0.78rem; cursor: pointer; transition: all .15s; }
-.filter-btn.ativo { background: #6366f1; border-color: #6366f1; color: #fff; }
-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-th { text-align: left; color: #4a5568; font-weight: 600; padding: 10px 14px; border-bottom: 1px solid #1e2435; white-space: nowrap; }
-td { padding: 11px 14px; border-bottom: 1px solid #111320; vertical-align: middle; }
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: #1e2240; }
-.empty { padding: 40px; text-align: center; color: #4a5568; font-size: 0.85rem; }
-
-.badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
-.badge.ativo        { background: #052e16; color: #4ade80; }
-.badge.trial        { background: #1e3a5f; color: #60a5fa; }
-.badge.expirado     { background: #2d1b1b; color: #f87171; }
-.badge.bloqueado    { background: #1f1f1f; color: #6b7280; }
-.badge.sem_assinatura { background: #1a1a2e; color: #818cf8; }
-
-.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: none; align-items: center; justify-content: center; z-index: 100; }
-.modal-bg.open { display: flex; }
-.modal { background: #1a1d2e; border: 1px solid #2d3748; border-radius: 16px; padding: 28px; width: 440px; max-width: 95vw; }
-.modal h2 { font-size: 1.1rem; margin-bottom: 6px; }
-.modal .sub { font-size: 0.8rem; color: #718096; margin-bottom: 20px; }
-.form-group { margin-bottom: 14px; }
-.form-group label { display: block; font-size: 0.75rem; color: #718096; margin-bottom: 5px; }
-.form-group select, .form-group input { width: 100%; background: #0a0c14; border: 1px solid #2d3748; border-radius: 8px; padding: 9px 12px; color: #e2e8f0; font-size: 0.9rem; }
-.form-group select:focus, .form-group input:focus { outline: none; border-color: #6366f1; }
-.modal-footer { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
-.msg { padding: 9px 14px; border-radius: 8px; font-size: 0.82rem; margin-top: 12px; }
-.msg.ok  { background: #052e16; color: #4ade80; }
-.msg.err { background: #2d1b1b; color: #f87171; }
-
-.email-card { background: #1a1d2e; border: 1px solid #1e2435; border-radius: 10px; padding: 14px 16px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.email-card .info { flex: 1; }
-.email-card .em { color: #60a5fa; font-size: 0.85rem; font-weight: 500; }
-.email-card .meta { color: #4a5568; font-size: 0.75rem; margin-top: 3px; }
-.copy-btn { background: #374151; border: none; color: #a0aec0; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; }
-.copy-btn:hover { background: #4b5563; }
-
-.loading { display: flex; align-items: center; gap: 8px; color: #4a5568; font-size: 0.85rem; padding: 16px; }
-.spin { width: 16px; height: 16px; border: 2px solid #2d3748; border-top-color: #6366f1; border-radius: 50%; animation: spin .7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+:root{--bg:#07090d;--card:#0d1117;--line:rgba(255,255,255,.08);--tx:#EEE9E0;--mt:rgba(238,233,224,.45);--am:#F0B429;--gn:#00D897;--rd:#FF4560}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,sans-serif;padding:16px;max-width:1100px;margin:0 auto}
+.header{display:flex;align-items:center;margin-bottom:20px}
+.logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800}
+.logo .p{width:32px;height:32px;border-radius:50%;background:var(--am);color:#000;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;flex-shrink:0}
+.nav{display:flex;gap:6px;margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+.nav::-webkit-scrollbar{display:none}
+.nav button{background:var(--card);border:1px solid var(--line);color:var(--mt);border-radius:20px;padding:7px 16px;font-size:13px;white-space:nowrap;cursor:pointer;font-family:inherit;transition:.2s}
+.nav button.active{background:var(--am);border-color:var(--am);color:#000;font-weight:700}
+.page{display:none}.page.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+@media(min-width:600px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:900px){.grid{grid-template-columns:repeat(4,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card .l{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--mt);margin-bottom:4px}
+.card .v{font-size:22px;font-weight:800}
+.card.mrr{border-color:rgba(240,180,41,.4);grid-column:span 2}.card.mrr .v{color:var(--am);font-size:28px}
+.chart-wrap{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:20px}
+canvas{max-height:200px;width:100%!important}
+.vagas{margin-bottom:20px}
+.vagas .lbl{font-size:12px;color:var(--mt);margin-bottom:6px}
+.vt{height:8px;background:rgba(255,255,255,.06);border-radius:6px;overflow:hidden}
+.vf{height:100%;background:linear-gradient(90deg,var(--am),var(--gn));border-radius:6px;transition:width 1s}
+.filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.filtros button{background:var(--card);border:1px solid var(--line);color:var(--mt);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;transition:.2s}
+.filtros button.active{background:rgba(240,180,41,.15);border-color:var(--am);color:var(--am)}
+.search{width:100%;background:var(--card);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:10px 14px;font-size:14px;margin-bottom:12px;font-family:inherit}
+.search::placeholder{color:var(--mt)}
+.search:focus{outline:none;border-color:rgba(240,180,41,.4)}
+/* Mobile: cards */
+.users-cards{display:flex;flex-direction:column;gap:8px}
+.user-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.uc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.uc-name{font-weight:700;font-size:15px}
+.uc-email{font-size:12px;color:var(--mt);margin-top:2px;word-break:break-all}
+.uc-meta{display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--mt)}
+.uc-meta span{background:rgba(255,255,255,.04);border-radius:6px;padding:3px 8px}
+/* Desktop: tabela */
+.users-table{display:none}
+@media(min-width:700px){.users-cards{display:none}.users-table{display:block;overflow-x:auto}}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{padding:10px 14px;text-align:left;font-size:13px;border-bottom:1px solid var(--line)}
+th{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--mt)}
+tr:last-child td{border-bottom:none}
+.st{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.st-trial{background:rgba(78,158,255,.15);color:#4E9EFF}
+.st-active{background:rgba(0,216,151,.15);color:var(--gn)}
+.st-expired{background:rgba(255,69,96,.12);color:var(--rd)}
+.st-cancelled,.st-sem_plano{background:rgba(255,255,255,.08);color:var(--mt)}
+.loading{text-align:center;padding:40px;color:var(--mt);font-size:14px}
 </style>
 </head>
 <body>
+<div class="header">
+  <div class="logo"><span class="p">⚡</span>&nbsp;Admin</div>
+</div>
+<nav class="nav">
+  <button class="active" onclick="showPage('dash',this)">Dashboard</button>
+  <button onclick="showPage('users',this)">Usuários</button>
+  <button onclick="showPage('remarketing',this)">Remarketing</button>
+  <button onclick="showPage('suporte',this)">Suporte</button>
+</nav>
 
-<!-- LOGIN -->
-<div class="login-screen" id="loginScreen">
-  <div class="login-box">
-    <h1>⚡ Painel.IA</h1>
-    <p>Acesso administrativo restrito</p>
-    <input type="password" id="tokenInput" placeholder="Token de admin" onkeydown="if(event.key==='Enter')entrar()">
-    <button class="btn btn-primary btn-full" onclick="entrar()">Entrar</button>
-    <div class="msg err" id="loginErr" style="display:none;margin-top:12px">Token inválido</div>
+<div class="page active" id="page-dash">
+  <div class="grid" id="cards"><div class="loading">Carregando...</div></div>
+  <div class="vagas">
+    <div class="lbl">Vagas Fundador: <b id="vg-num" style="color:var(--am)">—</b> de 50</div>
+    <div class="vt"><div class="vf" id="vg-fill" style="width:0%"></div></div>
+  </div>
+  <div class="chart-wrap"><canvas id="chart"></canvas></div>
+</div>
+
+<div class="page" id="page-users">
+  <input class="search" type="search" id="busca" placeholder="🔍 Buscar por nome ou email..." oninput="renderUsuarios()">
+  <div class="filtros">
+    <button class="active" onclick="setFiltro('all',this)">Todos</button>
+    <button onclick="setFiltro('active',this)">Ativos</button>
+    <button onclick="setFiltro('trial',this)">Trial</button>
+    <button onclick="setFiltro('expired',this)">Expirados</button>
+    <button onclick="setFiltro('sem_plano',this)">Sem plano</button>
+    <button onclick="setFiltro('cancelled',this)">Bloqueados</button>
+  </div>
+  <div class="users-cards" id="users-cards"><div class="loading">Carregando...</div></div>
+  <div class="users-table">
+    <table><thead><tr><th>Nome</th><th>Email</th><th>Status</th><th>Plano</th><th>Trial expira</th><th>Cadastro</th></tr></thead>
+    <tbody id="tbody"></tbody></table>
   </div>
 </div>
 
-<!-- APP -->
-<div class="app" id="app">
-  <div class="sidebar">
-    <div class="logo">⚡ Admin</div>
-    <div class="nav-item ativo" onclick="irPara('pg-dashboard',this)"><span class="icon">📊</span> Dashboard</div>
-    <div class="nav-item" onclick="irPara('pg-usuarios',this)"><span class="icon">👥</span> Usuários</div>
-    <div class="nav-item" onclick="irPara('pg-remarketing',this)"><span class="icon">📧</span> Remarketing</div>
-    <div class="nav-item" onclick="irPara('pg-suporte',this)"><span class="icon">🎫</span> Suporte</div>
-  </div>
-
-  <div class="main">
-
-    <!-- DASHBOARD -->
-    <div class="page ativo" id="pg-dashboard">
-      <div class="page-header">
-        <div><h1>Dashboard</h1><div class="sub" id="ultimaAtualizacao"></div></div>
-        <button class="btn btn-gray btn-sm" onclick="carregarTudo()">↻ Atualizar</button>
-      </div>
-      <div class="cards">
-        <div class="card"><div class="lbl">Total usuários</div><div class="val b" id="m-total">—</div></div>
-        <div class="card"><div class="lbl">Em trial</div><div class="val y" id="m-trial">—</div></div>
-        <div class="card"><div class="lbl">Ativos</div><div class="val g" id="m-ativos">—</div></div>
-        <div class="card"><div class="lbl">Expirados</div><div class="val r" id="m-exp">—</div></div>
-        <div class="card"><div class="lbl">Sem assinatura</div><div class="val p" id="m-sem">—</div></div>
-        <div class="card"><div class="lbl">Receita real</div><div class="val g" id="m-receita">—</div></div>
-        <div class="card"><div class="lbl">Novos 7 dias</div><div class="val b" id="m-novos">—</div></div>
-        <div class="card"><div class="lbl">Fundadores (usadas)</div><div class="val y" id="m-vagas">—</div></div>
-        <div class="card"><div class="lbl">Total lançamentos</div><div class="val b" id="m-lanc">—</div></div>
-        <div class="card"><div class="lbl">Usuários ativos</div><div class="val g" id="m-com-uso">—</div></div>
-        <div class="card"><div class="lbl">Sem uso nenhum</div><div class="val r" id="m-sem-uso">—</div></div>
-        <div class="card"><div class="lbl">Tickets abertos</div><div class="val y" id="m-tickets">—</div></div>
-      </div>
-      <!-- Top usuários -->
-      <div class="table-wrap" style="margin-bottom:24px">
-        <div style="padding:14px 16px;border-bottom:1px solid #1e2435;font-size:0.85rem;font-weight:600;color:#fff">🏆 Mais ativos (por uso da IA)</div>
-        <div id="topUsuariosWrap"><div class="loading"><div class="spin"></div></div></div>
-      </div>
-    </div>
-
-    <!-- USUÁRIOS -->
-    <div class="page" id="pg-usuarios">
-      <div class="page-header">
-        <div><h1>Usuários</h1><div class="sub" id="totalUsuarios"></div></div>
-        <button class="btn btn-gray btn-sm" onclick="carregarUsuarios()">↻ Atualizar</button>
-      </div>
-      <div class="table-wrap">
-        <div class="table-toolbar">
-          <input class="search-input" id="searchInput" placeholder="🔍 Buscar por nome ou email..." oninput="filtrarTabela()">
-          <div class="filter-btn ativo" onclick="setFiltro('all',this)">Todos</div>
-          <div class="filter-btn" onclick="setFiltro('ativo',this)">Ativos</div>
-          <div class="filter-btn" onclick="setFiltro('trial',this)">Trial</div>
-          <div class="filter-btn" onclick="setFiltro('expirado',this)">Expirados</div>
-          <div class="filter-btn" onclick="setFiltro('sem_assinatura',this)">Sem plano</div>
-          <div class="filter-btn" onclick="setFiltro('bloqueado',this)">Bloqueados</div>
-        </div>
-        <div id="tabelaWrap">
-          <div class="loading"><div class="spin"></div> Carregando usuários...</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- REMARKETING -->
-    <div class="page" id="pg-remarketing">
-      <div class="page-header">
-        <div><h1>Remarketing</h1><div class="sub">Usuários que não estão ativos</div></div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-gray btn-sm" onclick="copiarTodosEmails()">📋 Copiar todos</button>
-          <button class="btn btn-gray btn-sm" onclick="carregarEmails()">↻ Atualizar</button>
-        </div>
-      </div>
-      <div id="emailsWrap">
-        <div class="loading"><div class="spin"></div> Carregando...</div>
-      </div>
-    </div>
-
-    <!-- SUPORTE -->
-    <div class="page" id="pg-suporte">
-      <div class="page-header">
-        <div><h1>Suporte</h1><div class="sub" id="totalTickets"></div></div>
-        <div style="display:flex;gap:8px">
-          <div class="filter-btn ativo" onclick="setFiltroTicket('todos',this)" style="font-size:0.78rem;padding:6px 12px;border-radius:6px;cursor:pointer">Todos</div>
-          <div class="filter-btn" onclick="setFiltroTicket('aberto',this)" style="font-size:0.78rem;padding:6px 12px;border-radius:6px;cursor:pointer">Abertos</div>
-          <div class="filter-btn" onclick="setFiltroTicket('resolvido',this)" style="font-size:0.78rem;padding:6px 12px;border-radius:6px;cursor:pointer">Resolvidos</div>
-          <button class="btn btn-gray btn-sm" onclick="carregarTickets()">↻ Atualizar</button>
-        </div>
-      </div>
-      <div id="ticketsWrap">
-        <div class="loading"><div class="spin"></div> Carregando tickets...</div>
-      </div>
-    </div>
-
-  </div>
+<div class="page" id="page-remarketing">
+  <div class="card"><div class="l">Em breve</div><div style="color:var(--mt);font-size:14px;margin-top:8px">Campanhas de remarketing para usuários trial e expirados.</div></div>
 </div>
-
-<!-- MODAL -->
-<div class="modal-bg" id="modalBg" onclick="if(event.target===this)fecharModal()">
-  <div class="modal">
-    <h2 id="modalTitulo">Gerenciar acesso</h2>
-    <div class="sub" id="modalSub"></div>
-    <input type="hidden" id="modalUid">
-    <div class="form-group">
-      <label>Ação</label>
-      <select id="modalAcao" onchange="toggleModalAcao()">
-        <option value="ativo">✅ Liberar como Ativo</option>
-        <option value="trial">⏱ Liberar como Trial</option>
-        <option value="bloqueado">🚫 Bloquear acesso</option>
-      </select>
-    </div>
-    <div id="modalCamposPlano">
-      <div class="form-group">
-        <label>Plano</label>
-        <select id="modalPlano">
-          <option value="fundador">Fundador — R$19/mês</option>
-          <option value="pro">Pro — R$29/mês</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Duração (dias)</label>
-        <input type="number" id="modalDias" value="30" min="1" max="3650">
-      </div>
-    </div>
-    <div class="msg" id="modalMsg" style="display:none"></div>
-    <div class="modal-footer">
-      <button class="btn btn-gray" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" id="modalConfirmar" onclick="confirmarAcao()">Confirmar</button>
-    </div>
-  </div>
+<div class="page" id="page-suporte">
+  <div class="card"><div class="l">Em breve</div><div style="color:var(--mt);font-size:14px;margin-top:8px">Central de suporte e tickets.</div></div>
 </div>
 
 <script>
-let ADMIN_TOKEN = '';
-let todosUsuarios = [];
-let filtroStatus = 'all';
+let TOKEN = sessionStorage.getItem('admin_token');
+if(!TOKEN){ TOKEN = prompt('Token de admin:'); if(TOKEN) sessionStorage.setItem('admin_token', TOKEN); }
+const H = {'X-Admin-Token': TOKEN||''};
+const fmt = v => 'R$ '+(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+const fdt = s => s ? new Date(s).toLocaleDateString('pt-BR') : '—';
+let todosUsuarios = [], filtroAtual = 'all', usersCarregados = false;
 
-function entrar() {
-  const tok = document.getElementById('tokenInput').value.trim();
-  if (!tok) return;
-  ADMIN_TOKEN = tok;
-  document.getElementById('loginErr').style.display = 'none';
-  iniciar();
+function showPage(id, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='users' && !usersCarregados) carregarUsuarios();
 }
 
-async function req(path, opts = {}) {
-  const r = await fetch(path, {
-    headers: { 'X-Admin-Token': ADMIN_TOKEN, 'Content-Type': 'application/json' },
-    ...opts
+function setFiltro(st, btn){
+  filtroAtual = st;
+  document.querySelectorAll('.filtros button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderUsuarios();
+}
+
+async function carregar(){
+  const r = await fetch('/admin/metricas',{headers:H});
+  if(r.status===401){ sessionStorage.removeItem('admin_token'); alert('Token inválido'); location.reload(); return; }
+  const d = await r.json();
+  document.getElementById('cards').innerHTML = `
+    <div class="card mrr"><div class="l">MRR</div><div class="v">${fmt(d.mrr)}</div></div>
+    <div class="card"><div class="l">Usuários</div><div class="v">${d.usuarios_total}</div></div>
+    <div class="card"><div class="l">Em trial</div><div class="v" style="color:#4E9EFF">${d.em_trial}</div></div>
+    <div class="card"><div class="l">Ativos</div><div class="v" style="color:var(--gn)">${d.ativos}</div></div>
+    <div class="card"><div class="l">Expirados</div><div class="v" style="color:var(--rd)">${d.expirados||0}</div></div>
+    <div class="card"><div class="l">Conversão</div><div class="v">${d.conversao_pct}%</div></div>
+    <div class="card"><div class="l">Novos 7d</div><div class="v">${d.novos_semana}</div></div>`;
+  document.getElementById('vg-num').textContent = d.vagas_fundador;
+  document.getElementById('vg-fill').style.width = ((50-d.vagas_fundador)/50*100)+'%';
+  new Chart(document.getElementById('chart'),{type:'line',data:{
+    labels:d.por_dia.map(x=>x.dia.slice(5)),
+    datasets:[{label:'Novos',data:d.por_dia.map(x=>x.n),borderColor:'#F0B429',backgroundColor:'rgba(240,180,41,.08)',fill:true,tension:.35,pointRadius:2,pointBackgroundColor:'#F0B429'}]
+  },options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'rgba(238,233,224,.4)',maxTicksLimit:8}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'rgba(238,233,224,.4)',precision:0}}}}});
+}
+
+async function carregarUsuarios(){
+  document.getElementById('users-cards').innerHTML = '<div class="loading">Carregando...</div>';
+  const r = await fetch('/admin/usuarios?status=all&limit=200',{headers:H});
+  const d = await r.json();
+  todosUsuarios = d.usuarios||[];
+  usersCarregados = true;
+  renderUsuarios();
+}
+
+function renderUsuarios(){
+  const q = (document.getElementById('busca')?.value||'').toLowerCase();
+  const lista = todosUsuarios.filter(u=>{
+    const ms = filtroAtual==='all' || u.status===filtroAtual;
+    const mb = !q || (u.nome||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q);
+    return ms && mb;
   });
-  if (r.status === 401 || r.status === 403) {
-    document.getElementById('app').style.display = 'none';
-    document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('loginErr').style.display = 'block';
-    throw new Error('Não autorizado');
-  }
-  if (!r.ok) {
-    const err = await r.json().catch(() => ({}));
-    throw new Error(err.detail || 'Erro ' + r.status);
-  }
-  return r.json();
-}
-
-function irPara(id, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('ativo'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('ativo'));
-  document.getElementById(id).classList.add('ativo');
-  if (el) el.classList.add('ativo');
-  if (id === 'pg-usuarios' && !todosUsuarios.length) carregarUsuarios();
-  if (id === 'pg-remarketing') carregarEmails();
-  if (id === 'pg-suporte') carregarTickets();
-}
-
-async function iniciar() {
-  // Entra no painel PRIMEIRO, depois carrega os dados — se algum bloco falhar,
-  // o admin ainda abre (não fica preso na tela de login).
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  try { await carregarTudo(); } catch(e) { console.error('métricas:', e); }
-  try { carregarUsuarios(); } catch(e) { console.error('usuários:', e); }
-}
-
-async function carregarTudo() {
-  const m = await req('/admin/metricas');
-  document.getElementById('m-total').textContent   = m.total_usuarios ?? '—';
-  document.getElementById('m-trial').textContent   = m.em_trial ?? '—';
-  document.getElementById('m-ativos').textContent  = m.ativos ?? '—';
-  document.getElementById('m-exp').textContent     = m.expirados ?? '—';
-  document.getElementById('m-sem').textContent     = m.sem_assinatura ?? '—';
-  document.getElementById('m-receita').textContent = 'R$ ' + (Number(m.receita_total) || 0).toFixed(2);
-  document.getElementById('m-novos').textContent   = m.novos_7_dias ?? '—';
-  const usadas = (m.vagas_fundador_total ?? 50) - (m.vagas_fundador_restantes ?? 50);
-  document.getElementById('m-vagas').textContent = usadas + ' / ' + (m.vagas_fundador_total ?? 50);
-  // novos cards
-  document.getElementById('m-lanc').textContent    = (m.total_lancamentos ?? 0).toLocaleString('pt-BR');
-  document.getElementById('m-com-uso').textContent = m.usuarios_com_lancamentos ?? '—';
-  document.getElementById('m-sem-uso').textContent = m.usuarios_sem_uso ?? '—';
-  document.getElementById('m-tickets').textContent = m.tickets_abertos ?? '0';
-  document.getElementById('ultimaAtualizacao').textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR');
-  // top usuarios
-  renderTopUsuarios(m.top_usuarios || []);
-}
-
-function renderTopUsuarios(top) {
-  const el = document.getElementById('topUsuariosWrap');
-  if (!top.length) { el.innerHTML = '<div class="empty">Nenhum uso ainda</div>'; return; }
-  const rows = top.map((u, i) => {
-    const medalha = ['🥇','🥈','🥉','4°','5°','6°','7°','8°'][i] || (i+1)+'°';
-    const apiCalls = (u.chamadas_api ?? 0);
-    const lanc = (u.lancamentos ?? 0);
-    return `
-    <tr>
-      <td style="color:#fbbf24;font-weight:700;width:32px">${medalha}</td>
-      <td style="color:#60a5fa">${u.email || '—'}</td>
-      <td style="color:#a78bfa;font-weight:600">${apiCalls} chamadas IA</td>
-      <td style="color:#4ade80">${lanc} lançamentos</td>
-    </tr>`;
-  }).join('');
-  el.innerHTML = `<table><tbody>${rows}</tbody></table>`;
-}
-
-async function carregarUsuarios() {
-  document.getElementById('tabelaWrap').innerHTML = '<div class="loading"><div class="spin"></div> Carregando usuários...</div>';
-  try {
-    const d = await req('/admin/usuarios?limit=200&status=all');
-    if (d.erro) throw new Error(d.erro);
-    todosUsuarios = d.usuarios || [];
-    document.getElementById('totalUsuarios').textContent = todosUsuarios.length + ' usuários encontrados';
-    renderTabela();
-  } catch(e) {
-    document.getElementById('tabelaWrap').innerHTML = '<div class="empty">Erro ao carregar: ' + e.message + '<br><small style="color:#374151">Verifique o console para detalhes</small></div>';
-    console.error('Erro usuarios:', e);
-  }
-}
-
-function setFiltro(status, el) {
-  filtroStatus = status;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('ativo'));
-  el.classList.add('ativo');
-  renderTabela();
-}
-
-function filtrarTabela() { renderTabela(); }
-
-function renderTabela() {
-  const busca = (document.getElementById('searchInput').value || '').toLowerCase();
-  let lista = todosUsuarios.filter(u => {
-    if (filtroStatus !== 'all' && u.status !== filtroStatus) return false;
-    if (busca && !((u.email||'').toLowerCase().includes(busca) || (u.nome||'').toLowerCase().includes(busca))) return false;
-    return true;
-  });
-
-  if (!lista.length) {
-    document.getElementById('tabelaWrap').innerHTML = '<div class="empty">Nenhum usuário encontrado.</div>';
-    return;
-  }
-
-  const rows = lista.map(u => `
-    <tr>
-      <td>
-        <div style="font-weight:500;color:#fff">${u.nome || '—'}</div>
-        <div style="font-size:0.72rem;color:#4a5568;font-family:monospace">${(u.id||'').slice(0,12)}…</div>
-      </td>
-      <td style="color:#60a5fa">${u.email || '—'}</td>
-      <td><span class="badge ${u.status}">${traduzStatus(u.status)}</span></td>
-      <td>${u.plano ? '<span style="color:#a78bfa;font-size:0.78rem">' + u.plano + '</span>' : '<span style="color:#374151">—</span>'}</td>
-      <td style="font-size:0.75rem;color:#718096">${fmtData(u.criado_em)}</td>
-      <td style="font-size:0.75rem;color:#718096">${fmtData(u.ultimo_login)}</td>
-      <td style="font-size:0.75rem">${fmtExpira(u)}</td>
-      <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-green btn-sm" onclick="abrirModal('${u.id}','${esc(u.email)}','${esc(u.nome)}','liberar')">Liberar</button>
-          <button class="btn btn-red btn-sm" onclick="abrirModal('${u.id}','${esc(u.email)}','${esc(u.nome)}','bloquear')">Bloquear</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-
-  document.getElementById('tabelaWrap').innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>Usuário</th><th>Email</th><th>Status</th><th>Plano</th>
-          <th>Cadastro</th><th>Último login</th><th>Expira</th><th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
-}
-
-function abrirModal(uid, email, nome, tipo) {
-  document.getElementById('modalUid').value = uid;
-  document.getElementById('modalTitulo').textContent = tipo === 'bloquear' ? '🚫 Bloquear usuário' : '✅ Liberar acesso';
-  document.getElementById('modalSub').textContent = (nome || '—') + ' · ' + (email || '—');
-  document.getElementById('modalAcao').value = tipo === 'bloquear' ? 'bloqueado' : 'ativo';
-  const msg = document.getElementById('modalMsg');
-  msg.style.display = 'none'; msg.className = 'msg'; msg.textContent = '';
-  toggleModalAcao();
-  document.getElementById('modalBg').classList.add('open');
-}
-
-function fecharModal() { document.getElementById('modalBg').classList.remove('open'); }
-
-function toggleModalAcao() {
-  const acao = document.getElementById('modalAcao').value;
-  document.getElementById('modalCamposPlano').style.display = acao === 'bloqueado' ? 'none' : 'block';
-  const btn = document.getElementById('modalConfirmar');
-  btn.className = 'btn ' + (acao === 'bloqueado' ? 'btn-red' : 'btn-primary');
-  btn.textContent = acao === 'bloqueado' ? '🚫 Bloquear' : '✅ Confirmar';
-}
-
-async function confirmarAcao() {
-  const uid   = document.getElementById('modalUid').value;
-  const acao  = document.getElementById('modalAcao').value;
-  const plano = document.getElementById('modalPlano').value;
-  const dias  = parseInt(document.getElementById('modalDias').value);
-  const msgEl = document.getElementById('modalMsg');
-  msgEl.style.display = 'none';
-
-  const btn = document.getElementById('modalConfirmar');
-  btn.disabled = true; btn.textContent = 'Aguarde...';
-
-  try {
-    const r = await req('/admin/liberar', {
-      method: 'POST',
-      body: JSON.stringify({ motorista_id: uid, tipo: acao, plano_id: plano, dias })
-    });
-    msgEl.className = 'msg ok'; msgEl.style.display = 'block';
-    msgEl.textContent = r.mensagem || 'Feito!';
-    setTimeout(() => { fecharModal(); carregarUsuarios(); carregarTudo(); }, 1200);
-  } catch(e) {
-    msgEl.className = 'msg err'; msgEl.style.display = 'block';
-    msgEl.textContent = 'Erro: ' + e.message;
-  } finally {
-    btn.disabled = false; toggleModalAcao();
-  }
-}
-
-async function carregarEmails() {
-  document.getElementById('emailsWrap').innerHTML = '<div class="loading"><div class="spin"></div> Carregando...</div>';
-  try {
-    const d = await req('/admin/emails-remarketing');
-    const emails = d.emails || [];
-    if (!emails.length) {
-      document.getElementById('emailsWrap').innerHTML = '<div class="empty">Nenhum email encontrado.</div>';
-      return;
-    }
-    const cards = emails.map(e => `
-      <div class="email-card">
-        <div class="info">
-          <div class="em">${e.email}</div>
-          <div class="meta">Status: ${traduzStatus(e.status)} · Entrou: ${fmtData(e.criado_em) || '—'}</div>
-        </div>
-        <button class="copy-btn" onclick="copiar('${e.email}',this)">Copiar</button>
+  document.getElementById('users-cards').innerHTML = lista.length ? lista.map(u=>`
+    <div class="user-card">
+      <div class="uc-top">
+        <div><div class="uc-name">${u.nome||'Sem nome'}</div><div class="uc-email">${u.email||'—'}</div></div>
+        <span class="st st-${u.status}">${u.status}</span>
       </div>
-    `).join('');
-    document.getElementById('emailsWrap').innerHTML = `
-      <div style="color:#718096;font-size:0.82rem;margin-bottom:14px">${emails.length} emails</div>
-      ${cards}
-    `;
-  } catch(e) {
-    document.getElementById('emailsWrap').innerHTML = '<div class="empty">Erro: ' + e.message + '</div>';
-  }
-}
-
-function copiar(texto, btn) {
-  navigator.clipboard.writeText(texto).then(() => {
-    btn.textContent = '✓ Copiado';
-    setTimeout(() => btn.textContent = 'Copiar', 1500);
-  });
-}
-
-async function copiarTodosEmails() {
-  const d = await req('/admin/emails-remarketing');
-  const lista = (d.emails || []).map(e => e.email).join('\n');
-  await navigator.clipboard.writeText(lista);
-  alert('✓ ' + (d.emails||[]).length + ' emails copiados!');
-}
-
-function fmtData(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('pt-BR') + ' ' + new Date(iso).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-}
-
-function fmtExpira(u) {
-  const d = u.periodo_fim || u.trial_fim;
-  if (!d) return '<span style="color:#374151">—</span>';
-  const diff = Math.ceil((new Date(d) - Date.now()) / 86400000);
-  if (diff < 0) return '<span style="color:#f87171">Expirou</span>';
-  if (diff <= 3) return '<span style="color:#fbbf24">' + diff + 'd</span>';
-  return '<span style="color:#718096">' + diff + 'd</span>';
-}
-
-function traduzStatus(s) {
-  return {ativo:'Ativo',trial:'Trial',expirado:'Expirado',bloqueado:'Bloqueado',sem_assinatura:'Sem plano'}[s] || s || '—';
-}
-
-function esc(s) { return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
-
-// ── Tickets suporte ───────────────────────────────────────────────────────────
-let filtroTicket = 'todos';
-let todosTickets = [];
-
-function setFiltroTicket(f, el) {
-  filtroTicket = f;
-  document.querySelectorAll('#pg-suporte .filter-btn').forEach(b => b.classList.remove('ativo'));
-  if (el) el.classList.add('ativo');
-  renderTickets();
-}
-
-async function carregarTickets() {
-  document.getElementById('ticketsWrap').innerHTML = '<div class="loading"><div class="spin"></div> Carregando...</div>';
-  try {
-    const d = await req('/admin/tickets?status=todos');
-    todosTickets = d.tickets || [];
-    document.getElementById('totalTickets').textContent = todosTickets.length + ' mensagens recebidas';
-    renderTickets();
-  } catch(e) {
-    document.getElementById('ticketsWrap').innerHTML = '<div class="empty">Erro: ' + e.message + '</div>';
-  }
-}
-
-function renderTickets() {
-  const lista = filtroTicket === 'todos' ? todosTickets : todosTickets.filter(t => t.status === filtroTicket);
-  if (!lista.length) {
-    document.getElementById('ticketsWrap').innerHTML = '<div class="empty">Nenhuma mensagem aqui.</div>';
-    return;
-  }
-  const assuntoLabel = {duvida:'❓ Dúvida', bug:'🐛 Bug', reembolso:'💳 Reembolso', outro:'💬 Outro'};
-  const cards = lista.map(t => `
-    <div style="background:#1a1d2e;border:1px solid ${t.status==='aberto'?'#4338ca':'#1e2435'};border-radius:12px;padding:16px 18px;margin-bottom:12px">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px">
-        <div>
-          <span style="font-weight:600;color:#fff">${t.nome || '—'}</span>
-          <span style="color:#60a5fa;font-size:0.82rem;margin-left:8px">${t.email}</span>
-          <span style="background:#1e2435;color:#a78bfa;font-size:0.72rem;padding:2px 8px;border-radius:20px;margin-left:8px">${assuntoLabel[t.assunto]||t.assunto}</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-          <span style="font-size:0.72rem;color:#4a5568">${fmtData(t.criado_em)}</span>
-          <span class="badge ${t.status==='aberto'?'trial':'ativo'}">${t.status==='aberto'?'Aberto':'Resolvido'}</span>
-        </div>
+      <div class="uc-meta">
+        <span>📦 ${u.plano||'sem plano'}</span>
+        ${u.trial_fim?`<span>⏱ ${fdt(u.trial_fim)}</span>`:''}
+        <span>📅 ${fdt(u.criado_em)}</span>
       </div>
-      <p style="color:#cbd5e0;font-size:0.87rem;line-height:1.6;margin-bottom:12px">${t.mensagem}</p>
-      <div style="display:flex;gap:8px">
-        ${t.status==='aberto'?`<button class="btn btn-green btn-sm" onclick="resolverTicket('${t.id}')">✓ Marcar resolvido</button>`:''}
-        <button class="btn btn-gray btn-sm" onclick="window.location='mailto:${t.email}?subject=Re: ${t.assunto} — Painel.IA'">📧 Responder</button>
-      </div>
-    </div>
-  `).join('');
-  document.getElementById('ticketsWrap').innerHTML = cards;
+    </div>`).join('') : '<div class="loading">Nenhum encontrado</div>';
+  document.getElementById('tbody').innerHTML = lista.length ? lista.map(u=>`
+    <tr><td>${u.nome||'—'}</td><td style="color:var(--mt);font-size:12px">${u.email||'—'}</td>
+    <td><span class="st st-${u.status}">${u.status}</span></td>
+    <td>${u.plano||'—'}</td><td>${fdt(u.trial_fim)}</td><td>${fdt(u.criado_em)}</td></tr>`).join('')
+    : '<tr><td colspan="6" style="color:var(--mt);text-align:center;padding:30px">Nenhum usuário</td></tr>';
 }
-
-async function resolverTicket(id) {
-  try {
-    await req('/admin/tickets/' + id, { method: 'PATCH', body: JSON.stringify({status:'resolvido'}) });
-    await carregarTickets();
-    await carregarTudo();
-  } catch(e) {
-    alert('Erro: ' + e.message);
-  }
-}
-
+carregar();
 </script>
 </body>
 </html>
