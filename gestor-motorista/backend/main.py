@@ -89,6 +89,7 @@ async def generic_exception_handler(request, exc):
 from routes import (
     sistema, push, motoristas, metas, lancamentos, resumo,
     contas, plano, chat, webhook, relatorios, clima,
+    billing, admin,
 )
 
 app.include_router(push.router)
@@ -103,3 +104,5 @@ app.include_router(chat.router)
 app.include_router(webhook.router)
 app.include_router(relatorios.router)
 app.include_router(clima.router)
+app.include_router(billing.router)
+app.include_router(admin.router)

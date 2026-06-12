@@ -102,3 +102,7 @@ async def _debug_chat_impl(mid: str):
     except Exception as e:
         logs.append(f"parse_erro={e}")
     return {"logs": logs}
+
+@router.get("/admin-dashboard", response_class=HTMLResponse)
+def admin_dashboard(request: Request):
+    return templates.TemplateResponse("admin.html", {"request": request})
