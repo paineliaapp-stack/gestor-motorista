@@ -354,8 +354,6 @@ const _supa = supabase.createClient(
   var ui  = document.getElementById('splash-ui');
   var tocado = false;
 
-  function {} // logs removidos
-
   function _fim(v, a){
     if(v){ try{ v.pause(); }catch(e){} v.remove(); }
     if(a){ try{ a.pause(); }catch(e){} a.remove(); }
@@ -378,7 +376,7 @@ const _supa = supabase.createClient(
     v.src = '/static/splash.mp4';
     sp.appendChild(v);
 
-    // Audio do zero tambem
+    // Audio separado
     var a = document.createElement('audio');
     a.src = '/static/splash.mp3';
     a.preload = 'auto';
@@ -392,14 +390,13 @@ const _supa = supabase.createClient(
     }, {once:true});
 
     v.addEventListener('error', function(){
-      );
       clearTimeout(fallback);
       fim();
     }, {once:true});
 
     v.play().then(function(){
-      a.play().catch(function(e){ });
-    }).catch(function(e){
+      a.play().catch(function(){});
+    }).catch(function(){
       clearTimeout(fallback);
       fim();
     });
