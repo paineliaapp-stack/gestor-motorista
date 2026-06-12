@@ -598,6 +598,7 @@ const _supa = supabase.createClient(
       <div class="meta-track"><div class="meta-fill" id="meta-fill" style="width:0%"></div></div>
       <span class="meta-pct" id="meta-pct">0%</span>
     </div>
+    <div id="trial-chip" onclick="_abrirModalPlanos()" style="display:none;cursor:pointer;background:rgba(0,216,151,.1);border:1px solid rgba(0,216,151,.3);border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:700;color:#00D897;white-space:nowrap">⏱ trial</div>
     <div class="chip">
       <div class="av" id="user-av" style="overflow:hidden;padding:0">?</div>
       <div class="dot-on"></div>
@@ -994,6 +995,22 @@ const _supa = supabase.createClient(
 
 <div class="page" id="page-historico">
   <div class="ph"><div><h1>Histórico</h1><div class="sub">Lançamentos e comparativos</div></div></div>
+  <div id="card-veiculos" style="display:none;background:linear-gradient(135deg,rgba(240,180,41,.08),transparent);border:1px solid rgba(240,180,41,.25);border-radius:16px;padding:16px;margin-bottom:14px">
+    <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Ganhos por veículo este mês</div>
+    <div style="display:flex;gap:12px">
+      <div style="flex:1;text-align:center">
+        <div style="font-size:28px;margin-bottom:2px">🚗</div>
+        <div id="veic-carro" style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:#00D897">R$ 0</div>
+        <div style="font-size:10px;color:#64748b;text-transform:uppercase">Carro</div>
+      </div>
+      <div style="width:1px;background:rgba(255,255,255,.08)"></div>
+      <div style="flex:1;text-align:center">
+        <div style="font-size:28px;margin-bottom:2px">🏍️</div>
+        <div id="veic-moto" style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:#F0B429">R$ 0</div>
+        <div style="font-size:10px;color:#64748b;text-transform:uppercase">Moto</div>
+      </div>
+    </div>
+  </div>
   <div class="gc">
     <div class="hf" style="flex-wrap:wrap;gap:6px">
       <button class="fp active" onclick="mudarVisaoHist(this,'lancamentos')">📋 Lançamentos</button>
@@ -4050,6 +4067,12 @@ function limparChat() {
 
 let _chatSending = false;
 async function sendChat() {
+  // BILLING: bloqueia o chat se o trial/assinatura expirou
+  if (window._billingStatus && window._billingStatus.pode_usar === false) {
+    if (typeof appendMsg === 'function') appendMsg('assistant', '⏱ Seu acesso expirou. Para continuar usando o Gestor, assine o Plano Fundador por R$19/mês. 👉 Toque no botão "assinar" no topo da tela.');
+    _abrirModalPlanos();
+    return;
+  }
   if (_chatSending) return;
   // Se estiver em modo setup, redireciona para o chat de setup
   if (_setupMode) {
@@ -5333,6 +5356,16 @@ function abrirPerfil(nome, email, foto){
   const f = foto || window._userFoto || '';
   const overlay = document.createElement('div');
   overlay.id = 'modal-perfil';
+  setTimeout(function(){
+    var va = localStorage.getItem('pia_veiculo_'+(window.MID||'')) || 'carro';
+    ['carro','moto','ambos'].forEach(function(x){
+      var b=document.getElementById('pv-'+x); if(!b)return;
+      var on = x===va;
+      b.style.background = on?'rgba(240,180,41,.2)':'rgba(255,255,255,.04)';
+      b.style.border = on?'1.5px solid rgba(240,180,41,.5)':'1px solid rgba(255,255,255,.1)';
+      b.style.color = on?'#F0B429':'#94a3b8';
+    });
+  }, 50);
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.65);display:flex;align-items:flex-start;justify-content:flex-end;padding:60px 12px 0';
   overlay.innerHTML = `
     <div style="background:#1a1a2e;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:24px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,.6)">
@@ -5343,7 +5376,15 @@ function abrirPerfil(nome, email, foto){
         <div style="font-weight:700;font-size:15px;color:#fff;text-align:center">${n}</div>
         <div style="font-size:12px;color:#64748b;margin-top:2px;text-align:center">${e}</div>
       </div>
-      <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:14px;display:flex;flex-direction:column;gap:8px">
+      <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:14px;margin-bottom:10px">
+        <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;text-align:center">Como você trabalha hoje</div>
+        <div style="display:flex;gap:6px">
+          <button onclick="_trocarVeiculo('carro')" id="pv-carro" style="flex:1;padding:9px 4px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#94a3b8">🚗 Carro</button>
+          <button onclick="_trocarVeiculo('moto')" id="pv-moto" style="flex:1;padding:9px 4px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#94a3b8">🏍️ Moto</button>
+          <button onclick="_trocarVeiculo('ambos')" id="pv-ambos" style="flex:1;padding:9px 4px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#94a3b8">Ambos</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
         <button id="perfil-install-btn" onclick="document.getElementById('modal-perfil').remove();instalarApp()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(99,102,241,.3);background:rgba(99,102,241,.08);color:#818cf8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Instalar na tela inicial</button>
         <button onclick="document.getElementById('modal-perfil').remove()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#94a3b8;font-size:13px;cursor:pointer;font-family:inherit">Fechar</button>
         <button onclick="document.getElementById('modal-perfil').remove();fazerLogout()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,77,106,.3);background:rgba(255,77,106,.08);color:#FF4D6A;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">⏻ Sair da conta</button>
@@ -5418,6 +5459,35 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     NOME = setUserUI(session);
     const upRes = await authFetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})});
     const upData = await upRes.json();
+    // ── BILLING: status do plano (não bloqueia o carregamento) ──
+    setTimeout(async () => {
+      try {
+        const bRes = await authFetch(API+'/billing/status');
+        if (!bRes.ok) return;
+        const bs = await bRes.json();
+        window._billingStatus = bs;
+        const chip = document.getElementById('trial-chip');
+        if (!chip) return;
+        if (bs.status === 'active' || bs.status === 'ativo') {
+          chip.style.display = 'block';
+          chip.textContent = '⭐ ' + (bs.plano === 'fundador' ? 'Fundador' : 'Ativo');
+          chip.style.cursor = 'default';
+          chip.onclick = null;
+          window._planoAtivo = true;
+        } else if (bs.status === 'trial') {
+          chip.style.display = 'block';
+          const h = Math.floor((bs.trial_restante_ms||0) / 3600000);
+          chip.textContent = '⏱ ' + (h > 0 ? h + 'h grátis' : 'últimas horas');
+          if (h <= 6) { chip.style.color = '#F0B429'; chip.style.borderColor = 'rgba(240,180,41,.4)'; chip.style.background = 'rgba(240,180,41,.1)'; }
+        } else {
+          // expirado/bloqueado/cancelado
+          chip.style.display = 'block';
+          chip.textContent = '🔒 assinar';
+          chip.style.color = '#FF4D6A'; chip.style.borderColor = 'rgba(255,77,106,.4)'; chip.style.background = 'rgba(255,77,106,.1)';
+          if (!bs.pode_usar) _mostrarOverlayUpgrade(bs);
+        }
+      } catch(e) { /* billing opcional */ }
+    }, 1800);
     if(upData.meta_diaria && upData.meta_diaria !== 150){
       META_DIARIA=upData.meta_diaria; localStorage.setItem('meta',META_DIARIA);
     } else {
@@ -6014,6 +6084,101 @@ setTimeout(function(){
 (function(){
   var ni = document.getElementById('ni-corrida');
   if(ni) ni.addEventListener('click', function(){ setTimeout(carregarCorrida, 200); });
+})();
+</script>
+<script>
+/* ════ BILLING UI ════ */
+function _mostrarOverlayUpgrade(bs){
+  if(document.getElementById('upgrade-overlay')) return;
+  bs = bs || window._billingStatus || {};
+  let totalReg = 0, nLanc = 0;
+  try { const lc = window._todosLanc || []; nLanc = lc.length; totalReg = lc.filter(l=>l.tipo==='ganho').reduce((s,l)=>s+(+l.valor||0),0); } catch(e){}
+  const ov = document.createElement('div');
+  ov.id = 'upgrade-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9800;background:linear-gradient(180deg,#07090d,#0d1410);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;overflow-y:auto';
+  ov.innerHTML = `
+    <div style="width:72px;height:72px;border-radius:50%;overflow:hidden;margin-bottom:22px;box-shadow:0 0 50px rgba(240,180,41,.3)"><img src="/static/icon-512.png" style="width:100%;height:100%;object-fit:cover"></div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;text-transform:uppercase;line-height:1.1;margin-bottom:12px;color:#f3f4f6">Seu acesso expirou</div>
+    <div style="font-size:14px;color:rgba(238,233,224,.55);max-width:300px;line-height:1.6;margin-bottom:20px">Mas <b style="color:#00D897">tudo que você registrou está salvo</b>.${nLanc>0?` Já são ${nLanc} lançamentos no seu histórico.`:''}</div>
+    <button onclick="_irCheckout('fundador')" style="width:100%;max-width:320px;padding:17px;background:#F0B429;border:none;border-radius:14px;color:#0a0a0a;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:14px">Assinar Fundador — R$19/mês</button>
+    <button onclick="document.getElementById('upgrade-overlay').remove();window._modoLeitura=true" style="background:none;border:none;color:rgba(255,255,255,.35);font-size:12.5px;cursor:pointer;text-decoration:underline">Ver dashboard (somente leitura)</button>`;
+  document.body.appendChild(ov);
+}
+
+function _abrirModalPlanos(){
+  if(window._planoAtivo) return;
+  if(document.getElementById('modal-planos')) return;
+  const m = document.createElement('div');
+  m.id = 'modal-planos';
+  m.style.cssText = 'position:fixed;inset:0;z-index:9900;background:rgba(0,0,0,.82);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:18px;overflow-y:auto';
+  m.innerHTML = `
+    <div style="background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:28px 22px;max-width:380px;width:100%;max-height:92vh;overflow-y:auto">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;text-transform:uppercase;margin-bottom:4px;color:#f3f4f6">Plano Fundador</div>
+      <div style="font-size:12px;color:rgba(238,233,224,.45);margin-bottom:22px">Cancele quando quiser. Seus dados são sempre seus.</div>
+      <div style="border:1.5px solid rgba(240,180,41,.55);border-radius:18px;padding:22px;background:linear-gradient(135deg,rgba(240,180,41,.08),transparent)">
+        <div style="display:flex;align-items:baseline;gap:8px;justify-content:center;margin-bottom:6px"><span style="font-size:15px;color:rgba(255,255,255,.3);text-decoration:line-through">R$29</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:46px;font-weight:900;color:#F0B429">R$19</span><span style="font-size:13px;color:rgba(238,233,224,.5)">/mês</span></div>
+        <div style="font-size:11px;color:#00D897;text-align:center;margin-bottom:16px">🔒 preço travado por 1 ano</div>
+        <div style="font-size:12.5px;color:rgba(238,233,224,.6);line-height:2">✓ Gestor com IA ilimitado<br>✓ Histórico completo<br>✓ Plano financeiro inteligente<br>✓ Previsão do tempo<br>✓ Modo carro e moto<br>✓ Alertas de vencimento<br>✓ Card do Dia compartilhável</div>
+        <button onclick="_irCheckout('fundador')" style="width:100%;margin-top:18px;padding:15px;background:#F0B429;border:none;border-radius:12px;color:#0a0a0a;font-size:15px;font-weight:800;cursor:pointer">Garantir minha vaga</button>
+      </div>
+      <button onclick="document.getElementById('modal-planos').remove()" style="width:100%;padding:12px;margin-top:12px;background:none;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer">Agora não</button>
+    </div>`;
+  document.body.appendChild(m);
+}
+
+async function _irCheckout(plano){
+  let email = '';
+  try { const {data} = await _supa.auth.getUser(); email = data?.user?.email || ''; } catch(e){}
+  if(!email){ email = prompt('Seu email para o pagamento:') || ''; }
+  if(!email || !email.includes('@')){ alert('Email inválido'); return; }
+  try {
+    const r = await authFetch(API+'/billing/criar-checkout', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({plano_id:plano||'fundador', email})});
+    const d = await r.json();
+    if (d.init_point) { window.location.href = d.init_point; }
+    else { alert(d.erro || 'Não foi possível iniciar o pagamento. Tente de novo.'); }
+  } catch(e) { alert('Falha de conexão. Tente de novo.'); }
+}
+</script>
+<script>
+async function _trocarVeiculo(tipo){
+  try{
+    await authFetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tipo_veiculo:tipo})});
+    localStorage.setItem('pia_veiculo_'+(window.MID||''),tipo);
+    ['carro','moto','ambos'].forEach(function(x){
+      var b=document.getElementById('pv-'+x); if(!b)return;
+      var on=x===tipo;
+      b.style.background=on?'rgba(240,180,41,.2)':'rgba(255,255,255,.04)';
+      b.style.border=on?'1.5px solid rgba(240,180,41,.5)':'1px solid rgba(255,255,255,.1)';
+      b.style.color=on?'#F0B429':'#94a3b8';
+    });
+    var btn=document.getElementById('pv-'+tipo);
+    if(btn){var o=btn.textContent;btn.textContent='✅';setTimeout(function(){btn.textContent=o},900);}
+  }catch(e){ alert('Erro ao salvar. Tente de novo.'); }
+}
+</script>
+<script>
+async function carregarGanhosVeiculo(){
+  try{
+    if(!window.MID) return;
+    const veiculoUser = localStorage.getItem('pia_veiculo_'+(window.MID||'')) || 'carro';
+    const card = document.getElementById('card-veiculos');
+    if(!card) return;
+    // Só mostra o comparativo para quem trabalha com ambos
+    if(veiculoUser !== 'ambos'){ card.style.display='none'; return; }
+    const r = await authFetch(API+'/ganhos-por-veiculo/'+MID);
+    const d = await r.json();
+    // Só exibe se houver algum ganho classificado
+    if((d.carro||0) + (d.moto||0) <= 0){ card.style.display='none'; return; }
+    const fmt0 = v => 'R$ ' + Math.round(v||0).toLocaleString('pt-BR');
+    document.getElementById('veic-carro').textContent = fmt0(d.carro);
+    document.getElementById('veic-moto').textContent = fmt0(d.moto);
+    card.style.display = 'block';
+  }catch(e){ console.warn('ganhos veiculo:', e); }
+}
+// Carrega quando abre a aba Histórico
+(function(){
+  var ni = document.getElementById('ni-historico');
+  if(ni) ni.addEventListener('click', function(){ setTimeout(carregarGanhosVeiculo, 250); });
 })();
 </script>
 </body>

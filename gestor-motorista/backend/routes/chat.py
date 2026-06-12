@@ -89,6 +89,17 @@ async def chat_setup(dados: dict = Body(...), uid: str = Depends(get_uid_from_to
         log_erro("setup_parse_erro", erro=e)
         return {"resposta": "Não entendi bem. Me conta de novo?", "setup_completo": False}
 
+def _veiculo_ativo(mid: str):
+    """Veículo atual do motorista para marcar o lançamento. 'ambos' → None (não força)."""
+    try:
+        from core.supabase_client import supabase as _sb
+        r = _sb.table("motoristas").select("tipo_veiculo").eq("id", mid).execute()
+        v = (r.data or [{}])[0].get("tipo_veiculo")
+        return v if v in ("carro", "moto") else None
+    except Exception:
+        return None
+
+
 @router.post("/chat")
 async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
     # uid vem do token JWT verificado — ignora qualquer motorista_id do body
@@ -497,6 +508,10 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
                     try:
                         supabase.table("lancamentos").delete().eq("motorista_id", motorista_id).eq("tipo", "ganho").eq("plataforma", dados["plataforma"]).eq("data", data_final).execute()
                     except: pass
+                try:
+                    _veic = _veiculo_ativo(motorista_id)
+                    if _veic: dados["veiculo"] = _veic
+                except Exception: pass
                 supabase.table("lancamentos").insert(dados).execute()
                 acoes_executadas.append("lancamento_registrado")
                 # AUTO-ABATE: se for despesa, verifica se existe conta pendente com nome similar e abate

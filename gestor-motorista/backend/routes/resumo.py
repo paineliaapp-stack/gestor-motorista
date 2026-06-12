@@ -137,3 +137,34 @@ async def historico_semana(motorista_id: str, uid: str = Depends(get_uid_from_to
         "dias_fracos": dias_fracos,
         "meta_diaria_configurada": meta_diaria
     }
+
+
+@router.get("/ganhos-por-veiculo/{motorista_id}")
+async def ganhos_por_veiculo(motorista_id: str, mes: Optional[int] = None, ano: Optional[int] = None, uid: str = Depends(get_uid_from_token)):
+    """Quanto o motorista fez em cada veículo (carro/moto) no mês. Para o modo motoboy."""
+    if motorista_id != uid:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    if not _valid_uuid(motorista_id):
+        return {"erro": "ID inválido"}
+    hoje = hoje_brasil()
+    mes = mes or hoje.month
+    ano = ano or hoje.year
+    inicio = f"{ano}-{mes:02d}-01"
+    fim = f"{ano}-{mes:02d}-31"
+    try:
+        r = supabase.table("lancamentos").select("valor,tipo,veiculo") \
+            .eq("motorista_id", motorista_id).eq("tipo", "ganho") \
+            .gte("data", inicio).lte("data", fim).execute()
+        carro, moto, sem = 0.0, 0.0, 0.0
+        for l in (r.data or []):
+            v = float(l.get("valor") or 0)
+            veic = (l.get("veiculo") or "").lower()
+            if veic == "moto": moto += v
+            elif veic == "carro": carro += v
+            else: sem += v
+        return {"carro": round(carro, 2), "moto": round(moto, 2),
+                "sem_classificacao": round(sem, 2),
+                "total": round(carro + moto + sem, 2)}
+    except Exception as e:
+        log_erro("ganhos_veiculo_erro", erro=e)
+        return {"carro": 0, "moto": 0, "sem_classificacao": 0, "total": 0}
