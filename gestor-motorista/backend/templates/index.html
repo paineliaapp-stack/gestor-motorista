@@ -354,20 +354,18 @@ const _supa = supabase.createClient(
 @keyframes sp-p{0%,100%{opacity:.2;transform:scale(.65)}50%{opacity:1;transform:scale(1.2)}}
 </style>
 <script>
-// iOS PWA standalone: forca reload ao reabrir o app.
-// localStorage guarda o timestamp do ultimo fechamento.
-// Se a pagina carregou mas o timestamp e' "velho" (>3s), e' uma reabertura — reload.
 (function(){
   var KEY = 'pwa_ts';
   var now = Date.now();
   var last = parseInt(localStorage.getItem(KEY) || '0', 10);
-  // Salva timestamp agora
   localStorage.setItem(KEY, now);
-  // Atualiza timestamp ao fechar/sair
-  window.addEventListener('pagehide', function(){
-    localStorage.setItem(KEY, Date.now());
+  // iOS standalone nao dispara pagehide — usa visibilitychange e freeze
+  function _salva(){ localStorage.setItem(KEY, Date.now()); }
+  window.addEventListener('pagehide', _salva);
+  window.addEventListener('freeze', _salva);
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'hidden') _salva();
   });
-  // Se passou mais de 3 segundos desde o ultimo registro = reabertura = reload
   if(last > 0 && (now - last) > 1000){
     location.reload(true);
   }
