@@ -330,10 +330,9 @@ const _supa = supabase.createClient(
 
 
 <!-- ════ ABERTURA:INICIO — BLOCO PROTEGIDO. NÃO EDITAR FORA DAQUI ════
-     iOS não dispara canplaythrough de forma confiável até o app voltar do
-     background. Por isso NÃO esperamos evento nenhum: ao tocar, damos play()
-     direto — o gesto do usuário satisfaz a política do iOS e o vídeo faz
-     streaming na hora. A logo (poster) cobre qualquer micro-espera. Só mobile. -->
+     PWA iOS reusa o <video> entre aberturas (fica no estado da sessao anterior).
+     Por isso: (1) resetamos o video na entrada; (2) so ouvimos 'ended' DEPOIS
+     que o usuario tocou; (3) play() direto no gesto. Nunca trava. Só mobile. -->
 <div id="abertura" style="display:none;position:fixed;inset:0;z-index:99999;background:#000;overflow:hidden">
   <video id="abertura-vid" playsinline webkit-playsinline preload="auto" poster="/static/abertura-poster.jpg"
          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
@@ -363,7 +362,10 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
   var v = document.getElementById('abertura-vid');
   var welcome = document.getElementById('abertura-welcome');
   var skip = document.getElementById('abertura-skip');
-  var fechado = false;
+  var fechado = false, tocou = false;
+
+  // RESET na entrada: limpa qualquer estado antigo que o PWA tenha guardado
+  try { v.pause(); v.currentTime = 0; v.load(); } catch(e) {}
 
   function fechar(){
     if (fechado) return; fechado = true;
@@ -373,31 +375,30 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
     setTimeout(function(){ box.remove(); }, 550);
   }
   window._fecharAbertura = fechar;
-  v.addEventListener('ended', fechar);
 
-  // O toque é o gesto que o iOS exige. Damos play() IMEDIATAMENTE — sem esperar
-  // evento de carregamento (que no iOS pode nunca vir até voltar do background).
-  // O vídeo faz streaming; o iOS começa a tocar assim que tem os primeiros frames.
+  // 'ended' SÓ fecha se o usuario realmente tocou e o video rodou —
+  // evita que um 'ended' fantasma da sessao anterior trave a tela
+  v.addEventListener('ended', function(){ if (tocou) fechar(); });
+
   function tocar(){
-    if (fechado) return;
-    // Esconde a tela de boas-vindas só DEPOIS que o vídeo realmente começar
-    var jaComecou = false;
+    if (fechado || tocou) return;
+    tocou = true;
+
     v.addEventListener('playing', function(){
-      if (jaComecou) return; jaComecou = true;
       welcome.style.transition = 'opacity .35s ease';
       welcome.style.opacity = '0';
       setTimeout(function(){ welcome.style.display = 'none'; }, 350);
       skip.style.display = 'block';
     }, { once: true });
 
+    // Garante começo do zero mesmo se o elemento foi reusado
+    try { v.currentTime = 0; } catch(e) {}
     v.muted = false;
-    v.currentTime = 0;
     var p = v.play();
     if (p && p.catch) {
       p.catch(function(){
-        // Se com som falhar, tenta mudo (iOS sempre deixa mudo no gesto)
         v.muted = true;
-        v.play().catch(function(){});
+        v.play().catch(function(){ /* nao trava: deixa a tela de boas-vindas */ });
       });
     }
   }
