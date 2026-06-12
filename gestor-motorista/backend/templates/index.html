@@ -343,7 +343,7 @@ const _supa = supabase.createClient(
   <!-- Tela Bem-vindo (a logo é o botão que dá play com som) -->
   <div id="abertura-welcome" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer">
     <div style="position:absolute;top:11%;left:0;right:0;text-align:center;color:rgba(255,255,255,.5);font-size:22px;font-weight:300;letter-spacing:.3px">Bem-vindo!</div>
-    <img id="abertura-logo" src="/static/icon-512.png" alt="Painel.IA" style="width:148px;height:148px;border-radius:34px;box-shadow:0 0 55px rgba(240,180,41,.5);animation:ab-pulse 2s ease-in-out infinite">
+    <img id="abertura-logo" src="/static/icon-512.png" alt="Painel.IA" style="width:118px;height:118px;border-radius:50%;object-fit:cover;box-shadow:0 0 50px rgba(240,180,41,.5);animation:ab-pulse 2s ease-in-out infinite">
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:800;color:#fff;margin-top:26px">Painel<span style="color:#F0B429">.IA</span></div>
     <div style="color:rgba(255,255,255,.4);font-size:15px;margin-top:4px">Gestão financeira para motoristas</div>
     <div id="abertura-hint" style="position:absolute;bottom:13%;left:0;right:0;text-align:center;color:rgba(240,180,41,.85);font-size:13px;font-weight:600;animation:ab-pulse 2s ease-in-out infinite">toque para começar ▶</div>
@@ -354,6 +354,7 @@ const _supa = supabase.createClient(
 <style>@keyframes ab-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.82;transform:scale(1.04)}}
 @media (prefers-reduced-motion: reduce){ #abertura-logo,#abertura-hint{animation:none} }</style>
 <script>
+window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
 (function(){
   var box = document.getElementById('abertura');
   if (!box) return;
@@ -5396,9 +5397,10 @@ async function checkAuth(){
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.style.display='none';
     // Aguarda splash terminar antes de carregar o dashboard
-    var _runInit1=function(){ if(typeof init==='function') init(); setTimeout(()=>resumoSemanal(),3000); setTimeout(()=>_checkTourParaUsuario(),2000); };
-    if(window._splashDone){ _runInit1(); }
-    else{ document.addEventListener('splashDone',_runInit1,{once:true}); }
+    // Dados carregam já, em paralelo com a abertura
+    if(typeof init==='function') init();
+    setTimeout(()=>resumoSemanal(),3000);
+    setTimeout(()=>_checkTourParaUsuario(),2000);
 
   } else {
     const telaLogin = document.getElementById('tela-login');
@@ -5426,9 +5428,9 @@ _supa.auth.onAuthStateChange((event, session)=>{
       });
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.remove();
-    var _runInit2=function(){ if(typeof init==='function') init(); };
-    if(window._splashDone){ _runInit2(); }
-    else{ document.addEventListener('splashDone',_runInit2,{once:true}); }
+    // Dados carregam IMEDIATAMENTE, em paralelo com o vídeo de abertura —
+    // quando o usuário termina de ver a abertura, o dashboard já está pronto.
+    if(typeof init==='function') init();
   }
   if(event === 'SIGNED_OUT'){
     window.MID = null;
@@ -5484,9 +5486,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(upData.comb_diario){ atualizarExibicaoMeta(META_DIARIA, upData.comb_diario); }
     const tl = document.getElementById('tela-login');
     if(tl) tl.remove();
-    var _runInit3=function(){ if(typeof init==='function') init(); };
-    if(window._splashDone){ _runInit3(); }
-    else{ document.addEventListener('splashDone',_runInit3,{once:true}); }
+    if(typeof init==='function') init();
     // Detecta novo usuário ou setup incompleto (via DOMContentLoaded)
     // Só ativa setup se explicitamente false E não tem histórico de uso
     const _temHistChat2 = window.chatHistory && window.chatHistory.length > 0;
