@@ -343,9 +343,7 @@ const _supa = supabase.createClient(
   <!-- Tela Bem-vindo (a logo é o botão que dá play com som) -->
   <div id="abertura-welcome" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer">
     <div style="position:absolute;top:11%;left:0;right:0;text-align:center;color:rgba(255,255,255,.5);font-size:22px;font-weight:300;letter-spacing:.3px">Bem-vindo!</div>
-    <div id="abertura-logo" style="width:150px;height:150px;border-radius:50%;background:#F0B429;display:flex;align-items:center;justify-content:center;box-shadow:0 0 50px rgba(240,180,41,.55);animation:ab-pulse 2s ease-in-out infinite">
-      <span style="font-family:'Barlow Condensed',sans-serif;font-size:90px;font-weight:900;color:#0a0a0a;line-height:1">P</span>
-    </div>
+    <img id="abertura-logo" src="/static/icon-512.png" alt="Painel.IA" style="width:148px;height:148px;border-radius:34px;box-shadow:0 0 55px rgba(240,180,41,.5);animation:ab-pulse 2s ease-in-out infinite">
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:800;color:#fff;margin-top:26px">Painel<span style="color:#F0B429">.IA</span></div>
     <div style="color:rgba(255,255,255,.4);font-size:15px;margin-top:4px">Gestão financeira para motoristas</div>
     <div id="abertura-hint" style="position:absolute;bottom:13%;left:0;right:0;text-align:center;color:rgba(240,180,41,.85);font-size:13px;font-weight:600;animation:ab-pulse 2s ease-in-out infinite">toque para começar ▶</div>
@@ -1124,22 +1122,42 @@ function _getSessionOnce() {
   if(!_sessionPromise) _sessionPromise = _supa.auth.getSession();
   return _sessionPromise;
 }
-async function authFetch(url, options={}) {
-  try {
-    // Tenta sessão já disponível sem esperar
-    let session = await Promise.race([
+// Token em cache — getSession() é lento e era chamado em TODA requisição
+let _tokenCache = null, _tokenCacheAt = 0;
+async function _getToken(){
+  // Reaproveita o token por 30s (ele dura ~1h) — evita getSession() repetido
+  if(_tokenCache && (Date.now() - _tokenCacheAt) < 30000) return _tokenCache;
+  try{
+    const session = await Promise.race([
       _supa.auth.getSession(),
-      new Promise(res => setTimeout(() => res(null), 2000)) // timeout 2s
+      new Promise(res => setTimeout(() => res(null), 2000))
     ]);
     const token = session?.data?.session?.access_token;
-    if(token) {
-      const headers = { 'Content-Type': 'application/json', ...(options.headers||{}), 'Authorization': 'Bearer '+token };
-      return fetch(url, { ...options, headers });
-    }
-  } catch(e) { console.warn('authFetch getSession erro:', e); }
-  // Fallback sem token (não quebra o fluxo — backend retornará 401 se necessário)
+    if(token){ _tokenCache = token; _tokenCacheAt = Date.now(); }
+    return token || null;
+  }catch(e){ console.warn('getToken:', e); return null; }
+}
+
+// Deduplicação: GETs idênticos disparados ao mesmo tempo viram UMA requisição
+const _inflight = {};
+async function authFetch(url, options={}) {
+  const metodo = (options.method||'GET').toUpperCase();
+  const token = await _getToken();
   const headers = { 'Content-Type': 'application/json', ...(options.headers||{}) };
-  return fetch(url, { ...options, headers });
+  if(token) headers['Authorization'] = 'Bearer '+token;
+
+  // Só deduplica GET sem corpo (leituras) — escritas sempre passam
+  if(metodo === 'GET' && _inflight[url]){
+    // Clona a resposta em andamento para quem chegou junto
+    return _inflight[url].then(r => r.clone());
+  }
+  const p = fetch(url, { ...options, headers });
+  if(metodo === 'GET'){
+    _inflight[url] = p;
+    p.finally(() => { setTimeout(() => { delete _inflight[url]; }, 50); });
+    return p.then(r => r.clone());
+  }
+  return p;
 }
 // Data atual no horário de Brasília (UTC-3)
 function hojeStr(){const d=new Date(Date.now()-3*60*60*1000);return d.toISOString().slice(0,10);}
@@ -2335,7 +2353,16 @@ async function atualizarMeta(novaMeta){
   return true;
 }
 
+let _loadDashAt = 0, _loadDashRunning = false;
 async function loadDash(){
+  // Anti-spam: ignora chamadas repetidas em menos de 800ms (evita 8x /resumo na abertura)
+  const agora = Date.now();
+  if(_loadDashRunning) return;
+  if(agora - _loadDashAt < 800) return;
+  _loadDashAt = agora; _loadDashRunning = true;
+  try { await _loadDashInterno(); } finally { _loadDashRunning = false; }
+}
+async function _loadDashInterno(){
   try { _atualizarBotaoNotif(); } catch(e) {}
   if(!MID && window.MID) MID = window.MID;
   if(!MID)return;
