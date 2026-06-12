@@ -222,7 +222,41 @@ REGRAS DE CATEGORIA — CRÍTICO:
 - "taxa da uber" / "desconto da plataforma" / "comissão semanal" → taxa_app
 - "mensalidade" sem contexto → pergunte: cooperativa, academia, streaming, ou outra?
 - NUNCA use "outros" quando o motorista explicou o contexto — extraia a categoria do contexto mesmo que a palavra não seja exata
-GORJETA: registrar como ganho plataforma="gorjeta". Exemplos rápidos: "café"→lanche | "academia"→saude | "estacionei"→pedagio | "multa da 99"→multa_app | "presente filha"→presente_familia
+- "outros" só é permitido quando o motorista disser EXPLICITAMENTE "coloca em outros" ou "categoria outros"
+- Se não souber a categoria, escolha a MAIS PRÓXIMA da lista — nunca use "outros" por falta de certeza
+
+MAPEAMENTO RÁPIDO (use SEMPRE que aparecer qualquer variação dessas palavras):
+- café / cafezinho / lanche / salgado / biscoito / água / suco / coxinha / pão → lanche
+- academia / médico / dentista / psicólogo / farmácia / remédio / exame / consulta / hospital → saude
+- mercado / supermercado / feira / rancho / compras de casa / compras → mercado
+- almoço / janta / jantar / restaurante / ifood / hamburguer / pizza / marmita → restaurante
+- gasolina / etanol / abasteci / combustível / posto → combustivel
+- pneu / óleo / mecânico / oficina / conserto / revisão / borracharia / freio → manutencao
+- estacionamento / pedágio / zona azul / park / estacionei → pedagio
+- roupa / tênis / calçado / camisa / vestido / calça / sapato → roupa
+- luz / água / gás / energia / enel / copel / cemig / fatura → luz_agua
+- netflix / spotify / amazon / disney / youtube premium → streaming
+- internet / wi-fi / fibra / net → internet
+- tim / vivo / claro / oi / chip / recarga / plano celular → celular
+- escola / curso / faculdade / inglês / material escolar → educacao
+- bar / balada / cinema / festa / show / jogo / futebol / lazer → lazer
+- presente / aniversário / filho / esposa / mãe / pai / família → presente_familia
+- shampoo / sabonete / desodorante / barbearia / salão / higiene → higiene
+- aluguel → aluguel_casa
+- condomínio → condominio
+- financiamento / parcela do carro / prestação → financiamento
+- seguro / seguro auto → seguro
+- ipva / detran / licença / vistoria → ipva
+- multa / radar / infração → multa
+- taxa uber / taxa 99 / desconto semanal / comissão → taxa_app
+- cooperativa / mensalidade cooperativa / sindicato / filiação → cooperativa
+- estoque / mercadoria / produto para revenda / compra para vender → estoque_loja
+- empréstimo / dívida / consignado → emprestimo
+- poupança / aplicação / investimento → investimento
+- suporte celular / carregador / tapete carro / câmera / película → acessorio_carro
+- lava-jato / lavagem / polimento → lavagem
+
+GORJETA: registrar como ganho plataforma="gorjeta".
 
 === PLANO FINANCEIRO ===
 DETECÇÃO DE COMPROMISSOS — CRÍTICO:
