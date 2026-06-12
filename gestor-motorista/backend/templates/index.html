@@ -330,16 +330,16 @@ const _supa = supabase.createClient(
 
 
 <!-- ════ ABERTURA:INICIO — BLOCO PROTEGIDO. NÃO EDITAR FORA DAQUI ════
-     O vídeo (alta qualidade) baixa 100% em segundo plano enquanto a tela
-     "Bem-vindo" está visível. Ao tocar na logo, ele JÁ ESTÁ PRONTO e toca
-     na hora com som. Se ainda estiver baixando, mostra "carregando" e toca
-     sozinho assim que terminar — NUNCA pula direto pro dashboard. Só mobile. -->
+     iOS não dispara canplaythrough de forma confiável até o app voltar do
+     background. Por isso NÃO esperamos evento nenhum: ao tocar, damos play()
+     direto — o gesto do usuário satisfaz a política do iOS e o vídeo faz
+     streaming na hora. A logo (poster) cobre qualquer micro-espera. Só mobile. -->
 <div id="abertura" style="display:none;position:fixed;inset:0;z-index:99999;background:#000;overflow:hidden">
-  <video id="abertura-vid" playsinline preload="auto" poster="/static/abertura-poster.jpg"
-         style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .4s">
+  <video id="abertura-vid" playsinline webkit-playsinline preload="auto" poster="/static/abertura-poster.jpg"
+         style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
     <source src="/static/abertura.mp4" type="video/mp4">
   </video>
-  <div id="abertura-welcome" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer">
+  <div id="abertura-welcome" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer;z-index:2">
     <div style="position:absolute;top:11%;left:0;right:0;text-align:center;color:rgba(255,255,255,.5);font-size:22px;font-weight:300;letter-spacing:.3px">Bem-vindo!</div>
     <img id="abertura-logo" src="/static/icon-512.png" alt="Painel.IA" style="width:118px;height:118px;border-radius:50%;object-fit:cover;box-shadow:0 0 50px rgba(240,180,41,.5);animation:ab-pulse 2s ease-in-out infinite">
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:800;color:#fff;margin-top:26px">Painel<span style="color:#F0B429">.IA</span></div>
@@ -362,17 +362,8 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
   box.style.display = 'block';
   var v = document.getElementById('abertura-vid');
   var welcome = document.getElementById('abertura-welcome');
-  var hint = document.getElementById('abertura-hint');
   var skip = document.getElementById('abertura-skip');
-  var fechado = false, querTocar = false, pronto = false;
-
-  // Baixa o vídeo INTEIRO em segundo plano, já
-  try { v.load(); } catch(e) {}
-
-  // Marca como pronto quando dá pra tocar até o fim sem parar
-  v.addEventListener('canplaythrough', function(){ pronto = true; if (querTocar) iniciarVideo(); }, { once: true });
-  // Fallback de "pronto": canplay simples também libera (rede mais lenta)
-  v.addEventListener('canplay', function(){ if (!pronto) { pronto = true; if (querTocar) iniciarVideo(); } }, { once: true });
+  var fechado = false;
 
   function fechar(){
     if (fechado) return; fechado = true;
@@ -384,30 +375,33 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
   window._fecharAbertura = fechar;
   v.addEventListener('ended', fechar);
 
-  function iniciarVideo(){
-    welcome.style.transition = 'opacity .35s ease';
-    welcome.style.opacity = '0';
-    setTimeout(function(){ welcome.style.display = 'none'; }, 350);
-    skip.style.display = 'block';
-    v.style.opacity = '1';
-    v.currentTime = 0;
-    v.muted = false;
-    var p = v.play();
-    if (p && p.catch) p.catch(function(){ v.muted = true; v.play(); });
-  }
-
-  // Toque: se já está pronto, toca na hora. Se ainda baixa, avisa e espera —
-  // NUNCA pula pro dashboard.
-  welcome.addEventListener('click', function(){
+  // O toque é o gesto que o iOS exige. Damos play() IMEDIATAMENTE — sem esperar
+  // evento de carregamento (que no iOS pode nunca vir até voltar do background).
+  // O vídeo faz streaming; o iOS começa a tocar assim que tem os primeiros frames.
+  function tocar(){
     if (fechado) return;
-    querTocar = true;
-    if (pronto) {
-      iniciarVideo();
-    } else {
-      hint.textContent = 'carregando vídeo…';
-      // assim que canplay/canplaythrough disparar, iniciarVideo() roda sozinho
+    // Esconde a tela de boas-vindas só DEPOIS que o vídeo realmente começar
+    var jaComecou = false;
+    v.addEventListener('playing', function(){
+      if (jaComecou) return; jaComecou = true;
+      welcome.style.transition = 'opacity .35s ease';
+      welcome.style.opacity = '0';
+      setTimeout(function(){ welcome.style.display = 'none'; }, 350);
+      skip.style.display = 'block';
+    }, { once: true });
+
+    v.muted = false;
+    v.currentTime = 0;
+    var p = v.play();
+    if (p && p.catch) {
+      p.catch(function(){
+        // Se com som falhar, tenta mudo (iOS sempre deixa mudo no gesto)
+        v.muted = true;
+        v.play().catch(function(){});
+      });
     }
-  });
+  }
+  welcome.addEventListener('click', tocar);
 })();
 </script>
 <!-- ════ ABERTURA:FIM ════ -->
