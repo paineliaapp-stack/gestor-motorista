@@ -381,10 +381,26 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
     try { v.pause(); } catch(e) {}
     box.style.opacity = '0';
     box.style.transition = 'opacity .6s ease';
-    setTimeout(function(){ box.remove(); }, 650);
+    setTimeout(function(){ box.style.display = 'none'; }, 650);
   }
   window._fecharAbertura = fechar;
   v.addEventListener('ended', function(){ if (tocou) setTimeout(fechar, 300); });
+
+  // iOS PWA: ao "reabrir" o app, a pagina nao recarrega — so descongela.
+  // pageshow persisted detecta isso e refaz a abertura do zero.
+  window.addEventListener('pageshow', function(ev){
+    if (!ev.persisted) return;
+    fechado = false; tocou = false;
+    box.style.display = 'block';
+    box.style.opacity = '1';
+    box.style.transition = 'none';
+    welcome.style.display = 'flex';
+    welcome.style.opacity = '1';
+    welcome.style.transition = 'none';
+    skip.style.display = 'none';
+    v.style.opacity = '0';
+    try { v.pause(); v.currentTime = 0; v.muted = true; v.load(); } catch(e) {}
+  });
 
   function tocar(){
     if (fechado || tocou) return;
