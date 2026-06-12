@@ -363,9 +363,22 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
   var welcome = document.getElementById('abertura-welcome');
   var skip = document.getElementById('abertura-skip');
   var fechado = false, tocou = false;
+
+  // ── DIAGNÓSTICO TEMPORÁRIO — painel visível no rodapé ──
+  var dbg = document.createElement('div');
+  dbg.style.cssText = 'position:fixed;left:0;right:0;bottom:0;max-height:40vh;overflow:auto;background:rgba(0,0,0,.92);color:#0f0;font:10px monospace;padding:6px;z-index:2147483647;white-space:pre-wrap';
+  document.body.appendChild(dbg);
+  function log(msg){
+    var t = new Date().toISOString().substr(11,12);
+    dbg.textContent += '['+t+'] '+msg+'\n';
+    dbg.scrollTop = dbg.scrollHeight;
+  }
+  log('init — visibilityState='+document.visibilityState);
+
   var v = null;
 
   function criarVideo(){
+    log('criarVideo()');
     if (v) { try { v.pause(); v.removeAttribute('src'); v.load(); v.remove(); } catch(e){} }
     v = document.createElement('video');
     v.setAttribute('playsinline', '');
@@ -382,6 +395,7 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
 
   function fechar(){
     if (fechado) return; fechado = true;
+    log('fechar() chamado');
     try { v.pause(); } catch(e) {}
     box.style.opacity = '0';
     box.style.transition = 'opacity .6s ease';
@@ -390,6 +404,7 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
   window._fecharAbertura = fechar;
 
   function resetar(){
+    log('resetar() chamado');
     fechado = false; tocou = false;
     box.style.display = 'block';
     box.style.opacity = '1';
@@ -399,18 +414,22 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
     welcome.style.transition = 'none';
     skip.style.display = 'none';
     criarVideo();
+    log('resetar() concluido');
   }
 
   // iOS PWA: ao "reabrir" o app a pagina nao recarrega, so descongela.
   // visibilitychange + pageshow cobrem os dois jeitos que isso acontece.
   document.addEventListener('visibilitychange', function(){
+    log('visibilitychange -> '+document.visibilityState+' (fechado='+fechado+')');
     if (document.visibilityState === 'visible' && fechado) resetar();
   });
   window.addEventListener('pageshow', function(ev){
+    log('pageshow persisted='+ev.persisted+' (fechado='+fechado+')');
     if (ev.persisted && fechado) resetar();
   });
 
   function tocar(){
+    log('tocar() chamado (fechado='+fechado+' tocou='+tocou+')');
     if (fechado || tocou) return;
     tocou = true;
     v.style.opacity = '1';
@@ -422,8 +441,9 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
     v.muted = false;
     try { v.currentTime = 0; } catch(e) {}
     var p = v.play();
+    log('v.play() chamado, readyState='+v.readyState);
     if (p && p.catch) {
-      p.catch(function(){ v.muted = true; v.play().catch(function(){}); });
+      p.catch(function(err){ log('play ERRO: '+err.message); v.muted = true; v.play().catch(function(e2){ log('play mudo ERRO: '+e2.message); }); });
     }
   }
   welcome.addEventListener('click', tocar);
