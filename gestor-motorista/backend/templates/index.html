@@ -349,6 +349,9 @@ const _supa = supabase.createClient(
   var ui = document.getElementById('splash-ui');
   var tocado = false;
 
+  // Chrome no iOS: tem "CriOS" no userAgent. Safari não tem.
+  var isChrome = /CriOS/.test(navigator.userAgent);
+
   function _fim(){
     sp.style.transition = 'opacity .4s';
     sp.style.opacity = '0';
@@ -359,7 +362,10 @@ const _supa = supabase.createClient(
     if(tocado) return;
     tocado = true;
 
-    // Esconde UI
+    // Safari iOS — pula direto pro app sem vídeo
+    if(!isChrome){ _fim(); return; }
+
+    // Chrome iOS — esconde UI e toca vídeo
     ui.style.display = 'none';
 
     // Cria vídeo do zero no gesto — iOS exige isso para autoplay+som
