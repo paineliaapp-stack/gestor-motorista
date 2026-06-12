@@ -361,20 +361,24 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
 
   box.style.display = 'block';
   var welcome = document.getElementById('abertura-welcome');
-  var hint = document.getElementById('abertura-hint');
   var skip = document.getElementById('abertura-skip');
   var fechado = false, tocou = false;
+  var v = null;
 
-  // Pre-cria o video JA e comeca a baixar em segundo plano (nao bloqueia o app)
-  var v = document.createElement('video');
-  v.setAttribute('playsinline', '');
-  v.setAttribute('webkit-playsinline', '');
-  v.preload = 'auto';
-  v.muted = true; // mudo permite pre-carregar sem gesto
-  v.src = '/static/abertura.mp4';
-  v.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;opacity:0;transition:opacity .3s';
-  box.insertBefore(v, welcome);
-  try { v.load(); } catch(e) {}
+  function criarVideo(){
+    if (v) { try { v.pause(); v.removeAttribute('src'); v.load(); v.remove(); } catch(e){} }
+    v = document.createElement('video');
+    v.setAttribute('playsinline', '');
+    v.setAttribute('webkit-playsinline', '');
+    v.preload = 'auto';
+    v.muted = true; // mudo permite pre-carregar sem gesto
+    v.src = '/static/abertura.mp4?t=' + Date.now();
+    v.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;opacity:0;transition:opacity .3s';
+    box.insertBefore(v, welcome);
+    try { v.load(); } catch(e) {}
+    v.addEventListener('ended', function(){ if (tocou) setTimeout(fechar, 300); });
+  }
+  criarVideo();
 
   function fechar(){
     if (fechado) return; fechado = true;
@@ -384,12 +388,8 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
     setTimeout(function(){ box.style.display = 'none'; }, 650);
   }
   window._fecharAbertura = fechar;
-  v.addEventListener('ended', function(){ if (tocou) setTimeout(fechar, 300); });
 
-  // iOS PWA: ao "reabrir" o app, a pagina nao recarrega — so descongela.
-  // pageshow persisted detecta isso e refaz a abertura do zero.
-  window.addEventListener('pageshow', function(ev){
-    if (!ev.persisted) return;
+  function resetar(){
     fechado = false; tocou = false;
     box.style.display = 'block';
     box.style.opacity = '1';
@@ -398,8 +398,16 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
     welcome.style.opacity = '1';
     welcome.style.transition = 'none';
     skip.style.display = 'none';
-    v.style.opacity = '0';
-    try { v.pause(); v.currentTime = 0; v.muted = true; v.load(); } catch(e) {}
+    criarVideo();
+  }
+
+  // iOS PWA: ao "reabrir" o app a pagina nao recarrega, so descongela.
+  // visibilitychange + pageshow cobrem os dois jeitos que isso acontece.
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState === 'visible' && fechado) resetar();
+  });
+  window.addEventListener('pageshow', function(ev){
+    if (ev.persisted && fechado) resetar();
   });
 
   function tocar(){
@@ -422,6 +430,7 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
 })();
 </script>
 <!-- ════ ABERTURA:FIM ════ -->
+
 
 
 <div id="tela-login" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:0">
