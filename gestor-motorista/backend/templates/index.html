@@ -330,63 +330,6 @@ const _supa = supabase.createClient(
 if (typeof window._atualizarBotaoNotif !== 'function') { window._atualizarBotaoNotif = function(){}; }
 if (typeof window._registrarPushSilencioso !== 'function') { window._registrarPushSilencioso = function(){ return Promise.resolve(); }; }
 </script>
-<script>
-// ════ DIAGNÓSTICO TEMPORÁRIO — remover depois ════
-(function(){
-  var logs = [];
-  var t0 = Date.now();
-  function ms(){ return (Date.now()-t0) + 'ms'; }
-  window._diag = function(msg){ logs.push('['+ms()+'] '+msg); render(); };
-
-  function painel(){
-    var d = document.getElementById('diag-painel');
-    if(!d){
-      d = document.createElement('div');
-      d.id = 'diag-painel';
-      d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;max-height:45vh;overflow:auto;z-index:2147483647;background:rgba(0,0,0,.92);color:#0f0;font:11px/1.4 monospace;padding:10px;border-top:2px solid #0f0;white-space:pre-wrap;word-break:break-word';
-      var btn = document.createElement('button');
-      btn.textContent = '✕ fechar diagnóstico';
-      btn.style.cssText = 'position:sticky;top:0;float:right;background:#222;color:#fff;border:1px solid #555;border-radius:6px;padding:4px 10px;font-size:12px';
-      btn.onclick = function(){ d.remove(); };
-      d.appendChild(btn);
-      (document.body||document.documentElement).appendChild(d);
-    }
-    return d;
-  }
-  function render(){
-    var d = painel();
-    var txt = logs.join('\n');
-    // mantém o botão, atualiza o texto
-    d.childNodes.forEach && d.childNodes.forEach(function(n){ if(n.nodeType===3) n.remove(); });
-    var span = d.querySelector('.diag-txt');
-    if(!span){ span = document.createElement('div'); span.className='diag-txt'; d.appendChild(span); }
-    span.textContent = txt;
-  }
-
-  // 1. Captura TODO erro de JavaScript
-  window.addEventListener('error', function(e){
-    window._diag('❌ ERRO: ' + (e.message||e.error) + ' @ ' + (e.filename||'').split('/').pop() + ':' + e.lineno);
-  });
-  window.addEventListener('unhandledrejection', function(e){
-    window._diag('❌ PROMISE: ' + (e.reason && (e.reason.message||e.reason)));
-  });
-
-  // 2. Marcos do carregamento
-  window._diag('página iniciou');
-  document.addEventListener('DOMContentLoaded', function(){ window._diag('DOM pronto'); });
-  window.addEventListener('load', function(){ window._diag('load completo'); });
-
-  // 3. Detector de TRAVA: se em 12s o dashboard não carregou os dados, avisa
-  setTimeout(function(){
-    var hero = document.getElementById('hero-lucro');
-    var carregou = hero && !/Carregando|R\$ 0,00/.test(hero.textContent);
-    var sub = document.getElementById('dash-sub');
-    window._diag('⏱ 12s — hero-lucro="' + (hero?hero.textContent:'?') + '" | sub="' + (sub?sub.textContent:'?') + '"');
-    window._diag('MID=' + (window.MID||'NULO') + ' | _billingStatus=' + (window._billingStatus?'ok':'nulo'));
-    window._diag('init rodou? _initConcluido=' + (window._initConcluido||false));
-  }, 12000);
-})();
-</script>
 </head>
 <body>
 
@@ -2441,7 +2384,6 @@ async function loadDash(){
   try { await _loadDashInterno(); } finally { _loadDashRunning = false; }
 }
 async function _loadDashInterno(){
-  try{ window._diag && window._diag('loadDash iniciou'); }catch(e){}
   try { _atualizarBotaoNotif(); } catch(e) {}
   if(!MID && window.MID) MID = window.MID;
   if(!MID)return;
@@ -3070,7 +3012,6 @@ async function loadCorrida(){
 let _initRodando = false;
 let _initConcluido = false;
 async function init(){
-  try{ window._diag && window._diag('init() começou, MID='+(window.MID||'nulo')); }catch(e){}
   // Garante que MID está sincronizado
   if(!MID && window.MID) MID = window.MID;
 
@@ -3227,7 +3168,6 @@ async function init(){
 
   _initRodando = false;
   _initConcluido = true;
-  try{ window._diag && window._diag('✅ init() CONCLUÍDO'); }catch(e){}
   try{ if(typeof _registrarPushSilencioso==='function') setTimeout(_registrarPushSilencioso, 2000); }catch(e){}
 }
 // init() chamado após todos os scripts
