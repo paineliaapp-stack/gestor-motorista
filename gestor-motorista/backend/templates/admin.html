@@ -591,6 +591,28 @@ async function resolverTicket(id) {
   }
 }
 
+// Inicialização — usa token salvo ou mostra tela de login
+(function init(){
+  const saved = sessionStorage.getItem('admin_token');
+  if(saved){
+    ADMIN_TOKEN = saved;
+    iniciar();
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+})();
+
+// Salva token no sessionStorage ao entrar
+const _entrarOriginal = entrar;
+window.entrar = function(){
+  const tok = document.getElementById('tokenInput').value.trim();
+  if(!tok) return;
+  sessionStorage.setItem('admin_token', tok);
+  ADMIN_TOKEN = tok;
+  document.getElementById('loginErr').style.display = 'none';
+  iniciar();
+};
 </script>
 </body>
 </html>
