@@ -1,75 +1,315 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Painel.IA — Admin</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
-:root{--bg:#07090d;--card:#0d1117;--line:rgba(255,255,255,.08);--tx:#EEE9E0;--mt:rgba(238,233,224,.45);--am:#F0B429;--gn:#00D897;--rd:#FF4560}
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,sans-serif;padding:24px;max-width:1100px;margin:0 auto}
-h1{font-size:22px;margin-bottom:24px;display:flex;align-items:center;gap:10px}
-h1 .p{width:34px;height:34px;border-radius:50%;background:var(--am);color:#000;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:19px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:28px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
-.card .l{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--mt);margin-bottom:6px}
-.card .v{font-size:26px;font-weight:800}
-.card.mrr{border-color:rgba(240,180,41,.4)}.card.mrr .v{color:var(--am);font-size:32px}
-.vagas{margin:8px 0 28px}
-.vt{height:8px;background:rgba(255,255,255,.06);border-radius:6px;overflow:hidden}
-.vf{height:100%;background:linear-gradient(90deg,var(--am),var(--gn));border-radius:6px;transition:width 1s}
-canvas{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:28px;max-height:240px}
-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-th,td{padding:11px 14px;text-align:left;font-size:13px;border-bottom:1px solid var(--line)}
-th{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--mt)}
-.st{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
-.st-trial{background:rgba(78,158,255,.15);color:#4E9EFF}.st-active{background:rgba(0,216,151,.15);color:var(--gn)}
-.st-expired{background:rgba(255,69,96,.12);color:var(--rd)}.st-cancelled{background:rgba(255,255,255,.08);color:var(--mt)}
-select{background:var(--card);border:1px solid var(--line);color:var(--tx);border-radius:8px;padding:7px 10px;margin-bottom:12px}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+
+  .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  .login-box { background: #1a1d2e; border: 1px solid #2d3748; border-radius: 16px; padding: 40px; width: 360px; text-align: center; }
+  .login-box h1 { font-size: 1.4rem; margin-bottom: 8px; color: #fff; }
+  .login-box p { color: #718096; font-size: 0.85rem; margin-bottom: 28px; }
+  .login-box input { width: 100%; background: #0f1117; border: 1px solid #2d3748; border-radius: 8px; padding: 12px 16px; color: #e2e8f0; font-size: 1rem; margin-bottom: 16px; }
+  .login-box input:focus { outline: none; border-color: #6366f1; }
+  .btn { background: #6366f1; color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 1rem; cursor: pointer; width: 100%; font-weight: 600; transition: opacity .2s; }
+  .btn:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-sm { width: auto; padding: 6px 14px; font-size: 0.8rem; border-radius: 6px; }
+  .btn-verde { background: #22c55e; }
+  .btn-vermelho { background: #ef4444; }
+  .btn-cinza { background: #374151; }
+
+  .app { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+  .header h1 { font-size: 1.5rem; color: #fff; }
+  .header span { font-size: 0.8rem; color: #4ade80; background: #052e16; padding: 4px 10px; border-radius: 20px; }
+
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .card { background: #1a1d2e; border: 1px solid #2d3748; border-radius: 12px; padding: 20px; }
+  .card .label { font-size: 0.75rem; color: #718096; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .card .valor { font-size: 2rem; font-weight: 700; color: #fff; }
+  .card .valor.verde { color: #4ade80; }
+  .card .valor.azul { color: #60a5fa; }
+  .card .valor.amarelo { color: #fbbf24; }
+  .card .valor.vermelho { color: #f87171; }
+
+  .section { margin-bottom: 32px; }
+  .section h2 { font-size: 1rem; color: #a0aec0; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { text-align: left; color: #4a5568; font-weight: 600; padding: 8px 12px; border-bottom: 1px solid #2d3748; }
+  td { padding: 10px 12px; border-bottom: 1px solid #1e2435; color: #e2e8f0; vertical-align: middle; }
+  tr:hover td { background: #1e2435; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+  .badge.trial { background: #1e3a5f; color: #60a5fa; }
+  .badge.ativo { background: #052e16; color: #4ade80; }
+  .badge.expirado { background: #2d1b1b; color: #f87171; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .tab { background: #1a1d2e; border: 1px solid #2d3748; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 0.85rem; color: #a0aec0; transition: all .2s; }
+  .tab.ativo { background: #6366f1; border-color: #6366f1; color: #fff; }
+
+  .liberar-form { background: #1a1d2e; border: 1px solid #2d3748; border-radius: 12px; padding: 24px; }
+  .liberar-form h3 { font-size: 0.95rem; margin-bottom: 16px; color: #fff; }
+  .form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 0.75rem; color: #718096; }
+  .form-group input, .form-group select { background: #0f1117; border: 1px solid #2d3748; border-radius: 8px; padding: 8px 12px; color: #e2e8f0; font-size: 0.9rem; min-width: 200px; }
+  .form-group input:focus, .form-group select:focus { outline: none; border-color: #6366f1; }
+
+  .msg { padding: 10px 16px; border-radius: 8px; font-size: 0.85rem; margin-top: 12px; display: none; }
+  .msg.ok { background: #052e16; color: #4ade80; }
+  .msg.err { background: #2d1b1b; color: #f87171; }
+
+  .remarketing-box { background: #1a1d2e; border: 1px solid #2d3748; border-radius: 12px; padding: 24px; }
+  .emails-list { font-family: monospace; font-size: 0.8rem; color: #a0aec0; white-space: pre-wrap; margin-top: 12px; max-height: 200px; overflow-y: auto; }
+
+  .refresh-btn { background: none; border: 1px solid #2d3748; color: #718096; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 0.8rem; }
+  .refresh-btn:hover { border-color: #6366f1; color: #6366f1; }
+  .loading { color: #4a5568; font-size: 0.85rem; padding: 20px; text-align: center; }
 </style>
 </head>
 <body>
-<h1><span class="p">P</span>Painel.IA — Admin</h1>
-<div class="grid" id="cards"></div>
-<div class="vagas"><div style="font-size:12px;color:var(--mt);margin-bottom:6px">Vagas Fundador: <b id="vg-num" style="color:var(--am)">—</b> de 50</div><div class="vt"><div class="vf" id="vg-fill" style="width:0%"></div></div></div>
-<canvas id="chart"></canvas>
-<select id="filtro" onchange="carregarUsuarios()"><option value="all">Todos</option><option value="trial">Trial</option><option value="active">Ativos</option><option value="expired">Expirados</option><option value="cancelled">Cancelados</option></select>
-<table><thead><tr><th>Nome</th><th>Status</th><th>Plano</th><th>Trial expira</th><th>Cadastro</th></tr></thead><tbody id="tbody"></tbody></table>
-<script>
-let TOKEN = sessionStorage.getItem('admin_token');
-if(!TOKEN){ TOKEN = prompt('Token de admin:'); if(TOKEN) sessionStorage.setItem('admin_token', TOKEN); }
-const H = {'X-Admin-Token': TOKEN || ''};
-const fmt = v => 'R$ ' + (v||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
-const fdt = s => s ? new Date(s).toLocaleDateString('pt-BR') : '—';
 
-async function carregar(){
-  const r = await fetch('/admin/metricas',{headers:H});
-  if(r.status===401){ sessionStorage.removeItem('admin_token'); alert('Token inválido'); location.reload(); return; }
-  const d = await r.json();
-  document.getElementById('cards').innerHTML = `
-    <div class="card mrr"><div class="l">MRR</div><div class="v">${fmt(d.mrr)}</div></div>
-    <div class="card"><div class="l">Usuários</div><div class="v">${d.usuarios_total}</div></div>
-    <div class="card"><div class="l">Em trial</div><div class="v" style="color:#4E9EFF">${d.em_trial}</div></div>
-    <div class="card"><div class="l">Ativos</div><div class="v" style="color:var(--gn)">${d.ativos}</div></div>
-    <div class="card"><div class="l">Conversão</div><div class="v">${d.conversao_pct}%</div></div>
-    <div class="card"><div class="l">Novos (7d)</div><div class="v">${d.novos_semana}</div></div>`;
-  document.getElementById('vg-num').textContent = d.vagas_fundador;
-  document.getElementById('vg-fill').style.width = ((50-d.vagas_fundador)/50*100)+'%';
-  new Chart(document.getElementById('chart'),{type:'line',data:{
-    labels:d.por_dia.map(x=>x.dia.slice(5)),
-    datasets:[{label:'Novos usuários',data:d.por_dia.map(x=>x.n),borderColor:'#F0B429',backgroundColor:'rgba(240,180,41,.08)',fill:true,tension:.35,pointRadius:0}]
-  },options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'rgba(238,233,224,.4)',maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'rgba(238,233,224,.4)',precision:0}}}}});
-  carregarUsuarios();
-}
-async function carregarUsuarios(){
-  const st = document.getElementById('filtro').value;
-  const r = await fetch('/admin/usuarios?status='+st+'&limit=50',{headers:H});
-  const d = await r.json();
-  document.getElementById('tbody').innerHTML = (d.usuarios||[]).map(u=>`
-    <tr><td>${u.nome||'—'}</td><td><span class="st st-${u.status}">${u.status}</span></td>
-    <td>${u.plano||'—'}</td><td>${fdt(u.trial_fim)}</td><td>${fdt(u.criado_em)}</td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--mt)">Nenhum usuário</td></tr>';
-}
-carregar();
+<!-- Login -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <h1>⚡ Painel Admin</h1>
+    <p>Painel.IA — Acesso restrito</p>
+    <input type="password" id="tokenInput" placeholder="Token de admin" onkeydown="if(event.key==='Enter')entrar()">
+    <button class="btn" onclick="entrar()">Entrar</button>
+    <div class="msg err" id="loginErr">Token inválido</div>
+  </div>
+</div>
+
+<!-- App -->
+<div class="app" id="app">
+  <div class="header">
+    <h1>⚡ Painel.IA — Admin</h1>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="refresh-btn" onclick="carregarTudo()">↻ Atualizar</button>
+      <span id="statusOnline">🟢 online</span>
+    </div>
+  </div>
+
+  <!-- Métricas -->
+  <div class="grid-cards" id="cards">
+    <div class="card"><div class="label">Total usuários</div><div class="valor azul" id="m-total">—</div></div>
+    <div class="card"><div class="label">Em trial</div><div class="valor amarelo" id="m-trial">—</div></div>
+    <div class="card"><div class="label">Assinantes ativos</div><div class="valor verde" id="m-ativos">—</div></div>
+    <div class="card"><div class="label">Expirados</div><div class="valor vermelho" id="m-expirados">—</div></div>
+    <div class="card"><div class="label">Plano Fundador</div><div class="valor" id="m-fundador">—</div></div>
+    <div class="card"><div class="label">Receita total</div><div class="valor verde" id="m-receita">—</div></div>
+    <div class="card"><div class="label">Novos (7d)</div><div class="valor azul" id="m-novos">—</div></div>
+    <div class="card"><div class="label">Vagas fundador</div><div class="valor amarelo" id="m-vagas">—</div></div>
+  </div>
+
+  <!-- Usuários -->
+  <div class="section">
+    <h2>Usuários</h2>
+    <div class="tabs">
+      <div class="tab ativo" onclick="filtrar('')">Todos</div>
+      <div class="tab" onclick="filtrar('trial')">Trial</div>
+      <div class="tab" onclick="filtrar('ativo')">Ativos</div>
+      <div class="tab" onclick="filtrar('expirado')">Expirados</div>
+    </div>
+    <div id="tabelaUsuarios"><div class="loading">Carregando...</div></div>
+  </div>
+
+  <!-- Liberar acesso -->
+  <div class="section">
+    <h2>Liberar acesso manual</h2>
+    <div class="liberar-form">
+      <h3>Estender trial ou ativar assinatura para um usuário</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Motorista ID (UUID)</label>
+          <input type="text" id="liberarId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+        </div>
+        <div class="form-group">
+          <label>Tipo</label>
+          <select id="liberarTipo">
+            <option value="trial">Trial</option>
+            <option value="ativo">Ativo (assinante)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Plano (se ativo)</label>
+          <select id="liberarPlano">
+            <option value="fundador">Fundador</option>
+            <option value="pro">Pro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Dias</label>
+          <input type="number" id="liberarDias" value="30" min="1" max="365" style="min-width:80px">
+        </div>
+        <button class="btn btn-verde btn-sm" onclick="liberarAcesso()">Liberar</button>
+      </div>
+      <div class="msg ok" id="liberarOk"></div>
+      <div class="msg err" id="liberarErr"></div>
+    </div>
+  </div>
+
+  <!-- Remarketing -->
+  <div class="section">
+    <h2>Emails para remarketing</h2>
+    <div class="remarketing-box">
+      <p style="color:#718096;font-size:0.85rem;margin-bottom:12px">Usuários que testaram e não assinaram (inseriram email no checkout)</p>
+      <button class="btn btn-cinza btn-sm" onclick="carregarEmails()">Carregar emails</button>
+      <div class="emails-list" id="emailsList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = '';
+  let ADMIN_TOKEN = '';
+  let filtroAtual = '';
+
+  function entrar() {
+    const tok = document.getElementById('tokenInput').value.trim();
+    if (!tok) return;
+    ADMIN_TOKEN = tok;
+    document.getElementById('loginErr').style.display = 'none';
+    carregarTudo();
+  }
+
+  async function req(path, opts = {}) {
+    const r = await fetch(API + path, {
+      headers: { 'X-Admin-Token': ADMIN_TOKEN, 'Content-Type': 'application/json' },
+      ...opts
+    });
+    if (r.status === 403) { mostrarLogin(); throw new Error('Acesso negado'); }
+    return r.json();
+  }
+
+  function mostrarLogin() {
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('loginErr').style.display = 'block';
+  }
+
+  async function carregarTudo() {
+    try {
+      const m = await req('/admin/metricas');
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+
+      document.getElementById('m-total').textContent    = m.total_usuarios;
+      document.getElementById('m-trial').textContent    = m.em_trial;
+      document.getElementById('m-ativos').textContent   = m.ativos;
+      document.getElementById('m-expirados').textContent= m.expirados;
+      document.getElementById('m-fundador').textContent = m.fundadores + ' / ' + m.pro + ' pro';
+      document.getElementById('m-receita').textContent  = 'R$ ' + (m.receita_total || 0).toFixed(2);
+      document.getElementById('m-novos').textContent    = m.novos_7_dias;
+      document.getElementById('m-vagas').textContent    = (m.vagas_fundador_restantes ?? '—') + ' / ' + (m.vagas_fundador_total ?? '—');
+
+      await carregarUsuarios(filtroAtual);
+    } catch(e) {
+      if (e.message !== 'Acesso negado') console.error(e);
+    }
+  }
+
+  async function carregarUsuarios(status = '') {
+    document.getElementById('tabelaUsuarios').innerHTML = '<div class="loading">Carregando...</div>';
+    try {
+      const d = await req('/admin/usuarios?status=' + status + '&limit=100');
+      const us = d.usuarios || [];
+      if (!us.length) {
+        document.getElementById('tabelaUsuarios').innerHTML = '<div class="loading">Nenhum usuário encontrado.</div>';
+        return;
+      }
+      const rows = us.map(u => `
+        <tr>
+          <td>${u.nome || '—'}</td>
+          <td style="color:#718096;font-size:0.75rem">${(u.motorista_id||'').slice(0,8)}...</td>
+          <td>${u.email_pagamento ? `<span style="color:#60a5fa">${u.email_pagamento}</span>` : '<span style="color:#4a5568">—</span>'}</td>
+          <td><span class="badge ${u.status}">${u.status}</span></td>
+          <td>${u.plano_id || '—'}</td>
+          <td style="font-size:0.75rem;color:#718096">${fmtData(u.trial_fim || u.periodo_fim)}</td>
+          <td>
+            <button class="btn btn-verde btn-sm" onclick="preencherLiberar('${u.motorista_id}')">Liberar</button>
+          </td>
+        </tr>
+      `).join('');
+      document.getElementById('tabelaUsuarios').innerHTML = `
+        <table>
+          <thead><tr><th>Nome</th><th>ID</th><th>Email</th><th>Status</th><th>Plano</th><th>Expira</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    } catch(e) {
+      document.getElementById('tabelaUsuarios').innerHTML = '<div class="loading">Erro ao carregar.</div>';
+    }
+  }
+
+  function filtrar(status) {
+    filtroAtual = status;
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      const estados = ['', 'trial', 'ativo', 'expirado'];
+      t.classList.toggle('ativo', estados[i] === status);
+    });
+    carregarUsuarios(status);
+  }
+
+  function preencherLiberar(id) {
+    document.getElementById('liberarId').value = id;
+    document.getElementById('liberarId').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async function liberarAcesso() {
+    const mid  = document.getElementById('liberarId').value.trim();
+    const tipo = document.getElementById('liberarTipo').value;
+    const plano= document.getElementById('liberarPlano').value;
+    const dias = parseInt(document.getElementById('liberarDias').value);
+    const okEl = document.getElementById('liberarOk');
+    const errEl= document.getElementById('liberarErr');
+    okEl.style.display = errEl.style.display = 'none';
+
+    if (!mid) { errEl.textContent = 'Preencha o Motorista ID'; errEl.style.display = 'block'; return; }
+
+    try {
+      const r = await req('/admin/liberar', {
+        method: 'POST',
+        body: JSON.stringify({ motorista_id: mid, tipo, plano_id: plano, dias })
+      });
+      okEl.textContent = r.mensagem || 'Liberado com sucesso!';
+      okEl.style.display = 'block';
+      setTimeout(() => { okEl.style.display = 'none'; }, 4000);
+      carregarUsuarios(filtroAtual);
+    } catch(e) {
+      errEl.textContent = 'Erro: ' + e.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  async function carregarEmails() {
+    document.getElementById('emailsList').textContent = 'Carregando...';
+    try {
+      const d = await req('/admin/emails-remarketing');
+      const emails = d.emails || [];
+      if (!emails.length) {
+        document.getElementById('emailsList').textContent = 'Nenhum email encontrado ainda.';
+        return;
+      }
+      document.getElementById('emailsList').textContent = emails.map(e =>
+        `${e.email}  (trial terminou: ${fmtData(e.trial_fim)})`
+      ).join('\n');
+    } catch(e) {
+      document.getElementById('emailsList').textContent = 'Erro ao carregar.';
+    }
+  }
+
+  function fmtData(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
 </script>
 </body>
 </html>
