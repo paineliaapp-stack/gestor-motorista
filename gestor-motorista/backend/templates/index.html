@@ -378,6 +378,22 @@ const _supa = supabase.createClient(
   var ui  = document.getElementById('splash-ui');
   var tocado = false;
 
+  // FORÇA atualização do service worker: a v6 cacheava o vídeo sem Range e
+  // travava o iOS. Registrar de novo faz o navegador baixar a v7 (que limpa tudo).
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/static/sw.js').then(function(reg){
+      reg.update().catch(function(){});
+    }).catch(function(){});
+  }
+
+  // Pré-busca o vídeo e o áudio para a MEMÓRIA (Blob): clique = play instantâneo,
+  // sem rede, sem cache problemático, sem Range — zero delay.
+  var blobVid = null, blobAud = null;
+  fetch('/static/splash.mp4').then(function(r){ return r.blob(); })
+    .then(function(b){ blobVid = URL.createObjectURL(b); }).catch(function(){});
+  fetch('/static/splash.mp3').then(function(r){ return r.blob(); })
+    .then(function(b){ blobAud = URL.createObjectURL(b); }).catch(function(){});
+
   function _fim(v, a){
     if(v){ try{ v.pause(); }catch(e){} v.remove(); }
     if(a){ try{ a.pause(); }catch(e){} a.remove(); }
@@ -397,12 +413,12 @@ const _supa = supabase.createClient(
     v.setAttribute('playsinline', '');
     v.setAttribute('webkit-playsinline', '');
     v.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;z-index:1';
-    v.src = '/static/splash.mp4';
+    v.src = blobVid || '/static/splash.mp4';
     sp.appendChild(v);
 
     // Audio separado
     var a = document.createElement('audio');
-    a.src = '/static/splash.mp3';
+    a.src = blobAud || '/static/splash.mp3';
     a.preload = 'auto';
     document.body.appendChild(a);
 
