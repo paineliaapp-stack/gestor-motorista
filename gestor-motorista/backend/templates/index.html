@@ -352,9 +352,11 @@ const _supa = supabase.createClient(
 
   window._splashTap=function(){
     if(tocado) return; tocado=true;
+    // ⚠️ NÃO fazer appendChild aqui — mover o vídeo no DOM interrompe o buffer
+    v.style.opacity='0';
     v.style.display='block';
-    document.body.appendChild(v);
     v.muted=false;
+    v.volume=1;
     var p=v.play();
     if(p) p.catch(function(){ v.muted=true; v.play(); });
     requestAnimationFrame(function(){
@@ -363,9 +365,7 @@ const _supa = supabase.createClient(
     sp.style.transition='opacity .35s ease';
     sp.style.opacity='0';
     setTimeout(function(){sp&&sp.remove()},380);
-    // Ao terminar o vídeo → libera o app
     v.addEventListener('ended', _splashFim);
-    // Segurança: se vídeo travar → libera em 15s
     setTimeout(function(){if(v&&v.parentNode) _splashFim();},15000);
   };
 
