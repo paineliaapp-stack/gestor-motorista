@@ -1,5 +1,5 @@
-// Service Worker — Painel.IA v3
-const CACHE_NAME = 'painel-ia-v4';
+// Service Worker — Painel.IA v5
+const CACHE_NAME = 'painel-ia-v5';
 const SPLASH_FILES = ['/static/splash.mp4', '/static/splash.mp3'];
 
 self.addEventListener('install', e => {
