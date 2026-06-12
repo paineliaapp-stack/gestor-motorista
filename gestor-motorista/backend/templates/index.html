@@ -694,9 +694,12 @@ const _supa = supabase.createClient(
       <button onclick="quickChat('Me dá uma dica financeira')" style="padding:5px 10px;border-radius:20px;border:1px solid rgba(99,102,241,.2);background:rgba(99,102,241,.07);color:#a5b4fc;font-size:11px;cursor:pointer;font-family:inherit">💡 Dica</button>
     </div>
     <!-- Botão relatório semanal -->
-    <div style="margin-top:10px">
-      <button id="btn-relatorio-semanal" onclick="gerarRelatorioSemanal()" style="width:100%;padding:11px 16px;border-radius:14px;border:1px solid rgba(250,204,21,.35);background:rgba(250,204,21,.08);color:#fcd34d;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;justify-content:center;animation:pulse-report 2.5s ease-in-out infinite">
-        <span style="font-size:16px">📊</span> Ver relatório da semana
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button id="btn-relatorio-semanal" onclick="gerarRelatorioSemanal()" style="flex:1;padding:11px 12px;border-radius:14px;border:1px solid rgba(250,204,21,.35);background:rgba(250,204,21,.08);color:#fcd34d;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:7px;justify-content:center;animation:pulse-report 2.5s ease-in-out infinite">
+        <span style="font-size:15px">📊</span> Relatório
+      </button>
+      <button id="btn-card-dia" onclick="gerarCardDia()" style="flex:1;padding:11px 12px;border-radius:14px;border:1px solid rgba(240,180,41,.4);background:linear-gradient(135deg,rgba(240,180,41,.14),rgba(240,180,41,.05));color:#F0B429;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:7px;justify-content:center">
+        <span style="font-size:15px">🏆</span> Card do Dia
       </button>
     </div>
   </div>
@@ -5803,5 +5806,124 @@ function _renderMetaHora(){
   }catch(e){console.warn('metaHora:',e)}
 }
 setInterval(_renderMetaHora, 60000); // recalcula a cada minuto — o ritmo sobe conforme o dia passa
+</script>
+<script>
+/* ════ CARD DO DIA — competição estilo Strava SEM expor R$ ════ */
+async function gerarCardDia(){
+  const btn = document.getElementById('btn-card-dia');
+  const orig = btn ? btn.innerHTML : '';
+  if(btn){ btn.innerHTML = '⏳ gerando…'; btn.disabled = true; }
+  try{
+    const r = await authFetch(API+'/competicao/'+MID);
+    const d = await r.json();
+    const png = await _desenharCardDia(d);
+    const blob = await (await fetch(png)).blob();
+    const file = new File([blob], 'painelia-card.png', {type:'image/png'});
+    // Share nativo (iOS/Android) com fallback para download
+    if (navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:'Meu dia no Painel.IA'});
+    } else {
+      const a = document.createElement('a');
+      a.href = png; a.download = 'painelia-card.png'; a.click();
+    }
+  }catch(e){ if(String(e).indexOf('AbortError')===-1) alert('Não consegui gerar o card. Tenta de novo.'); }
+  if(btn){ btn.innerHTML = orig; btn.disabled = false; }
+}
+
+function _rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+
+function _desenharCardDia(d){
+  return new Promise(function(resolve){
+    const W=1080, H=1920;
+    const c = document.createElement('canvas'); c.width=W; c.height=H;
+    const x = c.getContext('2d');
+
+    // Fundo escuro premium com brilho dourado radial
+    x.fillStyle = '#07090d'; x.fillRect(0,0,W,H);
+    let g = x.createRadialGradient(W/2,H*0.42,80, W/2,H*0.42,900);
+    g.addColorStop(0,'rgba(240,180,41,.16)'); g.addColorStop(1,'rgba(240,180,41,0)');
+    x.fillStyle = g; x.fillRect(0,0,W,H);
+    // Grid sutil (estética de painel)
+    x.strokeStyle = 'rgba(255,255,255,.03)'; x.lineWidth = 1;
+    for(let i=0;i<W;i+=72){ x.beginPath(); x.moveTo(i,0); x.lineTo(i,H); x.stroke(); }
+    for(let i=0;i<H;i+=72){ x.beginPath(); x.moveTo(0,i); x.lineTo(W,i); x.stroke(); }
+
+    function desenharResto(logoImg){
+      // Logo + marca no topo
+      if(logoImg){
+        x.save(); x.beginPath(); x.arc(W/2, 200, 70, 0, Math.PI*2); x.clip();
+        x.drawImage(logoImg, W/2-70, 130, 140, 140); x.restore();
+        x.strokeStyle='rgba(240,180,41,.5)'; x.lineWidth=3;
+        x.beginPath(); x.arc(W/2,200,72,0,Math.PI*2); x.stroke();
+      }
+      x.textAlign='center';
+      x.fillStyle='#f3f4f6'; x.font='800 64px Barlow Condensed, sans-serif';
+      x.fillText('PAINEL', W/2-42, 350);
+      x.fillStyle='#F0B429'; x.fillText('.IA', W/2+118, 350);
+
+      x.fillStyle='rgba(243,244,246,.45)'; x.font='400 30px -apple-system, sans-serif';
+      const dt = new Date(d.data+'T12:00:00');
+      x.fillText(dt.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'}).toUpperCase(), W/2, 408);
+
+      // ═ O número-herói: % DA META (nunca R$) ═
+      x.fillStyle = d.pct_meta_hoje>=100 ? '#00D897' : '#F0B429';
+      x.font='900 290px Barlow Condensed, sans-serif';
+      x.fillText(d.pct_meta_hoje+'%', W/2, H*0.46);
+      x.fillStyle='rgba(243,244,246,.6)'; x.font='600 40px Barlow Condensed, sans-serif';
+      x.fillText('DA META DE HOJE', W/2, H*0.46+70);
+
+      // Selo meta batida
+      if(d.bateu_meta){
+        x.fillStyle='rgba(0,216,151,.15)'; _rr(x, W/2-220, H*0.46+110, 440, 76, 38); x.fill();
+        x.strokeStyle='rgba(0,216,151,.5)'; x.lineWidth=2; _rr(x, W/2-220, H*0.46+110, 440, 76, 38); x.stroke();
+        x.fillStyle='#00D897'; x.font='700 38px -apple-system, sans-serif';
+        x.fillText('🏆 META BATIDA', W/2, H*0.46+162);
+      }
+
+      // Streak + patente (cards lado a lado)
+      const y2 = H*0.62;
+      x.fillStyle='rgba(255,255,255,.04)';
+      _rr(x, 90, y2, 430, 220, 28); x.fill();
+      _rr(x, 560, y2, 430, 220, 28); x.fill();
+      x.strokeStyle='rgba(255,255,255,.1)'; x.lineWidth=2;
+      _rr(x, 90, y2, 430, 220, 28); x.stroke();
+      _rr(x, 560, y2, 430, 220, 28); x.stroke();
+
+      x.fillStyle='#F0B429'; x.font='900 100px Barlow Condensed, sans-serif';
+      x.fillText('🔥 '+d.streak, 305, y2+118);
+      x.fillStyle='rgba(243,244,246,.5)'; x.font='600 28px Barlow Condensed, sans-serif';
+      x.fillText(d.streak===1?'DIA BATENDO A META':'DIAS SEGUIDOS DE META', 305, y2+172);
+
+      x.font='900 76px -apple-system, sans-serif';
+      x.fillStyle='#f3f4f6'; x.fillText(d.patente, 775, y2+118);
+      x.fillStyle='rgba(243,244,246,.5)'; x.font='600 28px Barlow Condensed, sans-serif';
+      x.fillText('PATENTE ATUAL', 775, y2+172);
+
+      // Ranking nacional (percentil — sem valores)
+      if(d.rank_top_pct !== null && d.rank_total > 1){
+        const y3 = y2+270;
+        x.fillStyle='rgba(240,180,41,.1)'; _rr(x, 90, y3, 900, 130, 28); x.fill();
+        x.strokeStyle='rgba(240,180,41,.35)'; _rr(x, 90, y3, 900, 130, 28); x.stroke();
+        x.fillStyle='#F0B429'; x.font='800 46px Barlow Condensed, sans-serif';
+        x.fillText('TOP '+d.rank_top_pct+'% DO BRASIL HOJE', W/2, y3+62);
+        x.fillStyle='rgba(243,244,246,.45)'; x.font='500 28px -apple-system, sans-serif';
+        x.fillText('#'+d.rank_pos+' de '+d.rank_total+' motoristas no Painel.IA', W/2, y3+106);
+      }
+
+      // Rodapé CTA
+      x.fillStyle='rgba(243,244,246,.35)'; x.font='500 30px -apple-system, sans-serif';
+      x.fillText('Você sabe quanto sobrou do SEU dia?', W/2, H-150);
+      x.fillStyle='#F0B429'; x.font='800 40px Barlow Condensed, sans-serif';
+      x.fillText('painelia.app', W/2, H-90);
+
+      resolve(c.toDataURL('image/png'));
+    }
+
+    const img = new Image();
+    img.onload = function(){ desenharResto(img); };
+    img.onerror = function(){ desenharResto(null); };
+    img.src = '/static/icon-512.png';
+  });
+}
 </script>
 </body>
