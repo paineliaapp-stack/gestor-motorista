@@ -369,6 +369,14 @@ const _supa = supabase.createClient(
     setTimeout(function(){if(v&&v.parentNode) _splashFim();},15000);
   };
 
+  // iOS pausa o vídeo quando app vai pro background — retoma ao voltar
+  // REGRA: nunca remover esse listener sem testar no iPhone com PWA instalado
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'visible' && tocado && v && v.paused && !v.ended){
+      v.play().catch(function(){});
+    }
+  });
+
   // Botão Pular aparece após 3s para quem está com pressa
   setTimeout(function(){
     if(tocado) return;
