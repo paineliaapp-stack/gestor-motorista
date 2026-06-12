@@ -325,6 +325,11 @@ const _supa = supabase.createClient(
 );
 </script>
 
+<script>
+// Stubs de funções de notificação removidas — evita ReferenceError que travava o init()
+if (typeof window._atualizarBotaoNotif !== 'function') { window._atualizarBotaoNotif = function(){}; }
+if (typeof window._registrarPushSilencioso !== 'function') { window._registrarPushSilencioso = function(){ return Promise.resolve(); }; }
+</script>
 </head>
 <body>
 
@@ -362,8 +367,8 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
   function fechar(){
     if (fechado) return; fechado = true;
     box.style.opacity = '0';
-    box.style.transition = 'opacity .5s ease';
-    setTimeout(function(){ box.remove(); }, 550);
+    box.style.transition = 'opacity .6s ease';
+    setTimeout(function(){ box.remove(); }, 650);
   }
   window._fecharAbertura = fechar;
 
@@ -386,7 +391,9 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
       setTimeout(function(){ welcome.style.display = 'none'; }, 350);
       skip.style.display = 'block';
     }, { once: true });
-    v.addEventListener('ended', fechar);
+    // Vídeo terminou: deixa o último frame respirar 300ms antes do fade —
+    // evita a sensação de "corte seco" no final
+    v.addEventListener('ended', function(){ setTimeout(fechar, 300); });
 
     var p = v.play();
     if (p && p.catch) {
@@ -3147,7 +3154,7 @@ async function init(){
 
   _initRodando = false;
   _initConcluido = true;
-  setTimeout(_registrarPushSilencioso, 2000); // Renova subscription se já tinha permissão
+  try{ if(typeof _registrarPushSilencioso==='function') setTimeout(_registrarPushSilencioso, 2000); }catch(e){}
 }
 // init() chamado após todos os scripts
 </script>
@@ -5154,7 +5161,7 @@ function quickDashChat(txt){ quickChat(txt); }
 // tenta registrar push após 3s de qualquer forma
 window.addEventListener('load', () => {
   setTimeout(async () => {
-    _atualizarBotaoNotif();
+    try{ if(typeof _atualizarBotaoNotif==='function') _atualizarBotaoNotif(); }catch(e){}
     const mid = window.MID || localStorage.getItem('mid');
     if (mid && typeof _registrarPushSilencioso === 'function') {
       try { await _registrarPushSilencioso(); } catch(e) {}
