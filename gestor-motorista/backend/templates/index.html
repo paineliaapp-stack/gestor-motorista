@@ -379,21 +379,18 @@ const _supa = supabase.createClient(
       sp.querySelector('div').style.display = 'none';
       v.style.display = 'block';
 
-      // Safari iOS: sempre começa mudo, depois tenta desmutar
-      v.muted = true;
-      var p = v.play();
-      if(p){
-        p.then(function(){
-          // Play funcionou — tenta ligar o som
-          v.muted  = false;
-          v.volume = 1;
-        }).catch(function(){
-          // Falhou mesmo mudo — vai direto pro app
-          _fim();
-        });
-      }
+      // Cria elemento de audio separado dentro do gesto — Safari iOS libera assim
+      var a = new Audio('/static/splash.mp4');
+      a.volume = 1;
 
+      // Toca vídeo mudo + audio separado com som
+      v.muted = true;
+      var pv = v.play();
+      var pa = a.play();
+
+      // Sincroniza audio com video
       v.addEventListener('ended', _fim);
+      if(pa) pa.catch(function(){});
       setTimeout(_fim, 15000);
     } else {
       _fim();
