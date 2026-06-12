@@ -4679,12 +4679,14 @@ async function gerarPDF(){
     const res = await authFetch(API+'/relatorio-pdf', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
     if(!res.ok) throw new Error('Erro');
     const blob = await res.blob();
-    const url = URL.createObjectURconst a = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
     a.href = url;
     const label = _pdfTipo==='mes' ? body.mes : _pdfTipo==='ano' ? body.ano : `${body.inicio}_${body.fim}`;
     a.download = `relatorio_${label}.pdf`;
     a.click();
-    URL.revokeObjectURdocument.getElementById('modal-pdf').remove();
+    URL.revokeObjectURL(url);
+    document.getElementById('modal-pdf').remove();
     toast('PDF gerado! ✓');
   } catch(e) {
     btn.innerHTML = '❌ Erro — tente de novo'; btn.disabled = false;
