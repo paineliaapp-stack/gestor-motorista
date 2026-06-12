@@ -27,8 +27,14 @@ async def _auth_users(page=1, per_page=1000):
             headers={"Authorization": f"Bearer {SERVICE_KEY}", "apikey": SERVICE_KEY}
         )
     if r.status_code != 200:
-        raise HTTPException(status_code=502, detail=f"Supabase Auth erro: {r.status_code}")
-    return r.json().get("users", [])
+        raise HTTPException(status_code=502, detail=f"Supabase Auth erro: {r.status_code} — {r.text[:200]}")
+    data = r.json()
+    # Supabase pode retornar {"users": [...]} ou diretamente [...]
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        return data.get("users", [])
+    return []
 
 
 async def _auth_user_by_email(email: str):
@@ -285,3 +291,21 @@ async def emails_remarketing(request: Request):
     except Exception as e:
         log_erro("admin_emails_remarketing_erro", erro=e)
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/admin/debug-auth")
+async def debug_auth(x_admin_token: str = Header(default="")):
+    """Debug: mostra o que o Supabase Auth retorna."""
+    _check(x_admin_token)
+    async with _httpx.AsyncClient(timeout=15) as c:
+        r = await c.get(
+            f"{SUPABASE_URL}/auth/v1/admin/users",
+            params={"page": 1, "per_page": 5},
+            headers={"Authorization": f"Bearer {SERVICE_KEY}", "apikey": SERVICE_KEY}
+        )
+    return {
+        "status": r.status_code,
+        "tipo_resposta": type(r.json()).__name__,
+        "chaves": list(r.json().keys()) if isinstance(r.json(), dict) else "é lista",
+        "total": len(r.json()) if isinstance(r.json(), list) else r.json().get("total", "?"),
+        "amostra": r.json()[:2] if isinstance(r.json(), list) else r.json().get("users", [])[:2],
+    }
