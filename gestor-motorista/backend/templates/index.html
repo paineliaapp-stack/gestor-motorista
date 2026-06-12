@@ -376,6 +376,17 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
   window._fecharAbertura = fechar;
   v.addEventListener('ended', fechar);
 
+  function darPlay(){
+    v.muted = false;
+    var p = v.play();
+    if (p && p.catch) {
+      p.catch(function(){
+        v.muted = true;
+        var p2 = v.play();
+        if (p2 && p2.catch) p2.catch(fechar);
+      });
+    }
+  }
   function tocar(){
     if (iniciado || fechado) return;
     iniciado = true;
@@ -384,23 +395,19 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
     setTimeout(function(){ welcome.style.display = 'none'; }, 350);
     skip.style.display = 'block';
     v.style.opacity = '1';
-    // Reset TOTAL — garante que toca do início mesmo se o elemento foi reusado
-    try { v.load(); } catch(e) {}
     v.currentTime = 0;
-    v.muted = false;
-    var p = v.play();
-    if (p && p.catch) {
-      p.catch(function(){
-        // Som bloqueado → tenta mudo. Se nem mudo tocar, fecha sem travar.
-        v.muted = true;
-        var p2 = v.play();
-        if (p2 && p2.catch) p2.catch(fechar);
-      });
+    // Se o vídeo já tem buffer, toca na hora; senão espera o mínimo necessário
+    if (v.readyState >= 3) {        // HAVE_FUTURE_DATA — pode tocar já
+      darPlay();
+    } else {
+      // Mostra o poster (logo) enquanto o pouco que falta carrega, e toca assim que der
+      v.addEventListener('canplay', darPlay, { once: true });
+      darPlay(); // tenta já — muitos navegadores começam mesmo com pouco buffer
     }
-    // Se em 1.5s o vídeo não saiu do lugar, não trava o usuário
+    // Trava: se em 3s não começou a rodar de fato, não prende o usuário
     setTimeout(function(){
-      if (!fechado && v.currentTime < 0.1 && v.paused) fechar();
-    }, 1500);
+      if (!fechado && v.currentTime < 0.1) fechar();
+    }, 3000);
   }
 
   // Toque funciona SEMPRE (sem once) — não importa quantas vezes
