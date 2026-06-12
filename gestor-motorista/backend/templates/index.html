@@ -354,6 +354,23 @@ const _supa = supabase.createClient(
 @keyframes sp-p{0%,100%{opacity:.2;transform:scale(.65)}50%{opacity:1;transform:scale(1.2)}}
 </style>
 <script>
+// iOS PWA standalone: ao reabrir o app (nao e' primeira visita),
+// forca reload para garantir que o video funciona.
+// sessionStorage persiste dentro da sessao mas e' limpo ao fechar o app.
+// Portanto: primeira abertura = sem sessionStorage = deixa passar.
+// Reabrir = sessionStorage existe = reload.
+(function(){
+  var KEY = 'pwa_loaded';
+  if(sessionStorage.getItem(KEY)){
+    // Ja' foi aberto antes nesta sessao — recarrega limpo
+    sessionStorage.removeItem(KEY);
+    location.reload(true);
+    return;
+  }
+  sessionStorage.setItem(KEY, '1');
+})();
+</script>
+<script>
 !function(){
   var sp  = document.getElementById('splash');
   var ui  = document.getElementById('splash-ui');
@@ -361,7 +378,6 @@ const _supa = supabase.createClient(
   var a   = document.getElementById('sa');
   var tocado = false;
 
-  // Pre-carrega sem gesto (muted=true permite isso no iOS)
   v.load();
   a.load();
 
@@ -371,34 +387,14 @@ const _supa = supabase.createClient(
     setTimeout(function(){ sp.style.display = 'none'; }, 420);
   }
 
-  // Reload ao reabrir pelo atalho (pageshow persisted)
-  window.addEventListener('pageshow', function(ev){
-    if(ev.persisted){
-      // Reset completo do estado
-      tocado = false;
-      sp.style.display = 'flex';
-      sp.style.opacity = '1';
-      sp.style.transition = 'none';
-      ui.style.display = 'flex';
-      v.style.display = 'none';
-      try{ v.pause(); v.currentTime = 0; v.load(); }catch(e){}
-      try{ a.pause(); a.currentTime = 0; a.load(); }catch(e){}
-      // Remove botao pular se existir
-      var b = sp.querySelector('button');
-      if(b) b.remove();
-    }
-  });
-
   sp.addEventListener('click', function(){
     if(tocado) return;
     tocado = true;
 
-    // Mostra video, esconde UI
     v.style.display = 'block';
     ui.style.display = 'none';
 
-    // iOS standalone congela o video pre-carregado.
-    // Resetar o src no gesto forca o iOS a destravar e tocar de verdade.
+    // Reseta src no gesto para destravar o iOS
     v.pause();
     v.removeAttribute('src');
     v.load();
@@ -407,15 +403,12 @@ const _supa = supabase.createClient(
     a.pause();
     a.currentTime = 0;
 
-    // Play sincrono no mesmo gesto — iOS exige
     v.play().catch(function(){ _fim(); });
     a.play().catch(function(){});
 
     v.addEventListener('ended', _fim, {once:true});
-    // Fallback 15s
     setTimeout(_fim, 15000);
 
-    // Botao pular apos 3s
     setTimeout(function(){
       if(sp.style.display === 'none') return;
       var b = document.createElement('button');
