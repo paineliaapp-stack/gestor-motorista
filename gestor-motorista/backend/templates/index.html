@@ -410,7 +410,10 @@ const _supa = supabase.createClient(
     if(a){ try{ a.pause(); }catch(e){} a.remove(); }
     sp.style.transition = 'opacity .4s';
     sp.style.opacity = '0';
-    setTimeout(function(){ sp.style.display = 'none'; }, 420);
+    setTimeout(function(){
+      sp.style.display = 'none';
+      if(typeof checkAuth === 'function') checkAuth();
+    }, 420);
   }
 
   sp.addEventListener('click', function(){
