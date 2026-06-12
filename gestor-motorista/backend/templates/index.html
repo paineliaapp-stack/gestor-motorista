@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<link rel="preload" as="video" href="/static/abertura.mp4" type="video/mp4">
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#ffcc00">
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
@@ -335,9 +334,10 @@ if (typeof window._registrarPushSilencioso !== 'function') { window._registrarPu
 
 
 <!-- ════ ABERTURA:INICIO — BLOCO PROTEGIDO. NÃO EDITAR FORA DAQUI ════
-     Solucao definitiva p/ PWA iOS: o elemento <video> NAO e reusado. Ele e
-     CRIADO DO ZERO no momento do toque — assim nunca herda estado preso de
-     uma sessao anterior. O toque (gesto) dispara o play. Só mobile. -->
+     O video pre-carrega em segundo plano assim que a pagina abre (NAO bloqueia
+     o app — o dashboard carrega em paralelo). A tela "Bem-vindo" fica visivel.
+     Ao tocar, o video toca na hora (ja esta carregado). Cria <video> do zero
+     pra nunca herdar estado preso do PWA iOS. Só mobile. -->
 <div id="abertura" style="display:none;position:fixed;inset:0;z-index:100000;background:#000;overflow:hidden">
   <div id="abertura-welcome" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer;z-index:2">
     <div style="position:absolute;top:11%;left:0;right:0;text-align:center;color:rgba(255,255,255,.5);font-size:22px;font-weight:300;letter-spacing:.3px">Bem-vindo!</div>
@@ -361,61 +361,46 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
 
   box.style.display = 'block';
   var welcome = document.getElementById('abertura-welcome');
+  var hint = document.getElementById('abertura-hint');
   var skip = document.getElementById('abertura-skip');
   var fechado = false, tocou = false;
 
+  // Pre-cria o video JA e comeca a baixar em segundo plano (nao bloqueia o app)
+  var v = document.createElement('video');
+  v.setAttribute('playsinline', '');
+  v.setAttribute('webkit-playsinline', '');
+  v.preload = 'auto';
+  v.muted = true; // mudo permite pre-carregar sem gesto
+  v.src = '/static/abertura.mp4';
+  v.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;opacity:0;transition:opacity .3s';
+  box.insertBefore(v, welcome);
+  try { v.load(); } catch(e) {}
+
   function fechar(){
     if (fechado) return; fechado = true;
+    try { v.pause(); } catch(e) {}
     box.style.opacity = '0';
     box.style.transition = 'opacity .6s ease';
     setTimeout(function(){ box.remove(); }, 650);
   }
   window._fecharAbertura = fechar;
+  v.addEventListener('ended', function(){ if (tocou) setTimeout(fechar, 300); });
 
   function tocar(){
     if (fechado || tocou) return;
     tocou = true;
-
-    // Cria um <video> NOVO em memoria — sem estado herdado de sessao anterior
-    var v = document.createElement('video');
-    v.setAttribute('playsinline', '');
-    v.setAttribute('webkit-playsinline', '');
+    v.style.opacity = '1';
+    welcome.style.transition = 'opacity .35s ease';
+    welcome.style.opacity = '0';
+    setTimeout(function(){ welcome.style.display = 'none'; }, 350);
+    skip.style.display = 'block';
+    // Liga o som e toca do inicio (o gesto do toque libera o audio)
     v.muted = false;
-    v.src = '/static/abertura.mp4?t=' + Date.now(); // cache-bust por sessao
-    v.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1';
-    box.insertBefore(v, welcome);
-
-    v.addEventListener('playing', function(){
-      welcome.style.transition = 'opacity .35s ease';
-      welcome.style.opacity = '0';
-      setTimeout(function(){ welcome.style.display = 'none'; }, 350);
-      skip.style.display = 'block';
-    }, { once: true });
-    // Fecha quando o vídeo termina. No iOS o 'ended' às vezes não dispara,
-    // então usamos 3 garantias: ended + timeupdate (chega perto do fim) + duração.
-    var fechouPeloFim = false;
-    function fimDoVideo(){ if(fechouPeloFim) return; fechouPeloFim = true; setTimeout(fechar, 300); }
-    v.addEventListener('ended', fimDoVideo);
-    v.addEventListener('timeupdate', function(){
-      // quando faltam 0.15s para o fim, considera terminado (iOS-safe)
-      if (v.duration && v.currentTime >= v.duration - 0.15) fimDoVideo();
-    });
-    // Quando souber a duração, agenda um fechamento de segurança por tempo
-    v.addEventListener('loadedmetadata', function(){
-      if (v.duration && isFinite(v.duration)) {
-        setTimeout(fimDoVideo, (v.duration * 1000) + 600);
-      }
-    });
-
+    try { v.currentTime = 0; } catch(e) {}
     var p = v.play();
     if (p && p.catch) {
-      p.catch(function(){
-        v.muted = true;
-        v.play().catch(function(){});
-      });
+      p.catch(function(){ v.muted = true; v.play().catch(function(){}); });
     }
-    // Garantia final absoluta: 9s no máximo (vídeo tem 6s)
-    setTimeout(fimDoVideo, 9000);
   }
   welcome.addEventListener('click', tocar);
 })();
