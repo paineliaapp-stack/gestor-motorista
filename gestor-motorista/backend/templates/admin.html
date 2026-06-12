@@ -268,22 +268,18 @@ let filtroStatus = 'all';
 
 function entrar() {
   const tok = document.getElementById('tokenInput').value.trim();
-  window._log('tentando entrar, token: '+(tok?tok.length+'chars':'vazio'), !!tok);
   if (!tok) return;
   ADMIN_TOKEN = tok;
   sessionStorage.setItem('admin_token', tok);
   document.getElementById('loginErr').style.display = 'none';
-  window._log('chamando iniciar()...', true);
   iniciar();
 }
 
 async function req(path, opts = {}) {
-  window._log('req: '+path, null);
   const r = await fetch(path, {
     headers: { 'X-Admin-Token': ADMIN_TOKEN, 'Content-Type': 'application/json' },
     ...opts
   });
-  window._log('resp '+path+': '+r.status, r.ok);
   if (r.status === 401 || r.status === 403) {
     document.getElementById('app').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
@@ -308,12 +304,10 @@ function irPara(id, el) {
 }
 
 async function iniciar() {
-  window._log('iniciar() chamado', true);
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  window._log('app visivel', true);
-  try { await carregarTudo(); } catch(e) { window._log('carregarTudo erro: '+e.message, false); console.error('métricas:', e); }
-  try { carregarUsuarios(); } catch(e) { window._log('carregarUsuarios erro: '+e.message, false); console.error('usuários:', e); }
+  try { await carregarTudo(); } catch(e) { console.error('métricas:', e); }
+  try { carregarUsuarios(); } catch(e) { console.error('usuários:', e); }
 }
 
 async function carregarTudo() {
@@ -597,34 +591,12 @@ async function resolverTicket(id) {
   }
 }
 
-// Diagnóstico visual — remove após resolver
-(function diag(){
-  var d = document.createElement('div');
-  d.id = 'diag';
-  d.style.cssText = 'position:fixed;bottom:10px;right:10px;z-index:99999;display:flex;flex-direction:column;gap:4px;font-size:11px;font-family:monospace';
-  document.body.appendChild(d);
-  var n = 0;
-  window._log = function(msg, ok){
-    var el = document.createElement('div');
-    el.style.cssText = 'background:'+(ok===false?'#dc2626':ok===true?'#16a34a':'#374151')+';color:#fff;padding:3px 8px;border-radius:4px;max-width:280px';
-    el.textContent = (++n)+'. '+msg;
-    d.appendChild(el);
-  };
-  window._log('JS iniciou', true);
-})();
-
 // Inicialização
 (function init(){
-  window._log('loginScreen: '+document.getElementById('loginScreen').style.display, true);
-  window._log('app: '+document.getElementById('app').style.display, true);
   const saved = sessionStorage.getItem('admin_token');
-  window._log('token salvo: '+(saved?'sim':'nao'), !!saved);
   if(saved){
     ADMIN_TOKEN = saved;
-    window._log('chamando iniciar()', true);
     iniciar();
-  } else {
-    window._log('aguardando login manual', null);
   }
 })();
 </script>
