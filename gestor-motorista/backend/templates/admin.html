@@ -134,7 +134,7 @@ tr:hover td { background: #1e2240; }
         <div class="card"><div class="lbl">Sem assinatura</div><div class="val p" id="m-sem">—</div></div>
         <div class="card"><div class="lbl">Receita real</div><div class="val g" id="m-receita">—</div></div>
         <div class="card"><div class="lbl">Novos 7 dias</div><div class="val b" id="m-novos">—</div></div>
-        <div class="card"><div class="lbl">Vagas fundador</div><div class="val y" id="m-vagas">—</div></div>
+        <div class="card"><div class="lbl">Fundadores (usadas)</div><div class="val y" id="m-vagas">—</div></div>
       </div>
     </div>
 
@@ -272,19 +272,22 @@ async function carregarTudo() {
   document.getElementById('m-sem').textContent     = m.sem_assinatura ?? '—';
   document.getElementById('m-receita').textContent = 'R$ ' + (m.receita_total || 0).toFixed(2);
   document.getElementById('m-novos').textContent   = m.novos_7_dias ?? '—';
-  document.getElementById('m-vagas').textContent   = (m.vagas_fundador_restantes ?? '—') + ' / ' + (m.vagas_fundador_total ?? '—');
+  const usadas = (m.vagas_fundador_total ?? 50) - (m.vagas_fundador_restantes ?? 50);
+  document.getElementById('m-vagas').textContent = usadas + ' / ' + (m.vagas_fundador_total ?? 50);
   document.getElementById('ultimaAtualizacao').textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR');
 }
 
 async function carregarUsuarios() {
   document.getElementById('tabelaWrap').innerHTML = '<div class="loading"><div class="spin"></div> Carregando usuários...</div>';
   try {
-    const d = await req('/admin/usuarios?limit=200');
+    const d = await req('/admin/usuarios?limit=200&status=all');
+    if (d.erro) throw new Error(d.erro);
     todosUsuarios = d.usuarios || [];
     document.getElementById('totalUsuarios').textContent = todosUsuarios.length + ' usuários encontrados';
     renderTabela();
   } catch(e) {
-    document.getElementById('tabelaWrap').innerHTML = '<div class="empty">Erro ao carregar: ' + e.message + '</div>';
+    document.getElementById('tabelaWrap').innerHTML = '<div class="empty">Erro ao carregar: ' + e.message + '<br><small style="color:#374151">Verifique o console para detalhes</small></div>';
+    console.error('Erro usuarios:', e);
   }
 }
 

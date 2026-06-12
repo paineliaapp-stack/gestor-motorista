@@ -27,13 +27,18 @@ async def _auth_users(page=1, per_page=1000):
             headers={"Authorization": f"Bearer {SERVICE_KEY}", "apikey": SERVICE_KEY}
         )
     if r.status_code != 200:
+        log_erro("auth_users_erro", status=r.status_code, body=r.text[:300])
         raise HTTPException(status_code=502, detail=f"Supabase Auth erro: {r.status_code} — {r.text[:200]}")
-    data = r.json()
+    try:
+        data = r.json()
+    except Exception:
+        raise HTTPException(status_code=502, detail="Supabase Auth retornou JSON inválido")
     # Supabase pode retornar {"users": [...]} ou diretamente [...]
     if isinstance(data, list):
         return data
     if isinstance(data, dict):
-        return data.get("users", [])
+        # Algumas versões retornam {"users": [...], "total": N} ou {"data": [...]}
+        return data.get("users") or data.get("data") or []
     return []
 
 
