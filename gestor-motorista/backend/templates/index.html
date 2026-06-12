@@ -403,12 +403,28 @@ const _supa = supabase.createClient(
     a.pause();
     a.currentTime = 0;
 
-    v.play().then(function(){ L('v.play OK'); }).catch(function(e){ L('v.play ERR: '+e.name+' '+e.message); _fim(); });
-    a.play().catch(function(e){ L('a.play ERR: '+e.name); });
+    // Aguarda canplay antes de dar play — garante que o iOS carregou o video
+    function _doPlay(){
+      L('canplay fired, ended='+v.ended+' readyState='+v.readyState);
+      v.play().then(function(){ L('v.play OK'); }).catch(function(e){ L('v.play ERR: '+e.name+' '+e.message); _fim(); });
+      a.play().catch(function(e){ L('a.play ERR: '+e.name); });
+    }
 
-    v.addEventListener('ended', function(){ L('video ended'); _fim(); }, {once:true});
-    v.addEventListener('error', function(){ L('video error: '+v.error?.code); _fim(); }, {once:true});
+    v.addEventListener('error', function(){ L('video error: '+(v.error&&v.error.code)); _fim(); }, {once:true});
     setTimeout(function(){ L('fallback 15s'); _fim(); }, 15000);
+
+    // Listener de ended — so adiciona depois que o video realmente comecar
+    v.addEventListener('playing', function(){
+      L('playing event');
+      v.addEventListener('ended', function(){ L('video ended'); _fim(); }, {once:true});
+    }, {once:true});
+
+    if(v.readyState >= 3){
+      L('readyState>=3, play direto');
+      _doPlay();
+    } else {
+      v.addEventListener('canplay', _doPlay, {once:true});
+    }
 
     setTimeout(function(){
       if(sp.style.display === 'none') return;
