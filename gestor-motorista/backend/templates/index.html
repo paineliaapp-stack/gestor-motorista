@@ -330,14 +330,10 @@ const _supa = supabase.createClient(
 
 
 <!-- ════ ABERTURA:INICIO — BLOCO PROTEGIDO. NÃO EDITAR FORA DAQUI ════
-     PWA iOS reusa o <video> entre aberturas (fica no estado da sessao anterior).
-     Por isso: (1) resetamos o video na entrada; (2) so ouvimos 'ended' DEPOIS
-     que o usuario tocou; (3) play() direto no gesto. Nunca trava. Só mobile. -->
+     Solucao definitiva p/ PWA iOS: o elemento <video> NAO e reusado. Ele e
+     CRIADO DO ZERO no momento do toque — assim nunca herda estado preso de
+     uma sessao anterior. O toque (gesto) dispara o play. Só mobile. -->
 <div id="abertura" style="display:none;position:fixed;inset:0;z-index:99999;background:#000;overflow:hidden">
-  <video id="abertura-vid" playsinline webkit-playsinline preload="auto" poster="/static/abertura-poster.jpg"
-         style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
-    <source src="/static/abertura.mp4" type="video/mp4">
-  </video>
   <div id="abertura-welcome" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer;z-index:2">
     <div style="position:absolute;top:11%;left:0;right:0;text-align:center;color:rgba(255,255,255,.5);font-size:22px;font-weight:300;letter-spacing:.3px">Bem-vindo!</div>
     <img id="abertura-logo" src="/static/icon-512.png" alt="Painel.IA" style="width:118px;height:118px;border-radius:50%;object-fit:cover;box-shadow:0 0 50px rgba(240,180,41,.5);animation:ab-pulse 2s ease-in-out infinite">
@@ -359,30 +355,30 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
   if (!isMobile) { box.remove(); return; }
 
   box.style.display = 'block';
-  var v = document.getElementById('abertura-vid');
   var welcome = document.getElementById('abertura-welcome');
   var skip = document.getElementById('abertura-skip');
   var fechado = false, tocou = false;
 
-  // RESET na entrada: limpa qualquer estado antigo que o PWA tenha guardado
-  try { v.pause(); v.currentTime = 0; v.load(); } catch(e) {}
-
   function fechar(){
     if (fechado) return; fechado = true;
-    try { v.pause(); } catch(e) {}
     box.style.opacity = '0';
     box.style.transition = 'opacity .5s ease';
     setTimeout(function(){ box.remove(); }, 550);
   }
   window._fecharAbertura = fechar;
 
-  // 'ended' SÓ fecha se o usuario realmente tocou e o video rodou —
-  // evita que um 'ended' fantasma da sessao anterior trave a tela
-  v.addEventListener('ended', function(){ if (tocou) fechar(); });
-
   function tocar(){
     if (fechado || tocou) return;
     tocou = true;
+
+    // Cria um <video> NOVO em memoria — sem estado herdado de sessao anterior
+    var v = document.createElement('video');
+    v.setAttribute('playsinline', '');
+    v.setAttribute('webkit-playsinline', '');
+    v.muted = false;
+    v.src = '/static/abertura.mp4?t=' + Date.now(); // cache-bust por sessao
+    v.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1';
+    box.insertBefore(v, welcome);
 
     v.addEventListener('playing', function(){
       welcome.style.transition = 'opacity .35s ease';
@@ -390,15 +386,13 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
       setTimeout(function(){ welcome.style.display = 'none'; }, 350);
       skip.style.display = 'block';
     }, { once: true });
+    v.addEventListener('ended', fechar);
 
-    // Garante começo do zero mesmo se o elemento foi reusado
-    try { v.currentTime = 0; } catch(e) {}
-    v.muted = false;
     var p = v.play();
     if (p && p.catch) {
       p.catch(function(){
         v.muted = true;
-        v.play().catch(function(){ /* nao trava: deixa a tela de boas-vindas */ });
+        v.play().catch(function(){});
       });
     }
   }
