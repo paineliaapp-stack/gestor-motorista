@@ -138,16 +138,32 @@ async def metricas(x_admin_token: str = Header(default="")):
         except Exception:
             pass
 
-        top = sorted(uso.items(), key=lambda x: x[1]["lancamentos"], reverse=True)[:5]
-        out["top_usuarios"] = [
-            {
-                "id": mid,
-                "email": auth_map.get(mid, mid[:8] + "…"),
-                "lancamentos": v["lancamentos"],
-                "receita": round(v["receita"], 2),
-            }
-            for mid, v in top
-        ]
+        # Uso de API REAL (chamadas Gemini) — o que importa pro custo
+        api_uso = {}
+        try:
+            ua = supabase.table("uso_api").select("motorista_id,chamadas").execute()
+            for r in (ua.data or []):
+                k = r["motorista_id"]
+                api_uso[k] = api_uso.get(k, 0) + int(r.get("chamadas") or 0)
+        except Exception:
+            pass
+        out["total_chamadas_api"] = sum(api_uso.values())
+
+        # Ranking por USO (chamadas de API se houver, senão lançamentos) — SEM receita
+        if api_uso:
+            top = sorted(api_uso.items(), key=lambda x: x[1], reverse=True)[:8]
+            out["top_usuarios"] = [
+                {"id": mid, "email": auth_map.get(mid, mid[:8] + "…"),
+                 "chamadas_api": n, "lancamentos": uso.get(mid, {}).get("lancamentos", 0)}
+                for mid, n in top
+            ]
+        else:
+            top = sorted(uso.items(), key=lambda x: x[1]["lancamentos"], reverse=True)[:8]
+            out["top_usuarios"] = [
+                {"id": mid, "email": auth_map.get(mid, mid[:8] + "…"),
+                 "chamadas_api": api_uso.get(mid, 0), "lancamentos": v["lancamentos"]}
+                for mid, v in top
+            ]
     except Exception as e:
         log_erro("admin_uso_erro", erro=e)
 
@@ -283,14 +299,20 @@ async def liberar_acesso(request: Request, dados: dict = Body(...)):
         if tipo == "trial":
             upd = {"status": "trial", "plano_id": plano, "trial_inicio": agora.isoformat(), "trial_fim": fim.isoformat(), "atualizado_em": agora.isoformat()}
         elif tipo == "bloqueado":
+            # NUNCA apaga dados — só muda o status. Mantém o plano_id existente.
             upd = {"status": "bloqueado", "atualizado_em": agora.isoformat()}
         else:
             upd = {"status": "ativo", "plano_id": plano, "periodo_inicio": agora.isoformat(), "periodo_fim": fim.isoformat(), "atualizado_em": agora.isoformat()}
 
         if ass.data:
+            # Já existe assinatura: só atualiza (preserva plano_id e todo o histórico)
             supabase.table("assinaturas").update(upd).eq("id", ass.data[0]["id"]).execute()
         else:
-            supabase.table("assinaturas").insert({"motorista_id": mid, **upd}).execute()
+            # Não existe ainda: INSERT precisa de plano_id (coluna NOT NULL).
+            # Bloquear alguém sem assinatura → usa 'fundador' como placeholder do registro.
+            ins = {"motorista_id": mid, "plano_id": plano, **upd}
+            ins.setdefault("plano_id", "fundador")
+            supabase.table("assinaturas").insert(ins).execute()
 
         log_info("acesso_liberado_manual", motorista_id=mid, tipo=tipo, dias=dias)
         return {"ok": True, "mensagem": f"Acesso {tipo} por {dias} dias"}

@@ -306,6 +306,18 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
     msgs.append({"role": "user", "parts": [{"text": mensagem}]})
 
     result = await chamar_gemini_chat(msgs, _gemini_payload_extra)
+    # Conta uso de API (custo Gemini) por usuário/dia — para o admin ver quem usa mais
+    try:
+        import datetime as __dt
+        from core.supabase_client import supabase as __sb
+        __hoje = __dt.date.today().isoformat()
+        __ex = __sb.table("uso_api").select("chamadas").eq("motorista_id", uid).eq("data", __hoje).execute()
+        if __ex.data:
+            __sb.table("uso_api").update({"chamadas": (__ex.data[0].get("chamadas") or 0) + 1}).eq("motorista_id", uid).eq("data", __hoje).execute()
+        else:
+            __sb.table("uso_api").insert({"motorista_id": uid, "data": __hoje, "chamadas": 1}).execute()
+    except Exception:
+        pass
 
     if "error" in result:
         err_detail = result['error'].get('message','sem detalhes')

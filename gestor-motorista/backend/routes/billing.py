@@ -109,10 +109,10 @@ async def billing_status(uid: str = Depends(get_uid_from_token)):
 
     return {
         "status": status,
-        "plano": ass.get("plano_id") if status == "active" else None,
+        "plano": ass.get("plano_id") if status in ("active", "ativo") else None,
         "trial_restante_ms": restante_ms if status == "trial" else 0,
         "trial_expira_em": trial_fim_raw,
-        "pode_usar": status in ("trial", "active"),
+        "pode_usar": status in ("trial", "active", "ativo"),  # bloqueado/expired/cancelled = False
         "vagas_fundador": _vagas_fundador(),
     }
 
