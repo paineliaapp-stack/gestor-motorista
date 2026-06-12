@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <link rel="preload" as="video" href="/static/splash.mp4" type="video/mp4">
+<link rel="preload" as="audio" href="/static/splash.mp3" type="audio/mpeg">
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#ffcc00">
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
@@ -344,25 +345,30 @@ const _supa = supabase.createClient(
     <div style="color:rgba(243,244,246,.35);font-size:12px;font-family:-apple-system,sans-serif;letter-spacing:1.4px">TOQUE PARA ENTRAR</div>
   </div>
 
-  <!-- Vídeo escondido, carregando em background -->
+  <!-- Vídeo SEM áudio -->
   <video id="sv" playsinline webkit-playsinline preload="auto" muted
     style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000">
     <source src="/static/splash.mp4" type="video/mp4">
   </video>
+  <!-- Áudio separado — única forma confiável de ter som no Safari iOS PWA -->
+  <audio id="sa" preload="auto" src="/static/splash.mp3"></audio>
 </div>
 <style>
 @keyframes sp-p{0%,100%{opacity:.2;transform:scale(.65)}50%{opacity:1;transform:scale(1.2)}}
 </style>
 <script>
 !function(){
-  var sp  = document.getElementById('splash');
-  var v   = document.getElementById('sv');
+  var sp   = document.getElementById('splash');
+  var v    = document.getElementById('sv');
+  var a    = document.getElementById('sa');
   var done = false;
 
   v.load();
+  a.load();
 
   function _fim(){
     if(done) return; done = true;
+    a.pause();
     sp.style.transition = 'opacity .4s';
     sp.style.opacity = '0';
     setTimeout(function(){
@@ -379,22 +385,39 @@ const _supa = supabase.createClient(
       sp.querySelector('div').style.display = 'none';
       v.style.display = 'block';
 
-      // Cria elemento de audio separado dentro do gesto — Safari iOS libera assim
-      var a = new Audio('/static/splash.mp4');
-      a.volume = 1;
-
-      // Toca vídeo mudo + audio separado com som
+      // Vídeo sempre mudo — sem problema no Safari iOS
       v.muted = true;
-      var pv = v.play();
-      var pa = a.play();
+      v.play().catch(function(){});
 
-      // Sincroniza audio com video
+      // Áudio MP3 separado criado no gesto — Safari iOS libera 100%
+      a.volume = 1;
+      a.play().catch(function(){});
+
       v.addEventListener('ended', _fim);
-      if(pa) pa.catch(function(){});
       setTimeout(_fim, 15000);
     } else {
       _fim();
     }
+
+    // Botão pular após 3s
+    setTimeout(function(){
+      if(done) return;
+      var b = document.createElement('button');
+      b.textContent = 'Pular ›';
+      b.style.cssText = 'position:absolute;top:20px;right:20px;background:rgba(255,255,255,.12);border:none;border-radius:20px;color:rgba(255,255,255,.8);font-size:13px;padding:8px 18px;cursor:pointer;font-family:-apple-system,sans-serif;z-index:1';
+      b.onclick = function(e){ e.stopPropagation(); _fim(); };
+      sp.appendChild(b);
+    }, 3000);
+  });
+
+  // iOS: retoma se foi pro background
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'visible' && !done && v.style.display !== 'none'){
+      if(v.paused && !v.ended) v.play().catch(function(){});
+      if(a.paused && !a.ended) a.play().catch(function(){});
+    }
+  });
+}();
 
     // Botão pular após 3s
     setTimeout(function(){
