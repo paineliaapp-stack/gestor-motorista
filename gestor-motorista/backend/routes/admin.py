@@ -175,3 +175,53 @@ async def emails_remarketing(request: Request):
         return {"emails": emails, "total": len(emails)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/bloquear")
+async def bloquear_acesso(request: Request, dados: dict = Body(...)):
+    """Bloqueia ou desbloqueia acesso de um motorista."""
+    _verificar_admin(request)
+    mid = dados.get("motorista_id", "").strip()
+    if not mid:
+        raise HTTPException(status_code=400, detail="motorista_id obrigatório")
+
+    agora = datetime.now(timezone.utc)
+    try:
+        ass = supabase.table("assinaturas").select("id").eq("motorista_id", mid).order("criado_em", desc=True).limit(1).execute()
+        update = {
+            "status": "bloqueado",
+            "atualizado_em": agora.isoformat(),
+        }
+        if ass.data:
+            supabase.table("assinaturas").update(update).eq("id", ass.data[0]["id"]).execute()
+        else:
+            # Cria registro bloqueado com plano_id padrão para não violar NOT NULL
+            supabase.table("assinaturas").insert({
+                "motorista_id": mid,
+                "plano_id": "sem_plano",
+                "status": "bloqueado",
+                "atualizado_em": agora.isoformat(),
+                "criado_em": agora.isoformat(),
+            }).execute()
+        log_info("acesso_bloqueado", motorista_id=mid)
+        return {"ok": True, "mensagem": "Acesso bloqueado"}
+    except Exception as e:
+        log_erro("admin_bloquear_erro", erro=e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/debug-auth")
+async def debug_auth(request: Request):
+    """Debug: retorna dados brutos do Supabase Auth."""
+    _verificar_admin(request)
+    try:
+        import httpx as _hx
+        from core.supabase_client import _supabase_url, _supabase_service_key
+        headers = {
+            "apikey": _supabase_service_key,
+            "Authorization": f"Bearer {_supabase_service_key}",
+        }
+        async with _hx.AsyncClient(timeout=10) as c:
+            r = await c.get(f"{_supabase_url}/auth/v1/admin/users?per_page=10", headers=headers)
+        return {"status": r.status_code, "body": r.json()}
+    except Exception as e:
+        return {"erro": str(e)}

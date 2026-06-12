@@ -467,14 +467,36 @@ const _supa = supabase.createClient(
       <button class="ob-btn" onclick="obNext(1)">Continuar →</button>
     </div>
     <div class="ob-step" id="ob-step1">
-      <div class="ob-title">Qual plataforma? 🚗</div>
-      <div class="ob-sub">Selecione as plataformas que você usa.</div>
-      <div class="ob-plats">
+      <div class="ob-title">Como você trabalha? 🚗</div>
+      <div class="ob-sub">Isso ajuda a personalizar seu painel.</div>
+      <div class="ob-plats" style="margin-bottom:20px">
+        <button class="ob-plat" id="tipo-motorista" onclick="selecionarTipoTrabalho('motorista',this)" style="width:48%;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px">
+          <span style="font-size:24px">🚗</span>
+          <span>Motorista de app</span>
+          <span style="font-size:10px;color:#718096">Uber, 99, InDrive...</span>
+        </button>
+        <button class="ob-plat" id="tipo-motoboy" onclick="selecionarTipoTrabalho('motoboy',this)" style="width:48%;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px">
+          <span style="font-size:24px">🏍️</span>
+          <span>Motoboy</span>
+          <span style="font-size:10px;color:#718096">iFood, Rappi, 99Food...</span>
+        </button>
+      </div>
+      <!-- Plataformas motorista -->
+      <div id="plats-motorista" class="ob-plats" style="display:flex">
         <button class="ob-plat" onclick="togglePlat(this,'uber')">🖤 Uber</button>
         <button class="ob-plat" onclick="togglePlat(this,'99')">🟡 99</button>
         <button class="ob-plat" onclick="togglePlat(this,'indrive')">🟢 InDrive</button>
         <button class="ob-plat" onclick="togglePlat(this,'outras')">🔵 Outras</button>
         <button class="ob-plat" onclick="togglePlat(this,'outro')">➕ Outro</button>
+      </div>
+      <!-- Plataformas motoboy -->
+      <div id="plats-motoboy" class="ob-plats" style="display:none">
+        <button class="ob-plat" onclick="togglePlat(this,'ifood')">🔴 iFood</button>
+        <button class="ob-plat" onclick="togglePlat(this,'rappi')">🟠 Rappi</button>
+        <button class="ob-plat" onclick="togglePlat(this,'99food')">🟡 99Food</button>
+        <button class="ob-plat" onclick="togglePlat(this,'loggi')">🔵 Loggi</button>
+        <button class="ob-plat" onclick="togglePlat(this,'lalamove')">🟣 Lalamove</button>
+        <button class="ob-plat" onclick="togglePlat(this,'outro_mb')">➕ Outro</button>
       </div>
       <button class="ob-btn" onclick="obNext(2)">Continuar →</button>
     </div>
@@ -529,6 +551,68 @@ const _supa = supabase.createClient(
   <button id="install-action-btn" onclick="instalarApp()" style="background:linear-gradient(135deg,#6366f1,#818cf8);border:none;border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;cursor:pointer;white-space:nowrap">Instalar</button>
   <button onclick="fecharBannerInstall()" style="background:none;border:none;color:#6366f1;font-size:18px;cursor:pointer;padding:4px;line-height:1">✕</button>
 </div>
+
+<!-- BANNER TRIAL / UPGRADE -->
+<div id="trial-banner" style="display:none;position:fixed;bottom:70px;left:12px;right:12px;z-index:9998;background:linear-gradient(135deg,#451a03,#92400e);border:1px solid rgba(251,191,36,.35);border-radius:16px;padding:13px 14px;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5)">
+  <div style="font-size:22px">⏳</div>
+  <div style="flex:1;min-width:0">
+    <div style="font-size:12px;font-weight:800;color:#fbbf24" id="trial-banner-titulo">Trial expira em breve</div>
+    <div style="font-size:11px;color:#fcd34d;margin-top:2px" id="trial-banner-sub">Assine para continuar usando</div>
+  </div>
+  <button onclick="abrirModalUpgrade()" style="background:#F0B429;border:none;border-radius:10px;color:#000;font-size:12px;font-weight:800;padding:8px 12px;cursor:pointer;white-space:nowrap;flex-shrink:0">Assinar</button>
+  <button onclick="this.closest('#trial-banner').style.display='none';sessionStorage.setItem('trial-banner-fechado','1')" style="background:none;border:none;color:#fbbf24;font-size:18px;cursor:pointer;padding:4px;line-height:1;flex-shrink:0">✕</button>
+</div>
+
+<!-- MODAL UPGRADE (dentro do app) -->
+<div id="modal-upgrade" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:10000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#111827;border:1px solid #2d3748;border-radius:20px;width:100%;max-width:400px;padding:28px 24px;position:relative">
+    <button onclick="document.getElementById('modal-upgrade').style.display='none'" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#718096;font-size:1.3rem;cursor:pointer">✕</button>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:2rem;margin-bottom:8px">⚡</div>
+      <h2 style="font-size:1.2rem;color:#fff;margin-bottom:6px">Assine o Painel.IA</h2>
+      <p style="font-size:0.83rem;color:#718096">Continue com acesso total ao app</p>
+    </div>
+
+    <!-- Planos -->
+    <div id="upgrade-planos" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+      <div onclick="selecionarPlanoUpgrade('fundador',this)" id="plano-fundador-card"
+        style="border:2px solid #F0B429;border-radius:12px;padding:14px;cursor:pointer;background:#1a1506;position:relative">
+        <div style="position:absolute;top:-9px;left:14px;background:#F0B429;color:#000;font-size:10px;font-weight:800;padding:2px 10px;border-radius:10px">FUNDADOR 🔥</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <div>
+            <div style="font-weight:700;color:#fff;font-size:0.95rem">Plano Fundador</div>
+            <div style="font-size:11px;color:#F0B429;margin-top:2px">preço travado por 1 ano</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:1.4rem;font-weight:900;color:#F0B429">R$19</div>
+            <div style="font-size:10px;color:#718096">/mês</div>
+          </div>
+        </div>
+      </div>
+      <div onclick="selecionarPlanoUpgrade('pro',this)" id="plano-pro-card"
+        style="border:1px solid #2d3748;border-radius:12px;padding:14px;cursor:pointer;background:#0f1117">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:700;color:#fff;font-size:0.95rem">Plano Pro</div>
+            <div style="font-size:11px;color:#718096;margin-top:2px">cancele quando quiser</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:1.4rem;font-weight:900;color:#e2e8f0">R$29</div>
+            <div style="font-size:10px;color:#718096">/mês</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="irParaCheckoutUpgrade()" id="upgrade-btn"
+      style="width:100%;background:#F0B429;border:none;border-radius:12px;color:#000;font-size:1rem;font-weight:800;padding:14px;cursor:pointer">
+      Assinar agora →
+    </button>
+    <div style="font-size:11px;color:#4a5568;text-align:center;margin-top:10px">Você será redirecionado para o Mercado Pago</div>
+    <div id="upgrade-erro" style="display:none;background:#2d1b1b;color:#f87171;border-radius:8px;padding:8px 12px;font-size:0.8rem;margin-top:10px"></div>
+  </div>
+</div>
+
 
 <div class="shell">
 <header class="topbar">
@@ -1127,12 +1211,13 @@ async function authFetch(url, options={}) {
 function hojeStr(){const d=new Date(Date.now()-3*60*60*1000);return d.toISOString().slice(0,10);}
 let MID=null;
 let NOME='Motorista';
+let TIPO_TRABALHO='motorista'; // 'motorista' ou 'motoboy'
 let META_DIARIA=parseFloat(localStorage.getItem('meta')||'150');
 let META_MENSAL=parseFloat(localStorage.getItem('meta_mensal_obj')||'0');
 let tipoAtual='ganho',catAtual='',todosLanc=[];
 let _faturadoMesAtual=0; // atualizado pelo loadDash, usado pelo renderMetaMensal
 let gPizza=null,gLinha=null;
-let obPlats=[],obMeta=150;
+let obPlats=[],obMeta=150,obTipoTrabalho='motorista';
 
 // ── SETUP MODE ──────────────────────────────────────────────────────────────
 let _setupMode = false;       // true quando usuário novo ainda não configurou
@@ -2041,6 +2126,19 @@ function obNext(step){
   document.getElementById('ob-step'+step).classList.add('active');
   document.querySelectorAll('.ob-dot').forEach((x,i)=>x.classList.toggle('active',i<=step));
 }
+function selecionarTipoTrabalho(tipo, el) {
+  obTipoTrabalho = tipo;
+  // Reset visual dos botões de tipo
+  document.getElementById('tipo-motorista').classList.remove('sel');
+  document.getElementById('tipo-motoboy').classList.remove('sel');
+  el.classList.add('sel');
+  // Limpa seleções de plataforma ao trocar tipo
+  obPlats = [];
+  document.querySelectorAll('.ob-plat').forEach(b => b.classList.remove('sel'));
+  // Alterna visibilidade dos grupos
+  document.getElementById('plats-motorista').style.display = tipo === 'motorista' ? 'grid' : 'none';
+  document.getElementById('plats-motoboy').style.display = tipo === 'motoboy' ? 'grid' : 'none';
+}
 function togglePlat(el,p){
   el.classList.toggle('sel');
   if(obPlats.includes(p))obPlats=obPlats.filter(x=>x!==p);
@@ -2061,7 +2159,7 @@ async function obFim(){
   const tel=document.getElementById('ob-tel').value.trim();
   document.getElementById('ob-btn-fim').disabled=true;
   try{
-    const r=await authFetch(API+'/motoristas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,telefone:tel})});
+    const r=await authFetch(API+'/motoristas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,telefone:tel,tipo_veiculo:obTipoTrabalho,plataformas:obPlats})});
     const data=await r.json();
     MID=data[0].id;
     // mid agora vem do Google Auth
@@ -5312,6 +5410,7 @@ _supa.auth.onAuthStateChange((event, session)=>{
       .then(r=>r.json()).then(d=>{
         if(d.meta_diaria){ META_DIARIA=d.meta_diaria; localStorage.setItem('meta',META_DIARIA); }
         if(d.comb_diario){ window.COMB_DIARIO=d.comb_diario; localStorage.setItem('comb_diario',d.comb_diario); atualizarExibicaoMeta(META_DIARIA, d.comb_diario); }
+        if(d.tipo_veiculo){ TIPO_TRABALHO = d.tipo_veiculo; window.TIPO_TRABALHO = d.tipo_veiculo; }
         // Detecta novo usuário ou setup incompleto
         // Só ativa setup se explicitamente false E não tem histórico de uso
         const _temHistChat = window.chatHistory && window.chatHistory.length > 0;
@@ -5357,6 +5456,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     }
     // Carrega comb_diario do upsert se veio
     if(upData.comb_diario){ atualizarExibicaoMeta(META_DIARIA, upData.comb_diario); }
+    if(upData.tipo_veiculo){ TIPO_TRABALHO = upData.tipo_veiculo; window.TIPO_TRABALHO = upData.tipo_veiculo; }
     const tl = document.getElementById('tela-login');
     if(tl) tl.remove();
     _initAposSplash();
@@ -5716,5 +5816,99 @@ if('serviceWorker' in navigator){
     .catch(e => console.warn('SW erro:', e));
 }
 </script>
+
+<script>
+// ── Trial Banner & Upgrade Modal ─────────────────────────────────────────
+let _upgradePlanoSelecionado = 'fundador';
+
+function selecionarPlanoUpgrade(plano, el) {
+  _upgradePlanoSelecionado = plano;
+  document.getElementById('plano-fundador-card').style.border = '1px solid #2d3748';
+  document.getElementById('plano-fundador-card').style.background = '#0f1117';
+  document.getElementById('plano-pro-card').style.border = '1px solid #2d3748';
+  document.getElementById('plano-pro-card').style.background = '#0f1117';
+  el.style.border = '2px solid #F0B429';
+  el.style.background = plano === 'fundador' ? '#1a1506' : '#0f1117';
+}
+
+function abrirModalUpgrade() {
+  document.getElementById('modal-upgrade').style.display = 'flex';
+}
+
+async function irParaCheckoutUpgrade() {
+  const btn = document.getElementById('upgrade-btn');
+  btn.disabled = true;
+  btn.textContent = 'Aguarde...';
+  document.getElementById('upgrade-erro').style.display = 'none';
+  try {
+    const tok = await getToken();
+    const r = await authFetch(API + '/billing/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plano_id: _upgradePlanoSelecionado, email: '' })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Erro ao criar checkout');
+    const url = d.url || d.sandbox_url;
+    if (url) window.open(url, '_blank');
+    else throw new Error('URL de pagamento não retornada');
+  } catch(e) {
+    const err = document.getElementById('upgrade-erro');
+    err.textContent = e.message;
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Assinar agora →';
+  }
+}
+
+// Checa status do billing e mostra banner se em trial
+async function verificarTrialBanner() {
+  if (sessionStorage.getItem('trial-banner-fechado')) return;
+  try {
+    const r = await authFetch(API + '/billing/status');
+    if (!r.ok) return;
+    const d = await r.json();
+    const status = d.status; // trial, ativo, expirado, sem_assinatura
+    if (status !== 'trial' && status !== 'expirado') return;
+
+    const banner = document.getElementById('trial-banner');
+    const titulo = document.getElementById('trial-banner-titulo');
+    const sub    = document.getElementById('trial-banner-sub');
+    if (!banner) return;
+
+    if (status === 'expirado') {
+      banner.style.background = 'linear-gradient(135deg,#450a0a,#7f1d1d)';
+      banner.querySelector('div[style*="font-size:22px"]').textContent = '🔒';
+      titulo.textContent = 'Seu trial expirou';
+      sub.textContent = 'Assine para continuar usando o Painel.IA';
+    } else if (status === 'trial') {
+      // Calcula horas restantes
+      if (d.periodo_fim) {
+        const fim = new Date(d.periodo_fim);
+        const agora = new Date();
+        const horas = Math.max(0, Math.floor((fim - agora) / 36e5));
+        if (horas > 12) return; // Só mostra quando falta menos de 12h
+        titulo.textContent = horas > 0 ? `Trial expira em ${horas}h` : 'Trial expira hoje!';
+        sub.textContent = 'Assine agora para não perder o acesso';
+      }
+    }
+
+    banner.style.display = 'flex';
+  } catch(e) {
+    // Silencioso
+  }
+}
+
+// Roda após o init do app
+document.addEventListener('app-ready', verificarTrialBanner);
+// Fallback: roda 5s após carregamento
+setTimeout(() => {
+  if (typeof authFetch === 'function' && typeof API !== 'undefined') {
+    verificarTrialBanner();
+  }
+}, 5000);
+</script>
+
 </body>
 </html># force redeploy Thu Jun 11 20:28:44 UTC 2026

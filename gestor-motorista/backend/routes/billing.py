@@ -1,8 +1,8 @@
 """Billing: trial automático, status de assinatura, checkout Mercado Pago, webhook."""
-import os, httpx
+import os, httpx, secrets, string
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
-from core.supabase_client import supabase
+from core.supabase_client import supabase, _supabase_url, _supabase_service_key
 from core.security import get_uid_from_token
 from core.logging import log_info, log_erro
 
@@ -144,6 +144,114 @@ async def criar_checkout(
     except Exception as e:
         log_erro("checkout_excecao", erro=e)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/vagas-fundador")
+async def vagas_fundador():
+    """Retorna vagas restantes do plano fundador (endpoint público)."""
+    try:
+        res = supabase.table("planos").select("vagas_restantes").eq("id", "fundador").execute()
+        vagas = res.data[0]["vagas_restantes"] if res.data else 50
+        return {"vagas": vagas}
+    except Exception:
+        return {"vagas": 50}
+
+
+@router.post("/criar-checkout-landing")
+async def criar_checkout_landing(dados: dict = Body(...)):
+    """
+    Endpoint público para a landing page:
+    1. Cria conta no Supabase Auth se não existir
+    2. Inicia trial de 24h
+    3. Gera link de checkout Mercado Pago
+    """
+    email = (dados.get("email") or "").strip().lower()
+    plano_id = dados.get("plano_id", "fundador")
+
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Email inválido.")
+
+    headers = {
+        "apikey": _supabase_service_key,
+        "Authorization": f"Bearer {_supabase_service_key}",
+        "Content-Type": "application/json",
+    }
+    motorista_id = None
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as c:
+            r = await c.get(
+                f"{_supabase_url}/auth/v1/admin/users?email={email}",
+                headers=headers,
+            )
+            if r.status_code == 200:
+                users = r.json().get("users", [])
+                if users:
+                    motorista_id = users[0]["id"]
+
+            if not motorista_id:
+                senha_temp = secrets.token_urlsafe(16)
+                r2 = await c.post(
+                    f"{_supabase_url}/auth/v1/admin/users",
+                    headers=headers,
+                    json={
+                        "email": email,
+                        "password": senha_temp,
+                        "email_confirm": True,
+                        "user_metadata": {"origem": "landing"},
+                    },
+                )
+                if r2.status_code not in (200, 201):
+                    raise HTTPException(status_code=502, detail="Erro ao criar conta.")
+                motorista_id = r2.json()["id"]
+                log_info("conta_criada_landing", email=email, uid=motorista_id)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_erro("landing_auth_erro", erro=e)
+        raise HTTPException(status_code=500, detail="Erro ao processar cadastro.")
+
+    ass = _buscar_assinatura(motorista_id)
+    if not ass:
+        _criar_trial(motorista_id)
+
+    checkout_url = None
+    if MP_ACCESS_TOKEN:
+        preco = PLANO_FUNDADOR_PRECO if plano_id == "fundador" else PLANO_PRO_PRECO
+        titulo = "Painel.IA – Plano Fundador" if plano_id == "fundador" else "Painel.IA – Plano Pro"
+        payload = {
+            "items": [{"title": titulo, "quantity": 1, "unit_price": preco / 100, "currency_id": "BRL"}],
+            "payer": {"email": email},
+            "back_urls": {
+                "success": f"{APP_URL}/?pagamento=sucesso",
+                "failure": f"{APP_URL}/?pagamento=falha",
+                "pending": f"{APP_URL}/?pagamento=pendente",
+            },
+            "auto_return": "approved",
+            "notification_url": f"{APP_URL}/billing/webhook",
+            "external_reference": f"{motorista_id}|{plano_id}",
+            "statement_descriptor": "PAINEL.IA",
+        }
+        try:
+            async with httpx.AsyncClient(timeout=10) as c:
+                r = await c.post(
+                    "https://api.mercadopago.com/checkout/preferences",
+                    json=payload,
+                    headers={"Authorization": f"Bearer {MP_ACCESS_TOKEN}"},
+                )
+            if r.status_code == 201:
+                checkout_url = r.json().get("init_point")
+        except Exception as e:
+            log_erro("landing_checkout_mp_erro", erro=e)
+
+    log_info("landing_checkout", email=email, uid=motorista_id, plano=plano_id, tem_mp=bool(checkout_url))
+    return {
+        "ok": True,
+        "trial_ativo": True,
+        "checkout_url": checkout_url,
+        "uid": motorista_id,
+    }
 
 
 @router.post("/webhook")
