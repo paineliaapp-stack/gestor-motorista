@@ -124,32 +124,53 @@
   <div class="section">
     <h2>Liberar acesso manual</h2>
     <div class="liberar-form">
-      <h3>Estender trial ou ativar assinatura para um usuário</h3>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Motorista ID (UUID)</label>
-          <input type="text" id="liberarId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+      <h3>Buscar usuário por email</h3>
+      <div class="form-row" style="margin-bottom:16px">
+        <div class="form-group" style="flex:1">
+          <label>Email do usuário</label>
+          <input type="email" id="buscarEmail" placeholder="usuario@gmail.com" onkeydown="if(event.key==='Enter')buscarPorEmail()">
         </div>
+        <button class="btn btn-cinza btn-sm" onclick="buscarPorEmail()" style="align-self:flex-end">Buscar</button>
+      </div>
+      <div id="buscarResultado" style="display:none;background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:16px;margin-bottom:16px">
+        <div style="font-size:0.8rem;color:#718096;margin-bottom:8px">Usuário encontrado:</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div>
+            <span id="bNome" style="color:#fff;font-weight:600"></span>
+            <span id="bEmail" style="color:#60a5fa;font-size:0.8rem;margin-left:8px"></span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span id="bStatus" class="badge"></span>
+            <span id="bId" style="font-family:monospace;font-size:0.72rem;color:#4a5568"></span>
+          </div>
+        </div>
+      </div>
+      <div id="buscarErro" style="display:none;color:#f87171;font-size:0.85rem;margin-bottom:12px"></div>
+
+      <h3 style="margin-top:8px">Liberar acesso</h3>
+      <div class="form-row">
         <div class="form-group">
           <label>Tipo</label>
           <select id="liberarTipo">
-            <option value="trial">Trial</option>
-            <option value="ativo">Ativo (assinante)</option>
+            <option value="ativo">✅ Ativo (assinante)</option>
+            <option value="trial">⏱ Trial</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Plano (se ativo)</label>
+          <label>Plano</label>
           <select id="liberarPlano">
-            <option value="fundador">Fundador</option>
-            <option value="pro">Pro</option>
+            <option value="fundador">Fundador — R$19</option>
+            <option value="pro">Pro — R$29</option>
           </select>
         </div>
         <div class="form-group">
           <label>Dias</label>
           <input type="number" id="liberarDias" value="30" min="1" max="365" style="min-width:80px">
         </div>
-        <button class="btn btn-verde btn-sm" onclick="liberarAcesso()">Liberar</button>
+        <button class="btn btn-verde btn-sm" onclick="liberarAcesso()" style="align-self:flex-end">Liberar</button>
       </div>
+      <div style="margin-top:8px;font-size:0.75rem;color:#4a5568">Motorista ID: <span id="liberarIdDisplay">—</span></div>
+      <input type="hidden" id="liberarId">
       <div class="msg ok" id="liberarOk"></div>
       <div class="msg err" id="liberarErr"></div>
     </div>
@@ -259,7 +280,40 @@
 
   function preencherLiberar(id) {
     document.getElementById('liberarId').value = id;
+    document.getElementById('liberarIdDisplay').textContent = id;
     document.getElementById('liberarId').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async function buscarPorEmail() {
+    const email = document.getElementById('buscarEmail').value.trim();
+    const resEl  = document.getElementById('buscarResultado');
+    const errEl  = document.getElementById('buscarErro');
+    resEl.style.display = 'none';
+    errEl.style.display = 'none';
+    if (!email) return;
+
+    try {
+      const d = await req('/admin/buscar-usuario?email=' + encodeURIComponent(email));
+      if (!d || !d.id) {
+        errEl.textContent = 'Usuário não encontrado para esse email.';
+        errEl.style.display = 'block';
+        return;
+      }
+      document.getElementById('bNome').textContent  = d.nome || '—';
+      document.getElementById('bEmail').textContent = d.email || '';
+      const statusEl = document.getElementById('bStatus');
+      statusEl.textContent  = d.status || 'sem assinatura';
+      statusEl.className    = 'badge ' + (d.status || '');
+      document.getElementById('bId').textContent = d.id;
+      resEl.style.display = 'block';
+
+      // Preenche automaticamente o campo de liberação
+      document.getElementById('liberarId').value = d.id;
+      document.getElementById('liberarIdDisplay').textContent = d.id;
+    } catch(e) {
+      errEl.textContent = 'Erro ao buscar: ' + e.message;
+      errEl.style.display = 'block';
+    }
   }
 
   async function liberarAcesso() {

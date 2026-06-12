@@ -95,3 +95,83 @@ async def usuarios(x_admin_token: str = Header(default=""),
     except Exception as e:
         log_erro("admin_usuarios_erro", erro=e)
         return {"total": 0, "page": page, "usuarios": []}
+
+@router.post("/admin/liberar")
+async def liberar_acesso(request: Request, dados: dict = Body(...)):
+    """Libera acesso manual: trial ou ativo."""
+    from fastapi import Body
+    tok = request.headers.get("X-Admin-Token", "")
+    _check(tok)
+    mid  = dados.get("motorista_id", "").strip()
+    tipo = dados.get("tipo", "ativo")
+    plano= dados.get("plano_id", "fundador")
+    dias = int(dados.get("dias", 30))
+    if not mid:
+        raise HTTPException(status_code=400, detail="motorista_id obrigatório")
+    from datetime import datetime, timedelta, timezone
+    agora = datetime.now(timezone.utc)
+    fim   = agora + timedelta(days=dias)
+    try:
+        ass = supabase.table("assinaturas").select("id").eq("motorista_id", mid).order("criado_em", desc=True).limit(1).execute()
+        if tipo == "trial":
+            upd = {"status": "trial", "trial_inicio": agora.isoformat(), "trial_fim": fim.isoformat(), "atualizado_em": agora.isoformat()}
+        else:
+            upd = {"status": "ativo", "plano_id": plano, "periodo_inicio": agora.isoformat(), "periodo_fim": fim.isoformat(), "atualizado_em": agora.isoformat()}
+        if ass.data:
+            supabase.table("assinaturas").update(upd).eq("id", ass.data[0]["id"]).execute()
+        else:
+            supabase.table("assinaturas").insert({"motorista_id": mid, "plano_id": plano, **upd}).execute()
+        log_info("acesso_liberado_manual", motorista_id=mid, tipo=tipo, dias=dias)
+        return {"ok": True, "mensagem": f"Acesso liberado: {tipo} por {dias} dias"}
+    except Exception as e:
+        log_erro("admin_liberar_erro", erro=e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/admin/buscar-usuario")
+async def buscar_usuario(request: Request, email: str = ""):
+    """Busca usuário pelo email e retorna id + status de assinatura."""
+    tok = request.headers.get("X-Admin-Token", "")
+    _check(tok)
+    if not email:
+        raise HTTPException(status_code=400, detail="email obrigatório")
+    try:
+        import os, httpx as _httpx
+        supabase_url = os.getenv("SUPABASE_URL", "")
+        service_key  = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY", "")
+        async with _httpx.AsyncClient(timeout=8) as c:
+            r = await c.get(
+                f"{supabase_url}/auth/v1/admin/users",
+                params={"filter": f"email.eq.{email}", "page": 1, "per_page": 1},
+                headers={"Authorization": f"Bearer {service_key}", "apikey": service_key}
+            )
+        if r.status_code != 200:
+            raise HTTPException(status_code=502, detail="Erro Supabase Auth")
+        users = r.json().get("users", [])
+        if not users:
+            return {}
+        user = users[0]
+        uid  = user["id"]
+        mot  = supabase.table("motoristas").select("nome").eq("id", uid).execute()
+        nome = mot.data[0]["nome"] if mot.data else "—"
+        ass  = supabase.table("assinaturas").select("status,plano_id").eq("motorista_id", uid).order("criado_em", desc=True).limit(1).execute()
+        status = ass.data[0]["status"] if ass.data else None
+        return {"id": uid, "email": user.get("email"), "nome": nome, "status": status}
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_erro("admin_buscar_usuario_erro", erro=e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/admin/emails-remarketing")
+async def emails_remarketing(request: Request):
+    """Emails de quem testou e não assinou."""
+    tok = request.headers.get("X-Admin-Token", "")
+    _check(tok)
+    try:
+        expirados = supabase.table("assinaturas").select("motorista_id,email_pagamento,trial_fim,criado_em").eq("status", "expirado").execute()
+        emails = [{"email": e["email_pagamento"], "trial_fim": e.get("trial_fim"), "criado_em": e.get("criado_em")} for e in (expirados.data or []) if e.get("email_pagamento")]
+        return {"emails": emails, "total": len(emails)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
