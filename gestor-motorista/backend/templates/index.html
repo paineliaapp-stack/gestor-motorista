@@ -349,9 +349,6 @@ const _supa = supabase.createClient(
   var ui = document.getElementById('splash-ui');
   var tocado = false;
 
-  // Safari puro: tem "Safari" mas NÃO tem "Chrome" nem "CriOS"
-  var isSafariOnly = /Safari/.test(navigator.userAgent) && !/Chrome|CriOS/.test(navigator.userAgent);
-
   function _fim(){
     sp.style.transition = 'opacity .4s';
     sp.style.opacity = '0';
@@ -362,10 +359,7 @@ const _supa = supabase.createClient(
     if(tocado) return;
     tocado = true;
 
-    // Safari puro — pula direto pro app sem vídeo
-    if(isSafariOnly){ _fim(); return; }
-
-    // Chrome iOS, Chrome Android, qualquer outro — toca vídeo
+    // Esconde UI
     ui.style.display = 'none';
 
     // Cria vídeo do zero no gesto — iOS exige isso para autoplay+som
@@ -404,6 +398,7 @@ const _supa = supabase.createClient(
   });
 }();
 </script>
+
 
 <div id="tela-login" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:0">
   <div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 100%,rgba(240,180,41,.08) 0%,transparent 70%);pointer-events:none"></div>
