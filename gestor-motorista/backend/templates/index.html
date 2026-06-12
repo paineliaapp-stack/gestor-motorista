@@ -335,6 +335,40 @@ const _supa = supabase.createClient(
 );
 </script>
 
+<script>
+(function(){
+  var logs=[], t0=Date.now();
+  function ms(){return (Date.now()-t0)+'ms';}
+  function show(){
+    if(!document.body) return;
+    var d=document.getElementById('diagP');
+    if(!d){
+      d=document.createElement('div');
+      d.id='diagP';
+      d.style.cssText='position:fixed;left:0;right:0;bottom:0;max-height:42vh;overflow:auto;z-index:2147483647;background:rgba(0,0,0,.93);color:#0f0;font:11px monospace;padding:10px;border-top:2px solid #0f0;white-space:pre-wrap;word-break:break-word';
+      var b=document.createElement('button');
+      b.textContent='✕';b.style.cssText='position:sticky;top:0;float:right;background:#333;color:#fff;border:none;border-radius:6px;padding:4px 12px';
+      b.onclick=function(){d.remove();};
+      d.appendChild(b);
+      var s=document.createElement('div');s.id='diagT';d.appendChild(s);
+      document.body.appendChild(d);
+    }
+    document.getElementById('diagT').textContent=logs.join('\n');
+  }
+  window._d=function(m){logs.push('['+ms()+'] '+m);show();};
+  window.addEventListener('error',function(e){window._d('❌ '+(e.message||e.error)+' @'+(e.lineno||''));});
+  window.addEventListener('unhandledrejection',function(e){window._d('❌P '+(e.reason&&(e.reason.message||e.reason)));});
+  window._d('pagina iniciou');
+  document.addEventListener('DOMContentLoaded',function(){window._d('DOM pronto');});
+  window.addEventListener('load',function(){window._d('load completo');});
+  setTimeout(function(){
+    var h=document.getElementById('hero-lucro');
+    window._d('⏱10s MID='+(window.MID||'NULO')+' hero="'+(h?h.textContent:'?')+'"');
+    window._d('init concluido='+(window._initConcluido||false)+' lancs='+((window._todosLanc||[]).length));
+    window._d('billing='+(window._billingStatus?JSON.stringify(window._billingStatus).slice(0,80):'nulo'));
+  },10000);
+})();
+</script>
 </head>
 <body>
 <!-- ===== SPLASH =====
@@ -2386,8 +2420,11 @@ async function loadDash(){
   // Verifica contas vencendo + pré-carrega para meta mensal
   authFetch(API+'/contas/'+MID).then(r=>r.json()).then(c=>{window._contas=c;alertaContasVencendo(c);try{renderMetaMensal();}catch(e){}}).catch(()=>{});
   try{
+    if(window._d)window._d('loadDash: buscando resumo MID='+MID);
     const r=await authFetch(API+'/resumo/'+MID);
+    if(window._d)window._d('resumo HTTP '+r.status);
     const d=await r.json();
+    if(window._d)window._d('resumo: '+((d.lancamentos||[]).length)+' lancs, erro='+(d.erro||'nao'));
     todosLanc=d.lancamentos||[];
     window._todosLanc = todosLanc;
     // Calcula faturado do mês atual e expõe para renderMetaMensal
