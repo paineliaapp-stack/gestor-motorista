@@ -330,9 +330,10 @@ const _supa = supabase.createClient(
 
 
 <!-- ════ ABERTURA:INICIO — BLOCO PROTEGIDO. NÃO EDITAR FORA DAQUI ════
-     Fluxo: tela "Bem-vindo" com a logo (=botão). Vídeo HQ pré-carregado.
-     Ao tocar, o vídeo reinicia do zero e toca COM SOM (o toque libera o áudio
-     no iOS). Só mobile. Nunca trava — toque sempre responde, reset garantido. -->
+     O vídeo (alta qualidade) baixa 100% em segundo plano enquanto a tela
+     "Bem-vindo" está visível. Ao tocar na logo, ele JÁ ESTÁ PRONTO e toca
+     na hora com som. Se ainda estiver baixando, mostra "carregando" e toca
+     sozinho assim que terminar — NUNCA pula direto pro dashboard. Só mobile. -->
 <div id="abertura" style="display:none;position:fixed;inset:0;z-index:99999;background:#000;overflow:hidden">
   <video id="abertura-vid" playsinline preload="auto" poster="/static/abertura-poster.jpg"
          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .4s">
@@ -361,10 +362,17 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
   box.style.display = 'block';
   var v = document.getElementById('abertura-vid');
   var welcome = document.getElementById('abertura-welcome');
+  var hint = document.getElementById('abertura-hint');
   var skip = document.getElementById('abertura-skip');
-  var fechado = false, iniciado = false;
+  var fechado = false, querTocar = false, pronto = false;
 
+  // Baixa o vídeo INTEIRO em segundo plano, já
   try { v.load(); } catch(e) {}
+
+  // Marca como pronto quando dá pra tocar até o fim sem parar
+  v.addEventListener('canplaythrough', function(){ pronto = true; if (querTocar) iniciarVideo(); }, { once: true });
+  // Fallback de "pronto": canplay simples também libera (rede mais lenta)
+  v.addEventListener('canplay', function(){ if (!pronto) { pronto = true; if (querTocar) iniciarVideo(); } }, { once: true });
 
   function fechar(){
     if (fechado) return; fechado = true;
@@ -376,46 +384,30 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
   window._fecharAbertura = fechar;
   v.addEventListener('ended', fechar);
 
-  function darPlay(){
-    v.muted = false;
-    var p = v.play();
-    if (p && p.catch) {
-      p.catch(function(){
-        v.muted = true;
-        var p2 = v.play();
-        if (p2 && p2.catch) p2.catch(fechar);
-      });
-    }
-  }
-  function tocar(){
-    if (iniciado || fechado) return;
-    iniciado = true;
+  function iniciarVideo(){
     welcome.style.transition = 'opacity .35s ease';
     welcome.style.opacity = '0';
     setTimeout(function(){ welcome.style.display = 'none'; }, 350);
     skip.style.display = 'block';
     v.style.opacity = '1';
     v.currentTime = 0;
-    // Se o vídeo já tem buffer, toca na hora; senão espera o mínimo necessário
-    if (v.readyState >= 3) {        // HAVE_FUTURE_DATA — pode tocar já
-      darPlay();
-    } else {
-      // Mostra o poster (logo) enquanto o pouco que falta carrega, e toca assim que der
-      v.addEventListener('canplay', darPlay, { once: true });
-      darPlay(); // tenta já — muitos navegadores começam mesmo com pouco buffer
-    }
-    // Trava: se em 3s não começou a rodar de fato, não prende o usuário
-    setTimeout(function(){
-      if (!fechado && v.currentTime < 0.1) fechar();
-    }, 3000);
+    v.muted = false;
+    var p = v.play();
+    if (p && p.catch) p.catch(function(){ v.muted = true; v.play(); });
   }
 
-  // Toque funciona SEMPRE (sem once) — não importa quantas vezes
-  welcome.addEventListener('click', tocar);
-  // Erro de mídia nunca prende o usuário
-  v.addEventListener('error', function(){ if(!iniciado) {} else fechar(); });
-  // Trava absoluta de segurança
-  setTimeout(fechar, 30000);
+  // Toque: se já está pronto, toca na hora. Se ainda baixa, avisa e espera —
+  // NUNCA pula pro dashboard.
+  welcome.addEventListener('click', function(){
+    if (fechado) return;
+    querTocar = true;
+    if (pronto) {
+      iniciarVideo();
+    } else {
+      hint.textContent = 'carregando vídeo…';
+      // assim que canplay/canplaythrough disparar, iniciarVideo() roda sozinho
+    }
+  });
 })();
 </script>
 <!-- ════ ABERTURA:FIM ════ -->
