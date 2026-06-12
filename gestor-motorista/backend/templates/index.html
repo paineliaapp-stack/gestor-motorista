@@ -349,7 +349,7 @@ if (typeof window._registrarPushSilencioso !== 'function') { window._registrarPu
       btn.style.cssText = 'position:sticky;top:0;float:right;background:#222;color:#fff;border:1px solid #555;border-radius:6px;padding:4px 10px;font-size:12px';
       btn.onclick = function(){ d.remove(); };
       d.appendChild(btn);
-      document.body.appendChild(d);
+      (document.body||document.documentElement).appendChild(d);
     }
     return d;
   }
@@ -448,9 +448,21 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
       setTimeout(function(){ welcome.style.display = 'none'; }, 350);
       skip.style.display = 'block';
     }, { once: true });
-    // Vídeo terminou: deixa o último frame respirar 300ms antes do fade —
-    // evita a sensação de "corte seco" no final
-    v.addEventListener('ended', function(){ setTimeout(fechar, 300); });
+    // Fecha quando o vídeo termina. No iOS o 'ended' às vezes não dispara,
+    // então usamos 3 garantias: ended + timeupdate (chega perto do fim) + duração.
+    var fechouPeloFim = false;
+    function fimDoVideo(){ if(fechouPeloFim) return; fechouPeloFim = true; setTimeout(fechar, 300); }
+    v.addEventListener('ended', fimDoVideo);
+    v.addEventListener('timeupdate', function(){
+      // quando faltam 0.15s para o fim, considera terminado (iOS-safe)
+      if (v.duration && v.currentTime >= v.duration - 0.15) fimDoVideo();
+    });
+    // Quando souber a duração, agenda um fechamento de segurança por tempo
+    v.addEventListener('loadedmetadata', function(){
+      if (v.duration && isFinite(v.duration)) {
+        setTimeout(fimDoVideo, (v.duration * 1000) + 600);
+      }
+    });
 
     var p = v.play();
     if (p && p.catch) {
@@ -459,6 +471,8 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
         v.play().catch(function(){});
       });
     }
+    // Garantia final absoluta: 9s no máximo (vídeo tem 6s)
+    setTimeout(fimDoVideo, 9000);
   }
   welcome.addEventListener('click', tocar);
 })();
