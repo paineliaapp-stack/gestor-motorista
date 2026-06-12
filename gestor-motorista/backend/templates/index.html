@@ -397,6 +397,16 @@ const _supa = supabase.createClient(
     v.style.display = 'block';
     ui.style.display = 'none';
 
+    // iOS standalone congela o video pre-carregado.
+    // Resetar o src no gesto forca o iOS a destravar e tocar de verdade.
+    v.pause();
+    v.removeAttribute('src');
+    v.load();
+    v.src = '/static/splash.mp4';
+
+    a.pause();
+    a.currentTime = 0;
+
     // Play sincrono no mesmo gesto — iOS exige
     v.play().catch(function(){ _fim(); });
     a.play().catch(function(){});
