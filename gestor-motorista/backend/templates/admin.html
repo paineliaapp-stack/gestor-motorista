@@ -121,7 +121,7 @@ tr:hover td { background: #1e2240; }
 <body>
 
 <!-- LOGIN -->
-<div class="login-screen" id="loginScreen">
+<div class="login-screen" id="loginScreen" style="display:flex">
   <div class="login-box">
     <h1>⚡ Painel.IA</h1>
     <p>Acesso administrativo restrito</p>
@@ -269,6 +269,7 @@ function entrar() {
   const tok = document.getElementById('tokenInput').value.trim();
   if (!tok) return;
   ADMIN_TOKEN = tok;
+  sessionStorage.setItem('admin_token', tok);
   document.getElementById('loginErr').style.display = 'none';
   iniciar();
 }
@@ -591,28 +592,15 @@ async function resolverTicket(id) {
   }
 }
 
-// Inicialização — usa token salvo ou mostra tela de login
+// Inicialização
 (function init(){
   const saved = sessionStorage.getItem('admin_token');
   if(saved){
     ADMIN_TOKEN = saved;
     iniciar();
-  } else {
-    document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
   }
+  // loginScreen já aparece por padrão no HTML
 })();
-
-// Salva token no sessionStorage ao entrar
-const _entrarOriginal = entrar;
-window.entrar = function(){
-  const tok = document.getElementById('tokenInput').value.trim();
-  if(!tok) return;
-  sessionStorage.setItem('admin_token', tok);
-  ADMIN_TOKEN = tok;
-  document.getElementById('loginErr').style.display = 'none';
-  iniciar();
-};
 </script>
 </body>
 </html>
