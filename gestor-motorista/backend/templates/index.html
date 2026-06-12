@@ -417,23 +417,14 @@ const _supa = supabase.createClient(
       if(a.paused && !a.ended) a.play().catch(function(){});
     }
   });
-}();
 
-    // Botão pular após 3s
-    setTimeout(function(){
-      if(done) return;
-      var b = document.createElement('button');
-      b.textContent = 'Pular ›';
-      b.style.cssText = 'position:absolute;top:20px;right:20px;background:rgba(255,255,255,.12);border:none;border-radius:20px;color:rgba(255,255,255,.8);font-size:13px;padding:8px 18px;cursor:pointer;font-family:-apple-system,sans-serif;z-index:1';
-      b.onclick = function(e){ e.stopPropagation(); _fim(); };
-      sp.appendChild(b);
-    }, 3000);
-  });
-
-  // iOS: retoma se foi pro background durante o vídeo
-  document.addEventListener('visibilitychange', function(){
-    if(document.visibilityState === 'visible' && !done && v.style.display !== 'none' && v.paused && !v.ended){
-      v.play().catch(function(){});
+  // iOS PWA: reabrir sem recarregar — reseta estado sem destruir DOM
+  window.addEventListener('pageshow', function(ev){
+    if(ev.persisted){
+      done = false;
+      if(sp){ sp.style.display='flex'; sp.style.opacity='1'; }
+      if(v){ v.style.display='none'; try{ v.pause(); v.currentTime=0; }catch(e){} }
+      if(a){ try{ a.pause(); a.currentTime=0; }catch(e){} }
     }
   });
 }();
