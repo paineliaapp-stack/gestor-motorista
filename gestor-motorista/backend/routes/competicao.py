@@ -46,8 +46,21 @@ async def competicao(mid: str, uid: str = Depends(get_uid_from_token)):
         # Meta do motorista
         m = supabase.table("motoristas").select("meta_diaria,nome").eq("id", mid).execute()
         row = (m.data or [{}])[0]
-        meta = float(row.get("meta_diaria") or 150) or 150
+        meta_atual = float(row.get("meta_diaria") or 150) or 150
         nome = (row.get("nome") or "Motorista").split()[0]
+
+        # ANTI-BURLA: a meta do ranking é a CONGELADA no 1º acesso do dia.
+        # Abaixar a meta no fim do dia não muda o % de hoje.
+        meta = meta_atual
+        hoje_s = _hoje().isoformat()
+        try:
+            snap = supabase.table("metas_dia").select("meta").eq("motorista_id", mid).eq("data", hoje_s).execute()
+            if snap.data:
+                meta = float(snap.data[0]["meta"]) or meta_atual
+            else:
+                supabase.table("metas_dia").insert({"motorista_id": mid, "data": hoje_s, "meta": meta_atual}).execute()
+        except Exception:
+            pass  # tabela ainda não criada — usa a meta atual
 
         ganhos = _ganhos_por_dia(mid)
         hoje_str = _hoje().isoformat()
@@ -82,6 +95,13 @@ async def competicao(mid: str, uid: str = Depends(get_uid_from_token)):
                 metas = supabase.table("motoristas").select("id,meta_diaria") \
                     .in_("id", list(soma.keys())).execute()
                 meta_map = {r["id"]: float(r.get("meta_diaria") or 150) or 150 for r in (metas.data or [])}
+                # Sobrepõe com snapshots congelados do dia (anti-burla para todos)
+                try:
+                    snaps = supabase.table("metas_dia").select("motorista_id,meta").eq("data", hoje_str).execute()
+                    for s in (snaps.data or []):
+                        meta_map[s["motorista_id"]] = float(s["meta"]) or meta_map.get(s["motorista_id"], 150)
+                except Exception:
+                    pass
                 pcts = sorted(
                     (soma[k] / meta_map.get(k, 150) * 100 for k in soma),
                     reverse=True,

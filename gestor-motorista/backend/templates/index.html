@@ -464,15 +464,17 @@ const _supa = supabase.createClient(
     sp.style.opacity = '1';
     sp.style.display = 'block';
   }
-  // pageshow persisted = página restaurada do congelamento (bfcache/PWA)
+  // pageshow = página restaurada (qualquer forma) → reseta sempre
   window.addEventListener('pageshow', function(e){
     if (e.persisted) resetSplash();
   });
-  // Voltou do background depois de >30s = reabertura real do app
+  // Volta do background → reseta SEMPRE (antes era só >30s e a reabertura
+  // rápida ficava congelada no meio do vídeo). Threshold mínimo de 1.5s só
+  // para ignorar piscadas de foco (notificação, central de controle).
   var escondidoDesde = 0;
   document.addEventListener('visibilitychange', function(){
     if (document.hidden) { escondidoDesde = Date.now(); }
-    else if (escondidoDesde && (Date.now() - escondidoDesde) > 30000) { resetSplash(); }
+    else if (escondidoDesde && (Date.now() - escondidoDesde) > 1500) { resetSplash(); }
   });
 }();
 </script>
@@ -1027,12 +1029,12 @@ const _supa = supabase.createClient(
 .ranking-blur::after{content:"🏆 Em breve — Compete com motoristas da sua região e veja quem fatura mais na cidade";position:absolute;inset:0;background:rgba(10,10,20,.88);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;font-size:15px;font-weight:600;line-height:1.8;padding:24px;border-radius:12px}
 </style>
 <div class="page" id="page-corrida">
-  <div class="ph"><div><h1>Corrida</h1><div class="sub">Compete com motoristas da sua região</div></div></div>
+  <div class="ph"><div><h1>Corrida</h1><div class="sub">Competição por % da meta — sem expor seus valores</div></div></div>
   <div class="sk"><div class="sk-flame">🔥</div><div class="sk-info"><h3 id="streak-num">0 dias</h3><p id="streak-desc">Sequência ativa — continue!</p></div></div>
   <div class="ch-card">
-    <div class="ch-hdr"><div><div class="ch-name">🏁 Desafio da Semana — R$ 1.500</div><div class="ch-end">Termina domingo às 23:59</div></div><div style="font-size:11px;color:var(--am);font-weight:600">12 participantes</div></div>
+    <div class="ch-hdr"><div><div class="ch-name">🏁 Desafio: 7 dias de meta seguidos</div><div class="ch-end">Complete para virar 🥇 OURO</div></div><div id="ch-part" style="font-size:11px;color:var(--am);font-weight:600">—</div></div>
     <div class="ch-pb"><div class="ch-pf" id="ch-fill" style="width:0%"></div></div>
-    <div class="ch-meta"><span>Progresso: <strong id="ch-prog">R$ 0,00</strong></span><span>Meta: <strong>R$ 1.500,00</strong></span></div>
+    <div class="ch-meta"><span>Progresso: <strong id="ch-prog">0 de 7 dias</strong></span><span>Prêmio: <strong>patente OURO</strong></span></div>
   </div>
   <div class="comp-grid">
     <div class="gc ranking-blur"><h3>🏆 Ranking semanal</h3><div class="rk-list" id="ranking-list"></div></div>
@@ -5808,7 +5810,7 @@ function _renderMetaHora(){
 setInterval(_renderMetaHora, 60000); // recalcula a cada minuto — o ritmo sobe conforme o dia passa
 </script>
 <script>
-/* ════ CARD DO DIA — competição estilo Strava SEM expor R$ ════ */
+/* ════ CARD DO DIA v2 — design profissional + aba Corrida com dados reais ════ */
 async function gerarCardDia(){
   const btn = document.getElementById('btn-card-dia');
   const orig = btn ? btn.innerHTML : '';
@@ -5819,7 +5821,6 @@ async function gerarCardDia(){
     const png = await _desenharCardDia(d);
     const blob = await (await fetch(png)).blob();
     const file = new File([blob], 'painelia-card.png', {type:'image/png'});
-    // Share nativo (iOS/Android) com fallback para download
     if (navigator.canShare && navigator.canShare({files:[file]})){
       await navigator.share({files:[file], title:'Meu dia no Painel.IA'});
     } else {
@@ -5830,7 +5831,26 @@ async function gerarCardDia(){
   if(btn){ btn.innerHTML = orig; btn.disabled = false; }
 }
 
-function _rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function _rrp(x,px,py,w,h,r){x.beginPath();x.moveTo(px+r,py);x.arcTo(px+w,py,px+w,py+h,r);x.arcTo(px+w,py+h,px,py+h,r);x.arcTo(px,py+h,px,py,r);x.arcTo(px,py,px+w,py,r);x.closePath();}
+
+/* Pílula auto-dimensionada (mede o texto — NUNCA vaza) */
+function _pill(x, texto, cx, cy, opts){
+  opts = opts || {};
+  x.font = opts.font || '600 34px -apple-system, sans-serif';
+  const tw = x.measureText(texto).width;
+  const padX = opts.padX || 34, h = opts.h || 74;
+  const w = tw + padX*2;
+  _rrp(x, cx - w/2, cy - h/2, w, h, h/2);
+  x.fillStyle = opts.bg || 'rgba(255,255,255,.05)';
+  x.fill();
+  if(opts.stroke){ x.strokeStyle = opts.stroke; x.lineWidth = 2; 
+    _rrp(x, cx - w/2, cy - h/2, w, h, h/2); x.stroke(); }
+  x.fillStyle = opts.fg || '#f3f4f6';
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText(texto, cx, cy + 2);
+  x.textBaseline = 'alphabetic';
+  return w;
+}
 
 function _desenharCardDia(d){
   return new Promise(function(resolve){
@@ -5838,92 +5858,145 @@ function _desenharCardDia(d){
     const c = document.createElement('canvas'); c.width=W; c.height=H;
     const x = c.getContext('2d');
 
-    // Fundo escuro premium com brilho dourado radial
-    x.fillStyle = '#07090d'; x.fillRect(0,0,W,H);
-    let g = x.createRadialGradient(W/2,H*0.42,80, W/2,H*0.42,900);
-    g.addColorStop(0,'rgba(240,180,41,.16)'); g.addColorStop(1,'rgba(240,180,41,0)');
+    // Fundo profundo com glow dourado suave
+    x.fillStyle = '#0a0c10'; x.fillRect(0,0,W,H);
+    let g = x.createRadialGradient(W/2, 640, 60, W/2, 640, 760);
+    g.addColorStop(0,'rgba(240,180,41,.14)'); g.addColorStop(.6,'rgba(240,180,41,.04)'); g.addColorStop(1,'rgba(240,180,41,0)');
     x.fillStyle = g; x.fillRect(0,0,W,H);
-    // Grid sutil (estética de painel)
-    x.strokeStyle = 'rgba(255,255,255,.03)'; x.lineWidth = 1;
-    for(let i=0;i<W;i+=72){ x.beginPath(); x.moveTo(i,0); x.lineTo(i,H); x.stroke(); }
-    for(let i=0;i<H;i+=72){ x.beginPath(); x.moveTo(0,i); x.lineTo(W,i); x.stroke(); }
+    // Vinheta inferior
+    let vg = x.createLinearGradient(0,H-500,0,H);
+    vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.45)');
+    x.fillStyle = vg; x.fillRect(0,H-500,W,500);
 
-    function desenharResto(logoImg){
-      // Logo + marca no topo
-      if(logoImg){
-        x.save(); x.beginPath(); x.arc(W/2, 200, 70, 0, Math.PI*2); x.clip();
-        x.drawImage(logoImg, W/2-70, 130, 140, 140); x.restore();
-        x.strokeStyle='rgba(240,180,41,.5)'; x.lineWidth=3;
-        x.beginPath(); x.arc(W/2,200,72,0,Math.PI*2); x.stroke();
-      }
+    function desenhar(logoImg){
       x.textAlign='center';
-      x.fillStyle='#f3f4f6'; x.font='800 64px Barlow Condensed, sans-serif';
-      x.fillText('PAINEL', W/2-42, 350);
-      x.fillStyle='#F0B429'; x.fillText('.IA', W/2+118, 350);
 
-      x.fillStyle='rgba(243,244,246,.45)'; x.font='400 30px -apple-system, sans-serif';
+      // ── Marca no topo ──
+      if(logoImg){
+        x.save(); x.beginPath(); x.arc(W/2 - 130, 132, 44, 0, Math.PI*2); x.clip();
+        x.drawImage(logoImg, W/2 - 174, 88, 88, 88); x.restore();
+      }
+      x.textAlign='left';
+      x.fillStyle='#f3f4f6'; x.font='800 52px Barlow Condensed, sans-serif';
+      x.fillText('PAINEL', W/2 - 66, 150);
+      x.fillStyle='#F0B429'; x.fillText('.IA', W/2 + 116, 150);
+      x.textAlign='center';
       const dt = new Date(d.data+'T12:00:00');
-      x.fillText(dt.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'}).toUpperCase(), W/2, 408);
+      x.fillStyle='rgba(243,244,246,.4)'; x.font='500 28px -apple-system, sans-serif';
+      x.fillText(dt.toLocaleDateString('pt-BR',{weekday:'long', day:'numeric', month:'long'}).toUpperCase(), W/2, 218);
 
-      // ═ O número-herói: % DA META (nunca R$) ═
-      x.fillStyle = d.pct_meta_hoje>=100 ? '#00D897' : '#F0B429';
-      x.font='900 290px Barlow Condensed, sans-serif';
-      x.fillText(d.pct_meta_hoje+'%', W/2, H*0.46);
-      x.fillStyle='rgba(243,244,246,.6)'; x.font='600 40px Barlow Condensed, sans-serif';
-      x.fillText('DA META DE HOJE', W/2, H*0.46+70);
+      // ── ANEL DE PROGRESSO (o herói) ──
+      const cx = W/2, cy = 640, R = 290, LW = 30;
+      // trilha
+      x.beginPath(); x.arc(cx, cy, R, 0, Math.PI*2);
+      x.strokeStyle = 'rgba(255,255,255,.06)'; x.lineWidth = LW; x.stroke();
+      // progresso (cap visual em 100%)
+      const pct = Math.max(0, Math.min(100, d.pct_meta_hoje));
+      const a0 = -Math.PI/2, a1 = a0 + (pct/100)*Math.PI*2;
+      const cor = d.pct_meta_hoje >= 100 ? '#00D897' : '#F0B429';
+      if(pct > 0){
+        const lg = x.createLinearGradient(cx-R, cy, cx+R, cy);
+        lg.addColorStop(0, cor); lg.addColorStop(1, d.pct_meta_hoje>=100 ? '#34d399' : '#fbbf24');
+        x.beginPath(); x.arc(cx, cy, R, a0, a1);
+        x.strokeStyle = lg; x.lineWidth = LW; x.lineCap = 'round'; x.stroke();
+      }
+      // brilho na ponta do arco
+      if(pct > 2 && pct < 100){
+        const tx = cx + R*Math.cos(a1), ty = cy + R*Math.sin(a1);
+        x.beginPath(); x.arc(tx, ty, 16, 0, Math.PI*2);
+        x.fillStyle = cor; x.shadowColor = cor; x.shadowBlur = 28; x.fill(); x.shadowBlur = 0;
+      }
+      // número central
+      x.fillStyle = cor; x.font='900 230px Barlow Condensed, sans-serif';
+      x.fillText(d.pct_meta_hoje + '%', cx, cy + 64);
+      x.fillStyle='rgba(243,244,246,.55)'; x.font='600 34px Barlow Condensed, sans-serif';
+      x.fillText('DA META DE HOJE', cx, cy + 128);
 
-      // Selo meta batida
+      // ── Selo de meta batida ──
+      let y = cy + R + 110;
       if(d.bateu_meta){
-        x.fillStyle='rgba(0,216,151,.15)'; _rr(x, W/2-220, H*0.46+110, 440, 76, 38); x.fill();
-        x.strokeStyle='rgba(0,216,151,.5)'; x.lineWidth=2; _rr(x, W/2-220, H*0.46+110, 440, 76, 38); x.stroke();
-        x.fillStyle='#00D897'; x.font='700 38px -apple-system, sans-serif';
-        x.fillText('🏆 META BATIDA', W/2, H*0.46+162);
-      }
+        _pill(x, '🏆  META BATIDA', cx, y, {font:'800 40px -apple-system, sans-serif',
+          fg:'#00D897', bg:'rgba(0,216,151,.12)', stroke:'rgba(0,216,151,.45)', h:86, padX:44});
+        y += 130;
+      } else { y += 20; }
 
-      // Streak + patente (cards lado a lado)
-      const y2 = H*0.62;
-      x.fillStyle='rgba(255,255,255,.04)';
-      _rr(x, 90, y2, 430, 220, 28); x.fill();
-      _rr(x, 560, y2, 430, 220, 28); x.fill();
-      x.strokeStyle='rgba(255,255,255,.1)'; x.lineWidth=2;
-      _rr(x, 90, y2, 430, 220, 28); x.stroke();
-      _rr(x, 560, y2, 430, 220, 28); x.stroke();
+      // ── Linha de stats: streak + patente (pílulas medidas, sem vazar) ──
+      const stxt = '🔥 ' + d.streak + (d.streak===1?' dia de meta':' dias seguidos');
+      x.font='600 36px -apple-system, sans-serif';
+      const w1 = x.measureText(stxt).width + 68;
+      const w2 = x.measureText(d.patente).width + 68;
+      const gap = 24, total = w1 + w2 + gap;
+      _pill(x, stxt, cx - total/2 + w1/2, y, {font:'600 36px -apple-system, sans-serif', bg:'rgba(255,255,255,.05)', stroke:'rgba(255,255,255,.12)'});
+      _pill(x, d.patente, cx - total/2 + w1 + gap + w2/2, y, {font:'700 36px -apple-system, sans-serif', fg:'#F0B429', bg:'rgba(240,180,41,.1)', stroke:'rgba(240,180,41,.4)'});
+      y += 116;
 
-      x.fillStyle='#F0B429'; x.font='900 100px Barlow Condensed, sans-serif';
-      x.fillText('🔥 '+d.streak, 305, y2+118);
-      x.fillStyle='rgba(243,244,246,.5)'; x.font='600 28px Barlow Condensed, sans-serif';
-      x.fillText(d.streak===1?'DIA BATENDO A META':'DIAS SEGUIDOS DE META', 305, y2+172);
-
-      x.font='900 76px -apple-system, sans-serif';
-      x.fillStyle='#f3f4f6'; x.fillText(d.patente, 775, y2+118);
-      x.fillStyle='rgba(243,244,246,.5)'; x.font='600 28px Barlow Condensed, sans-serif';
-      x.fillText('PATENTE ATUAL', 775, y2+172);
-
-      // Ranking nacional (percentil — sem valores)
+      // ── Ranking percentil ──
       if(d.rank_top_pct !== null && d.rank_total > 1){
-        const y3 = y2+270;
-        x.fillStyle='rgba(240,180,41,.1)'; _rr(x, 90, y3, 900, 130, 28); x.fill();
-        x.strokeStyle='rgba(240,180,41,.35)'; _rr(x, 90, y3, 900, 130, 28); x.stroke();
-        x.fillStyle='#F0B429'; x.font='800 46px Barlow Condensed, sans-serif';
-        x.fillText('TOP '+d.rank_top_pct+'% DO BRASIL HOJE', W/2, y3+62);
-        x.fillStyle='rgba(243,244,246,.45)'; x.font='500 28px -apple-system, sans-serif';
-        x.fillText('#'+d.rank_pos+' de '+d.rank_total+' motoristas no Painel.IA', W/2, y3+106);
+        _pill(x, '🇧🇷 TOP ' + d.rank_top_pct + '% DO BRASIL HOJE  ·  #' + d.rank_pos + ' de ' + d.rank_total, cx, y,
+          {font:'700 34px -apple-system, sans-serif', fg:'#f3f4f6', bg:'rgba(255,255,255,.04)', stroke:'rgba(240,180,41,.25)', h:80});
+        y += 70;
       }
+      x.fillStyle='rgba(243,244,246,.3)'; x.font='400 24px -apple-system, sans-serif';
+      x.fillText('competição por % da meta — sem expor valores', cx, y + 44);
 
-      // Rodapé CTA
-      x.fillStyle='rgba(243,244,246,.35)'; x.font='500 30px -apple-system, sans-serif';
-      x.fillText('Você sabe quanto sobrou do SEU dia?', W/2, H-150);
-      x.fillStyle='#F0B429'; x.font='800 40px Barlow Condensed, sans-serif';
-      x.fillText('painelia.app', W/2, H-90);
+      // ── Rodapé ──
+      x.fillStyle='rgba(243,244,246,.4)'; x.font='500 30px -apple-system, sans-serif';
+      x.fillText('Você sabe quanto sobrou do SEU dia?', cx, H-158);
+      x.fillStyle='#F0B429'; x.font='800 44px Barlow Condensed, sans-serif';
+      x.fillText('painelia.app', cx, H-96);
 
       resolve(c.toDataURL('image/png'));
     }
-
     const img = new Image();
-    img.onload = function(){ desenharResto(img); };
-    img.onerror = function(){ desenharResto(null); };
+    img.onload = function(){ desenhar(img); };
+    img.onerror = function(){ desenhar(null); };
     img.src = '/static/icon-512.png';
   });
 }
+
+/* ════ ABA CORRIDA: dados REAIS de competição ════ */
+async function carregarCorrida(){
+  try{
+    if(!window.MID) return;
+    const r = await authFetch(API+'/competicao/'+MID);
+    const d = await r.json();
+    window._competicao = d;
+    // Streak real
+    const sn = document.getElementById('streak-num');
+    const sd = document.getElementById('streak-desc');
+    if(sn) sn.textContent = d.streak + (d.streak===1?' dia':' dias');
+    if(sd) sd.textContent = d.streak > 0 ? 'Batendo a meta — não quebra a corrente!' : 'Bata a meta hoje para começar sua sequência';
+    // Desafio = 7 dias seguidos (rumo ao OURO)
+    const fill = document.getElementById('ch-fill');
+    const prog = document.getElementById('ch-prog');
+    if(fill) fill.style.width = Math.min(100, d.streak/7*100) + '%';
+    if(prog) prog.textContent = d.streak + ' de 7 dias';
+    const part = document.getElementById('ch-part');
+    if(part) part.textContent = d.patente;
+    // Ranking real
+    const rk = document.getElementById('ranking-list');
+    if(rk){
+      if(d.rank_top_pct !== null && d.rank_total > 1){
+        rk.innerHTML = '<div style="text-align:center;padding:14px 6px">'
+          + '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:34px;font-weight:900;color:var(--am)">TOP '+d.rank_top_pct+'%</div>'
+          + '<div style="font-size:12px;color:var(--mt);margin-top:2px">do Brasil hoje · #'+d.rank_pos+' de '+d.rank_total+' motoristas</div>'
+          + '<div style="font-size:11px;color:var(--faint,#64748b);margin-top:8px">ranking por % da meta — ninguém vê seus valores</div>'
+          + '<button onclick="gerarCardDia()" style="margin-top:12px;padding:10px 18px;border-radius:12px;border:1px solid rgba(240,180,41,.4);background:rgba(240,180,41,.12);color:var(--am);font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">🏆 Compartilhar Card do Dia</button>'
+          + '</div>';
+        rk.parentElement && rk.parentElement.classList.remove('ranking-blur');
+      } else {
+        rk.innerHTML = '<div style="text-align:center;padding:14px;font-size:12px;color:var(--mt)">Registre seus ganhos hoje para entrar no ranking 🏁</div>';
+      }
+    }
+  }catch(e){ console.warn('corrida:', e); }
+}
+// Carrega ao abrir o app (também CONGELA a meta do dia — anti-burla) e ao clicar na aba
+setTimeout(function(){
+  var t0 = setInterval(function(){ if(window.MID){ clearInterval(t0); carregarCorrida(); } }, 700);
+}, 2500);
+(function(){
+  var ni = document.getElementById('ni-corrida');
+  if(ni) ni.addEventListener('click', function(){ setTimeout(carregarCorrida, 200); });
+})();
 </script>
 </body>
