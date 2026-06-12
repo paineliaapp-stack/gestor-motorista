@@ -248,19 +248,19 @@
       const rows = us.map(u => `
         <tr>
           <td>${u.nome || '—'}</td>
-          <td style="color:#718096;font-size:0.75rem">${(u.motorista_id||'').slice(0,8)}...</td>
-          <td>${u.email_pagamento ? `<span style="color:#60a5fa">${u.email_pagamento}</span>` : '<span style="color:#4a5568">—</span>'}</td>
+          <td style="color:#60a5fa;font-size:0.8rem">${u.email || '—'}</td>
           <td><span class="badge ${u.status}">${u.status}</span></td>
-          <td>${u.plano_id || '—'}</td>
+          <td>${u.plano || '—'}</td>
           <td style="font-size:0.75rem;color:#718096">${fmtData(u.trial_fim || u.periodo_fim)}</td>
+          <td style="font-size:0.75rem;color:#718096">${fmtData(u.ultimo_login)}</td>
           <td>
-            <button class="btn btn-verde btn-sm" onclick="preencherLiberar('${u.motorista_id}')">Liberar</button>
+            <button class="btn btn-verde btn-sm" onclick="preencherLiberar('${u.id}','${u.email}')">Liberar</button>
           </td>
         </tr>
       `).join('');
       document.getElementById('tabelaUsuarios').innerHTML = `
         <table>
-          <thead><tr><th>Nome</th><th>ID</th><th>Email</th><th>Status</th><th>Plano</th><th>Expira</th><th></th></tr></thead>
+          <thead><tr><th>Nome</th><th>Email</th><th>Status</th><th>Plano</th><th>Expira</th><th>Último login</th><th></th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       `;
@@ -278,10 +278,11 @@
     carregarUsuarios(status);
   }
 
-  function preencherLiberar(id) {
+  function preencherLiberar(id, email) {
     document.getElementById('liberarId').value = id;
     document.getElementById('liberarIdDisplay').textContent = id;
-    document.getElementById('liberarId').scrollIntoView({ behavior: 'smooth' });
+    if (email) document.getElementById('buscarEmail').value = email;
+    document.querySelector('.liberar-form').scrollIntoView({ behavior: 'smooth' });
   }
 
   async function buscarPorEmail() {
