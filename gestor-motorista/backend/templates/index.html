@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<link rel="preload" as="video" href="https://xtihcmzjwklfsfgsdpww.supabase.co/storage/v1/object/public/static/Transform_logo_for_app_202606101907.mov" type="video/mp4">
+<link rel="preload" as="video" href="/static/splash-silent.mp4" type="video/mp4">
+<link rel="preload" as="audio" href="/static/splash.mp3" type="audio/mpeg">
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#ffcc00">
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
@@ -331,77 +332,64 @@ const _supa = supabase.createClient(
     <div style="color:rgba(255,255,255,.55);font-size:13px;font-family:-apple-system,sans-serif;letter-spacing:1.2px">toque para entrar</div>
   </div>
 </div>
-<!-- Vídeo do splash — opacity:0 em vez de display:none para iOS fazer buffer -->
+<!-- Vídeo MUDO sempre — iOS faz preload sem gesto -->
 <video id="sv" playsinline webkit-playsinline preload="auto" muted
   style="position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:999998;background:#000;opacity:0;pointer-events:none;transition:opacity .4s ease">
-  <source src="https://xtihcmzjwklfsfgsdpww.supabase.co/storage/v1/object/public/static/Transform_logo_for_app_202606101907.mov" type="video/quicktime">
-  <source src="https://xtihcmzjwklfsfgsdpww.supabase.co/storage/v1/object/public/static/Transform_logo_for_app_202606101907.mov" type="video/mp4">
+  <source src="/static/splash-silent.mp4" type="video/mp4">
 </video>
+<!-- Áudio SEPARADO — iOS libera play() de audio dentro do gesto do usuário -->
+<audio id="sa" preload="auto" style="display:none">
+  <source src="/static/splash.mp3" type="audio/mpeg">
+</audio>
 <style>
 @keyframes sp-p{0%,100%{opacity:.2;transform:scale(.65)}50%{opacity:1;transform:scale(1.2)}}
 </style>
 <script>
 !function(){
   var sp=document.getElementById('splash');
-  var v=document.getElementById('sv');
+  var v=document.getElementById('sv');  // vídeo MUDO sempre
+  var a=document.getElementById('sa'); // áudio SEPARADO — iOS libera dentro do gesto
   var tocado=false;
 
-  // Pula splash se: veio do logout (?nosplash=1)
   if(location.search.indexOf('nosplash=1')!==-1){
     sp&&(sp.style.display='none');
     v&&(v.style.display='none');
+    a&&(a.style.display='none');
     history.replaceState(null,'',location.pathname);
     return;
   }
 
   v.load();
+  if(a) a.load();
 
   function _fecharSplash(){
-    if(v){ v.style.transition='opacity .4s'; v.style.opacity='0'; }
-    setTimeout(function(){
-      if(v) v.style.display='none';
-    },420);
+    v.style.transition='opacity .4s'; v.style.opacity='0';
+    if(a){ try{ a.pause(); }catch(e){} }
+    setTimeout(function(){ v.style.display='none'; },420);
   }
 
-  // iOS PWA não recarrega a página ao "reabrir" — o app fica em memória.
-  // pageshow com persisted=true detecta essa reabertura e reseta o estado
-  // para o splash funcionar de novo, sem remover elementos do DOM.
+  // iOS PWA: reabrir sem recarregar — reseta estado sem destruir DOM
   window.addEventListener('pageshow', function(ev){
     if(ev.persisted){
       tocado=false;
-      if(sp){
-        sp.style.display='block';
-        sp.style.opacity='1';
-        sp.style.transition='none';
-      }
-      if(v){
-        v.style.display='block';
-        v.style.opacity='0';
-        v.muted=true;
-        try{ v.pause(); v.currentTime=0; v.load(); }catch(e){}
-      }
+      if(sp){ sp.style.display='block'; sp.style.opacity='1'; sp.style.transition='none'; }
+      if(v){ v.style.display='block'; v.style.opacity='0'; try{ v.pause(); v.currentTime=0; v.load(); }catch(e){} }
+      if(a){ try{ a.pause(); a.currentTime=0; }catch(e){} }
     }
   });
 
   // ⚠️ REGRA iOS — NÃO ALTERAR SEM LER:
-  // Para ter SOM no iOS, dentro do handler de toque DEVE ser:
-  //   1. v.muted = false   ← desmuta PRIMEIRO, dentro do gesto
-  //   2. v.currentTime = 0
-  //   3. v.play()          ← síncrono, sem await/setTimeout antes
-  // Se muted=false vier DEPOIS do play(), iOS bloqueia o áudio silenciosamente.
+  // Vídeo fica MUTED sempre — iOS faz preload sem gesto.
+  // Áudio via <audio id="sa"> — iOS libera play() de <audio> dentro do gesto.
+  // a.play() e v.play() SÍNCRONOS no mesmo gesto, sem await/setTimeout antes.
   window._splashTap=function(){
     if(tocado) return; tocado=true;
     if(!sp||!v) return;
 
-    // Some a tela estática
     sp.style.transition='opacity .35s ease';
     sp.style.opacity='0';
     setTimeout(function(){ if(sp) sp.style.display='none'; },380);
 
-    // ← ORDEM CRÍTICA: desmuta ANTES do play()
-    v.muted=false;
-    v.volume=1;
-    v.currentTime=0;
     v.style.display='block';
     v.style.opacity='0';
 
@@ -409,20 +397,15 @@ const _supa = supabase.createClient(
     v.addEventListener('canplay', _mostrar, {once:true});
     v.addEventListener('ended', _fecharSplash, {once:true});
 
-    var p=v.play();
-    if(p){
-      p.catch(function(){
-        // Play bloqueado (ex: Low Power Mode) — tenta mudo como fallback
-        v.muted=true;
-        var p2=v.play();
-        if(p2) p2.catch(function(){ _fecharSplash(); });
-      });
-    }
+    // ← Síncrono: áudio e vídeo juntos no mesmo gesto
+    if(a){ a.currentTime=0; a.play().catch(function(){}); }
+    var pv=v.play();
+    if(pv){ pv.catch(function(){ _fecharSplash(); }); }
 
-    // Fallback: 8s sem carregar → pula
+    // Fallback 10s
     setTimeout(function(){
       if(parseFloat(v.style.opacity||0) < 1) _fecharSplash();
-    }, 8000);
+    }, 10000);
   };
 }();
 </script>
