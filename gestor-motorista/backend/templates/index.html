@@ -309,46 +309,60 @@ const _supa = supabase.createClient(
 </head>
 <body>
 <!-- ===== SPLASH =====
-  REGRA iOS — NÃO ALTERAR SEM LER:
-  1. O vídeo DEVE estar dentro do #splash no HTML (não mover com appendChild)
-  2. muted=false e volume=1 ANTES do play(), dentro do gesto do usuário
-  3. Nenhum await/setTimeout entre o clique e o play()
-  4. O splash some DEPOIS que o vídeo termina — não antes
+  REGRA iOS: muted=false ANTES do play(), dentro do gesto. Nunca mover o <video> no DOM.
 ===== -->
 <div id="splash"
-  style="position:fixed;inset:0;z-index:999999;background:#000;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent">
-  <!-- Imagem de fundo enquanto aguarda toque -->
-  <img src="/static/icon-512.png"
-    style="position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);width:140px;height:140px;border-radius:50%;object-fit:cover">
-  <!-- Vídeo fica aqui, escondido, carregando em background -->
+  style="position:fixed;inset:0;z-index:999999;background:#07090d;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center">
+
+  <!-- Fundo com gradiente sutil -->
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(240,180,41,.07) 0%,transparent 70%);pointer-events:none"></div>
+
+  <!-- Conteúdo central -->
+  <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:0;text-align:center;padding:0 32px">
+
+    <!-- Logo -->
+    <div style="width:90px;height:90px;border-radius:50%;overflow:hidden;margin-bottom:22px;box-shadow:0 0 0 1px rgba(240,180,41,.3),0 0 40px rgba(240,180,41,.2)">
+      <img src="/static/icon-512.png" style="width:100%;height:100%;object-fit:cover">
+    </div>
+
+    <!-- Nome -->
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#f3f4f6;line-height:1;margin-bottom:8px">
+      Painel<span style="color:#F0B429">.IA</span>
+    </div>
+
+    <!-- Tagline -->
+    <div style="font-size:14px;color:rgba(243,244,246,.5);letter-spacing:.5px;margin-bottom:48px;font-family:-apple-system,sans-serif">
+      Gestor Financeiro para Motoristas
+    </div>
+
+    <!-- Bolinhas animadas -->
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div style="width:7px;height:7px;border-radius:50%;background:#F0B429;animation:sp-p 1.5s ease-in-out infinite"></div>
+      <div style="width:7px;height:7px;border-radius:50%;background:#F0B429;animation:sp-p 1.5s ease-in-out .22s infinite"></div>
+      <div style="width:7px;height:7px;border-radius:50%;background:#F0B429;animation:sp-p 1.5s ease-in-out .44s infinite"></div>
+    </div>
+    <div style="color:rgba(243,244,246,.35);font-size:12px;font-family:-apple-system,sans-serif;letter-spacing:1.4px">TOQUE PARA ENTRAR</div>
+  </div>
+
+  <!-- Vídeo escondido, carregando em background -->
   <video id="sv" playsinline webkit-playsinline preload="auto" muted
     style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000">
     <source src="https://xtihcmzjwklfsfgsdpww.supabase.co/storage/v1/object/public/static/splash.mp4" type="video/mp4">
   </video>
-  <!-- Bolinhas -->
-  <div style="position:absolute;bottom:52px;width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none">
-    <div style="display:flex;gap:8px">
-      <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out infinite"></div>
-      <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out .22s infinite"></div>
-      <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out .44s infinite"></div>
-    </div>
-    <div style="color:rgba(255,255,255,.55);font-size:13px;font-family:-apple-system,sans-serif;letter-spacing:1.2px">toque para entrar</div>
-  </div>
 </div>
 <style>
 @keyframes sp-p{0%,100%{opacity:.2;transform:scale(.65)}50%{opacity:1;transform:scale(1.2)}}
 </style>
 <script>
 !function(){
-  var sp = document.getElementById('splash');
-  var v  = document.getElementById('sv');
-  var tocado = false;
+  var sp  = document.getElementById('splash');
+  var v   = document.getElementById('sv');
+  var done = false;
 
-  // Pré-carrega silencioso
   v.load();
 
-  // Chamado quando o vídeo termina — libera o app
   function _fim(){
+    if(done) return; done = true;
     sp.style.transition = 'opacity .4s';
     sp.style.opacity = '0';
     setTimeout(function(){
@@ -357,41 +371,41 @@ const _supa = supabase.createClient(
     }, 420);
   }
 
-  // Toque do usuário — destrava áudio e toca o vídeo
   sp.addEventListener('click', function(){
-    if(tocado) return;
-    tocado = true;
+    if(done) return;
 
-    // Esconde a imagem de fundo e mostra o vídeo
-    sp.querySelector('img').style.display = 'none';
-    sp.querySelector('div').style.display = 'none';
-    v.style.display = 'block';
+    // Tenta tocar o vídeo se já carregou o suficiente
+    var pronto = v.readyState >= 3; // HAVE_FUTURE_DATA
+    if(pronto){
+      // Mostra vídeo, esconde conteúdo estático
+      sp.querySelector('div').style.display = 'none';
+      v.style.display = 'block';
+      v.muted  = false;
+      v.volume = 1;
+      var p = v.play();
+      if(p) p.catch(function(){ v.muted = true; v.play(); });
+      v.addEventListener('ended', _fim);
+      // Segurança: fecha em 15s se travar
+      setTimeout(_fim, 15000);
+    } else {
+      // Vídeo ainda não carregou — pula direto para o app
+      _fim();
+    }
 
-    // ⚠️ iOS: muted=false ANTES do play(), dentro do gesto
-    v.muted  = false;
-    v.volume = 1;
-    var p = v.play();
-    if(p) p.catch(function(){ v.muted = true; v.play(); });
-
-    // Quando terminar → fecha splash e abre app
-    v.addEventListener('ended', _fim);
-
-    // Segurança: se travar por 15s → abre o app mesmo assim
-    setTimeout(function(){ if(tocado && sp.style.display !== 'none') _fim(); }, 15000);
-
-    // Botão Pular após 3s
+    // Botão pular após 3s
     setTimeout(function(){
+      if(done) return;
       var b = document.createElement('button');
       b.textContent = 'Pular ›';
-      b.style.cssText = 'position:absolute;top:20px;right:20px;background:rgba(255,255,255,.15);border:none;border-radius:20px;color:rgba(255,255,255,.9);font-size:13px;padding:8px 18px;cursor:pointer;font-family:-apple-system,sans-serif;z-index:1';
+      b.style.cssText = 'position:absolute;top:20px;right:20px;background:rgba(255,255,255,.12);border:none;border-radius:20px;color:rgba(255,255,255,.8);font-size:13px;padding:8px 18px;cursor:pointer;font-family:-apple-system,sans-serif;z-index:1';
       b.onclick = function(e){ e.stopPropagation(); _fim(); };
       sp.appendChild(b);
     }, 3000);
   });
 
-  // iOS: retoma vídeo se app foi pro background durante o vídeo
+  // iOS: retoma se foi pro background durante o vídeo
   document.addEventListener('visibilitychange', function(){
-    if(document.visibilityState === 'visible' && tocado && v.paused && !v.ended){
+    if(document.visibilityState === 'visible' && !done && v.style.display !== 'none' && v.paused && !v.ended){
       v.play().catch(function(){});
     }
   });
