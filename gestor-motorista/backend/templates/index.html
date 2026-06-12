@@ -314,30 +314,40 @@ const _supa = supabase.createClient(
 </head>
 <body>
 <!-- ===== SPLASH =====
-  iOS: vídeo criado do zero no toque — único jeito garantido de ter play+som no Safari PWA.
-  SW cacheia splash.mp4 + splash.mp3 no install — da 2ª abertura em diante é instantâneo.
+  iOS PWA standalone: <video> DEVE estar no HTML desde o inicio — nao pode ser criado dinamicamente.
+  Criar via createElement nao renderiza visualmente no modo standalone (bug iOS).
 ===== -->
 <div id="splash"
-  style="position:fixed;inset:0;z-index:999999;background:#07090d;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden">
+  style="position:fixed;inset:0;z-index:999999;background:#07090d;cursor:pointer;-webkit-tap-highlight-color:transparent;overflow:hidden">
 
-  <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(240,180,41,.07) 0%,transparent 70%);pointer-events:none"></div>
+  <!-- Video JA no HTML — visivel so apos o toque -->
+  <video id="sv" playsinline webkit-playsinline muted
+    style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000">
+    <source src="/static/splash.mp4" type="video/mp4">
+  </video>
+  <!-- Audio separado — iOS libera play() dentro do gesto -->
+  <audio id="sa" src="/static/splash.mp3" preload="auto"></audio>
 
-  <div id="splash-ui" style="position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 32px">
-    <div style="width:90px;height:90px;border-radius:50%;overflow:hidden;margin-bottom:22px;box-shadow:0 0 0 1px rgba(240,180,41,.3),0 0 40px rgba(240,180,41,.2)">
-      <img src="/static/icon-512.png" style="width:100%;height:100%;object-fit:cover">
+  <!-- UI inicial — some quando video comecar -->
+  <div id="splash-ui" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#07090d">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(240,180,41,.07) 0%,transparent 70%);pointer-events:none"></div>
+    <div style="position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 32px">
+      <div style="width:90px;height:90px;border-radius:50%;overflow:hidden;margin-bottom:22px;box-shadow:0 0 0 1px rgba(240,180,41,.3),0 0 40px rgba(240,180,41,.2)">
+        <img src="/static/icon-512.png" style="width:100%;height:100%;object-fit:cover">
+      </div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#f3f4f6;line-height:1;margin-bottom:8px">
+        Painel<span style="color:#F0B429">.IA</span>
+      </div>
+      <div style="font-size:14px;color:rgba(243,244,246,.5);letter-spacing:.5px;margin-bottom:48px;font-family:-apple-system,sans-serif">
+        Gestor Financeiro para Motoristas
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <div style="width:7px;height:7px;border-radius:50%;background:#F0B429;animation:sp-p 1.5s ease-in-out infinite"></div>
+        <div style="width:7px;height:7px;border-radius:50%;background:#F0B429;animation:sp-p 1.5s ease-in-out .22s infinite"></div>
+        <div style="width:7px;height:7px;border-radius:50%;background:#F0B429;animation:sp-p 1.5s ease-in-out .44s infinite"></div>
+      </div>
+      <div style="color:rgba(243,244,246,.35);font-size:12px;font-family:-apple-system,sans-serif;letter-spacing:1.4px">TOQUE PARA ENTRAR</div>
     </div>
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#f3f4f6;line-height:1;margin-bottom:8px">
-      Painel<span style="color:#F0B429">.IA</span>
-    </div>
-    <div style="font-size:14px;color:rgba(243,244,246,.5);letter-spacing:.5px;margin-bottom:48px;font-family:-apple-system,sans-serif">
-      Gestor Financeiro para Motoristas
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:14px">
-      <div style="width:7px;height:7px;border-radius:50%;background:#F0B429;animation:sp-p 1.5s ease-in-out infinite"></div>
-      <div style="width:7px;height:7px;border-radius:50%;background:#F0B429;animation:sp-p 1.5s ease-in-out .22s infinite"></div>
-      <div style="width:7px;height:7px;border-radius:50%;background:#F0B429;animation:sp-p 1.5s ease-in-out .44s infinite"></div>
-    </div>
-    <div style="color:rgba(243,244,246,.35);font-size:12px;font-family:-apple-system,sans-serif;letter-spacing:1.4px">TOQUE PARA ENTRAR</div>
   </div>
 </div>
 <style>
@@ -345,9 +355,15 @@ const _supa = supabase.createClient(
 </style>
 <script>
 !function(){
-  var sp = document.getElementById('splash');
-  var ui = document.getElementById('splash-ui');
+  var sp  = document.getElementById('splash');
+  var ui  = document.getElementById('splash-ui');
+  var v   = document.getElementById('sv');
+  var a   = document.getElementById('sa');
   var tocado = false;
+
+  // Pre-carrega sem gesto (muted=true permite isso no iOS)
+  v.load();
+  a.load();
 
   function _fim(){
     sp.style.transition = 'opacity .4s';
@@ -355,64 +371,28 @@ const _supa = supabase.createClient(
     setTimeout(function(){ sp.style.display = 'none'; }, 420);
   }
 
-  // DEBUG — painel visível na tela para diagnosticar no iPhone
-  var dbg = document.createElement('div');
-  dbg.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,.85);color:#0f0;font-size:11px;font-family:monospace;padding:8px;z-index:9999999;max-height:40vh;overflow-y:auto;pointer-events:none';
-  document.body.appendChild(dbg);
-  function log(msg){ dbg.innerHTML += new Date().toISOString().substr(11,8) + ' ' + msg + '<br>'; dbg.scrollTop = 9999; console.log(msg); }
-
-  log('UA: ' + navigator.userAgent.substr(0,80));
-  log('standalone: ' + (window.navigator.standalone === true));
-  log('persisted: aguardando pageshow...');
-
-  // PWA standalone: ao reabrir o app (atalho na tela inicial), iOS congela a página.
-  // Força reload para o splash e vídeo sempre funcionarem do zero.
+  // Reload ao reabrir pelo atalho (pageshow persisted)
   window.addEventListener('pageshow', function(ev){
-    log('pageshow persisted=' + ev.persisted + ' standalone=' + window.navigator.standalone);
-    if(ev.persisted){ 
-      log('RELOAD agora...');
-      window.location.reload(); 
-    }
+    if(ev.persisted){ window.location.reload(); }
   });
 
   sp.addEventListener('click', function(){
     if(tocado) return;
     tocado = true;
-    log('CLICOU — criando video...');
 
-    // Esconde UI
+    // Mostra video, esconde UI
+    v.style.display = 'block';
     ui.style.display = 'none';
 
-    // Cria vídeo do zero no gesto — iOS exige isso para autoplay+som
-    var v = document.createElement('video');
-    v.setAttribute('playsinline', '');
-    v.setAttribute('webkit-playsinline', '');
-    v.muted = true;
-    v.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000';
-    v.src = '/static/splash.mp4';
-    sp.appendChild(v);
+    // Play sincrono no mesmo gesto — iOS exige
+    v.play().catch(function(){ _fim(); });
+    a.play().catch(function(){});
 
-    var a = document.createElement('audio');
-    a.src = '/static/splash.mp3';
-    a.volume = 1;
-    sp.appendChild(a);
-
-    v.addEventListener('canplay',  function(){ log('video: canplay readyState='+v.readyState); }, {once:true});
-    v.addEventListener('playing',  function(){ log('video: playing!'); }, {once:true});
-    v.addEventListener('stalled',  function(){ log('video: STALLED'); });
-    v.addEventListener('error',    function(){ log('video: ERROR code='+v.error?.code); });
-    v.addEventListener('ended',    function(){ log('video: ended → _fim'); _fim(); }, {once:true});
-
-    var pv = v.play();
-    log('v.play() chamado');
-    if(pv) pv.then(function(){ log('v.play() resolved'); }).catch(function(e){ log('v.play() ERRO: '+e); _fim(); });
-
-    var pa = a.play();
-    log('a.play() chamado');
-    if(pa) pa.catch(function(e){ log('a.play() ERRO: '+e); });
-
+    v.addEventListener('ended', _fim, {once:true});
+    // Fallback 15s
     setTimeout(_fim, 15000);
 
+    // Botao pular apos 3s
     setTimeout(function(){
       if(sp.style.display === 'none') return;
       var b = document.createElement('button');
@@ -424,7 +404,6 @@ const _supa = supabase.createClient(
   });
 }();
 </script>
-
 
 <div id="tela-login" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:0">
   <div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 100%,rgba(240,180,41,.08) 0%,transparent 70%);pointer-events:none"></div>
