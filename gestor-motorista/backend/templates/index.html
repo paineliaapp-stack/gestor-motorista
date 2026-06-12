@@ -434,10 +434,16 @@ const _supa = supabase.createClient(
       fim();
     }, {once:true});
 
+    // Trava de segurança: se o vídeo não COMEÇOU a tocar em 2.5s, pula pro app
+    var travaInicio = setTimeout(function(){
+      if (v.paused || v.readyState < 2) { clearTimeout(fallback); fim(); }
+    }, 2500);
+    v.addEventListener('playing', function(){ clearTimeout(travaInicio); }, {once:true});
+
     v.play().then(function(){
       a.play().catch(function(){});
     }).catch(function(){
-      clearTimeout(fallback);
+      clearTimeout(fallback); clearTimeout(travaInicio);
       fim();
     });
 
@@ -452,29 +458,40 @@ const _supa = supabase.createClient(
     }, 3000);
   });
 
-  // ════ PWA iOS: reabrir pelo atalho NÃO recarrega a página — descongela.
-  // Resetamos o splash para a experiência completa rodar de novo. ════
-  function resetSplash(){
-    tocado = false;
-    // remove vídeo/áudio/botões da rodada anterior
-    sp.querySelectorAll('video,button').forEach(function(n){ n.remove(); });
-    document.querySelectorAll('audio').forEach(function(n){ n.remove(); });
-    ui.style.display = 'flex';
-    sp.style.transition = '';
-    sp.style.opacity = '1';
-    sp.style.display = 'block';
+  // ════ COMPORTAMENTO DO SPLASH ════
+  // REGRA: o vídeo só toca em ABERTURA REAL do app (primeira carga da página).
+  // Minimizar e voltar (segundo plano) NÃO mostra o splash de novo — vai direto
+  // ao app. Se a página foi congelada no MEIO do splash e o usuário voltou,
+  // pulamos para o dashboard em vez de travar.
+
+  // Se o splash ficou preso (visível) ao voltar do background, fecha ele.
+  function pularSeProeso(){
+    // Se o splash ainda está visível mas o vídeo não está tocando, destrava.
+    if (sp.style.display !== 'none') {
+      var vid = sp.querySelector('video');
+      var travado = !vid || vid.paused || vid.ended || vid.readyState < 2;
+      if (tocado && travado) {
+        sp.querySelectorAll('video,button').forEach(function(n){ n.remove(); });
+        document.querySelectorAll('audio').forEach(function(n){ n.remove(); });
+        sp.style.transition = 'opacity .3s';
+        sp.style.opacity = '0';
+        setTimeout(function(){ sp.style.display = 'none'; }, 320);
+      }
+    }
   }
-  // pageshow = página restaurada (qualquer forma) → reseta sempre
+
+  // bfcache restore (raro no iOS standalone, mas cobre o caso): se restaurou
+  // a página com o splash preso, destrava para o app.
   window.addEventListener('pageshow', function(e){
-    if (e.persisted) resetSplash();
+    if (e.persisted) pularSeProeso();
   });
-  // Volta do background → reseta SEMPRE (antes era só >30s e a reabertura
-  // rápida ficava congelada no meio do vídeo). Threshold mínimo de 1.5s só
-  // para ignorar piscadas de foco (notificação, central de controle).
-  var escondidoDesde = 0;
+
+  // Voltar do background NÃO reabre o splash. Apenas destrava se ficou preso.
   document.addEventListener('visibilitychange', function(){
-    if (document.hidden) { escondidoDesde = Date.now(); }
-    else if (escondidoDesde && (Date.now() - escondidoDesde) > 1500) { resetSplash(); }
+    if (!document.hidden) {
+      // pequena espera para o iOS retomar o vídeo se ele estava só pausado
+      setTimeout(pularSeProeso, 400);
+    }
   });
 }();
 </script>
