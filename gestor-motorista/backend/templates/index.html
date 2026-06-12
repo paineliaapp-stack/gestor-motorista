@@ -296,6 +296,30 @@ select option{background:#141820}
 .bt-btn.encerrar{background:rgba(255,77,106,.15);color:#FF4D6A;border:1px solid rgba(255,77,106,.3)}
 .voice-btn{background:rgba(255,255,255,.05);border:1px solid var(--b);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px;flex-shrink:0;transition:all .2s;color:var(--mt)}
 .voice-btn.on{background:rgba(245,166,35,.15);border-color:rgba(245,166,35,.4);color:var(--am)}
+
+/* ════ POLISH SENIOR — refinamentos sem mudar estrutura ════ */
+/* Estados de toque: botões respondem fisicamente */
+button:active, .sc:active, [onclick]:active { transform: scale(.975); transition: transform .08s ease; }
+/* Foco visível acessível (teclado/leitores) */
+:focus-visible { outline: 2px solid rgba(240,180,41,.6); outline-offset: 2px; border-radius: 6px; }
+/* Sombras em camadas (profundidade real, não chapado) */
+.sc { box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.05); }
+/* Scrollbar fina e discreta */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+/* Seleção de texto na cor da marca */
+::selection { background: rgba(240,180,41,.3); }
+/* Antialiasing consistente */
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+/* Inputs com transição suave de borda */
+input, textarea, select { transition: border-color .2s ease, box-shadow .2s ease; }
+input:focus, textarea:focus { box-shadow: 0 0 0 3px rgba(240,180,41,.12); }
+/* Imagens nunca vazam dos containers */
+img { max-width: 100%; }
+/* Tabular nums nos valores monetários (alinhamento perfeito de dígitos) */
+#hero-lucro, .sc-v, [id^="c-"] { font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce){ button:active, .sc:active { transform:none } }
 </style>
 <script>
 // Bloqueia zoom por pinça e duplo-toque em qualquer browser embutido
@@ -411,6 +435,29 @@ const _supa = supabase.createClient(
       sp.appendChild(b);
     }, 3000);
   });
+
+  // ════ PWA iOS: reabrir pelo atalho NÃO recarrega a página — descongela.
+  // Resetamos o splash para a experiência completa rodar de novo. ════
+  function resetSplash(){
+    tocado = false;
+    // remove vídeo/áudio/botões da rodada anterior
+    sp.querySelectorAll('video,button').forEach(function(n){ n.remove(); });
+    document.querySelectorAll('audio').forEach(function(n){ n.remove(); });
+    ui.style.display = 'flex';
+    sp.style.transition = '';
+    sp.style.opacity = '1';
+    sp.style.display = 'block';
+  }
+  // pageshow persisted = página restaurada do congelamento (bfcache/PWA)
+  window.addEventListener('pageshow', function(e){
+    if (e.persisted) resetSplash();
+  });
+  // Voltou do background depois de >30s = reabertura real do app
+  var escondidoDesde = 0;
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden) { escondidoDesde = Date.now(); }
+    else if (escondidoDesde && (Date.now() - escondidoDesde) > 30000) { resetSplash(); }
+  });
 }();
 </script>
 
@@ -507,15 +554,6 @@ const _supa = supabase.createClient(
   <div class="cel-sub" id="cel-sub">Você arrasou hoje!</div>
 </div>
 <!-- MODAL BOAS-VINDAS / COMEÇAR O DIA -->
-
-    <div id="install-steps-android" style="display:none">
-      <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:center"><div style="font-size:18px">1️⃣</div><div style="font-size:13px;color:#e2e8f0">Toque no menu <strong>⋮</strong> no canto superior direito do Chrome</div></div>
-      <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:center"><div style="font-size:18px">2️⃣</div><div style="font-size:13px;color:#e2e8f0">Toque em <strong>"Adicionar à tela inicial"</strong></div></div>
-      <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center"><div style="font-size:18px">3️⃣</div><div style="font-size:13px;color:#e2e8f0">Toque em <strong>"Adicionar"</strong> para confirmar</div></div>
-    </div>
-    <button onclick="document.getElementById('modal-install').style.display='none'" style="width:100%;margin-top:16px;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Entendi!</button>
-  </div>
-</div>
 
 <div class="shell">
 <header class="topbar">
@@ -5150,6 +5188,7 @@ async function instalarApp(){
 
 function abrirInstrucaoInstall(isIOS){
   const modal = document.getElementById('modal-install');
+  if(!modal){ alert('Para instalar: toque em Compartilhar e depois \"Adicionar à Tela de Início\"'); return; }
   if(!modal) return;
   document.getElementById('install-steps-ios').style.display = isIOS ? 'block' : 'none';
   document.getElementById('install-steps-android').style.display = isIOS ? 'none' : 'block';
