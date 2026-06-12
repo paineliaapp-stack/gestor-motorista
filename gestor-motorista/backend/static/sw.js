@@ -1,8 +1,15 @@
-// Service Worker — Painel.IA v2
-const CACHE_NAME = 'painel-ia-v2';
+// Service Worker — Painel.IA v3
+const CACHE_NAME = 'painel-ia-v3';
+const SPLASH_VIDEO = 'https://xtihcmzjwklfsfgsdpww.supabase.co/storage/v1/object/public/static/splash.mp4';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
+  // Faz cache do vídeo no install — da segunda abertura em diante é instantâneo
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(cache =>
+      cache.add(SPLASH_VIDEO).catch(() => {}) // falha silenciosa se offline
+    )
+  );
 });
 
 self.addEventListener('activate', e => {
@@ -12,6 +19,23 @@ self.addEventListener('activate', e => {
     )
   );
   self.clients.claim();
+});
+
+// Intercepta requisição do vídeo — serve do cache se disponível
+self.addEventListener('fetch', e => {
+  if(e.request.url === SPLASH_VIDEO){
+    e.respondWith(
+      caches.open(CACHE_NAME).then(cache =>
+        cache.match(e.request).then(cached => {
+          if(cached) return cached;
+          return fetch(e.request).then(resp => {
+            cache.put(e.request, resp.clone());
+            return resp;
+          });
+        })
+      )
+    );
+  }
 });
 
 // Push Notifications
