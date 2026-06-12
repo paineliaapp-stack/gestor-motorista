@@ -71,7 +71,10 @@ async def previsao_tempo(lat: float = None, lon: float = None, cidade: str = Non
                 atual = {"ini": dt_br, "fim": dt_br + _dt.timedelta(hours=3), "pop_max": pop,
                          "descricao": cond.get("description", "chuva")}
             else:
-                atual["fim"] = dt_br + _dt.timedelta(hours=3)
+                # Estende a janela — fim sempre avança
+                novo_fim = dt_br + _dt.timedelta(hours=3)
+                if novo_fim > atual["fim"]:
+                    atual["fim"] = novo_fim
                 atual["pop_max"] = max(atual["pop_max"], pop)
         elif atual is not None:
             janelas.append(atual)
@@ -81,10 +84,18 @@ async def previsao_tempo(lat: float = None, lon: float = None, cidade: str = Non
 
     def _fmt_janela(j):
         dia_idx = (j["ini"].date() - hoje).days
+        ini_str = j["ini"].strftime("%Hh")
+        # fim sempre pelo menos 1h depois do ini para evitar "09h às 09h"
+        fim_real = j["fim"] if j["fim"] > j["ini"] else j["ini"] + _dt.timedelta(hours=3)
+        # Se o fim escapou para o dia seguinte (ex: 12h às 09h), trava em meia-noite
+        if fim_real.date() != j["ini"].date():
+            fim_str = "meia-noite"
+        else:
+            fim_str = fim_real.strftime("%Hh")
         return {
             "dia": _NOMES_DIA.get(dia_idx, j["ini"].strftime("%d/%m")),
-            "ini": j["ini"].strftime("%Hh"),
-            "fim": j["fim"].strftime("%Hh"),
+            "ini": ini_str,
+            "fim": fim_str,
             "probabilidade": round(j["pop_max"] * 100),
             "descricao": j["descricao"],
         }
@@ -97,5 +108,5 @@ async def previsao_tempo(lat: float = None, lon: float = None, cidade: str = Non
         "chuva_36h": bool(janelas),
         "janelas": [_fmt_janela(j) for j in janelas[:3]],
     }
-    _cache_set(cache_key, resp, ttl=1800)  # 30 min
+    _cache_set(cache_key, resp, ttl=60)  # 1 min — temporário para limpar cache
     return resp

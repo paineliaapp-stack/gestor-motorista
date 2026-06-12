@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel.IA — Fala quanto fez. O app pensa o resto.</title>
+<meta name="description" content="O gestor financeiro com IA para motoristas de aplicativo. Registre falando, veja quanto sobra, nunca mais atrase a semanal do carro.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090d; --card:#0e1117; --line:rgba(255,255,255,.08);
+  --tx:#f3f4f6; --muted:rgba(243,244,246,.55); --faint:rgba(243,244,246,.3);
+  --amarelo:#F0B429; --verde:#00D897; --roxo:#6366f1; --vermelho:#ff4560;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::selection{background:rgba(240,180,41,.3)}
+.wrap{max-width:1100px;margin:0 auto;padding:0 22px;position:relative;z-index:1}
+
+.road{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:.6}
+.road span{position:absolute;width:40vw;height:40vw;border-radius:50%;filter:blur(110px)}
+.road span:nth-child(1){background:rgba(240,180,41,.08);top:-12%;right:-10%}
+.road span:nth-child(2){background:rgba(0,216,151,.07);bottom:-18%;left:-12%}
+.road span:nth-child(3){background:rgba(99,102,241,.06);top:45%;left:35%}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;backdrop-filter:blur(16px);background:rgba(7,9,13,.75);border-bottom:1px solid var(--line)}
+.nav-in{max-width:1100px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:21px;letter-spacing:.3px}
+.logo-mark{width:34px;height:34px;border-radius:50%;background:var(--amarelo);display:flex;align-items:center;justify-content:center;color:#0a0a0a;font-size:20px;font-weight:900}
+.logo .ia{color:var(--amarelo)}
+.btn{display:inline-block;text-decoration:none;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:transform .15s,box-shadow .2s}
+.btn:active{transform:scale(.97)}
+.btn-am{background:var(--amarelo);color:#0a0a0a;padding:11px 22px;font-size:14px}
+.btn-am:hover{box-shadow:0 8px 30px rgba(240,180,41,.35)}
+.btn-ghost{background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--tx);padding:11px 22px;font-size:14px}
+
+/* ── HERO ── */
+.hero{padding:140px 0 60px;display:grid;grid-template-columns:1.1fr .9fr;gap:44px;align-items:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--verde);font-weight:700;margin-bottom:18px}
+.eyebrow::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--verde);box-shadow:0 0 12px var(--verde);animation:pulse 2s ease infinite}
+@keyframes pulse{50%{opacity:.35}}
+h1{font-family:'Barlow Condensed',sans-serif;font-size:clamp(44px,6.4vw,76px);font-weight:900;line-height:.98;letter-spacing:.2px;text-transform:uppercase;margin-bottom:18px}
+h1 .am{color:var(--amarelo)}
+.hero p{font-size:17px;color:var(--muted);line-height:1.65;max-width:460px;margin-bottom:28px}
+.hero-ctas{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.btn-hero{padding:16px 30px;font-size:15px;border-radius:14px}
+.hero-note{font-size:12.5px;color:var(--faint)}
+
+.phone{background:var(--card);border:1px solid var(--line);border-radius:26px;padding:18px;box-shadow:0 40px 100px rgba(0,0,0,.6);max-width:380px;margin-left:auto}
+.phone-head{display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.phone-ava{width:36px;height:36px;border-radius:50%;background:var(--roxo);display:flex;align-items:center;justify-content:center;font-size:18px}
+.phone-head b{font-size:14px}
+.phone-head .on{font-size:11px;color:var(--verde)}
+.msgs{display:flex;flex-direction:column;gap:10px;min-height:230px}
+.msg{max-width:85%;padding:11px 14px;border-radius:14px;font-size:13.5px;line-height:1.5;opacity:0;transform:translateY(10px);animation:msgIn .5s ease forwards}
+.m-user{align-self:flex-end;background:var(--roxo);color:#fff;border-bottom-right-radius:4px}
+.m-bot{align-self:flex-start;background:rgba(0,216,151,.1);border:1px solid rgba(0,216,151,.25);border-bottom-left-radius:4px}
+@keyframes msgIn{to{opacity:1;transform:none}}
+.phone-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.ps{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.ps .v{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800}
+.ps .l{font-size:9.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.4px}
+
+/* ── PLATAFORMAS ── */
+.plats{display:flex;flex-wrap:wrap;gap:10px;margin-top:44px;justify-content:center}
+.plat{background:var(--card);border:1px solid var(--line);border-radius:100px;padding:9px 18px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px}
+
+/* ── CALCULADORA ── */
+.calc-box{background:var(--card);border:1px solid rgba(240,180,41,.3);border-radius:22px;padding:36px;margin-top:60px;position:relative;overflow:hidden}
+.calc-box::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(240,180,41,.04),transparent);pointer-events:none}
+.calc-title{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;text-transform:uppercase;margin-bottom:6px}
+.calc-sub{font-size:14px;color:var(--muted);margin-bottom:28px}
+.calc-inputs{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.calc-field label{display:block;font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:600}
+.calc-field input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;padding:13px 16px;color:var(--tx);font-size:16px;font-family:'DM Sans',sans-serif;outline:none;transition:border .2s}
+.calc-field input:focus{border-color:rgba(240,180,41,.5)}
+.calc-result{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px}
+.calc-r{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center}
+.calc-r .rv{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900}
+.calc-r .rl{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+.calc-r.destaque{border-color:rgba(240,180,41,.4);background:rgba(240,180,41,.06)}
+.calc-r.destaque .rv{color:var(--amarelo)}
+.calc-cta{margin-top:20px;text-align:center;font-size:13px;color:var(--muted)}
+.calc-cta a{color:var(--amarelo);text-decoration:none;font-weight:700}
+
+/* ── ANTES vs DEPOIS ── */
+.avd{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:44px}
+.avd-col{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px}
+.avd-col.depois{border-color:rgba(0,216,151,.3);background:linear-gradient(135deg,rgba(0,216,151,.05),var(--card))}
+.avd-label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.avd-label.antes{color:var(--vermelho)}
+.avd-label.depois{color:var(--verde)}
+.avd-item{display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;font-size:14px;color:var(--muted);line-height:1.5}
+.avd-item .ic{font-size:16px;flex-shrink:0;margin-top:1px}
+
+/* ── TIMELINE ── */
+.era-sec{padding:100px 0 60px}
+.sec-eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--amarelo);font-weight:700;margin-bottom:14px}
+h2{font-family:'Barlow Condensed',sans-serif;font-size:clamp(34px,4.6vw,54px);font-weight:900;text-transform:uppercase;line-height:1;letter-spacing:.2px;margin-bottom:14px}
+.sec-sub{font-size:16px;color:var(--muted);max-width:540px;line-height:1.6}
+.timeline{position:relative;margin-top:70px;padding-left:34px}
+.timeline::before{content:'';position:absolute;left:9px;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg,rgba(255,255,255,.12) 0%,var(--amarelo) 85%,var(--verde) 100%)}
+.era{position:relative;margin-bottom:64px;opacity:0;transform:translateX(-18px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
+.era.visible{opacity:1;transform:none}
+.era::before{content:'';position:absolute;left:-31px;top:6px;width:14px;height:14px;border-radius:50%;background:var(--bg);border:2px solid rgba(255,255,255,.3)}
+.era.last::before{background:var(--verde);border-color:var(--verde);box-shadow:0 0 18px rgba(0,216,151,.7)}
+.era-year{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;letter-spacing:.18em;color:var(--faint);margin-bottom:8px}
+.era.last .era-year{color:var(--verde)}
+.era h3{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;text-transform:uppercase;margin-bottom:8px}
+.era p{font-size:14.5px;color:var(--muted);line-height:1.65;max-width:520px}
+.era-vid{width:100%;max-width:420px;border-radius:14px;border:1px solid var(--line);display:block;margin-top:16px;aspect-ratio:16/9;object-fit:cover;background:#0a0d12}
+.era-art{margin-top:16px;border:1px solid var(--line);border-radius:14px;padding:18px 20px;background:var(--card);max-width:420px}
+.caderneta{font-family:'Caveat',cursive;font-size:19px;line-height:1.7;color:rgba(243,244,246,.7);transform:rotate(-.6deg)}
+.caderneta .riscado{text-decoration:line-through;color:var(--faint)}
+.livrocaixa{font-family:monospace;font-size:12px;line-height:2;color:rgba(243,244,246,.65)}
+.livrocaixa .col{display:flex;justify-content:space-between;border-bottom:1px dotted rgba(255,255,255,.12)}
+.excel{font-family:monospace;font-size:11px;border-collapse:collapse;width:100%}
+.excel td{border:1px solid rgba(255,255,255,.14);padding:5px 8px;color:rgba(243,244,246,.65)}
+.excel .h{background:rgba(255,255,255,.06);font-weight:700;color:rgba(243,244,246,.8)}
+.excel .err{color:var(--vermelho);font-weight:700}
+.appgen{display:flex;flex-direction:column;gap:7px}
+.appgen .row{display:flex;justify-content:space-between;font-size:12.5px;color:rgba(243,244,246,.6);background:rgba(255,255,255,.04);border-radius:8px;padding:8px 12px}
+.appgen .plus{text-align:center;font-size:11px;color:var(--faint);padding-top:4px}
+.era-ia{border-color:rgba(0,216,151,.4);background:linear-gradient(135deg,rgba(0,216,151,.08),rgba(0,216,151,.02))}
+.era-ia .chatline{display:flex;gap:8px;align-items:center;font-size:13px}
+.era-ia .bub-u{background:var(--roxo);color:#fff;padding:8px 12px;border-radius:12px;border-bottom-right-radius:3px;margin-left:auto}
+.era-ia .bub-b{background:rgba(0,216,151,.12);border:1px solid rgba(0,216,151,.3);padding:8px 12px;border-radius:12px;border-bottom-left-radius:3px;margin-top:8px}
+
+/* ── FEATURES ── */
+.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:44px}
+.feat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px 24px;position:relative;overflow:hidden}
+.feat::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--fc),transparent);opacity:.6}
+.feat .ic{font-size:26px;margin-bottom:14px}
+.feat h3{font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:800;text-transform:uppercase;margin-bottom:8px}
+.feat p{font-size:13.5px;color:var(--muted);line-height:1.65}
+.f1{--fc:var(--roxo)} .f2{--fc:var(--amarelo)} .f3{--fc:var(--verde)}
+
+/* ── NÚMEROS ── */
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-top:60px}
+.nums div{background:var(--card);padding:28px 16px;text-align:center}
+.nums .n{font-family:'Barlow Condensed',sans-serif;font-size:38px;font-weight:900;color:var(--amarelo)}
+.nums .l{font-size:12px;color:var(--faint);margin-top:4px}
+
+/* ── COMPARATIVO ── */
+.comp-table{width:100%;border-collapse:collapse;margin-top:44px;border-radius:16px;overflow:hidden}
+.comp-table th{padding:14px 18px;font-size:12px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;background:rgba(255,255,255,.04);text-align:center}
+.comp-table th:first-child{text-align:left}
+.comp-table th.dest{color:var(--amarelo);background:rgba(240,180,41,.08)}
+.comp-table td{padding:13px 18px;font-size:13.5px;border-top:1px solid var(--line);text-align:center;color:var(--muted)}
+.comp-table td:first-child{text-align:left;color:var(--tx);font-weight:500}
+.comp-table td.dest{background:rgba(240,180,41,.04);color:var(--tx);font-weight:600}
+.comp-table .yes{color:var(--verde);font-size:16px}
+.comp-table .no{color:var(--vermelho);font-size:16px}
+
+/* ── DEPOIMENTOS ── */
+.depos{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:44px}
+.depo{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px}
+.stars{color:var(--amarelo);font-size:14px;margin-bottom:14px;letter-spacing:2px}
+.depo p{font-size:13.5px;color:var(--muted);line-height:1.65;margin-bottom:18px}
+.depo-author{display:flex;align-items:center;gap:12px}
+.depo-av{width:38px;height:38px;border-radius:50%;background:var(--roxo);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.depo-av.g{background:linear-gradient(135deg,#F0B429,#e08c00)}
+.depo-av.b{background:linear-gradient(135deg,#6366f1,#4f46e5)}
+.depo-av.v{background:linear-gradient(135deg,#00D897,#009966)}
+.depo-name{font-size:13px;font-weight:700}
+.depo-role{font-size:11.5px;color:var(--faint)}
+
+/* ── GARANTIA ── */
+.garantia{border:1px solid rgba(0,216,151,.25);background:linear-gradient(135deg,rgba(0,216,151,.06),rgba(0,216,151,.02));border-radius:18px;padding:30px;margin-top:60px;display:flex;align-items:center;gap:24px}
+.garantia .ic{font-size:44px;flex-shrink:0}
+.garantia h3{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;text-transform:uppercase;margin-bottom:6px}
+.garantia p{font-size:14px;color:var(--muted);line-height:1.6}
+
+/* ── FAQ ── */
+.faq{margin-top:44px}
+.faq-item{border-bottom:1px solid var(--line);overflow:hidden}
+.faq-q{width:100%;background:none;border:none;color:var(--tx);text-align:left;padding:20px 0;font-size:15px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:'DM Sans',sans-serif}
+.faq-q .arr{font-size:18px;color:var(--faint);transition:transform .3s}
+.faq-item.open .faq-q .arr{transform:rotate(45deg);color:var(--amarelo)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .4s ease;font-size:14px;color:var(--muted);line-height:1.7}
+.faq-item.open .faq-a{max-height:200px;padding-bottom:18px}
+
+/* ── CTA FINAL ── */
+.final{text-align:center;padding:110px 22px;border-top:1px solid var(--line);position:relative;z-index:1}
+.final h2{margin-bottom:14px}
+.final p{color:var(--muted);margin-bottom:30px;font-size:16px}
+
+
+
+footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font-size:12px;color:var(--faint);position:relative;z-index:1}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .7s ease,transform .7s ease}
+.reveal.visible{opacity:1;transform:none}
+
+/* ── RESPONSIVO ── */
+@media(max-width:760px){
+  .hero{grid-template-columns:1fr;padding:120px 0 40px}
+  .phone{max-width:100%;margin-left:0}
+  .feats{grid-template-columns:1fr}
+  .avd{grid-template-columns:1fr}
+  .depos{grid-template-columns:1fr}
+  .calc-inputs{grid-template-columns:1fr}
+  .calc-result{grid-template-columns:1fr 1fr}
+  .nums{grid-template-columns:1fr}
+  .comp-table{font-size:12px}
+  .float-cta{display:block}
+  .garantia{flex-direction:column;text-align:center}
+}
+
+.btn-am{position:relative;overflow:hidden}
+.btn-am::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);animation:btn-shimmer 3.2s ease-in-out infinite;animation-delay:2s}
+@keyframes btn-shimmer{0%{left:-100%}100%{left:200%}}
+.palavra-destaque{background:linear-gradient(95deg,#F0B429,#00D897,#F0B429);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gflow 4s linear infinite}
+@keyframes gflow{0%{background-position:0% center}100%{background-position:200% center}}
+.timeline .era:nth-of-type(1) .era-vid{filter:sepia(.55) contrast(1.08)}
+.timeline .era:nth-of-type(2) .era-vid{filter:saturate(.7) contrast(1.15)}
+.timeline .era:nth-of-type(3) .era-vid{filter:saturate(.85)}
+.timeline .era:nth-of-type(3) .era-vid{position:relative}
+.road span:nth-child(1){animation:mesh1 22s ease-in-out infinite alternate}
+.road span:nth-child(2){animation:mesh2 27s ease-in-out infinite alternate}
+.road span:nth-child(3){animation:mesh3 19s ease-in-out infinite alternate-reverse}
+@keyframes mesh1{0%{top:-20%;left:-15%}100%{top:8%;left:4%}}
+@keyframes mesh2{0%{top:30%;right:-20%}100%{top:52%;right:-2%}}
+@keyframes mesh3{0%{bottom:-25%;left:20%}100%{bottom:-8%;left:38%}}
+@media(prefers-reduced-motion:reduce){.btn-am::after,.palavra-destaque,.road span{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="road"><span></span><span></span><span></span></div>
+
+<nav>
+  <div class="nav-in">
+    <div class="logo">
+      <div class="logo-mark">P</div>
+      <span>Painel<span class="ia">.IA</span></span>
+    </div>
+    <div style="display:flex;gap:10px">
+      <a href="/" class="btn btn-ghost">Entrar</a>
+      <a href="/" class="btn btn-am">Começar grátis</a>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <!-- HERO -->
+  <section>
+    <div class="hero">
+      <div>
+        <div class="eyebrow">Feito para quem vive do volante</div>
+        <h1>Fala quanto fez.<br><span class="am">O app pensa</span><br>o resto.</h1>
+        <p>"Fiz 350 na Uber, paguei 90 de gasolina" — pronto, registrado. O Gestor com IA calcula seu lucro real, prioriza a semanal do carro e mostra quanto vai sobrar no bolso.</p>
+        <div class="hero-ctas">
+          <a href="/" class="btn btn-am btn-hero">Começar grátis agora</a>
+        </div>
+        <div class="hero-note">Sem cartão de crédito · funciona no navegador · seus dados são só seus</div>
+      </div>
+      <div>
+        <div class="phone">
+          <div class="phone-head">
+            <div class="phone-ava">🧠</div>
+            <div>
+              <b>Gestor Financeiro</b>
+              <div class="on">● Online · por dentro de tudo</div>
+            </div>
+          </div>
+          <div class="msgs" id="heroMsgs"></div>
+          <div class="phone-stats">
+            <div class="ps"><div class="v" id="st-lucro">R$ 0</div><div class="l">Lucro do dia</div></div>
+            <div class="ps"><div class="v" id="st-meta">0%</div><div class="l">da meta</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLATAFORMAS -->
+    <div class="reveal" style="text-align:center;margin-bottom:12px">
+      <div style="font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:.12em;font-weight:600;margin-bottom:16px">Funciona com todas as plataformas</div>
+      <div class="plats">
+        <div class="plat">🚗 Uber</div>
+        <div class="plat">🚖 99</div>
+        <div class="plat">🛵 iFood</div>
+        <div class="plat">🛵 Rappi</div>
+        <div class="plat">🚗 InDrive</div>
+        <div class="plat">📦 Loggi</div>
+        <div class="plat">📦 Lalamove</div>
+        <div class="plat">🛵 Qualquer outra</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALCULADORA -->
+  <section style="padding:80px 0 0">
+    <div class="sec-eyebrow">Descubra agora</div>
+    <h2>Quanto você realmente<br>está ganhando?</h2>
+    <div class="calc-box reveal">
+      <div class="calc-title">Calculadora de lucro real</div>
+      <div class="calc-sub">Digite seus números da semana passada e veja o que sobrou de verdade</div>
+      <div class="calc-inputs">
+        <div class="calc-field">
+          <label>💰 Quanto faturou bruto (R$)</label>
+          <input type="number" id="cFat" placeholder="Ex: 1.200" value="1200" oninput="calcular()">
+        </div>
+        <div class="calc-field">
+          <label>⛽ Quanto gastou de combustível (R$)</label>
+          <input type="number" id="cComb" placeholder="Ex: 250" value="250" oninput="calcular()">
+        </div>
+        <div class="calc-field">
+          <label>🔧 Manutenção / outros gastos (R$)</label>
+          <input type="number" id="cManut" placeholder="Ex: 80" value="80" oninput="calcular()">
+        </div>
+        <div class="calc-field">
+          <label>⏱️ Quantas horas trabalhou</label>
+          <input type="number" id="cHoras" placeholder="Ex: 40" value="40" oninput="calcular()">
+        </div>
+      </div>
+      <div class="calc-result">
+        <div class="calc-r">
+          <div class="rv" id="rBruto" style="color:var(--muted)">R$ 1.200</div>
+          <div class="rl">Bruto</div>
+        </div>
+        <div class="calc-r">
+          <div class="rv" id="rGastos" style="color:var(--vermelho)">R$ 330</div>
+          <div class="rl">Gastos totais</div>
+        </div>
+        <div class="calc-r destaque">
+          <div class="rv" id="rLucro">R$ 870</div>
+          <div class="rl">Lucro real</div>
+        </div>
+        <div class="calc-r">
+          <div class="rv" id="rPorHora" style="color:var(--verde)">R$ 21,75</div>
+          <div class="rl">Por hora</div>
+        </div>
+        <div class="calc-r">
+          <div class="rv" id="rMargem" style="color:var(--amarelo)">72%</div>
+          <div class="rl">Margem real</div>
+        </div>
+        <div class="calc-r">
+          <div class="rv" id="rMes" style="color:var(--verde)">R$ 3.480</div>
+          <div class="rl">Estimativa mês</div>
+        </div>
+      </div>
+      <div class="calc-cta">O Painel.IA calcula isso automaticamente, todo dia. <a href="/">Testar grátis →</a></div>
+    </div>
+  </section>
+
+  <!-- ANTES vs DEPOIS -->
+  <section style="padding:80px 0 0">
+    <div class="sec-eyebrow">A diferença na prática</div>
+    <h2>Antes vs Depois.</h2>
+    <div class="avd reveal">
+      <div class="avd-col">
+        <div class="avd-label antes">😩 Sem Painel.IA</div>
+        <div class="avd-item"><span class="ic">⏰</span><span><b>Não sabe quanto sobrou</b> — no fim do mês só tinha a sensação de que trabalhou muito e não ficou nada.</span></div>
+        <div class="avd-item"><span class="ic">😰</span><span><b>Semanal atrasada de surpresa</b> — sem controle do vencimento, o carro vai para o pátio.</span></div>
+        <div class="avd-item"><span class="ic">📉</span><span><b>Trabalha no escuro</b> — não sabe qual plataforma paga mais, qual horário vale a pena.</span></div>
+        <div class="avd-item"><span class="ic">💸</span><span><b>Combustível come tudo</b> — sem ver o gasto real, acha que está ganhando mais do que está.</span></div>
+        <div class="avd-item"><span class="ic">📋</span><span><b>Planilha que ninguém preenche</b> — começa na segunda, abandona na quarta.</span></div>
+      </div>
+      <div class="avd-col depois">
+        <div class="avd-label depois">🚀 Com Painel.IA</div>
+        <div class="avd-item"><span class="ic">⚡</span><span><b>Fala uma frase, tá registrado</b> — "fiz 280 na 99 hoje, abasteci 80" — pronto.</span></div>
+        <div class="avd-item"><span class="ic">🛡️</span><span><b>Semanal sempre em dia</b> — o app avisa antes, não depois. Nunca mais surpresa.</span></div>
+        <div class="avd-item"><span class="ic">📊</span><span><b>Sabe exatamente o que rende</b> — compara plataformas, horários, dias da semana.</span></div>
+        <div class="avd-item"><span class="ic">💰</span><span><b>Vê o lucro real, não o bruto</b> — depois de combustível, manutenção e contas.</span></div>
+        <div class="avd-item"><span class="ic">🎯</span><span><b>Meta que fecha o mês</b> — sabe exatamente quantas corridas faltam para bater.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIMELINE -->
+  <section class="era-sec">
+    <div class="sec-eyebrow">Um século de controle financeiro</div>
+    <h2>De 1920 até hoje,<br>o motorista anotava sozinho.</h2>
+    <p class="sec-sub">Cada geração teve sua ferramenta. Todas exigiam a mesma coisa: o seu tempo no fim de um dia exausto.</p>
+    <div class="timeline">
+      <div class="era">
+        <div class="era-year">ANOS 1920</div>
+        <h3>A caderneta de bolso</h3>
+        <p>Taxistas anotavam corridas a lápis. Funcionava — até a chuva, até perder, até a letra que nem você entendia depois.</p>
+        <video class="era-vid" autoplay loop muted playsinline preload="auto" src="/static/landing/era-1920.mp4"></video>
+        <div class="era-art"><div class="caderneta">
+          terça — 14 corridas<br>
+          gasolina ...... 12$000<br>
+          almoço 3$500 <span class="riscado">4$000</span><br>
+          sobrou ........ ???
+        </div></div>
+      </div>
+
+      <div class="era">
+        <div class="era-year">ANOS 1960</div>
+        <h3>O livro-caixa</h3>
+        <p>Colunas de débito e crédito, somadas à mão. Um erro de soma na linha 14 e o mês inteiro fechava errado.</p>
+        <video class="era-vid" autoplay loop muted playsinline preload="auto" src="/static/landing/era-1960.mp4"></video>
+        <div class="era-art"><div class="livrocaixa">
+          <div class="col"><span>ENTRADAS</span><span>Cr$ 847,00</span></div>
+          <div class="col"><span>SAÍDAS</span><span>Cr$ 612,00</span></div>
+          <div class="col"><span>SALDO</span><span>Cr$ 235,00 ✏️</span></div>
+        </div></div>
+      </div>
+
+      <div class="era">
+        <div class="era-year">ANOS 1990</div>
+        <h3>A planilha</h3>
+        <p>O Excel prometia resolver tudo. Mas exigia computador, fórmula e disciplina de contador — depois de 12 horas dirigindo.</p>
+        <video class="era-vid" autoplay loop muted playsinline preload="auto" src="/static/landing/era-1990.mp4"></video>
+        <div class="era-art"><table class="excel">
+          <tr><td class="h">A</td><td class="h">B</td><td class="h">C</td></tr>
+          <tr><td>Seg</td><td>R$ 180</td><td>=B2-C2</td></tr>
+          <tr><td>Ter</td><td>R$ 240</td><td class="err">#REF!</td></tr>
+        </table></div>
+      </div>
+
+      <div class="era">
+        <div class="era-year">ANOS 2010</div>
+        <h3>Os apps de planilha</h3>
+        <p>A planilha foi para o celular — mas continuou sendo planilha. Vinte toques para registrar um dia. Categorias, formulários, menus. Ninguém aguenta por mais de duas semanas.</p>
+        <video class="era-vid" autoplay loop muted playsinline preload="auto" src="/static/landing/era-2010.mp4"></video>
+        <div class="era-art"><div class="appgen">
+          <div class="row"><span>Categoria ▾</span><span>obrigatório</span></div>
+          <div class="row"><span>Subcategoria ▾</span><span>obrigatório</span></div>
+          <div class="row"><span>Forma de pagamento ▾</span><span>obrigatório</span></div>
+          <div class="plus">+ 17 campos para preencher…</div>
+        </div></div>
+      </div>
+
+      <div class="era last">
+        <div class="era-year">2026 — PAINEL.IA</div>
+        <h3>Você fala. A IA entende.</h3>
+        <p>Uma frase no fim do dia — por texto ou áudio. O Gestor registra, separa por plataforma, calcula o lucro real e te avisa o que vence amanhã. Cem anos de evolução para devolver seu tempo.</p>
+        <div class="era-art era-ia">
+          <div class="chatline"><div class="bub-u">fiz 350 na uber, paguei 90 de gasolina</div></div>
+          <div class="chatline"><div class="bub-b">Anotei! ✅ Lucro de hoje: <b>R$ 260</b>. Faltam R$ 140 pra meta — no seu ritmo, mais 6 corridas. A semanal do carro vence amanhã, já separei no plano. 💪</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section>
+    <div class="sec-eyebrow">O que ele faz por você</div>
+    <h2>Um gestor financeiro<br>no banco do passageiro.</h2>
+    <div class="feats">
+      <div class="feat f1 reveal"><div class="ic">💬</div><h3>Registra falando</h3><p>"Fiz 97 na 99, vendi 20 na lojinha, abasteci 100." O Gestor entende linguagem de motorista — separa ganho, despesa e renda extra sozinho.</p></div>
+      <div class="feat f2 reveal"><div class="ic">🎯</div><h3>Meta que se ajusta</h3><p>Quanto falta hoje, quanto por hora até o horário que VOCÊ escolher parar, e quanto sobra no bolso se bater a meta — depois de pagar todas as contas.</p></div>
+      <div class="feat f3 reveal"><div class="ic">🛡️</div><h3>Protege a semanal</h3><p>O plano financeiro com IA prioriza o que não pode atrasar — semanal do carro, financiamento — e te avisa antes do vencimento, não depois.</p></div>
+      <div class="feat f1 reveal"><div class="ic">🏍️</div><h3>Motoboy também</h3><p>iFood, Rappi, Loggi, restaurante fixo. Controla km da moto, EPI, ganho fixo mais variável. Feito para quem faz entrega também.</p></div>
+      <div class="feat f2 reveal"><div class="ic">🌦️</div><h3>Previsão do tempo</h3><p>Vai chover amanhã? O app já sabe. Para motorista, chuva rende mais. Para motoboy, chuva é risco. A IA avisa diferente para cada um.</p></div>
+      <div class="feat f3 reveal"><div class="ic">📊</div><h3>Relatório fiscal</h3><p>Exporta seus ganhos organizados por plataforma e mês. Para declarar imposto ou comprovar renda sem precisar de contador.</p></div>
+    </div>
+
+    <div class="nums reveal">
+      <div><div class="n">10s</div><div class="l">para registrar o dia inteiro</div></div>
+      <div><div class="n">24h</div><div class="l">Gestor disponível no chat</div></div>
+      <div><div class="n">R$ 0</div><div class="l">para começar — sem cartão</div></div>
+    </div>
+  </section>
+
+  <!-- COMPARATIVO -->
+  <section style="padding:80px 0 0">
+    <div class="sec-eyebrow">Por que Painel.IA?</div>
+    <h2>A comparação honesta.</h2>
+    <div class="reveal" style="overflow-x:auto">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Critério</th>
+            <th class="dest">Painel.IA</th>
+            <th>Planilha</th>
+            <th>Anotar no papel</th>
+            <th>App genérico</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Registra por voz</td><td class="dest"><span class="yes">✓</span></td><td><span class="no">✗</span></td><td><span class="no">✗</span></td><td><span class="no">✗</span></td></tr>
+          <tr><td>Entende linguagem de motorista</td><td class="dest"><span class="yes">✓</span></td><td><span class="no">✗</span></td><td><span class="no">✗</span></td><td><span class="no">✗</span></td></tr>
+          <tr><td>Calcula lucro real automaticamente</td><td class="dest"><span class="yes">✓</span></td><td>Manual</td><td><span class="no">✗</span></td><td>Parcial</td></tr>
+          <tr><td>Avisa vencimento da semanal</td><td class="dest"><span class="yes">✓</span></td><td><span class="no">✗</span></td><td><span class="no">✗</span></td><td><span class="no">✗</span></td></tr>
+          <tr><td>Funciona com Uber, 99, iFood...</td><td class="dest"><span class="yes">✓</span></td><td>Depende</td><td><span class="yes">✓</span></td><td>Parcial</td></tr>
+          <tr><td>Previsão do tempo integrada</td><td class="dest"><span class="yes">✓</span></td><td><span class="no">✗</span></td><td><span class="no">✗</span></td><td><span class="no">✗</span></td></tr>
+          <tr><td>Custo para começar</td><td class="dest" style="color:var(--verde)">R$ 0</td><td>R$ 0</td><td>R$ 0</td><td>R$ 0–29</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- DEPOIMENTOS -->
+  <section style="padding:80px 0 0">
+    <div class="sec-eyebrow">Quem já usa</div>
+    <h2>O que dizem os motoristas.</h2>
+    <div class="depos">
+      <div class="depo reveal">
+        <div class="stars">★★★★★</div>
+        <p>"Eu não sabia quanto eu tava ganhando de verdade. Com o Painel.IA eu vejo tudo na hora, é muito mais fácil."</p>
+        <div class="depo-author">
+          <div class="depo-av g">JF</div>
+          <div><div class="depo-name">José F.</div><div class="depo-role">Motorista Uber · Curitiba</div></div>
+        </div>
+      </div>
+      <div class="depo reveal">
+        <div class="stars">★★★★★</div>
+        <p>"Nunca mais atrasou a semanal do carro. O app me avisa dois dias antes. Isso sozinho já paga qualquer assinatura."</p>
+        <div class="depo-author">
+          <div class="depo-av b">RM</div>
+          <div><div class="depo-name">Ricardo M.</div><div class="depo-role">Motorista 99 e Uber · São Paulo</div></div>
+        </div>
+      </div>
+      <div class="depo reveal">
+        <div class="stars">★★★★★</div>
+        <p>"Uso no iFood e no Rappi ao mesmo tempo. O app separa tudo direitinho. Descobri que o Rappi tava rendendo 30% a mais."</p>
+        <div class="depo-author">
+          <div class="depo-av v">CS</div>
+          <div><div class="depo-name">Carlos S.</div><div class="depo-role">Motoboy · Belo Horizonte</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GARANTIA -->
+    <div class="garantia reveal">
+      <div class="ic">🛡️</div>
+      <div>
+        <h3>Garantia de 7 dias sem perguntas</h3>
+        <p>Teste o Painel.IA por 7 dias completos. Se não gostar por qualquer motivo — devolvemos 100% do valor pago. Sem burocracia, sem explicação necessária.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section style="padding:80px 0 0">
+    <div class="sec-eyebrow">Dúvidas frequentes</div>
+    <h2>FAQ</h2>
+    <div class="faq reveal">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Precisa baixar algum app? <span class="arr">+</span></button>
+        <div class="faq-a">Não. O Painel.IA funciona direto no navegador do celular — Chrome, Safari, qualquer um. Você pode adicionar na tela inicial como se fosse um app, mas não precisa passar pela App Store ou Google Play.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Funciona com iFood, Rappi e motoboy? <span class="arr">+</span></button>
+        <div class="faq-a">Sim. Funciona com Uber, 99, InDrive, iFood, Rappi, Loggi, Lalamove e qualquer outra plataforma. Você fala qual plataforma na mensagem e o Gestor separa automaticamente. Tem perfil específico para motoboy com km da moto, EPI e ganho fixo de restaurante.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Meus dados ficam seguros? <span class="arr">+</span></button>
+        <div class="faq-a">Seus dados são armazenados com criptografia no Supabase, um banco de dados profissional. Nenhum dado é vendido ou compartilhado com terceiros. Você pode exportar ou deletar sua conta a qualquer momento.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Quanto custa? <span class="arr">+</span></button>
+        <div class="faq-a">Começar é gratuito, sem cartão de crédito. O plano básico tem todas as funcionalidades essenciais. Planos premium com relatórios avançados e histórico ilimitado estão disponíveis por um valor justo — menos que uma corrida por mês.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">E se eu trabalhar em mais de uma plataforma? <span class="arr">+</span></button>
+        <div class="faq-a">Perfeito para isso. Você fala "fiz 180 na Uber e 95 no iFood hoje" e o Gestor separa os dois automaticamente. No relatório você vê qual plataforma está rendendo mais por hora — dado que a maioria dos motoristas nunca teve acesso.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Posso cancelar quando quiser? <span class="arr">+</span></button>
+        <div class="faq-a">Sim. Sem fidelidade. Cancele a qualquer momento sem taxa e sem explicação. Seus dados ficam disponíveis por 30 dias após o cancelamento para exportar.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- CTA FINAL -->
+<section id="planos" style="position:relative;z-index:1">
+  <div class="wrap">
+    <div style="text-align:center">
+      <div class="sec-eyebrow" style="display:inline-block">Planos</div>
+      <h2>Menos que um café por dia.<br>Controle do mês inteiro.</h2>
+      <p class="sec-sub" style="margin:0 auto 36px">Comece com <b style="color:#00D897">24h grátis</b> — sem cartão. Fundadores travam o preço por 1 ano.</p>
+    </div>
+    <div style="max-width:420px;margin:0 auto 36px;text-align:center">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:7px">Vagas de Fundador restantes</div>
+      <div style="height:8px;background:rgba(255,255,255,.07);border-radius:6px;overflow:hidden"><div id="vagas-fill" style="height:100%;width:0;background:linear-gradient(90deg,#F0B429,#00D897);border-radius:6px;transition:width 1.3s cubic-bezier(.2,.8,.2,1)"></div></div>
+      <div id="vagas-num" style="font-size:12px;color:#F0B429;margin-top:7px;font-weight:700">carregando…</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;max-width:640px;margin:0 auto">
+      <div style="border:1.5px solid rgba(240,180,41,.55);border-radius:20px;padding:26px 22px;position:relative;background:linear-gradient(135deg,rgba(240,180,41,.08),transparent)">
+        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#F0B429;color:#000;font-size:10.5px;font-weight:800;padding:4px 14px;border-radius:20px;white-space:nowrap">🔥 FUNDADOR</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin:8px 0 4px"><span style="font-size:14px;color:var(--faint);text-decoration:line-through">R$29</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;color:#F0B429">R$19</span><span style="font-size:13px;color:var(--muted)">/mês</span></div>
+        <div style="font-size:11.5px;color:#00D897;margin-bottom:14px">preço travado por 1 ano</div>
+        <div style="font-size:13px;color:var(--muted);line-height:2">✓ Gestor com IA ilimitado<br>✓ Histórico completo<br>✓ Plano financeiro inteligente<br>✓ Previsão do tempo<br>✓ Modo motoboy<br>✓ Alertas de vencimento</div>
+        <a href="/" class="btn btn-am" style="display:block;text-align:center;margin-top:16px;padding:14px">Começar com 24h grátis</a>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:20px;padding:26px 22px;background:var(--card)">
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px">Pro</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:14px"><span style="font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:900">R$29</span><span style="font-size:13px;color:var(--muted)">/mês</span></div>
+        <div style="font-size:13px;color:var(--muted);line-height:2">✓ Tudo do Fundador<br>✓ Sem limite de vagas<br>✓ Para quem chegou depois</div>
+        <a href="/" class="btn btn-ghost" style="display:block;text-align:center;margin-top:16px;padding:14px">Começar com 24h grátis</a>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:12px;color:var(--faint);margin-top:22px">✅ 24h de teste grátis · sem cartão · cancele quando quiser · seus dados são sempre seus</div>
+  </div>
+</section>
+
+<div class="final">
+  <div class="sec-eyebrow" style="text-align:center">Chega de dirigir no escuro</div>
+  <h2>Quanto sobrou<br>do seu mês passado?</h2>
+  <p>Se você precisou pensar, você precisa do Painel.IA.</p>
+  <a href="/" class="btn btn-am btn-hero">Descobrir agora — grátis</a>
+  <div style="margin-top:16px;font-size:12px;color:var(--faint)">Sem cartão · funciona no celular · grátis para começar</div>
+</div>
+
+<footer>
+  Painel.IA © 2026 · <a href="/static/termos.html" style="color:var(--faint)">Termos</a> · <a href="/static/privacidade.html" style="color:var(--faint)">Privacidade</a>
+</footer>
+
+
+
+<script>
+/* Conversa do hero */
+const convo=[
+  {t:'u',txt:'fiz 350 na uber, paguei 90 de gasolina'},
+  {t:'b',txt:'Anotei! ✅ R$350 na Uber e R$90 de combustível.'},
+  {t:'u',txt:'quanto falta pra meta?'},
+  {t:'b',txt:'Faltam R$140. No seu ritmo, mais 6 corridas e fecha o dia. 💪'},
+];
+const box=document.getElementById('heroMsgs');
+let ci=0;
+function nextMsg(){
+  if(ci>=convo.length){setTimeout(()=>{box.innerHTML='';ci=0;animStats(0);nextMsg()},6000);return}
+  const m=convo[ci++];
+  const d=document.createElement('div');
+  d.className='msg '+(m.t==='u'?'m-user':'m-bot');
+  d.textContent=m.txt;
+  box.appendChild(d);
+  if(ci===2)animStats(1);
+  setTimeout(nextMsg,1400);
+}
+function animStats(on){
+  const lucro=document.getElementById('st-lucro'),meta=document.getElementById('st-meta');
+  if(!on){lucro.textContent='R$ 0';meta.textContent='0%';return}
+  let v=0;const target=260,iv=setInterval(()=>{
+    v+=13;if(v>=target){v=target;clearInterval(iv)}
+    lucro.textContent='R$ '+v;
+    meta.textContent=Math.round(v/400*100)+'%';
+  },40);
+}
+setTimeout(nextMsg,900);
+
+/* Calculadora */
+function fmt(v){return'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function calcular(){
+  const fat=parseFloat(document.getElementById('cFat').value)||0;
+  const comb=parseFloat(document.getElementById('cComb').value)||0;
+  const manut=parseFloat(document.getElementById('cManut').value)||0;
+  const horas=parseFloat(document.getElementById('cHoras').value)||1;
+  const gastos=comb+manut;
+  const lucro=fat-gastos;
+  const porHora=lucro/horas;
+  const margem=fat>0?Math.round(lucro/fat*100):0;
+  const mes=lucro*4.33;
+  document.getElementById('rBruto').textContent=fmt(fat);
+  document.getElementById('rGastos').textContent=fmt(gastos);
+  document.getElementById('rLucro').textContent=fmt(lucro);
+  document.getElementById('rPorHora').textContent=fmt(porHora);
+  document.getElementById('rMargem').textContent=margem+'%';
+  document.getElementById('rMes').textContent=fmt(mes);
+}
+calcular();
+
+/* FAQ */
+function toggleFaq(btn){
+  const item=btn.parentElement;
+  const isOpen=item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open'));
+  if(!isOpen)item.classList.add('open');
+}
+
+/* Vídeos das eras */
+document.querySelectorAll('.era-vid').forEach(v=>{v.muted=true;v.defaultMuted=true;v.play().catch(()=>{})});
+const vidObs=new IntersectionObserver(es=>{es.forEach(e=>{
+  const v=e.target;
+  if(e.isIntersecting){v.muted=true;v.play().catch(()=>{});}
+  else{v.pause();}
+})},{threshold:.2});
+document.querySelectorAll('.era-vid').forEach(v=>vidObs.observe(v));
+document.addEventListener('touchstart',()=>{document.querySelectorAll('.era-vid').forEach(v=>{if(v.paused)v.play().catch(()=>{})})},{once:true,passive:true});
+
+/* Vagas Fundador ao vivo */
+fetch('/billing/vagas-fundador').then(r=>r.json()).then(d=>{
+  const v = d.vagas ?? 50;
+  document.getElementById('vagas-num').textContent = v + ' de 50 vagas restantes';
+  setTimeout(()=>{ document.getElementById('vagas-fill').style.width = ((50-v)/50*100)+'%'; }, 300);
+}).catch(()=>{ document.getElementById('vagas-num').textContent = 'vagas limitadas'; });
+
+/* Reveals */
+const obs=new IntersectionObserver(es=>{es.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*60);obs.unobserve(e.target)}})},{threshold:.1});
+document.querySelectorAll('.reveal,.era').forEach(r=>obs.observe(r));
+</script>
+</body>
+</html>

@@ -70,6 +70,10 @@ async def _notif_relatorio_domingo():
     await _disparar_push_todos("Relatorio da semana 📈", "Veja como foi sua semana no Painel.IA 📊", "/", "relatorio-semana")
 
 async def startup_scheduler():
+    try:
+        _scheduler.add_job(_billing_emails_hora, 'interval', hours=1, id='billing_emails', replace_existing=True)
+    except Exception:
+        pass
     # Garante que a tabela push_subscriptions existe
     try:
         supabase.table("push_subscriptions").select("id").limit(1).execute()
@@ -96,3 +100,35 @@ async def startup_scheduler():
     # _scheduler.start()  # push desativado temporariamente
     log_info("scheduler_iniciado", jobs=5)
 
+
+
+# ── BILLING: emails automáticos de trial (rodam no scheduler existente) ──
+async def _billing_emails_hora():
+    import datetime as _dt
+    from core.supabase_client import supabase
+    from core.logging import log_info, log_erro
+    from services.email_service import email_trial_expirando, email_trial_expirado
+    from routes.billing import _email_do_usuario, _nome_do_motorista
+    agora = _dt.datetime.now(_dt.timezone.utc)
+    try:
+        r = supabase.table("assinaturas").select("*").eq("status", "trial").execute()
+        for ass in (r.data or []):
+            try:
+                tf = _dt.datetime.fromisoformat(str(ass["trial_fim"]).replace("Z", "+00:00"))
+            except Exception:
+                continue
+            restante_h = (tf - agora).total_seconds() / 3600
+            if restante_h <= 0 and not ass.get("email_expirado_enviado"):
+                supabase.table("assinaturas").update({"status": "expired", "email_expirado_enviado": True}).eq("id", ass["id"]).execute()
+                email = await _email_do_usuario(ass["motorista_id"])
+                if email:
+                    await email_trial_expirado(email, _nome_do_motorista(ass["motorista_id"]))
+                log_info("trial_expirado_processado", mid=ass["motorista_id"])
+            elif 0 < restante_h <= 6 and not ass.get("email_expirando_enviado"):
+                supabase.table("assinaturas").update({"email_expirando_enviado": True}).eq("id", ass["id"]).execute()
+                email = await _email_do_usuario(ass["motorista_id"])
+                if email:
+                    await email_trial_expirando(email, _nome_do_motorista(ass["motorista_id"]), max(1, int(restante_h)))
+                log_info("trial_expirando_avisado", mid=ass["motorista_id"])
+    except Exception as e:
+        log_erro("billing_emails_erro", erro=e)

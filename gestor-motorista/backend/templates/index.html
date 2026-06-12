@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<link rel="preload" as="video" href="/static/splash-v3.mp4" type="video/mp4">
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#ffcc00">
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
@@ -291,6 +290,25 @@ select option{background:#141820}
 .bt-btn.encerrar{background:rgba(255,77,106,.15);color:#FF4D6A;border:1px solid rgba(255,77,106,.3)}
 .voice-btn{background:rgba(255,255,255,.05);border:1px solid var(--b);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px;flex-shrink:0;transition:all .2s;color:var(--mt)}
 .voice-btn.on{background:rgba(245,166,35,.15);border-color:rgba(245,166,35,.4);color:var(--am)}
+
+/* ════ CAMADA VISUAL PREMIUM ════ */
+body::before{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.032;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:200px 200px}
+body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.5;background-image:radial-gradient(circle,rgba(255,255,255,.035) 1px,transparent 1px);background-size:30px 30px}
+.sc{background:linear-gradient(135deg,rgba(255,255,255,.045) 0%,rgba(255,255,255,.012) 100%)!important;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 4px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.06);transition:border-color .3s,transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s!important}
+.sc:hover{box-shadow:0 12px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)!important}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.14),transparent)}
+.meta-fill{position:relative;overflow:hidden}
+.meta-fill::after{content:'';position:absolute;top:0;right:0;width:36px;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:liquid 2.2s ease-in-out infinite}
+@keyframes liquid{0%,100%{transform:translateX(-36px);opacity:0}50%{transform:translateX(0);opacity:1}}
+.toast{transition:transform .42s cubic-bezier(.34,1.56,.64,1),opacity .3s ease!important}
+#alerta-contas{animation:urgency-pulse 2.6s ease-in-out infinite}
+@keyframes urgency-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,69,96,0)}50%{box-shadow:0 0 0 5px rgba(255,69,96,.12)}}
+#card-meta-mensal{position:relative}
+#card-meta-mensal::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--card-glow,#F0B429),transparent);opacity:.65}
+#hero-lucro{filter:drop-shadow(0 0 18px rgba(240,180,41,.1))}
+@keyframes shimmer-sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skeleton{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.09) 50%,rgba(255,255,255,.04) 75%)!important;background-size:200% 100%!important;animation:shimmer-sk 1.4s infinite;border-radius:8px;color:transparent!important}
+@media (prefers-reduced-motion: reduce){body::before,body::after{display:none}.meta-fill::after,#alerta-contas{animation:none}}
 </style>
 <script>
 // Bloqueia zoom por pinça e duplo-toque em qualquer browser embutido
@@ -306,86 +324,134 @@ const _supa = supabase.createClient(
 );
 </script>
 
+<script>
+// Stubs de funções de notificação removidas — evita ReferenceError que travava o init()
+if (typeof window._atualizarBotaoNotif !== 'function') { window._atualizarBotaoNotif = function(){}; }
+if (typeof window._registrarPushSilencioso !== 'function') { window._registrarPushSilencioso = function(){ return Promise.resolve(); }; }
+</script>
 </head>
 <body>
-<div id="splash" onclick="window._splashTap()"
-  style="position:fixed;inset:0;z-index:999999;background:#000;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent">
-  <!-- Imagem de fundo full screen -->
-  <picture style="position:absolute;inset:0;width:100%;height:100%">
-    <source srcset="/static/splash-bg.webp?v=2" type="image/webp">
-    <img src="/static/splash-bg.jpg?v=2" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block">
-  </picture>
-  <!-- Vídeo pré-carregado, inicia escondido -->
-  <video id="sv" playsinline webkit-playsinline preload="auto"
-    style="display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:999998;background:#000;opacity:0;transition:opacity .35s ease">
-    <source src="/static/splash-v4.mp4" type="video/mp4">
-  </video>
-  <!-- Bolinhas e toque para entrar -->
-  <div style="position:absolute;bottom:52px;width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none">
-    <div style="display:flex;gap:8px">
-      <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out infinite"></div>
-      <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out .22s infinite"></div>
-      <div style="width:7px;height:7px;border-radius:50%;background:#f0b429;animation:sp-p 1.5s ease-in-out .44s infinite"></div>
-    </div>
-    <div style="color:rgba(255,255,255,.55);font-size:13px;font-family:-apple-system,sans-serif;letter-spacing:1.2px">toque para entrar</div>
-  </div>
-</div>
-<style>
-@keyframes sp-p{0%,100%{opacity:.2;transform:scale(.65)}50%{opacity:1;transform:scale(1.2)}}
-</style>
-<script>
-!function(){
-  var sp=document.getElementById('splash');
-  var v=document.getElementById('sv');
-  var tocado=false;
-  v.load();
 
-  // Função chamada quando o vídeo (ou timeout) termina — libera o app
-  function _splashFim(){
-    v.style.transition='opacity .5s';
-    v.style.opacity='0';
-    setTimeout(function(){
-      v.remove();
-      // Retomar o fluxo normal: checkAuth decide login ou dashboard
-      if(typeof checkAuth==='function') checkAuth();
-    },550);
+
+<!-- ════ ABERTURA:INICIO — BLOCO PROTEGIDO. NÃO EDITAR FORA DAQUI ════
+     O video pre-carrega em segundo plano assim que a pagina abre (NAO bloqueia
+     o app — o dashboard carrega em paralelo). A tela "Bem-vindo" fica visivel.
+     Ao tocar, o video toca na hora (ja esta carregado). Cria <video> do zero
+     pra nunca herdar estado preso do PWA iOS. Só mobile. -->
+<div id="abertura" style="display:none;position:fixed;inset:0;z-index:100000;background:#000;overflow:hidden">
+  <div id="abertura-welcome" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer;z-index:2">
+    <div style="position:absolute;top:11%;left:0;right:0;text-align:center;color:rgba(255,255,255,.5);font-size:22px;font-weight:300;letter-spacing:.3px">Bem-vindo!</div>
+    <img id="abertura-logo" src="/static/icon-512.png" alt="Painel.IA" style="width:118px;height:118px;border-radius:50%;object-fit:cover;box-shadow:0 0 50px rgba(240,180,41,.5);animation:ab-pulse 2s ease-in-out infinite">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:800;color:#fff;margin-top:26px">Painel<span style="color:#F0B429">.IA</span></div>
+    <div style="color:rgba(255,255,255,.4);font-size:15px;margin-top:4px">Gestão financeira para motoristas</div>
+    <div id="abertura-hint" style="position:absolute;bottom:13%;left:0;right:0;text-align:center;color:rgba(240,180,41,.85);font-size:13px;font-weight:600;animation:ab-pulse 2s ease-in-out infinite">toque para começar ▶</div>
+  </div>
+  <button id="abertura-skip" onclick="window._fecharAbertura&&window._fecharAbertura()"
+          style="display:none;position:absolute;bottom:calc(26px + env(safe-area-inset-bottom));right:22px;background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:8px 18px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;z-index:3">Pular ›</button>
+</div>
+<style>@keyframes ab-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.82;transform:scale(1.04)}}
+@media (prefers-reduced-motion: reduce){ #abertura-logo,#abertura-hint{animation:none} }</style>
+<script>
+window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
+(function(){
+  var box = document.getElementById('abertura');
+  if (!box) return;
+  var isMobile = window.matchMedia('(max-width: 820px)').matches || /iPhone|iPad|Android/i.test(navigator.userAgent);
+  if (!isMobile) { box.remove(); return; }
+
+  box.style.display = 'block';
+  var welcome = document.getElementById('abertura-welcome');
+  var skip = document.getElementById('abertura-skip');
+  var fechado = false, tocou = false;
+
+  // ── DIAGNÓSTICO TEMPORÁRIO — painel visível no rodapé ──
+  var dbg = document.createElement('div');
+  dbg.style.cssText = 'position:fixed;left:0;right:0;bottom:0;max-height:40vh;overflow:auto;background:rgba(0,0,0,.92);color:#0f0;font:10px monospace;padding:6px;z-index:2147483647;white-space:pre-wrap';
+  document.body.appendChild(dbg);
+  function log(msg){
+    var t = new Date().toISOString().substr(11,12);
+    dbg.textContent += '['+t+'] '+msg+'\n';
+    dbg.scrollTop = dbg.scrollHeight;
+  }
+  log('init — visibilityState='+document.visibilityState);
+
+  var v = null;
+
+  function criarVideo(){
+    log('criarVideo()');
+    if (v) { try { v.pause(); v.removeAttribute('src'); v.load(); v.remove(); } catch(e){} }
+    v = document.createElement('video');
+    v.setAttribute('playsinline', '');
+    v.setAttribute('webkit-playsinline', '');
+    v.preload = 'auto';
+    v.muted = true; // mudo permite pre-carregar sem gesto
+    v.src = '/static/abertura.mp4?t=' + Date.now();
+    v.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;opacity:0;transition:opacity .3s';
+    box.insertBefore(v, welcome);
+    try { v.load(); } catch(e) {}
+    v.addEventListener('ended', function(){ if (tocou) setTimeout(fechar, 300); });
+  }
+  criarVideo();
+
+  function fechar(){
+    if (fechado) return; fechado = true;
+    log('fechar() chamado');
+    try { v.pause(); } catch(e) {}
+    box.style.opacity = '0';
+    box.style.transition = 'opacity .6s ease';
+    setTimeout(function(){ box.style.display = 'none'; }, 650);
+  }
+  window._fecharAbertura = fechar;
+
+  function resetar(){
+    log('resetar() chamado');
+    fechado = false; tocou = false;
+    box.style.display = 'block';
+    box.style.opacity = '1';
+    box.style.transition = 'none';
+    welcome.style.display = 'flex';
+    welcome.style.opacity = '1';
+    welcome.style.transition = 'none';
+    skip.style.display = 'none';
+    criarVideo();
+    log('resetar() concluido');
   }
 
-  window._splashTap=function(){
-    if(tocado) return; tocado=true;
-    // Mostrar vídeo preto (opacity 0) por cima imediatamente
-    v.style.display='block';
-    document.body.appendChild(v);
-    v.muted=false;
-    var p=v.play();
-    if(p) p.catch(function(){ v.muted=true; v.play(); });
-    // Fade in rápido do vídeo — esconde o delay visualmente
-    requestAnimationFrame(function(){
-      requestAnimationFrame(function(){
-        v.style.opacity='1';
-      });
-    });
-    // Sumir a tela estática junto
-    sp.style.transition='opacity .35s ease';
-    sp.style.opacity='0';
-    setTimeout(function(){sp&&sp.remove()},380);
-    // Ao terminar o vídeo → libera o app
-    v.addEventListener('ended', _splashFim);
-    // Segurança: se vídeo travar, libera em 20s
-    setTimeout(function(){if(v&&v.parentNode) _splashFim();},20000);
-  };
+  // iOS PWA: ao "reabrir" o app a pagina nao recarrega, so descongela.
+  // visibilitychange + pageshow cobrem os dois jeitos que isso acontece.
+  document.addEventListener('visibilitychange', function(){
+    log('visibilitychange -> '+document.visibilityState+' (fechado='+fechado+')');
+    if (document.visibilityState === 'visible' && fechado) resetar();
+  });
+  window.addEventListener('pageshow', function(ev){
+    log('pageshow persisted='+ev.persisted+' (fechado='+fechado+')');
+    if (ev.persisted && fechado) resetar();
+  });
 
-  // Botão pular — aparece após 3s para quem está com pressa
-  setTimeout(function(){
-    if(tocado) return;
-    var skip=document.createElement('button');
-    skip.textContent='Pular ›';
-    skip.style.cssText='position:absolute;top:20px;right:20px;background:rgba(255,255,255,.15);border:none;border-radius:20px;color:rgba(255,255,255,.7);font-size:13px;padding:7px 16px;cursor:pointer;font-family:-apple-system,sans-serif;letter-spacing:.5px;backdrop-filter:blur(4px)';
-    skip.onclick=function(e){ e.stopPropagation(); window._splashTap(); };
-    sp.appendChild(skip);
-  }, 3000);
-}();
+  function tocar(){
+    log('tocar() chamado (fechado='+fechado+' tocou='+tocou+')');
+    if (fechado || tocou) return;
+    tocou = true;
+    v.style.opacity = '1';
+    welcome.style.transition = 'opacity .35s ease';
+    welcome.style.opacity = '0';
+    setTimeout(function(){ welcome.style.display = 'none'; }, 350);
+    skip.style.display = 'block';
+    // Liga o som e toca do inicio (o gesto do toque libera o audio)
+    v.muted = false;
+    try { v.currentTime = 0; } catch(e) {}
+    var p = v.play();
+    log('v.play() chamado, readyState='+v.readyState);
+    if (p && p.catch) {
+      p.catch(function(err){ log('play ERRO: '+err.message); v.muted = true; v.play().catch(function(e2){ log('play mudo ERRO: '+e2.message); }); });
+    }
+  }
+  welcome.addEventListener('click', tocar);
+})();
 </script>
+<!-- ════ ABERTURA:FIM ════ -->
+
+
 
 <div id="tela-login" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:0">
   <div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 100%,rgba(240,180,41,.08) 0%,transparent 70%);pointer-events:none"></div>
@@ -445,18 +511,37 @@ const _supa = supabase.createClient(
       <button class="ob-btn" onclick="obNext(1)">Continuar →</button>
     </div>
     <div class="ob-step" id="ob-step1">
+      <div class="ob-title">Como você trabalha? 🚗🏍️</div>
+      <div class="ob-sub">Isso personaliza o app para a sua realidade.</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin:20px 0">
+        <button class="ob-plat ob-veiculo" onclick="selVeiculo(this,'carro')" style="padding:16px;font-size:15px;display:flex;align-items:center;gap:12px;text-align:left">
+          <span style="font-size:28px">🚗</span>
+          <div><div style="font-weight:700">Motorista de app</div><div style="font-size:12px;opacity:.7;margin-top:2px">Uber, 99, InDrive</div></div>
+        </button>
+        <button class="ob-plat ob-veiculo" onclick="selVeiculo(this,'moto')" style="padding:16px;font-size:15px;display:flex;align-items:center;gap:12px;text-align:left">
+          <span style="font-size:28px">🏍️</span>
+          <div><div style="font-weight:700">Motoboy / entregador</div><div style="font-size:12px;opacity:.7;margin-top:2px">iFood, Rappi, Loggi, restaurante</div></div>
+        </button>
+        <button class="ob-plat ob-veiculo" onclick="selVeiculo(this,'ambos')" style="padding:16px;font-size:15px;display:flex;align-items:center;gap:12px;text-align:left">
+          <span style="font-size:28px">🚗🏍️</span>
+          <div><div style="font-weight:700">Os dois</div><div style="font-size:12px;opacity:.7;margin-top:2px">Trabalho com carro e moto</div></div>
+        </button>
+      </div>
+      <button class="ob-btn" id="ob-btn-veiculo" onclick="obNext(2)" disabled style="opacity:.4">Continuar →</button>
+    </div>
+    <div class="ob-step" id="ob-step2">
       <div class="ob-title">Qual plataforma? 🚗</div>
       <div class="ob-sub">Selecione as plataformas que você usa.</div>
-      <div class="ob-plats">
+      <div class="ob-plats" id="ob-plats-grid">
         <button class="ob-plat" onclick="togglePlat(this,'uber')">🖤 Uber</button>
         <button class="ob-plat" onclick="togglePlat(this,'99')">🟡 99</button>
         <button class="ob-plat" onclick="togglePlat(this,'indrive')">🟢 InDrive</button>
         <button class="ob-plat" onclick="togglePlat(this,'outras')">🔵 Outras</button>
         <button class="ob-plat" onclick="togglePlat(this,'outro')">➕ Outro</button>
       </div>
-      <button class="ob-btn" onclick="obNext(2)">Continuar →</button>
+      <button class="ob-btn" onclick="obNext(3)">Continuar →</button>
     </div>
-    <div class="ob-step" id="ob-step2">
+    <div class="ob-step" id="ob-step3">
       <div class="ob-title">Sua meta diária 🎯</div>
       <div class="ob-sub">Quanto quer ganhar por dia?</div>
       <div class="ob-meta-opts">
@@ -498,6 +583,7 @@ const _supa = supabase.createClient(
       <div class="meta-track"><div class="meta-fill" id="meta-fill" style="width:0%"></div></div>
       <span class="meta-pct" id="meta-pct">0%</span>
     </div>
+    <div id="trial-counter" style="display:none;background:rgba(0,216,151,.1);border:1px solid rgba(0,216,151,.3);border-radius:20px;padding:4px 9px;font-size:10px;font-weight:700;color:#00D897;white-space:nowrap">⏱ 24:00:00</div>
     <div class="chip">
       <div class="av" id="user-av" style="overflow:hidden;padding:0">?</div>
       <div class="dot-on"></div>
@@ -580,7 +666,16 @@ const _supa = supabase.createClient(
     <script>
     (function(){
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if(!SR){ const b=document.getElementById('mic-btn'); if(b) b.style.display='none'; return; }
+      if(!SR){
+        // iOS/Safari não tem Web Speech API — botão avisa em vez de sumir
+        window.toggleMic = function(){
+          const inp=document.getElementById('chat-input');
+          if(inp){ inp.placeholder='🎙️ Ditado por voz: use o microfone do teclado do seu celular';
+            setTimeout(()=>{ inp.placeholder='Ex: fiz 350 na uber, paguei...'; },4000);
+            inp.focus(); }
+        };
+        return;
+      }
       let rec=null, listening=false;
       window.toggleMic = function(){
         const btn=document.getElementById('mic-btn');
@@ -1078,22 +1173,42 @@ function _getSessionOnce() {
   if(!_sessionPromise) _sessionPromise = _supa.auth.getSession();
   return _sessionPromise;
 }
-async function authFetch(url, options={}) {
-  try {
-    // Tenta sessão já disponível sem esperar
-    let session = await Promise.race([
+// Token em cache — getSession() é lento e era chamado em TODA requisição
+let _tokenCache = null, _tokenCacheAt = 0;
+async function _getToken(){
+  // Reaproveita o token por 30s (ele dura ~1h) — evita getSession() repetido
+  if(_tokenCache && (Date.now() - _tokenCacheAt) < 30000) return _tokenCache;
+  try{
+    const session = await Promise.race([
       _supa.auth.getSession(),
-      new Promise(res => setTimeout(() => res(null), 2000)) // timeout 2s
+      new Promise(res => setTimeout(() => res(null), 2000))
     ]);
     const token = session?.data?.session?.access_token;
-    if(token) {
-      const headers = { 'Content-Type': 'application/json', ...(options.headers||{}), 'Authorization': 'Bearer '+token };
-      return fetch(url, { ...options, headers });
-    }
-  } catch(e) { console.warn('authFetch getSession erro:', e); }
-  // Fallback sem token (não quebra o fluxo — backend retornará 401 se necessário)
+    if(token){ _tokenCache = token; _tokenCacheAt = Date.now(); }
+    return token || null;
+  }catch(e){ console.warn('getToken:', e); return null; }
+}
+
+// Deduplicação: GETs idênticos disparados ao mesmo tempo viram UMA requisição
+const _inflight = {};
+async function authFetch(url, options={}) {
+  const metodo = (options.method||'GET').toUpperCase();
+  const token = await _getToken();
   const headers = { 'Content-Type': 'application/json', ...(options.headers||{}) };
-  return fetch(url, { ...options, headers });
+  if(token) headers['Authorization'] = 'Bearer '+token;
+
+  // Só deduplica GET sem corpo (leituras) — escritas sempre passam
+  if(metodo === 'GET' && _inflight[url]){
+    // Clona a resposta em andamento para quem chegou junto
+    return _inflight[url].then(r => r.clone());
+  }
+  const p = fetch(url, { ...options, headers });
+  if(metodo === 'GET'){
+    _inflight[url] = p;
+    p.finally(() => { setTimeout(() => { delete _inflight[url]; }, 50); });
+    return p.then(r => r.clone());
+  }
+  return p;
 }
 // Data atual no horário de Brasília (UTC-3)
 function hojeStr(){const d=new Date(Date.now()-3*60*60*1000);return d.toISOString().slice(0,10);}
@@ -1272,6 +1387,12 @@ function renderMetaMensal(){
   const combEstMM = META_MENSAL * (pctCombMM / 100);
   const liquidoReal = META_MENSAL - combEstMM - totalContas;
   const pctProgresso = Math.min(100, Math.round(faturadoAte/META_MENSAL*100));
+  // Glow do topo do card conforme progresso (vermelho→amarelo→verde)
+  try{
+    const _hue = pctProgresso >= 100 ? '#00D897' : pctProgresso > 50 ? '#F0B429' : '#FF4560';
+    const _cmm = document.getElementById('card-meta-mensal');
+    if(_cmm) _cmm.style.setProperty('--card-glow', _hue);
+  }catch(e){}
   // Atualiza widget lateral do hero
   const _wp = document.getElementById('widget-potencial');
   const _wv = document.getElementById('widget-potencial-valor');
@@ -2041,9 +2162,39 @@ function obNext(step){
     if(!n){alert('Informe seu nome');return}
     if(!t){alert('Informe seu WhatsApp');return}
   }
+  // Adapta plataformas baseado no tipo de veículo selecionado
+  if(step===2 && window._obVeiculo){
+    const grid=document.getElementById('ob-plats-grid');
+    if(grid){
+      if(window._obVeiculo==='moto'){
+        grid.innerHTML=`
+          <button class="ob-plat" onclick="togglePlat(this,'ifood')">🟠 iFood</button>
+          <button class="ob-plat" onclick="togglePlat(this,'rappi')">🟣 Rappi</button>
+          <button class="ob-plat" onclick="togglePlat(this,'loggi')">🔵 Loggi</button>
+          <button class="ob-plat" onclick="togglePlat(this,'lalamove')">🟡 Lalamove</button>
+          <button class="ob-plat" onclick="togglePlat(this,'restaurante_fixo')">🍽️ Restaurante fixo</button>
+          <button class="ob-plat" onclick="togglePlat(this,'outro')">➕ Outro</button>`;
+      } else if(window._obVeiculo==='ambos'){
+        grid.innerHTML=`
+          <button class="ob-plat" onclick="togglePlat(this,'uber')">🖤 Uber</button>
+          <button class="ob-plat" onclick="togglePlat(this,'99')">🟡 99</button>
+          <button class="ob-plat" onclick="togglePlat(this,'ifood')">🟠 iFood</button>
+          <button class="ob-plat" onclick="togglePlat(this,'rappi')">🟣 Rappi</button>
+          <button class="ob-plat" onclick="togglePlat(this,'loggi')">🔵 Loggi</button>
+          <button class="ob-plat" onclick="togglePlat(this,'outro')">➕ Outro</button>`;
+      }
+    }
+  }
   document.querySelectorAll('.ob-step').forEach(x=>x.classList.remove('active'));
   document.getElementById('ob-step'+step).classList.add('active');
   document.querySelectorAll('.ob-dot').forEach((x,i)=>x.classList.toggle('active',i<=step));
+}
+function selVeiculo(el, tipo){
+  document.querySelectorAll('.ob-veiculo').forEach(x=>x.classList.remove('sel'));
+  el.classList.add('sel');
+  window._obVeiculo = tipo;
+  const btn=document.getElementById('ob-btn-veiculo');
+  btn.disabled=false; btn.style.opacity='1';
 }
 function togglePlat(el,p){
   el.classList.toggle('sel');
@@ -2063,16 +2214,18 @@ async function obFim(){
   if(!obMeta){alert('Escolha sua meta');return}
   const nome=document.getElementById('ob-nome').value.trim();
   const tel=document.getElementById('ob-tel').value.trim();
+  const tipoVeiculo=window._obVeiculo||'carro';
   document.getElementById('ob-btn-fim').disabled=true;
   try{
     const r=await authFetch(API+'/motoristas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,telefone:tel})});
     const data=await r.json();
     MID=data[0].id;
-    // mid agora vem do Google Auth
     localStorage.setItem('nome',nome);
     localStorage.setItem('meta',obMeta);
     META_DIARIA=obMeta;
     NOME=nome;
+    // Salva tipo_veiculo no perfil
+    await authFetch(API+'/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tipo_veiculo:tipoVeiculo,meta_diaria:obMeta,plataformas:obPlats})});
     document.getElementById('onboarding').style.display='none';
     const _nEl=document.getElementById('user-nome'); if(_nEl) _nEl.textContent=NOME.split(' ')[0];
     const _aEl=document.getElementById('user-av'); if(_aEl) _aEl.textContent=NOME[0].toUpperCase();
@@ -2251,7 +2404,16 @@ async function atualizarMeta(novaMeta){
   return true;
 }
 
+let _loadDashAt = 0, _loadDashRunning = false;
 async function loadDash(){
+  // Anti-spam: ignora chamadas repetidas em menos de 800ms (evita 8x /resumo na abertura)
+  const agora = Date.now();
+  if(_loadDashRunning) return;
+  if(agora - _loadDashAt < 800) return;
+  _loadDashAt = agora; _loadDashRunning = true;
+  try { await _loadDashInterno(); } finally { _loadDashRunning = false; }
+}
+async function _loadDashInterno(){
   try { _atualizarBotaoNotif(); } catch(e) {}
   if(!MID && window.MID) MID = window.MID;
   if(!MID)return;
@@ -2288,11 +2450,11 @@ async function loadDash(){
       rendaExtraPrevista = df.total_renda_extra_prevista || 0;
       lancFuturos = df.lancamentos || [];
     } catch(e) {}
-    document.getElementById('c-ganhos').textContent=fmt(d.ganhos);
-    document.getElementById('c-despesas').textContent=fmt(d.despesas);
-    document.getElementById('c-lucro').textContent=fmt(d.lucro);
+    animarValor('c-ganhos', d.ganhos);
+    animarValor('c-despesas', d.despesas);
+    animarValor('c-lucro', d.lucro);
     const heroLucro=document.getElementById('hero-lucro');
-    if(heroLucro){heroLucro.textContent=fmt(d.lucro);heroLucro.style.color=d.lucro>=0?'var(--am)':'var(--rd)';}
+    if(heroLucro){animarValor(heroLucro, d.lucro);heroLucro.style.color=d.lucro>=0?'var(--am)':'var(--rd)';}
     const hoje=hojeStr();
     const ganhoHoje=todosLanc.filter(l=>l.data===hoje&&l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
     const pct=Math.min(100,Math.round(ganhoHoje/META_DIARIA*100));
@@ -2885,7 +3047,7 @@ async function init(){
 
   if(!MID){
     const tl = document.getElementById('tela-login');
-    if(tl) tl.style.display='flex';
+    if(tl && !document.getElementById('abertura')) tl.style.display='flex';
     return;
   }
 
@@ -3036,7 +3198,7 @@ async function init(){
 
   _initRodando = false;
   _initConcluido = true;
-  setTimeout(_registrarPushSilencioso, 2000); // Renova subscription se já tinha permissão
+  try{ if(typeof _registrarPushSilencioso==='function') setTimeout(_registrarPushSilencioso, 2000); }catch(e){}
 }
 // init() chamado após todos os scripts
 </script>
@@ -3879,6 +4041,8 @@ function _mdToHtml(text) {
 }
 
 function appendMsg(role, text, skipScroll, dateOverride) {
+  // Háptico ao confirmar registro
+  try{ if(role!=='user' && /Anotei|✅/.test(String(text)) && navigator.vibrate) navigator.vibrate([10,30,60]); }catch(e){}
   const box = document.getElementById('chat-msgs');
   const hora = _horaAgora();
 
@@ -3947,6 +4111,12 @@ function limparChat() {
 
 let _chatSending = false;
 async function sendChat() {
+  // ── BILLING: bloqueia o chat com trial expirado ──
+  if(window._billingStatus && !window._billingStatus.pode_usar){
+    appendMsg('assistant', '⏱ Seu trial de 24h acabou — mas tudo que você registrou está salvo. Assine o Plano Fundador por R$19/mês para continuar. 👉 Toque no contador no topo da tela para ver os planos.');
+    _abrirModalPlanos();
+    return;
+  }
   if (_chatSending) return;
   // Se estiver em modo setup, redireciona para o chat de setup
   if (_setupMode) {
@@ -5035,7 +5205,7 @@ function quickDashChat(txt){ quickChat(txt); }
 // tenta registrar push após 3s de qualquer forma
 window.addEventListener('load', () => {
   setTimeout(async () => {
-    _atualizarBotaoNotif();
+    try{ if(typeof _atualizarBotaoNotif==='function') _atualizarBotaoNotif(); }catch(e){}
     const mid = window.MID || localStorage.getItem('mid');
     if (mid && typeof _registrarPushSilencioso === 'function') {
       try { await _registrarPushSilencioso(); } catch(e) {}
@@ -5188,12 +5358,13 @@ async function fazerLogout(){
   try {
     const keys = Object.keys(localStorage).filter(k => 
       k.startsWith('sb-') || k.startsWith('supabase') || 
-      k.startsWith('painel_') || k.startsWith('pct_comb_') ||
+      (k.startsWith('painel_') && !k.startsWith('painel_tour_v2_')) || k.startsWith('pct_comb_') ||
       k.startsWith('dashHistory_')
     );
     keys.forEach(k => localStorage.removeItem(k));
   } catch(e){}
-  location.href = location.origin + location.pathname;
+  // Vai direto para login sem mostrar o splash novamente
+  location.href = location.origin + location.pathname + '?nosplash=1';
 }
 
 function setUserUI(session){
@@ -5239,7 +5410,15 @@ function abrirPerfil(nome, email, foto){
         <div style="font-weight:700;font-size:15px;color:#fff;text-align:center">${n}</div>
         <div style="font-size:12px;color:#64748b;margin-top:2px;text-align:center">${e}</div>
       </div>
-      <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:14px;display:flex;flex-direction:column;gap:8px">
+      <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:14px;margin-bottom:10px">
+        <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Meu veículo</div>
+        <div style="display:flex;gap:6px">
+          <button onclick="_trocarVeiculo('carro')" id="pv-carro" style="flex:1;padding:9px 4px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#94a3b8;transition:.2s">🚗 Carro</button>
+          <button onclick="_trocarVeiculo('moto')" id="pv-moto" style="flex:1;padding:9px 4px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#94a3b8;transition:.2s">🏍️ Moto</button>
+          <button onclick="_trocarVeiculo('ambos')" id="pv-ambos" style="flex:1;padding:9px 4px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#94a3b8;transition:.2s">Ambos</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
         <button id="perfil-install-btn" onclick="document.getElementById('modal-perfil').remove();instalarApp()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(99,102,241,.3);background:rgba(99,102,241,.08);color:#818cf8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Instalar na tela inicial</button>
         <button onclick="document.getElementById('modal-perfil').remove()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#94a3b8;font-size:13px;cursor:pointer;font-family:inherit">Fechar</button>
         <button onclick="document.getElementById('modal-perfil').remove();fazerLogout()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,77,106,.3);background:rgba(255,77,106,.08);color:#FF4D6A;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">⏻ Sair da conta</button>
@@ -5247,6 +5426,10 @@ function abrirPerfil(nome, email, foto){
     </div>`;
   overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+  // Pinta o botão do veículo ativo
+  const _vAtual = localStorage.getItem('pia_veiculo_'+(window.MID||'')) || 'carro';
+  const _pintarV = (v)=>{['carro','moto','ambos'].forEach(x=>{const b=document.getElementById('pv-'+x);if(!b)return;b.style.background=x===v?'rgba(240,180,41,.2)':'rgba(255,255,255,.04)';b.style.border=x===v?'1.5px solid rgba(240,180,41,.5)':'1px solid rgba(255,255,255,.1)';b.style.color=x===v?'#F0B429':'#94a3b8';})};
+  _pintarV(_vAtual);window._pintarVeiculo=_pintarV;
   // Esconde botão de instalar se app já está instalado como PWA
   if(typeof isInstalado === 'function' && isInstalado()){
     const ib = document.getElementById('perfil-install-btn');
@@ -5263,14 +5446,15 @@ async function checkAuth(){
     setUserUI(session);
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.style.display='none';
-    if(typeof init === 'function') init();
-    // Resumo semanal toda segunda
-    setTimeout(()=>resumoSemanal(), 3000);
-    // Verifica tour agora que temos o MID real
-    setTimeout(()=>_checkTourParaUsuario(), 2000);
+    // Aguarda splash terminar antes de carregar o dashboard
+    // Dados carregam já, em paralelo com a abertura
+    if(typeof init==='function') init();
+    setTimeout(()=>resumoSemanal(),3000);
+    setTimeout(()=>_checkTourParaUsuario(),2000);
+
   } else {
     const telaLogin = document.getElementById('tela-login');
-    if(telaLogin) telaLogin.style.display='flex';
+    if(telaLogin && !document.getElementById('abertura')) telaLogin.style.display='flex';
   }
 }
 
@@ -5294,7 +5478,9 @@ _supa.auth.onAuthStateChange((event, session)=>{
       });
     const telaLogin = document.getElementById('tela-login');
     if(telaLogin) telaLogin.remove();
-    if(typeof init === 'function') init();
+    // Dados carregam IMEDIATAMENTE, em paralelo com o vídeo de abertura —
+    // quando o usuário termina de ver a abertura, o dashboard já está pronto.
+    if(typeof init==='function') init();
   }
   if(event === 'SIGNED_OUT'){
     window.MID = null;
@@ -5313,6 +5499,25 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     localStorage.setItem('mid', MID);
     NOME = setUserUI(session);
     const upRes = await authFetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})});
+    // ── BILLING: fire-and-forget — NUNCA bloqueia o carregamento ──
+    setTimeout(async () => {
+      try{
+        const _bRes = await authFetch(API+'/billing/status');
+        if(!_bRes.ok) return;
+        window._billingStatus = await _bRes.json();
+        const _bs = window._billingStatus;
+        if(_bs && typeof _bs.trial_restante_ms === 'number'){
+          const inicioReal = Date.now() - (24*3600000 - _bs.trial_restante_ms);
+          localStorage.setItem('pia_trial_inicio_'+MID, String(inicioReal));
+        }
+        if(_bs && _bs.status === 'active'){
+          const tc = document.getElementById('trial-counter');
+          if(tc){ tc.textContent = '⭐ ' + (_bs.plano === 'fundador' ? 'Fundador' : 'Pro'); tc.style.cursor = 'default'; }
+          window._planoAtivo = true;
+        }
+        if(_bs && !_bs.pode_usar){ _mostrarOverlayUpgrade(); }
+      }catch(e){ /* billing opcional — nunca quebra o app */ }
+    }, 1500); // 1.5s depois do dashboard já ter carregado
     const upData = await upRes.json();
     if(upData.meta_diaria && upData.meta_diaria !== 150){
       META_DIARIA=upData.meta_diaria; localStorage.setItem('meta',META_DIARIA);
@@ -5331,7 +5536,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if(upData.comb_diario){ atualizarExibicaoMeta(META_DIARIA, upData.comb_diario); }
     const tl = document.getElementById('tela-login');
     if(tl) tl.remove();
-    if(typeof init === 'function') init();
+    if(typeof init==='function') init();
     // Detecta novo usuário ou setup incompleto (via DOMContentLoaded)
     // Só ativa setup se explicitamente false E não tem histórico de uso
     const _temHistChat2 = window.chatHistory && window.chatHistory.length > 0;
@@ -5340,7 +5545,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     const _temMeta2 = upData.meta_diaria && upData.meta_diaria !== 150;
     // setup automático desativado — usuário acessa o dashboard diretamente
   } else {
-    document.getElementById('tela-login').style.display='flex';
+    if(!document.getElementById('abertura')) document.getElementById('tela-login').style.display='flex';
   }
 });
 </script>
@@ -5664,10 +5869,28 @@ async function carregarClima(){
           })()
         document.getElementById('card-clima').style.display = 'block';
       }catch(e){console.warn('clima:',e)}
-    }, ()=>{}, {timeout:8000, maximumAge:1800000});
+    }, function(err){
+      // Permissão negada ou erro — silencioso, card de clima não aparece
+      console.info('clima: geo indisponível, código '+err.code);
+    }, {timeout:8000, maximumAge:1800000});
   }catch(e){}
 }
-setTimeout(carregarClima, 3500);
+// Só pede localização depois que o vídeo do splash terminar
+// para não interromper a reprodução com o alerta de permissão
+(function(){
+  var _sv = document.getElementById('sv');
+  if(_sv){
+    _sv.addEventListener('ended', function(){ setTimeout(carregarClima, 1000); }, {once:true});
+    // Fallback: se o vídeo não existir mais após 15s, carrega normalmente
+    setTimeout(function(){
+      if(document.getElementById('sv')) return; // ainda rodando
+      carregarClima();
+    }, 15000);
+  } else {
+    // Sem vídeo — carrega normalmente após 3.5s
+    setTimeout(carregarClima, 3500);
+  }
+})();
 
 </script>
 <script>
@@ -5721,5 +5944,159 @@ function _renderMetaHora(){
   }catch(e){console.warn('metaHora:',e)}
 }
 setInterval(_renderMetaHora, 60000); // recalcula a cada minuto — o ritmo sobe conforme o dia passa
+</script>
+<script>
+/* ── Troca de veículo no perfil ── */
+async function _trocarVeiculo(tipo){
+  try{
+    await authFetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tipo_veiculo:tipo})});
+    localStorage.setItem('pia_veiculo_'+(window.MID||''),tipo);
+    if(window._pintarVeiculo)window._pintarVeiculo(tipo);
+    const btn=document.getElementById('pv-'+tipo);
+    if(btn){const orig=btn.textContent;btn.textContent='✅';setTimeout(()=>{btn.textContent=orig},1200);}
+  }catch(e){alert('Erro ao salvar. Tente de novo.');}
+}
+
+/* ── Trial 24h — contador no header ── */
+(function(){
+  function _initTrial(){ return; // BILLING PENDENTE — reativar quando pronto
+    const key='pia_trial_inicio_'+(window.MID||'local');
+    let inicio=localStorage.getItem(key);
+    if(!inicio){inicio=Date.now().toString();localStorage.setItem(key,inicio);}
+    const DURACAO=24*60*60*1000; // 24h em ms
+    function _tick(){
+      const restante=DURACAO-(Date.now()-parseInt(inicio));
+      const el=document.getElementById('trial-counter');
+      if(!el)return;
+      el.style.display='block';
+      if(restante<=0){
+        el.textContent='⏱ Expirado';
+        el.style.background='rgba(255,69,96,.15)';
+        el.style.borderColor='rgba(255,69,96,.4)';
+        el.style.color='#ff6b6b';
+        clearInterval(_iv);
+        return;
+      }
+      const h=Math.floor(restante/3600000);
+      const m=Math.floor((restante%3600000)/60000);
+      const s=Math.floor((restante%60000)/1000);
+      // Fica vermelho nas últimas 2h
+      if(restante < 2*3600000){
+        el.style.background='rgba(255,180,41,.12)';
+        el.style.borderColor='rgba(255,180,41,.4)';
+        el.style.color='#F0B429';
+      }
+      el.textContent=`⏱ ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      el.title='Tempo restante de trial gratuito';
+    }
+    _tick();
+    var _iv=setInterval(_tick,1000);
+  }
+  // Aguarda o MID estar disponível
+  let _t=setInterval(()=>{if(window.MID){clearInterval(_t);_initTrial();}},500);
+})();
+</script>
+<script>
+/* ════ BILLING: overlay, modal de planos e bloqueio do chat ════ */
+async function _mostrarOverlayUpgrade(){
+  if(document.getElementById('upgrade-overlay')) return;
+  let nLanc=0, totalReg=0, dias=0;
+  try{
+    const r = await authFetch(API+'/turnos/'+MID); // leve; fallback abaixo cobre
+  }catch(e){}
+  try{
+    const r2 = await authFetch(API+'/resumo/'+MID);
+    const d = await r2.json();
+    totalReg = (d.ganhos||0)+(d.despesas||0);
+    nLanc = (d.lancamentos||[]).length || 0;
+  }catch(e){}
+  let vagas = '—';
+  try{ const v = await fetch(API+'/billing/vagas-fundador'); vagas = (await v.json()).vagas; }catch(e){}
+  const ov = document.createElement('div');
+  ov.id = 'upgrade-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9800;background:linear-gradient(180deg,#07090d 0%,#0d1410 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;overflow-y:auto';
+  ov.innerHTML = `
+    <div style="width:64px;height:64px;border-radius:50%;background:#F0B429;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;color:#000;margin-bottom:22px;box-shadow:0 0 50px rgba(240,180,41,.3)">P</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;text-transform:uppercase;line-height:1.1;margin-bottom:10px">Seu trial de 24h acabou</div>
+    <div style="font-size:14px;color:rgba(238,233,224,.55);max-width:300px;line-height:1.6;margin-bottom:18px">Mas relaxa — <b style="color:#00D897">tudo que você registrou está salvo</b>. ${totalReg>0?`Já são <b style=\"color:#F0B429\">R$ ${totalReg.toFixed(0)}</b> movimentados aqui dentro.`:''}</div>
+    <button onclick="_abrirModalPlanos()" style="width:100%;max-width:320px;padding:17px;background:#F0B429;border:none;border-radius:14px;color:#0a0a0a;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:10px">Assinar por R$19/mês — Fundador</button>
+    <div style="font-size:11.5px;color:rgba(240,180,41,.7);margin-bottom:18px">🔥 ${vagas} vagas restantes com esse preço</div>
+    <button onclick="document.getElementById('upgrade-overlay').remove();window._modoLeitura=true" style="background:none;border:none;color:rgba(255,255,255,.35);font-size:12.5px;cursor:pointer;text-decoration:underline">Ver apenas o dashboard (somente leitura)</button>`;
+  document.body.appendChild(ov);
+}
+
+function _abrirModalPlanos(){
+  if(document.getElementById('modal-planos')) return;
+  const m = document.createElement('div');
+  m.id = 'modal-planos';
+  m.style.cssText = 'position:fixed;inset:0;z-index:9900;background:rgba(0,0,0,.82);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:18px;overflow-y:auto';
+  m.innerHTML = `
+    <div style="background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:26px 22px;max-width:380px;width:100%;max-height:92vh;overflow-y:auto">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;text-transform:uppercase;margin-bottom:4px">Escolha seu plano</div>
+      <div style="font-size:12px;color:rgba(238,233,224,.45);margin-bottom:20px">Cancele quando quiser. Seus dados são sempre seus.</div>
+      <div style="border:1.5px solid rgba(240,180,41,.55);border-radius:16px;padding:18px;margin-bottom:12px;position:relative;background:linear-gradient(135deg,rgba(240,180,41,.08),transparent)">
+        <div style="position:absolute;top:-11px;left:18px;background:#F0B429;color:#000;font-size:10px;font-weight:800;padding:3px 12px;border-radius:20px">🔥 FUNDADOR</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin:6px 0 4px"><span style="font-size:13px;color:rgba(255,255,255,.3);text-decoration:line-through">R$29</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:900;color:#F0B429">R$19</span><span style="font-size:12px;color:rgba(238,233,224,.5)">/mês</span></div>
+        <div style="font-size:11px;color:#00D897;margin-bottom:12px">✓ preço travado por 1 ano · vagas limitadas</div>
+        <div style="font-size:12px;color:rgba(238,233,224,.6);line-height:1.9">✓ Chat com o Gestor ilimitado<br>✓ Histórico completo<br>✓ Plano financeiro com IA<br>✓ Previsão do tempo + modo motoboy<br>✓ Alertas de vencimento</div>
+        <button onclick="_irCheckout('fundador')" style="width:100%;margin-top:14px;padding:13px;background:#F0B429;border:none;border-radius:11px;color:#0a0a0a;font-size:14px;font-weight:800;cursor:pointer">Garantir vaga Fundador</button>
+      </div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px;margin-bottom:14px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">Pro</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:10px"><span style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900">R$29</span><span style="font-size:12px;color:rgba(238,233,224,.5)">/mês</span></div>
+        <button onclick="_irCheckout('pro')" style="width:100%;padding:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:11px;color:#EEE9E0;font-size:13px;font-weight:700;cursor:pointer">Assinar Pro</button>
+      </div>
+      <button onclick="document.getElementById('modal-planos').remove()" style="width:100%;padding:9px;background:none;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer">Fechar</button>
+    </div>`;
+  document.body.appendChild(m);
+}
+
+async function _irCheckout(plano){
+  let email = '';
+  try{ const {data} = await window.sb.auth.getUser(); email = data?.user?.email || ''; }catch(e){}
+  if(!email){ email = prompt('Seu email para o pagamento:') || ''; }
+  if(!email || !email.includes('@')){ alert('Email inválido'); return; }
+  try{
+    const r = await authFetch(API+'/billing/criar-checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plano_id:plano,email})});
+    const d = await r.json();
+    if(d.init_point){ window.location.href = d.init_point; }
+    else{ alert(d.erro || 'Erro ao iniciar pagamento'); }
+  }catch(e){ alert('Falha de conexão — tente de novo'); }
+}
+
+// Trial counter clicável → modal de planos
+(function(){
+  const iv = setInterval(()=>{
+    const tc = document.getElementById('trial-counter');
+    if(tc){ clearInterval(iv); tc.style.cursor='pointer'; tc.addEventListener('click',()=>{ if(!window._planoAtivo) _abrirModalPlanos(); }); }
+  }, 800);
+})();
+</script>
+<script>
+/* ════ ANIMAÇÃO NUMÉRICA ════ */
+function animarValor(elId, valorFinal, dur=750){
+  const el = typeof elId==='string' ? document.getElementById(elId) : elId;
+  if(!el) return;
+  el.classList.remove('skeleton');
+  const ini = performance.now();
+  const easeOut = x => 1 - Math.pow(1-x, 4);
+  function frame(now){
+    const p = Math.min(1, (now-ini)/dur);
+    const v = valorFinal * easeOut(p);
+    el.textContent = fmt(v);
+    if(p < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+/* Skeleton inicial nos números até os dados chegarem */
+document.addEventListener('DOMContentLoaded', ()=>{
+  ['hero-lucro','c-ganhos','c-despesas','c-lucro','c-contas-pend'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && el.textContent.includes('R$ 0')) el.classList.add('skeleton');
+  });
+  setTimeout(()=>document.querySelectorAll('.skeleton').forEach(e=>e.classList.remove('skeleton')), 6000);
+});
+
+/* nebulosa removida — CSS estático substitui o Canvas no mobile */
 </script>
 </body>
