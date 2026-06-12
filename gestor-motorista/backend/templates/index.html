@@ -330,17 +330,14 @@ const _supa = supabase.createClient(
 
 
 <!-- ════ ABERTURA:INICIO — BLOCO PROTEGIDO. NÃO EDITAR FORA DAQUI ════
-     Fluxo: tela "Bem-vindo" com a logo (=botão). O vídeo já está PRÉ-CARREGADO
-     escondido. Ao tocar na logo, o vídeo (alta qualidade, com som) toca na hora —
-     o toque é o gesto que libera o áudio no iOS. Só mobile. Nunca trava o app.
-     Para alterar a abertura, mexer SOMENTE dentro deste bloco. -->
+     Fluxo: tela "Bem-vindo" com a logo (=botão). Vídeo HQ pré-carregado.
+     Ao tocar, o vídeo reinicia do zero e toca COM SOM (o toque libera o áudio
+     no iOS). Só mobile. Nunca trava — toque sempre responde, reset garantido. -->
 <div id="abertura" style="display:none;position:fixed;inset:0;z-index:99999;background:#000;overflow:hidden">
-  <!-- Vídeo pré-carregado, escondido atrás da tela de boas-vindas -->
   <video id="abertura-vid" playsinline preload="auto" poster="/static/abertura-poster.jpg"
          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .4s">
     <source src="/static/abertura.mp4" type="video/mp4">
   </video>
-  <!-- Tela Bem-vindo (a logo é o botão que dá play com som) -->
   <div id="abertura-welcome" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer">
     <div style="position:absolute;top:11%;left:0;right:0;text-align:center;color:rgba(255,255,255,.5);font-size:22px;font-weight:300;letter-spacing:.3px">Bem-vindo!</div>
     <img id="abertura-logo" src="/static/icon-512.png" alt="Painel.IA" style="width:118px;height:118px;border-radius:50%;object-fit:cover;box-shadow:0 0 50px rgba(240,180,41,.5);animation:ab-pulse 2s ease-in-out infinite">
@@ -359,15 +356,14 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
   var box = document.getElementById('abertura');
   if (!box) return;
   var isMobile = window.matchMedia('(max-width: 820px)').matches || /iPhone|iPad|Android/i.test(navigator.userAgent);
-  if (!isMobile) { box.remove(); return; }   // desktop entra direto
+  if (!isMobile) { box.remove(); return; }
 
   box.style.display = 'block';
   var v = document.getElementById('abertura-vid');
   var welcome = document.getElementById('abertura-welcome');
   var skip = document.getElementById('abertura-skip');
-  var fechado = false;
+  var fechado = false, iniciado = false;
 
-  // Pré-carrega o vídeo imediatamente (fica pronto enquanto o usuário lê "Bem-vindo")
   try { v.load(); } catch(e) {}
 
   function fechar(){
@@ -378,25 +374,40 @@ window._splashDone = true; document.dispatchEvent(new Event('splashDone'));
     setTimeout(function(){ box.remove(); }, 550);
   }
   window._fecharAbertura = fechar;
-
   v.addEventListener('ended', fechar);
-  v.addEventListener('error', fechar);
 
-  // Toque na logo/tela = gesto do usuário → libera o vídeo COM SOM na hora
-  welcome.addEventListener('click', function(){
+  function tocar(){
+    if (iniciado || fechado) return;
+    iniciado = true;
     welcome.style.transition = 'opacity .35s ease';
     welcome.style.opacity = '0';
     setTimeout(function(){ welcome.style.display = 'none'; }, 350);
-    v.style.opacity = '1';
-    v.muted = false;
-    v.currentTime = 0;
-    var p = v.play();
-    if (p && p.catch) p.catch(function(){ v.muted = true; v.play().catch(fechar); });
     skip.style.display = 'block';
-  }, { once: true });
+    v.style.opacity = '1';
+    // Reset TOTAL — garante que toca do início mesmo se o elemento foi reusado
+    try { v.load(); } catch(e) {}
+    v.currentTime = 0;
+    v.muted = false;
+    var p = v.play();
+    if (p && p.catch) {
+      p.catch(function(){
+        // Som bloqueado → tenta mudo. Se nem mudo tocar, fecha sem travar.
+        v.muted = true;
+        var p2 = v.play();
+        if (p2 && p2.catch) p2.catch(fechar);
+      });
+    }
+    // Se em 1.5s o vídeo não saiu do lugar, não trava o usuário
+    setTimeout(function(){
+      if (!fechado && v.currentTime < 0.1 && v.paused) fechar();
+    }, 1500);
+  }
 
-  // Trava absoluta: nunca prende o usuário
-  setTimeout(function(){ if (!fechado && v.paused && welcome.style.display !== 'none') {} }, 1);
+  // Toque funciona SEMPRE (sem once) — não importa quantas vezes
+  welcome.addEventListener('click', tocar);
+  // Erro de mídia nunca prende o usuário
+  v.addEventListener('error', function(){ if(!iniciado) {} else fechar(); });
+  // Trava absoluta de segurança
   setTimeout(fechar, 30000);
 })();
 </script>
