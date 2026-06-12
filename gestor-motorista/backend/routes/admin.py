@@ -1,4 +1,4 @@
-"""Painel admin: métricas, usuários com email, busca e liberação manual."""
+"""Painel admin: métricas, usuários, suporte."""
 import os
 import datetime as _dt
 import httpx as _httpx
@@ -19,7 +19,6 @@ def _check(token: str):
 
 
 async def _auth_users(page=1, per_page=1000):
-    """Busca todos os usuários do Supabase Auth."""
     async with _httpx.AsyncClient(timeout=15) as c:
         r = await c.get(
             f"{SUPABASE_URL}/auth/v1/admin/users",
@@ -28,22 +27,16 @@ async def _auth_users(page=1, per_page=1000):
         )
     if r.status_code != 200:
         log_erro("auth_users_erro", status=r.status_code, body=r.text[:300])
-        raise HTTPException(status_code=502, detail=f"Supabase Auth erro: {r.status_code} — {r.text[:200]}")
-    try:
-        data = r.json()
-    except Exception:
-        raise HTTPException(status_code=502, detail="Supabase Auth retornou JSON inválido")
-    # Supabase pode retornar {"users": [...]} ou diretamente [...]
+        raise HTTPException(status_code=502, detail=f"Supabase Auth erro: {r.status_code}")
+    data = r.json()
     if isinstance(data, list):
         return data
     if isinstance(data, dict):
-        # Algumas versões retornam {"users": [...], "total": N} ou {"data": [...]}
         return data.get("users") or data.get("data") or []
     return []
 
 
 async def _auth_user_by_email(email: str):
-    """Busca um usuário específico por email no Supabase Auth."""
     async with _httpx.AsyncClient(timeout=10) as c:
         r = await c.get(
             f"{SUPABASE_URL}/auth/v1/admin/users",
@@ -52,12 +45,11 @@ async def _auth_user_by_email(email: str):
         )
     if r.status_code != 200:
         return []
-    users = r.json().get("users", [])
-    # filtra exato pelo email
+    users = r.json().get("users", []) if isinstance(r.json(), dict) else r.json()
     return [u for u in users if u.get("email", "").lower() == email.lower()]
 
 
-# ── Métricas ─────────────────────────────────────────────────────────────────
+# ── Métricas ──────────────────────────────────────────────────────────────────
 
 @router.get("/admin/metricas")
 async def metricas(x_admin_token: str = Header(default="")):
@@ -68,9 +60,14 @@ async def metricas(x_admin_token: str = Header(default="")):
         "receita_total": 0.0, "novos_7_dias": 0,
         "vagas_fundador_restantes": None, "vagas_fundador_total": None,
         "fundadores": 0, "pro": 0,
+        # extras
+        "total_lancamentos": 0,
+        "usuarios_com_lancamentos": 0,
+        "top_usuarios": [],
+        "usuarios_sem_uso": 0,
+        "tickets_abertos": 0,
     }
     try:
-        # Busca todos do Auth para contar total real
         auth_users = await _auth_users()
         out["total_usuarios"] = len(auth_users)
         hoje = _dt.datetime.now(_dt.timezone.utc)
@@ -116,6 +113,51 @@ async def metricas(x_admin_token: str = Header(default="")):
     except Exception:
         pass
 
+    # Uso por usuário (lançamentos)
+    try:
+        lanc = supabase.table("lancamentos").select("motorista_id,valor,tipo").execute()
+        uso = {}
+        for l in (lanc.data or []):
+            mid = l.get("motorista_id")
+            if mid:
+                if mid not in uso:
+                    uso[mid] = {"lancamentos": 0, "receita": 0.0}
+                uso[mid]["lancamentos"] += 1
+                if l.get("tipo") == "ganho":
+                    uso[mid]["receita"] += float(l.get("valor") or 0)
+
+        out["total_lancamentos"] = sum(v["lancamentos"] for v in uso.values())
+        out["usuarios_com_lancamentos"] = len(uso)
+        out["usuarios_sem_uso"] = out["total_usuarios"] - len(uso)
+
+        # top 5 por lançamentos
+        auth_map = {}
+        try:
+            users = await _auth_users()
+            auth_map = {u["id"]: u.get("email", "—") for u in users}
+        except Exception:
+            pass
+
+        top = sorted(uso.items(), key=lambda x: x[1]["lancamentos"], reverse=True)[:5]
+        out["top_usuarios"] = [
+            {
+                "id": mid,
+                "email": auth_map.get(mid, mid[:8] + "…"),
+                "lancamentos": v["lancamentos"],
+                "receita": round(v["receita"], 2),
+            }
+            for mid, v in top
+        ]
+    except Exception as e:
+        log_erro("admin_uso_erro", erro=e)
+
+    # Tickets abertos
+    try:
+        tickets = supabase.table("tickets_suporte").select("id").eq("status", "aberto").execute()
+        out["tickets_abertos"] = len(tickets.data or [])
+    except Exception:
+        pass
+
     return out
 
 
@@ -130,15 +172,21 @@ async def usuarios(
 ):
     _check(x_admin_token)
     try:
-        # 1. Todos os usuários do Auth (com email)
         auth_users = await _auth_users()
         auth_map = {u["id"]: u for u in auth_users}
 
-        # 2. Nomes da tabela motoristas
-        mot = supabase.table("motoristas").select("id,nome,criado_em").execute()
+        # Motoristas — só colunas que existem
+        mot = supabase.table("motoristas").select("id,nome,setup_completo,meta_diaria").execute()
         mot_map = {r["id"]: r for r in (mot.data or [])}
 
-        # 3. Assinaturas
+        # Contagem de lançamentos por motorista
+        lanc = supabase.table("lancamentos").select("motorista_id").execute()
+        uso_map = {}
+        for l in (lanc.data or []):
+            mid = l.get("motorista_id")
+            if mid:
+                uso_map[mid] = uso_map.get(mid, 0) + 1
+
         ass = supabase.table("assinaturas").select(
             "motorista_id,status,plano_id,trial_inicio,trial_fim,periodo_fim,email_pagamento,criado_em"
         ).execute()
@@ -154,21 +202,23 @@ async def usuarios(
                 continue
 
             out.append({
-                "id":          uid,
-                "email":       u.get("email", "—"),
-                "nome":        m.get("nome") or u.get("user_metadata", {}).get("name") or "—",
-                "status":      s,
-                "plano":       a.get("plano_id"),
-                "trial_fim":   a.get("trial_fim"),
-                "periodo_fim": a.get("periodo_fim"),
-                "criado_em":   u.get("created_at"),
-                "ultimo_login": u.get("last_sign_in_at"),
+                "id":            uid,
+                "email":         u.get("email", "—"),
+                "nome":          m.get("nome") or u.get("user_metadata", {}).get("name") or "—",
+                "status":        s,
+                "plano":         a.get("plano_id"),
+                "trial_fim":     a.get("trial_fim"),
+                "periodo_fim":   a.get("periodo_fim"),
+                "criado_em":     u.get("created_at"),
+                "ultimo_login":  u.get("last_sign_in_at"),
+                "setup_completo": m.get("setup_completo", False),
+                "meta_diaria":   m.get("meta_diaria"),
+                "lancamentos":   uso_map.get(uid, 0),
             })
 
-        # Ordena por criado_em desc
-        out.sort(key=lambda x: x.get("criado_em") or "", reverse=True)
+        out.sort(key=lambda x: x.get("lancamentos", 0), reverse=True)
         total = len(out)
-        ini   = (page - 1) * limit
+        ini = (page - 1) * limit
         return {"total": total, "page": page, "usuarios": out[ini:ini + limit]}
 
     except HTTPException:
@@ -192,24 +242,23 @@ async def buscar_usuario(request: Request, email: str = ""):
             return {}
         u   = users[0]
         uid = u["id"]
-        mot = supabase.table("motoristas").select("nome").eq("id", uid).execute()
+        mot = supabase.table("motoristas").select("nome,setup_completo").eq("id", uid).execute()
         nome = mot.data[0]["nome"] if mot.data else "—"
         ass  = supabase.table("assinaturas").select("status,plano_id,trial_fim,periodo_fim").eq("motorista_id", uid).order("criado_em", desc=True).limit(1).execute()
         a    = ass.data[0] if ass.data else {}
         return {
-            "id":          uid,
-            "email":       u.get("email"),
-            "nome":        nome,
-            "status":      a.get("status"),
-            "plano":       a.get("plano_id"),
-            "trial_fim":   a.get("trial_fim"),
-            "periodo_fim": a.get("periodo_fim"),
+            "id":           uid,
+            "email":        u.get("email"),
+            "nome":         nome,
+            "status":       a.get("status"),
+            "plano":        a.get("plano_id"),
+            "trial_fim":    a.get("trial_fim"),
+            "periodo_fim":  a.get("periodo_fim"),
             "ultimo_login": u.get("last_sign_in_at"),
         }
     except HTTPException:
         raise
     except Exception as e:
-        log_erro("admin_buscar_usuario_erro", erro=e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -233,6 +282,8 @@ async def liberar_acesso(request: Request, dados: dict = Body(...)):
         ass = supabase.table("assinaturas").select("id").eq("motorista_id", mid).order("criado_em", desc=True).limit(1).execute()
         if tipo == "trial":
             upd = {"status": "trial", "plano_id": plano, "trial_inicio": agora.isoformat(), "trial_fim": fim.isoformat(), "atualizado_em": agora.isoformat()}
+        elif tipo == "bloqueado":
+            upd = {"status": "bloqueado", "atualizado_em": agora.isoformat()}
         else:
             upd = {"status": "ativo", "plano_id": plano, "periodo_inicio": agora.isoformat(), "periodo_fim": fim.isoformat(), "atualizado_em": agora.isoformat()}
 
@@ -242,9 +293,73 @@ async def liberar_acesso(request: Request, dados: dict = Body(...)):
             supabase.table("assinaturas").insert({"motorista_id": mid, **upd}).execute()
 
         log_info("acesso_liberado_manual", motorista_id=mid, tipo=tipo, dias=dias)
-        return {"ok": True, "mensagem": f"Acesso liberado: {tipo} por {dias} dias"}
+        return {"ok": True, "mensagem": f"Acesso {tipo} por {dias} dias"}
     except Exception as e:
         log_erro("admin_liberar_erro", erro=e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Suporte ───────────────────────────────────────────────────────────────────
+
+@router.post("/suporte/enviar")
+async def enviar_ticket(dados: dict = Body(...)):
+    """Recebe mensagem de suporte do usuário — sem autenticação obrigatória."""
+    nome    = (dados.get("nome") or "").strip()
+    email   = (dados.get("email") or "").strip()
+    assunto = (dados.get("assunto") or "outro").strip()
+    msg     = (dados.get("mensagem") or "").strip()
+
+    if not email or not msg:
+        raise HTTPException(status_code=400, detail="email e mensagem são obrigatórios")
+
+    try:
+        supabase.table("tickets_suporte").insert({
+            "nome":     nome or "—",
+            "email":    email,
+            "assunto":  assunto,
+            "mensagem": msg,
+            "status":   "aberto",
+        }).execute()
+        return {"ok": True, "mensagem": "Mensagem enviada! Retornamos em até 24h."}
+    except Exception as e:
+        log_erro("suporte_enviar_erro", erro=e)
+        raise HTTPException(status_code=500, detail="Erro ao salvar mensagem")
+
+
+@router.get("/admin/tickets")
+async def listar_tickets(
+    x_admin_token: str = Header(default=""),
+    status: str = Query("todos")
+):
+    _check(x_admin_token)
+    try:
+        q = supabase.table("tickets_suporte").select("*").order("criado_em", desc=True)
+        if status != "todos":
+            q = q.eq("status", status)
+        r = q.execute()
+        return {"tickets": r.data or []}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/admin/tickets/{ticket_id}")
+async def atualizar_ticket(
+    ticket_id: str,
+    request: Request,
+    dados: dict = Body(...)
+):
+    tok = request.headers.get("X-Admin-Token", "")
+    _check(tok)
+    try:
+        upd = {}
+        if "status" in dados:
+            upd["status"] = dados["status"]
+        if "resposta" in dados:
+            upd["resposta"] = dados["resposta"]
+        if upd:
+            supabase.table("tickets_suporte").update(upd).eq("id", ticket_id).execute()
+        return {"ok": True}
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -252,20 +367,16 @@ async def liberar_acesso(request: Request, dados: dict = Body(...)):
 
 @router.get("/admin/emails-remarketing")
 async def emails_remarketing(request: Request):
-    """Todos os emails que usaram e não estão ativos — para remarketing."""
     tok = request.headers.get("X-Admin-Token", "")
     _check(tok)
     try:
-        # Busca todos do Auth
         auth_users = await _auth_users()
         auth_map = {u["id"]: u.get("email", "") for u in auth_users}
 
-        # Assinaturas não ativas
         ass = supabase.table("assinaturas").select(
             "motorista_id,status,trial_fim,criado_em,email_pagamento"
         ).neq("status", "ativo").execute()
 
-        # IDs sem nenhuma assinatura
         ids_com_ass = {r["motorista_id"] for r in (ass.data or [])}
         emails = []
 
@@ -279,12 +390,10 @@ async def emails_remarketing(request: Request):
                     "criado_em": r.get("criado_em"),
                 })
 
-        # Usuários sem nenhuma assinatura
         for uid, email in auth_map.items():
             if uid not in ids_com_ass and email:
                 emails.append({"email": email, "status": "sem_assinatura", "trial_fim": None, "criado_em": None})
 
-        # Deduplica por email
         seen = set()
         unique = []
         for e in emails:
@@ -297,9 +406,9 @@ async def emails_remarketing(request: Request):
         log_erro("admin_emails_remarketing_erro", erro=e)
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.get("/admin/debug-auth")
 async def debug_auth(x_admin_token: str = Header(default="")):
-    """Debug: mostra o que o Supabase Auth retorna."""
     _check(x_admin_token)
     async with _httpx.AsyncClient(timeout=15) as c:
         r = await c.get(
@@ -307,10 +416,11 @@ async def debug_auth(x_admin_token: str = Header(default="")):
             params={"page": 1, "per_page": 5},
             headers={"Authorization": f"Bearer {SERVICE_KEY}", "apikey": SERVICE_KEY}
         )
+    data = r.json()
     return {
         "status": r.status_code,
-        "tipo_resposta": type(r.json()).__name__,
-        "chaves": list(r.json().keys()) if isinstance(r.json(), dict) else "é lista",
-        "total": len(r.json()) if isinstance(r.json(), list) else r.json().get("total", "?"),
-        "amostra": r.json()[:2] if isinstance(r.json(), list) else r.json().get("users", [])[:2],
+        "tipo": type(data).__name__,
+        "chaves": list(data.keys()) if isinstance(data, dict) else "lista",
+        "total": len(data) if isinstance(data, list) else data.get("total", "?"),
+        "amostra": data[:2] if isinstance(data, list) else data.get("users", [])[:2],
     }

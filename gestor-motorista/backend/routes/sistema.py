@@ -116,3 +116,6 @@ async def _debug_chat_impl(mid: str):
 @router.get("/admin-dashboard", response_class=HTMLResponse)
 def admin_dashboard(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
+@router.get("/suporte", response_class=HTMLResponse)
+def pagina_suporte(request: Request):
+    return templates.TemplateResponse("suporte.html", {"request": request})

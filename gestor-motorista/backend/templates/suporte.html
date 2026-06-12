@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suporte — Painel.IA</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0c14; color: #e2e8f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+
+.container { width: 100%; max-width: 520px; }
+
+.logo { text-align: center; margin-bottom: 32px; }
+.logo span { font-size: 1.1rem; font-weight: 700; color: #fff; }
+.logo .dot { color: #6366f1; }
+
+h1 { font-size: 1.5rem; color: #fff; margin-bottom: 6px; }
+.sub { color: #718096; font-size: 0.9rem; margin-bottom: 28px; }
+
+/* Assuntos */
+.assuntos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+.assunto-btn { background: #1a1d2e; border: 2px solid #1e2435; border-radius: 12px; padding: 14px 16px; cursor: pointer; text-align: left; transition: all .15s; }
+.assunto-btn:hover { border-color: #4b5263; }
+.assunto-btn.ativo { border-color: #6366f1; background: #1e2240; }
+.assunto-btn .icon { font-size: 1.3rem; display: block; margin-bottom: 6px; }
+.assunto-btn .label { font-size: 0.85rem; font-weight: 600; color: #e2e8f0; display: block; }
+.assunto-btn .desc { font-size: 0.75rem; color: #4a5568; margin-top: 2px; display: block; }
+
+/* Resposta rápida */
+.resposta-rapida { background: #111827; border: 1px solid #1e2435; border-radius: 12px; padding: 16px 18px; margin-bottom: 20px; display: none; }
+.resposta-rapida.visivel { display: block; }
+.resposta-rapida .rtitulo { font-size: 0.78rem; color: #6366f1; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+.resposta-rapida p { font-size: 0.87rem; color: #cbd5e0; line-height: 1.6; }
+
+/* Form */
+.form-group { margin-bottom: 16px; }
+label { display: block; font-size: 0.78rem; color: #718096; margin-bottom: 6px; font-weight: 500; }
+input, textarea { width: 100%; background: #1a1d2e; border: 1px solid #2d3748; border-radius: 10px; padding: 12px 14px; color: #e2e8f0; font-size: 0.9rem; font-family: inherit; transition: border-color .15s; }
+input:focus, textarea:focus { outline: none; border-color: #6366f1; }
+textarea { resize: vertical; min-height: 120px; }
+
+.btn { width: 100%; padding: 14px; background: #6366f1; color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity .15s; margin-top: 4px; }
+.btn:hover { opacity: .88; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.sucesso { text-align: center; display: none; padding: 40px 20px; }
+.sucesso .emoji { font-size: 3rem; margin-bottom: 16px; }
+.sucesso h2 { font-size: 1.3rem; margin-bottom: 8px; }
+.sucesso p { color: #718096; font-size: 0.9rem; }
+
+.rodape { text-align: center; margin-top: 24px; font-size: 0.78rem; color: #374151; }
+.rodape a { color: #6366f1; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">
+    <span>⚡ Painel<span class="dot">.</span>IA</span>
+  </div>
+
+  <div id="formArea">
+    <h1>Como podemos ajudar?</h1>
+    <p class="sub">Escolha o assunto e descreve o que aconteceu — respondemos em até 24h.</p>
+
+    <div class="assuntos">
+      <button class="assunto-btn" onclick="selecionarAssunto('duvida', this)">
+        <span class="icon">❓</span>
+        <span class="label">Dúvida</span>
+        <span class="desc">Como usar o app</span>
+      </button>
+      <button class="assunto-btn" onclick="selecionarAssunto('bug', this)">
+        <span class="icon">🐛</span>
+        <span class="label">Algo não funciona</span>
+        <span class="desc">Erro ou travamento</span>
+      </button>
+      <button class="assunto-btn" onclick="selecionarAssunto('reembolso', this)">
+        <span class="icon">💳</span>
+        <span class="label">Reembolso</span>
+        <span class="desc">Cancelar ou devolver</span>
+      </button>
+      <button class="assunto-btn" onclick="selecionarAssunto('outro', this)">
+        <span class="icon">💬</span>
+        <span class="label">Outro</span>
+        <span class="desc">Sugestão ou outro assunto</span>
+      </button>
+    </div>
+
+    <div class="resposta-rapida" id="respostaRapida">
+      <div class="rtitulo">💡 Resposta rápida</div>
+      <p id="respostaTexto"></p>
+    </div>
+
+    <div class="form-group">
+      <label>Seu nome</label>
+      <input type="text" id="nome" placeholder="Como você se chama?">
+    </div>
+    <div class="form-group">
+      <label>Seu email *</label>
+      <input type="email" id="email" placeholder="email@gmail.com">
+    </div>
+    <div class="form-group">
+      <label>O que aconteceu? *</label>
+      <textarea id="mensagem" placeholder="Descreve com detalhes — quanto mais você contar, mais rápido a gente resolve."></textarea>
+    </div>
+
+    <button class="btn" id="btnEnviar" onclick="enviar()">Enviar mensagem</button>
+  </div>
+
+  <div class="sucesso" id="sucesso">
+    <div class="emoji">✅</div>
+    <h2>Mensagem recebida!</h2>
+    <p>Respondemos no email <strong id="emailConfirm"></strong><br>em até 24 horas. Obrigado!</p>
+  </div>
+
+  <div class="rodape">
+    <a href="/">← Voltar para o app</a>
+  </div>
+</div>
+
+<script>
+const respostas = {
+  duvida: "O assistente dentro do app consegue responder a maioria das dúvidas em tempo real. Se não resolveu, nos conta aqui o que você tentou fazer.",
+  bug: "Nos conta exatamente o que aconteceu — qual tela, o que você fez antes do erro, e se apareceu alguma mensagem. Isso ajuda a resolver muito mais rápido.",
+  reembolso: "Trabalhamos com satisfação garantida. Se você assinou e não ficou satisfeito nos primeiros 7 dias, devolvemos o valor integralmente. Nos conta o que aconteceu.",
+  outro: "Adoramos receber sugestões — muitas funcionalidades do app vieram de usuários. Escreve o que você quiser!"
+};
+
+let assuntoAtual = 'outro';
+
+function selecionarAssunto(assunto, el) {
+  assuntoAtual = assunto;
+  document.querySelectorAll('.assunto-btn').forEach(b => b.classList.remove('ativo'));
+  el.classList.add('ativo');
+  const rr = document.getElementById('respostaRapida');
+  document.getElementById('respostaTexto').textContent = respostas[assunto];
+  rr.classList.add('visivel');
+}
+
+async function enviar() {
+  const email = document.getElementById('email').value.trim();
+  const msg   = document.getElementById('mensagem').value.trim();
+  if (!email) { document.getElementById('email').focus(); return; }
+  if (!msg)   { document.getElementById('mensagem').focus(); return; }
+
+  const btn = document.getElementById('btnEnviar');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  try {
+    const r = await fetch('/suporte/enviar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nome:     document.getElementById('nome').value.trim(),
+        email:    email,
+        assunto:  assuntoAtual,
+        mensagem: msg,
+      })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Erro');
+    document.getElementById('emailConfirm').textContent = email;
+    document.getElementById('formArea').style.display = 'none';
+    document.getElementById('sucesso').style.display  = 'block';
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Enviar mensagem';
+    alert('Erro ao enviar: ' + e.message);
+  }
+}
+</script>
+</body>
+</html>

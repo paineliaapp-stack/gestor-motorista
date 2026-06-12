@@ -116,6 +116,7 @@ tr:hover td { background: #1e2240; }
     <div class="nav-item ativo" onclick="irPara('pg-dashboard',this)"><span class="icon">📊</span> Dashboard</div>
     <div class="nav-item" onclick="irPara('pg-usuarios',this)"><span class="icon">👥</span> Usuários</div>
     <div class="nav-item" onclick="irPara('pg-remarketing',this)"><span class="icon">📧</span> Remarketing</div>
+    <div class="nav-item" onclick="irPara('pg-suporte',this)"><span class="icon">🎫</span> Suporte</div>
   </div>
 
   <div class="main">
@@ -135,6 +136,15 @@ tr:hover td { background: #1e2240; }
         <div class="card"><div class="lbl">Receita real</div><div class="val g" id="m-receita">—</div></div>
         <div class="card"><div class="lbl">Novos 7 dias</div><div class="val b" id="m-novos">—</div></div>
         <div class="card"><div class="lbl">Fundadores (usadas)</div><div class="val y" id="m-vagas">—</div></div>
+        <div class="card"><div class="lbl">Total lançamentos</div><div class="val b" id="m-lanc">—</div></div>
+        <div class="card"><div class="lbl">Usuários ativos</div><div class="val g" id="m-com-uso">—</div></div>
+        <div class="card"><div class="lbl">Sem uso nenhum</div><div class="val r" id="m-sem-uso">—</div></div>
+        <div class="card"><div class="lbl">Tickets abertos</div><div class="val y" id="m-tickets">—</div></div>
+      </div>
+      <!-- Top usuários -->
+      <div class="table-wrap" style="margin-bottom:24px">
+        <div style="padding:14px 16px;border-bottom:1px solid #1e2435;font-size:0.85rem;font-weight:600;color:#fff">🏆 Mais ativos (por lançamentos)</div>
+        <div id="topUsuariosWrap"><div class="loading"><div class="spin"></div></div></div>
       </div>
     </div>
 
@@ -171,6 +181,22 @@ tr:hover td { background: #1e2240; }
       </div>
       <div id="emailsWrap">
         <div class="loading"><div class="spin"></div> Carregando...</div>
+      </div>
+    </div>
+
+    <!-- SUPORTE -->
+    <div class="page" id="pg-suporte">
+      <div class="page-header">
+        <div><h1>Suporte</h1><div class="sub" id="totalTickets"></div></div>
+        <div style="display:flex;gap:8px">
+          <div class="filter-btn ativo" onclick="setFiltroTicket('todos',this)" style="font-size:0.78rem;padding:6px 12px;border-radius:6px;cursor:pointer">Todos</div>
+          <div class="filter-btn" onclick="setFiltroTicket('aberto',this)" style="font-size:0.78rem;padding:6px 12px;border-radius:6px;cursor:pointer">Abertos</div>
+          <div class="filter-btn" onclick="setFiltroTicket('resolvido',this)" style="font-size:0.78rem;padding:6px 12px;border-radius:6px;cursor:pointer">Resolvidos</div>
+          <button class="btn btn-gray btn-sm" onclick="carregarTickets()">↻ Atualizar</button>
+        </div>
+      </div>
+      <div id="ticketsWrap">
+        <div class="loading"><div class="spin"></div> Carregando tickets...</div>
       </div>
     </div>
 
@@ -250,6 +276,7 @@ function irPara(id, el) {
   if (el) el.classList.add('ativo');
   if (id === 'pg-usuarios' && !todosUsuarios.length) carregarUsuarios();
   if (id === 'pg-remarketing') carregarEmails();
+  if (id === 'pg-suporte') carregarTickets();
 }
 
 async function iniciar() {
@@ -274,7 +301,28 @@ async function carregarTudo() {
   document.getElementById('m-novos').textContent   = m.novos_7_dias ?? '—';
   const usadas = (m.vagas_fundador_total ?? 50) - (m.vagas_fundador_restantes ?? 50);
   document.getElementById('m-vagas').textContent = usadas + ' / ' + (m.vagas_fundador_total ?? 50);
+  // novos cards
+  document.getElementById('m-lanc').textContent    = (m.total_lancamentos ?? 0).toLocaleString('pt-BR');
+  document.getElementById('m-com-uso').textContent = m.usuarios_com_lancamentos ?? '—';
+  document.getElementById('m-sem-uso').textContent = m.usuarios_sem_uso ?? '—';
+  document.getElementById('m-tickets').textContent = m.tickets_abertos ?? '0';
   document.getElementById('ultimaAtualizacao').textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR');
+  // top usuarios
+  renderTopUsuarios(m.top_usuarios || []);
+}
+
+function renderTopUsuarios(top) {
+  const el = document.getElementById('topUsuariosWrap');
+  if (!top.length) { el.innerHTML = '<div class="empty">Nenhum lançamento ainda</div>'; return; }
+  const rows = top.map((u, i) => `
+    <tr>
+      <td style="color:#fbbf24;font-weight:700;width:32px">${['🥇','🥈','🥉','4°','5°'][i]}</td>
+      <td style="color:#60a5fa">${u.email}</td>
+      <td style="color:#4ade80;font-weight:600">${u.lancamentos} lançamentos</td>
+      <td style="color:#a78bfa">R$ ${u.receita.toFixed(2)}</td>
+    </tr>
+  `).join('');
+  el.innerHTML = `<table><tbody>${rows}</tbody></table>`;
 }
 
 async function carregarUsuarios() {
@@ -455,6 +503,70 @@ function traduzStatus(s) {
 }
 
 function esc(s) { return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+// ── Tickets suporte ───────────────────────────────────────────────────────────
+let filtroTicket = 'todos';
+let todosTickets = [];
+
+function setFiltroTicket(f, el) {
+  filtroTicket = f;
+  document.querySelectorAll('#pg-suporte .filter-btn').forEach(b => b.classList.remove('ativo'));
+  if (el) el.classList.add('ativo');
+  renderTickets();
+}
+
+async function carregarTickets() {
+  document.getElementById('ticketsWrap').innerHTML = '<div class="loading"><div class="spin"></div> Carregando...</div>';
+  try {
+    const d = await req('/admin/tickets?status=todos');
+    todosTickets = d.tickets || [];
+    document.getElementById('totalTickets').textContent = todosTickets.length + ' mensagens recebidas';
+    renderTickets();
+  } catch(e) {
+    document.getElementById('ticketsWrap').innerHTML = '<div class="empty">Erro: ' + e.message + '</div>';
+  }
+}
+
+function renderTickets() {
+  const lista = filtroTicket === 'todos' ? todosTickets : todosTickets.filter(t => t.status === filtroTicket);
+  if (!lista.length) {
+    document.getElementById('ticketsWrap').innerHTML = '<div class="empty">Nenhuma mensagem aqui.</div>';
+    return;
+  }
+  const assuntoLabel = {duvida:'❓ Dúvida', bug:'🐛 Bug', reembolso:'💳 Reembolso', outro:'💬 Outro'};
+  const cards = lista.map(t => `
+    <div style="background:#1a1d2e;border:1px solid ${t.status==='aberto'?'#4338ca':'#1e2435'};border-radius:12px;padding:16px 18px;margin-bottom:12px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px">
+        <div>
+          <span style="font-weight:600;color:#fff">${t.nome || '—'}</span>
+          <span style="color:#60a5fa;font-size:0.82rem;margin-left:8px">${t.email}</span>
+          <span style="background:#1e2435;color:#a78bfa;font-size:0.72rem;padding:2px 8px;border-radius:20px;margin-left:8px">${assuntoLabel[t.assunto]||t.assunto}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <span style="font-size:0.72rem;color:#4a5568">${fmtData(t.criado_em)}</span>
+          <span class="badge ${t.status==='aberto'?'trial':'ativo'}">${t.status==='aberto'?'Aberto':'Resolvido'}</span>
+        </div>
+      </div>
+      <p style="color:#cbd5e0;font-size:0.87rem;line-height:1.6;margin-bottom:12px">${t.mensagem}</p>
+      <div style="display:flex;gap:8px">
+        ${t.status==='aberto'?`<button class="btn btn-green btn-sm" onclick="resolverTicket('${t.id}')">✓ Marcar resolvido</button>`:''}
+        <button class="btn btn-gray btn-sm" onclick="window.location='mailto:${t.email}?subject=Re: ${t.assunto} — Painel.IA'">📧 Responder</button>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('ticketsWrap').innerHTML = cards;
+}
+
+async function resolverTicket(id) {
+  try {
+    await req('/admin/tickets/' + id, { method: 'PATCH', body: JSON.stringify({status:'resolvido'}) });
+    await carregarTickets();
+    await carregarTudo();
+  } catch(e) {
+    alert('Erro: ' + e.message);
+  }
+}
+
 </script>
 </body>
 </html>
