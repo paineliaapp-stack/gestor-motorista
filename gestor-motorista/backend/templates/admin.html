@@ -552,31 +552,39 @@ async function carregarTickets() {
 function renderTickets() {
   const lista = filtroTicket === 'todos' ? todosTickets : todosTickets.filter(t => t.status === filtroTicket);
   if (!lista.length) {
-    document.getElementById('ticketsWrap').innerHTML = '<div class="empty">Nenhuma mensagem aqui.</div>';
+    document.getElementById('ticketsWrap').innerHTML = '<div class="empty" style="padding:40px;text-align:center;color:#4a5568">Nenhuma mensagem aqui.</div>';
     return;
   }
-  const assuntoLabel = {duvida:'❓ Dúvida', bug:'🐛 Bug', reembolso:'💳 Reembolso', outro:'💬 Outro'};
+  const assuntoEmoji = {duvida:'❓', bug:'🐛', reembolso:'💳', outro:'💬', 'Dúvida':'❓', 'Bug / Erro':'🐛', 'Pagamento':'💳', 'Sugestão':'💡', 'Geral':'💬'};
   const cards = lista.map(t => `
-    <div style="background:#1a1d2e;border:1px solid ${t.status==='aberto'?'#4338ca':'#1e2435'};border-radius:12px;padding:16px 18px;margin-bottom:12px">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px">
-        <div>
-          <span style="font-weight:600;color:#fff">${t.nome || '—'}</span>
-          <span style="color:#60a5fa;font-size:0.82rem;margin-left:8px">${t.email}</span>
-          <span style="background:#1e2435;color:#a78bfa;font-size:0.72rem;padding:2px 8px;border-radius:20px;margin-left:8px">${assuntoLabel[t.assunto]||t.assunto}</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-          <span style="font-size:0.72rem;color:#4a5568">${fmtData(t.criado_em)}</span>
-          <span class="badge ${t.status==='aberto'?'trial':'ativo'}">${t.status==='aberto'?'Aberto':'Resolvido'}</span>
-        </div>
+    <div style="background:#111827;border:1px solid ${t.status==='aberto'?'rgba(99,102,241,.5)':'rgba(255,255,255,.06)'};border-radius:14px;padding:16px;margin-bottom:10px">
+      <!-- Header do ticket: responsivo com flex-wrap -->
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:18px">${assuntoEmoji[t.assunto]||'💬'}</span>
+        <span style="font-weight:700;color:#fff;font-size:14px">${t.nome||'Usuário'}</span>
+        <span style="font-size:11px;color:#60a5fa;word-break:break-all">${t.email||''}</span>
+        <span style="margin-left:auto;font-size:11px;color:#4a5568;white-space:nowrap">${fmtData(t.criado_em)}</span>
+        <span style="background:${t.status==='aberto'?'rgba(99,102,241,.2)':'rgba(0,216,151,.1)'};color:${t.status==='aberto'?'#818cf8':'#00D897'};font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px">${t.status==='aberto'?'ABERTO':'RESOLVIDO'}</span>
       </div>
-      <p style="color:#cbd5e0;font-size:0.87rem;line-height:1.6;margin-bottom:12px">${t.mensagem}</p>
-      <div style="display:flex;gap:8px">
-        ${t.status==='aberto'?`<button class="btn btn-green btn-sm" onclick="resolverTicket('${t.id}')">✓ Marcar resolvido</button>`:''}
-        <button class="btn btn-gray btn-sm" onclick="window.location='mailto:${t.email}?subject=Re: ${t.assunto} — Painel.IA'">📧 Responder</button>
+      <!-- Assunto pill -->
+      <div style="display:inline-block;background:rgba(255,255,255,.06);color:#94a3b8;font-size:11px;padding:2px 10px;border-radius:20px;margin-bottom:10px">${t.assunto||'Geral'}</div>
+      <!-- Mensagem -->
+      <p style="color:#cbd5e0;font-size:13px;line-height:1.65;margin-bottom:14px;white-space:pre-wrap">${t.mensagem}</p>
+      <!-- Ações: responsivas com flex-wrap -->
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${t.status==='aberto'?`<button style="padding:8px 14px;background:rgba(0,216,151,.12);border:1px solid rgba(0,216,151,.3);color:#00D897;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap" onclick="resolverTicket('${t.id}')">✓ Resolvido</button>`:''}
+        <button style="padding:8px 14px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);color:#60a5fa;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap" onclick="responderTicket('${t.email}','${(t.assunto||'').replace(/'/g,"\'")}')">📧 Responder</button>
       </div>
     </div>
   `).join('');
   document.getElementById('ticketsWrap').innerHTML = cards;
+}
+
+function responderTicket(email, assunto){
+  // Abre o email com template pré-preenchido
+  const subject = encodeURIComponent('Re: ' + assunto + ' — Painel.IA');
+  const body = encodeURIComponent('Olá,\n\nObrigado por entrar em contato com o Painel.IA.\n\n[Sua resposta aqui]\n\nEquipe Painel.IA');
+  window.location = 'mailto:' + email + '?subject=' + subject + '&body=' + body;
 }
 
 async function resolverTicket(id) {

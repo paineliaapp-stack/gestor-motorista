@@ -5623,6 +5623,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">🗑️ Como apagar um lançamento errado?</div><div class="faq-a">Fale no chat: <em>"Cancele o último lançamento que você fez"</em>. Ou vá em <strong>Histórico</strong> e toque na lixeira.</div></div>
     <button onclick="toggleHelp();iniciarTour()" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1px solid rgba(99,102,241,.4);background:rgba(99,102,241,.1);color:#818cf8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🎯 Ver tour novamente</button>
     <button id="ajuda-install-btn" onclick="toggleHelp();instalarApp()" style="width:100%;margin-top:6px;padding:10px;border-radius:10px;border:1px solid rgba(20,184,166,.4);background:rgba(20,184,166,.08);color:#14b8a6;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Instalar app na tela inicial</button>
+    <button onclick="toggleHelp();abrirSuporte()" style="width:100%;margin-top:6px;padding:10px;border-radius:10px;border:1px solid rgba(240,180,41,.3);background:rgba(240,180,41,.06);color:#F0B429;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">💬 Falar com suporte</button>
   </div>
 </div>
 
@@ -6270,5 +6271,67 @@ function _aplicarFotoPerfil(src){
     if(foto) _aplicarFotoPerfil(foto);
   }, 600);
 })();
+</script>
+<script>
+function abrirSuporte(){
+  if(document.getElementById('modal-suporte')) return;
+  const m = document.createElement('div');
+  m.id = 'modal-suporte';
+  m.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center;padding:0';
+  m.innerHTML = `
+    <div style="background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:22px 22px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto">
+      <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 20px"></div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;margin-bottom:4px">💬 Suporte</div>
+      <div style="font-size:13px;color:rgba(238,233,224,.45);margin-bottom:18px">Descreva o que está acontecendo</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        ${['Dúvida','Bug / Erro','Pagamento','Sugestão'].map(a=>`<button onclick="_selAssunto(this)" style="padding:7px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.04);color:#94a3b8;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">${a}</button>`).join('')}
+      </div>
+      <textarea id="sup-msg" placeholder="Ex: Ao tentar registrar um ganho, o chat não responde..." style="width:100%;height:110px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#EEE9E0;font-size:14px;padding:12px;font-family:inherit;resize:none;outline:none;margin-bottom:12px"></textarea>
+      <div id="sup-status" style="font-size:12px;color:#00D897;display:none;margin-bottom:10px;text-align:center"></div>
+      <button onclick="_enviarSuporte()" id="sup-btn" style="width:100%;padding:14px;background:#F0B429;border:none;border-radius:12px;color:#000;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit">Enviar mensagem</button>
+      <button onclick="document.getElementById('modal-suporte').remove()" style="width:100%;padding:10px;margin-top:8px;background:none;border:none;color:rgba(255,255,255,.3);font-size:13px;cursor:pointer">Fechar</button>
+    </div>`;
+  m.addEventListener('click', e => { if(e.target===m) m.remove(); });
+  document.body.appendChild(m);
+  window._supAssunto = '';
+}
+function _selAssunto(btn){
+  document.querySelectorAll('#modal-suporte button').forEach(b=>{
+    if(['Dúvida','Bug / Erro','Pagamento','Sugestão'].includes(b.textContent)){
+      b.style.background='rgba(255,255,255,.04)'; b.style.color='#94a3b8';
+      b.style.borderColor='rgba(255,255,255,.15)';
+    }
+  });
+  btn.style.background='rgba(240,180,41,.15)'; btn.style.color='#F0B429';
+  btn.style.borderColor='rgba(240,180,41,.5)';
+  window._supAssunto = btn.textContent;
+}
+async function _enviarSuporte(){
+  const msg = (document.getElementById('sup-msg').value||'').trim();
+  if(!msg){ document.getElementById('sup-msg').style.borderColor='#ff6b6b'; return; }
+  const btn = document.getElementById('sup-btn');
+  const st = document.getElementById('sup-status');
+  btn.textContent='Enviando...'; btn.disabled=true;
+  try{
+    const r = await authFetch(API+'/suporte/enviar', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        motorista_id: window.MID, mensagem: msg,
+        assunto: window._supAssunto || 'Geral',
+        nome: window._userNome||'', email: window._userEmail||''
+      })
+    });
+    const d = await r.json();
+    if(d.ok || d.id){
+      st.textContent = '✅ Mensagem enviada! Respondemos em até 24h.';
+      st.style.display='block'; btn.style.display='none';
+      document.getElementById('sup-msg').value='';
+    } else { throw new Error(d.erro||'erro'); }
+  }catch(e){
+    btn.textContent='Enviar mensagem'; btn.disabled=false;
+    st.textContent='❌ Não foi possível enviar. Tente de novo.';
+    st.style.color='#ff6b6b'; st.style.display='block';
+  }
+}
 </script>
 </body>
