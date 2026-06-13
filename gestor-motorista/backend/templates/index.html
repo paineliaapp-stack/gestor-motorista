@@ -613,12 +613,12 @@ const _supa = supabase.createClient(
       <div class="meta-track"><div class="meta-fill" id="meta-fill" style="width:0%"></div></div>
       <span class="meta-pct" id="meta-pct">0%</span>
     </div>
-    <button onclick="abrirPerfil()" class="chip" style="border:none;cursor:pointer;padding:0;background:none" title="Perfil">
-      <div class="av" id="user-av" style="overflow:hidden;padding:0">?</div>
-      <div class="dot-on"></div>
+    <button onclick="abrirPerfil()" id="btn-avatar" style="border:none;cursor:pointer;padding:0;background:none;position:relative;flex-shrink:0;width:34px;height:34px;border-radius:50%" title="Meu Perfil">
+      <div id="user-av" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#F0B429,#C47A0A);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#000;overflow:hidden;flex-shrink:0">?</div>
+      <div style="position:absolute;bottom:0;right:0;width:9px;height:9px;background:#00D897;border-radius:50%;border:1.5px solid #07090d"></div>
     </button>
     <button class="voice-btn" id="voice-toggle" onclick="toggleVoice()" title="Voz da IA">🔇</button>
-    <button onclick="fazerLogout()" title="Sair" style="background:rgba(255,77,106,.12);border:1px solid rgba(255,77,106,.3);border-radius:8px;color:#FF4D6A;font-size:13px;font-weight:700;padding:7px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0">⏻</button>
+    <button onclick="fazerLogout()" title="Sair" style="display:none">⏻</button>
   </div>
 </header>
 
@@ -5401,8 +5401,11 @@ function abrirPerfil(nome, email, foto){
   overlay.innerHTML = `
     <div style="background:#1a1a2e;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:24px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,.6)">
       <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:18px">
-        <div style="width:64px;height:64px;border-radius:50%;overflow:hidden;background:rgba(99,102,241,.3);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#818cf8;margin-bottom:10px;border:2px solid rgba(99,102,241,.4)">
-          ${f ? '<img src="'+f+'" style="width:100%;height:100%;object-fit:cover">' : n[0].toUpperCase()}
+        <div style="position:relative;margin-bottom:10px;cursor:pointer" onclick="_escolherFotoPerfil()" title="Trocar foto">
+          <div id="modal-av-wrap" style="width:72px;height:72px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#F0B429,#C47A0A);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#000;border:2.5px solid rgba(240,180,41,.5)">
+            ${f ? '<img id="modal-av-img" src="'+f+'" style="width:100%;height:100%;object-fit:cover">' : '<span id="modal-av-ini">'+n[0].toUpperCase()+'</span>'}
+          </div>
+          <div style="position:absolute;bottom:0;right:0;width:22px;height:22px;border-radius:50%;background:#F0B429;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid #1a1a2e">📷</div>
         </div>
         <div style="font-weight:700;font-size:15px;color:#fff;text-align:center">${n}</div>
         <div style="font-size:12px;color:#64748b;margin-top:2px;text-align:center">${e}</div>
@@ -6217,4 +6220,55 @@ async function carregarGanhosVeiculo(){
   <a href="/termos" style="color:rgba(255,255,255,.3);text-decoration:none;margin:0 8px">Termos de Uso</a>·
   <a href="/privacidade" style="color:rgba(255,255,255,.3);text-decoration:none;margin:0 8px">Privacidade</a>
 </div>
+<script>
+/* ── Upload de foto de perfil ── */
+function _escolherFotoPerfil(){
+  var inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*'; inp.style.display = 'none';
+  inp.onchange = function(){
+    var file = inp.files[0]; if(!file) return;
+    if(file.size > 2*1024*1024){ alert('Foto muito grande. Escolha uma imagem menor que 2MB.'); return; }
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var dataUrl = ev.target.result;
+      // Redimensiona para 200x200 antes de salvar
+      var img = new Image();
+      img.onload = function(){
+        var c = document.createElement('canvas'); c.width=200; c.height=200;
+        var x = c.getContext('2d');
+        // crop centralizado
+        var size = Math.min(img.width, img.height);
+        var ox = (img.width-size)/2, oy = (img.height-size)/2;
+        x.drawImage(img, ox, oy, size, size, 0, 0, 200, 200);
+        var thumb = c.toDataURL('image/jpeg', 0.82);
+        localStorage.setItem('pia_foto_'+(window.MID||''), thumb);
+        _aplicarFotoPerfil(thumb);
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  };
+  document.body.appendChild(inp); inp.click();
+  setTimeout(()=>inp.remove(), 5000);
+}
+
+function _aplicarFotoPerfil(src){
+  // Atualiza o avatar no topo
+  var av = document.getElementById('user-av');
+  if(av){ av.innerHTML = '<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+  // Atualiza no modal de perfil se estiver aberto
+  var wrap = document.getElementById('modal-av-wrap');
+  if(wrap){ wrap.innerHTML = '<img id="modal-av-img" src="'+src+'" style="width:100%;height:100%;object-fit:cover">'; }
+  window._userFoto = src;
+}
+
+// Carrega foto salva ao iniciar
+(function(){
+  var iv = setInterval(function(){
+    if(!window.MID) return; clearInterval(iv);
+    var foto = localStorage.getItem('pia_foto_'+window.MID);
+    if(foto) _aplicarFotoPerfil(foto);
+  }, 600);
+})();
+</script>
 </body>
