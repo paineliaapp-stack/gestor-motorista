@@ -388,6 +388,8 @@ const _supa = supabase.createClient(
   // Splash SÓ no mobile — no desktop fica feio, entra direto no app
   var ehMobile = window.matchMedia('(max-width: 820px)').matches || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   if (!ehMobile) { if(sp) sp.remove(); return; }
+  // Mobile: exibe o splash (estava display:none por padrão para não dar tela preta no desktop)
+  if (sp) sp.style.display = 'block';
 
   // FORÇA atualização do service worker: a v6 cacheava o vídeo sem Range e
   // travava o iOS. Registrar de novo faz o navegador baixar a v7 (que limpa tudo).
@@ -2472,15 +2474,13 @@ async function loadDash(){
     if(pct>=100) celebrarMeta(ganhoHoje);
     const dashSub=document.getElementById('dash-sub'); if(dashSub) dashSub.textContent='Hoje: '+fmt(ganhoHoje)+' de '+fmt(META_DIARIA)+' de meta';
     // Resultado do dia
-    // Gastos do dia = só despesas OPERACIONAIS (combustível, etc), NÃO pagamento de contas
-    const ehContaPaga = l => (l.plataforma==='conta' || l.plataforma==='conta_paga');
-    const despHoje=todosLanc.filter(l=>l.data===hoje&&l.tipo==='despesa'&&!ehContaPaga(l)).reduce((a,l)=>a+parseFloat(l.valor),0);
+    const despHoje=todosLanc.filter(l=>l.data===hoje&&l.tipo==='despesa').reduce((a,l)=>a+parseFloat(l.valor),0);
     const horasHoje=0; // calculado via turnos separadamente
     // Se hoje não tem dados, tenta ontem (pode ter sido salvo com UTC anterior ao fix)
     const ontem=new Date(Date.now()-3*60*60*1000-86400000).toISOString().slice(0,10);
     const diaRef = ganhoHoje===0 && despHoje===0 && todosLanc.some(l=>l.data===ontem) ? ontem : hoje;
     const ganhoRef = todosLanc.filter(l=>l.data===diaRef&&l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
-    const despRef = todosLanc.filter(l=>l.data===diaRef&&l.tipo==='despesa'&&!ehContaPaga(l)).reduce((a,l)=>a+parseFloat(l.valor),0);
+    const despRef = todosLanc.filter(l=>l.data===diaRef&&l.tipo==='despesa').reduce((a,l)=>a+parseFloat(l.valor),0);
     const horasRef = 0; // calculado via turnos separadamente
     const labelDia = diaRef===hoje ? 'hoje' : 'ontem';
     const elHoje=document.getElementById('resumo-hoje');
