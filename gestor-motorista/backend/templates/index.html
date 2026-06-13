@@ -1153,6 +1153,26 @@ const _supa = supabase.createClient(
 
 <div class="page" id="page-contas">
 
+  <!-- Planejador inteligente de contas -->
+  <div id="planejador-card" style="display:none;margin-bottom:16px;border-radius:16px;padding:16px;border:1.5px solid rgba(240,180,41,.4);background:linear-gradient(135deg,rgba(240,180,41,.07),transparent)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="font-size:18px">🧠</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;text-transform:uppercase">Análise do Gestor</span>
+      <span id="plan-badge" style="margin-left:auto;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(255,69,96,.2);color:#ff6b6b">CRÍTICO</span>
+    </div>
+    <p id="plan-msg" style="font-size:13px;color:rgba(238,233,224,.75);line-height:1.6;margin-bottom:12px">Analisando...</p>
+    <div id="plan-stats" style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap"></div>
+    <div id="plan-criticas" style="display:none;margin-bottom:10px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#ff6b6b;margin-bottom:6px">⚠️ Pagar agora (não dá pra mover)</div>
+      <div id="plan-criticas-list"></div>
+    </div>
+    <div id="plan-renegocia" style="display:none">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#F0B429;margin-bottom:6px">💡 Pedir prazo nestas (torna viável)</div>
+      <div id="plan-renegocia-list"></div>
+    </div>
+    <button onclick="_expandirPlano()" id="plan-btn-ver" style="width:100%;margin-top:10px;padding:10px;border-radius:10px;border:1px solid rgba(240,180,41,.35);background:rgba(240,180,41,.08);color:#F0B429;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Ver plano completo de renegociação ↓</button>
+  </div>
+
   <!-- Resumo -->
   <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:20px" id="contas-resumo"></div>
 
@@ -2452,13 +2472,15 @@ async function loadDash(){
     if(pct>=100) celebrarMeta(ganhoHoje);
     const dashSub=document.getElementById('dash-sub'); if(dashSub) dashSub.textContent='Hoje: '+fmt(ganhoHoje)+' de '+fmt(META_DIARIA)+' de meta';
     // Resultado do dia
-    const despHoje=todosLanc.filter(l=>l.data===hoje&&l.tipo==='despesa').reduce((a,l)=>a+parseFloat(l.valor),0);
+    // Gastos do dia = só despesas OPERACIONAIS (combustível, etc), NÃO pagamento de contas
+    const ehContaPaga = l => (l.plataforma==='conta' || l.plataforma==='conta_paga');
+    const despHoje=todosLanc.filter(l=>l.data===hoje&&l.tipo==='despesa'&&!ehContaPaga(l)).reduce((a,l)=>a+parseFloat(l.valor),0);
     const horasHoje=0; // calculado via turnos separadamente
     // Se hoje não tem dados, tenta ontem (pode ter sido salvo com UTC anterior ao fix)
     const ontem=new Date(Date.now()-3*60*60*1000-86400000).toISOString().slice(0,10);
     const diaRef = ganhoHoje===0 && despHoje===0 && todosLanc.some(l=>l.data===ontem) ? ontem : hoje;
     const ganhoRef = todosLanc.filter(l=>l.data===diaRef&&l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
-    const despRef = todosLanc.filter(l=>l.data===diaRef&&l.tipo==='despesa').reduce((a,l)=>a+parseFloat(l.valor),0);
+    const despRef = todosLanc.filter(l=>l.data===diaRef&&l.tipo==='despesa'&&!ehContaPaga(l)).reduce((a,l)=>a+parseFloat(l.valor),0);
     const horasRef = 0; // calculado via turnos separadamente
     const labelDia = diaRef===hoje ? 'hoje' : 'ontem';
     const elHoje=document.getElementById('resumo-hoje');
