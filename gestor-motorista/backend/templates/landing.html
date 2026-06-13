@@ -233,7 +233,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
 <nav>
   <div class="nav-in">
     <div class="logo">
-      <div class="logo-mark">P</div>
+      <div class="logo-mark" style="padding:0;overflow:hidden"><img src="/static/icon-512.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>
       <span>Painel<span class="ia">.IA</span></span>
     </div>
     <div style="display:flex;gap:10px">
@@ -692,17 +692,32 @@ document.querySelectorAll('.reveal,.era').forEach(r=>obs.observe(r));
 </script>
 <script>
 async function comprarDireto(){
-  const email = prompt('Seu email para a assinatura:');
-  if(!email || !email.includes('@')){ if(email!==null) alert('Email inválido'); return; }
+  // Cria um modal bonito em vez de alert() feio
+  var modal = document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`<div style="background:#0d1117;border:1px solid rgba(240,180,41,.4);border-radius:20px;padding:28px 24px;max-width:360px;width:100%">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;margin-bottom:6px">Assinar Plano Fundador</div>
+    <div style="font-size:13px;color:rgba(238,233,224,.5);margin-bottom:18px">R$19/mês · preço travado por 1 ano</div>
+    <input id="checkout-email" type="email" placeholder="seu@email.com" style="width:100%;padding:12px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;font-size:15px;margin-bottom:12px;outline:none;font-family:inherit">
+    <div id="checkout-erro" style="color:#ff6b6b;font-size:12px;margin-bottom:10px;display:none"></div>
+    <button id="checkout-btn" onclick="fazerCheckout(this)" style="width:100%;padding:14px;background:#F0B429;border:none;border-radius:12px;color:#000;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit">Ir para pagamento →</button>
+    <button onclick="this.closest('[style]').remove()" style="width:100%;padding:10px;margin-top:8px;background:none;border:none;color:rgba(255,255,255,.3);font-size:13px;cursor:pointer">Cancelar</button>
+  </div>`;
+  document.body.appendChild(modal);
+  setTimeout(()=>{ var inp=document.getElementById('checkout-email'); if(inp) inp.focus(); },100);
+}
+
+async function fazerCheckout(btn){
+  var email=(document.getElementById('checkout-email').value||'').trim().toLowerCase();
+  var erro=document.getElementById('checkout-erro');
+  if(!email||!email.includes('@')){ erro.textContent='Informe um email válido'; erro.style.display='block'; return; }
+  erro.style.display='none'; btn.textContent='Aguarde...'; btn.disabled=true;
   try{
-    const r = await fetch('/billing/checkout-publico', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({email: email.trim().toLowerCase()})
-    });
-    const d = await r.json();
-    if(d.init_point){ window.location.href = d.init_point; }
-    else { alert(d.erro || 'Não foi possível iniciar o pagamento. Tente o teste grátis.'); }
-  }catch(e){ alert('Falha de conexão. Tente de novo.'); }
+    const r=await fetch('/billing/checkout-publico',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    const d=await r.json();
+    if(d.init_point){ window.location.href=d.init_point; }
+    else{ erro.textContent=d.erro||'Erro ao iniciar pagamento. Tente o teste grátis.'; erro.style.display='block'; btn.textContent='Ir para pagamento →'; btn.disabled=false; }
+  }catch(e){ erro.textContent='Falha de conexão. Tente novamente.'; erro.style.display='block'; btn.textContent='Ir para pagamento →'; btn.disabled=false; }
 }
 </script>
 </body>

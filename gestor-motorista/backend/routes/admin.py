@@ -128,7 +128,7 @@ async def metricas(x_admin_token: str = Header(default="")):
 
         out["total_lancamentos"] = sum(v["lancamentos"] for v in uso.values())
         out["usuarios_com_lancamentos"] = len(uso)
-        out["usuarios_sem_uso"] = out["total_usuarios"] - len(uso)
+        out["usuarios_sem_uso"] = max(0, out["total_usuarios"] - len(uso))
 
         # top 5 por lançamentos
         auth_map = {}
@@ -150,20 +150,15 @@ async def metricas(x_admin_token: str = Header(default="")):
         out["total_chamadas_api"] = sum(api_uso.values())
 
         # Ranking por USO (chamadas de API se houver, senão lançamentos) — SEM receita
-        if api_uso:
-            top = sorted(api_uso.items(), key=lambda x: x[1], reverse=True)[:8]
-            out["top_usuarios"] = [
-                {"id": mid, "email": auth_map.get(mid, mid[:8] + "…"),
-                 "chamadas_api": n, "lancamentos": uso.get(mid, {}).get("lancamentos", 0)}
-                for mid, n in top
-            ]
-        else:
-            top = sorted(uso.items(), key=lambda x: x[1]["lancamentos"], reverse=True)[:8]
-            out["top_usuarios"] = [
-                {"id": mid, "email": auth_map.get(mid, mid[:8] + "…"),
-                 "chamadas_api": api_uso.get(mid, 0), "lancamentos": v["lancamentos"]}
-                for mid, v in top
-            ]
+        # Agrupa por lançamentos sempre; API fica como segunda coluna se tiver dados
+        top = sorted(uso.items(), key=lambda x: (api_uso.get(x[0],0), x[1]["lancamentos"]), reverse=True)[:8]
+        out["top_usuarios"] = [
+            {"id": mid,
+             "email": auth_map.get(mid, "—") if auth_map.get(mid, "").strip() and "@" in auth_map.get(mid,"") else (mid[:8] + "…"),
+             "chamadas_api": api_uso.get(mid, 0),
+             "lancamentos": v["lancamentos"]}
+            for mid, v in top
+        ]
     except Exception as e:
         log_erro("admin_uso_erro", erro=e)
 

@@ -343,8 +343,8 @@ function renderTopUsuarios(top) {
     <tr>
       <td style="color:#fbbf24;font-weight:700;width:32px">${medalha}</td>
       <td style="color:#60a5fa">${u.email || '—'}</td>
-      <td style="color:#a78bfa;font-weight:600">${apiCalls} chamadas IA</td>
-      <td style="color:#4ade80">${lanc} lançamentos</td>
+      <td style="color:#a78bfa;font-weight:600">${apiCalls > 0 ? apiCalls+' chamadas IA' : lanc+' lançamentos'}</td>
+      <td style="color:rgba(255,255,255,.3);font-size:11px">${apiCalls > 0 ? lanc+' lanç.' : ''}</td>
     </tr>`;
   }).join('');
   el.innerHTML = `<table><tbody>${rows}</tbody></table>`;
