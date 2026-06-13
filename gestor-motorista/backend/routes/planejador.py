@@ -50,10 +50,15 @@ def _contas_pendentes(mid: str) -> list[dict]:
     try:
         hoje_s = _hoje().isoformat()
         r = supabase.table("contas").select("*") \
-            .eq("motorista_id", mid).eq("status", "pendente") \
+            .eq("motorista_id", mid) \
             .gte("vencimento", hoje_s) \
             .order("vencimento").execute()
-        return r.data or []
+        # Considera pendente: campo 'pago' é False/None (não foi quitado)
+        out = []
+        for c in (r.data or []):
+            if not c.get("pago"):
+                out.append(c)
+        return out
     except Exception:
         return []
 
