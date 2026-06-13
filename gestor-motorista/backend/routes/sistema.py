@@ -47,6 +47,14 @@ async def status():
         "ts": datetime.datetime.utcnow().isoformat()
     }
 
+@router.get("/termos", response_class=HTMLResponse)
+def termos():
+    return FileResponse("templates/termos.html", media_type="text/html")
+
+@router.get("/privacidade", response_class=HTMLResponse)
+def privacidade():
+    return FileResponse("templates/privacidade.html", media_type="text/html")
+
 @router.get("/admin", response_class=HTMLResponse)
 def admin_page(request: Request):
     return FileResponse("templates/admin.html", media_type="text/html")

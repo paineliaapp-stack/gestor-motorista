@@ -5419,6 +5419,7 @@ function abrirPerfil(nome, email, foto){
         <button id="perfil-install-btn" onclick="document.getElementById('modal-perfil').remove();instalarApp()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(99,102,241,.3);background:rgba(99,102,241,.08);color:#818cf8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 Instalar na tela inicial</button>
         <button onclick="document.getElementById('modal-perfil').remove()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#94a3b8;font-size:13px;cursor:pointer;font-family:inherit">Fechar</button>
         <button onclick="document.getElementById('modal-perfil').remove();fazerLogout()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,77,106,.3);background:rgba(255,77,106,.08);color:#FF4D6A;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">⏻ Sair da conta</button>
+        <div style="display:flex;justify-content:center;gap:16px;margin-top:8px"><a href="/termos" style="font-size:11px;color:rgba(255,255,255,.3);text-decoration:none">Termos</a><a href="/privacidade" style="font-size:11px;color:rgba(255,255,255,.3);text-decoration:none">Privacidade</a></div>
       </div>
     </div>`;
   overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
