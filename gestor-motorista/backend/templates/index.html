@@ -5523,6 +5523,20 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         }
       } catch(e) { /* billing opcional */ }
     }, 1800);
+    // ── Bloqueio em tempo real: verifica a cada 5 min sem precisar de logout ──
+    if(!window._billingInterval){
+      window._billingInterval = setInterval(async function(){
+        try{
+          const _br = await authFetch(API+'/billing/status');
+          if(!_br.ok) return;
+          const _bs = await _br.json();
+          window._billingStatus = _bs;
+          if(_bs && !_bs.pode_usar && !document.getElementById('upgrade-overlay')){
+            _mostrarOverlayUpgrade(_bs);
+          }
+        }catch(e){}
+      }, 5 * 60 * 1000);
+    }
     if(upData.meta_diaria && upData.meta_diaria !== 150){
       META_DIARIA=upData.meta_diaria; localStorage.setItem('meta',META_DIARIA);
     } else {
@@ -6333,5 +6347,96 @@ async function _enviarSuporte(){
     st.style.color='#ff6b6b'; st.style.display='block';
   }
 }
+</script>
+<script>
+/* ════ PLANEJADOR INTELIGENTE DE CONTAS ════ */
+var _planoExpandido = false;
+
+async function carregarPlanejador(){
+  if(!window.MID) return;
+  try{
+    const r = await authFetch(API+'/planejador-contas/'+MID);
+    const d = await r.json();
+    const card = document.getElementById('planejador-card');
+    if(!card) return;
+    // Só mostra o card se houver algo a dizer
+    if(d.situacao === 'ok' || d.situacao === 'sem_dados'){
+      card.style.display = 'none'; return;
+    }
+    card.style.display = 'block';
+    // Badge de situação
+    const badge = document.getElementById('plan-badge');
+    if(badge){
+      if(d.situacao === 'critico'){
+        badge.textContent = 'CRÍTICO'; badge.style.background = 'rgba(255,69,96,.2)'; badge.style.color = '#ff6b6b';
+      } else {
+        badge.textContent = 'ATENÇÃO'; badge.style.background = 'rgba(240,180,41,.2)'; badge.style.color = '#F0B429';
+      }
+    }
+    // Mensagem principal
+    const msg = document.getElementById('plan-msg');
+    if(msg) msg.textContent = d.mensagem;
+    // Stats (média vs necessidade)
+    const stats = document.getElementById('plan-stats');
+    if(stats) stats.innerHTML = `
+      <div style="flex:1;min-width:100px;background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:#64748b;text-transform:uppercase;margin-bottom:2px">Sua média/dia</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#00D897">R$${d.media_diaria?.toFixed(0)||0}</div>
+      </div>
+      <div style="flex:1;min-width:100px;background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:#64748b;text-transform:uppercase;margin-bottom:2px">Precisa (7d)</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#ff6b6b">R$${d.necessidade_7d?.toFixed(0)||0}</div>
+      </div>
+      <div style="flex:1;min-width:100px;background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:#64748b;text-transform:uppercase;margin-bottom:2px">Total pendente</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#F0B429">R$${d.total_pendente?.toFixed(0)||0}</div>
+      </div>`;
+    window._planoData = d;
+  }catch(e){ console.warn('planejador:', e); }
+}
+
+function _expandirPlano(){
+  const d = window._planoData;
+  if(!d) return;
+  _planoExpandido = !_planoExpandido;
+  const btn = document.getElementById('plan-btn-ver');
+  if(btn) btn.textContent = _planoExpandido ? 'Recolher ↑' : 'Ver plano completo de renegociação ↓';
+  // Contas críticas (pagar agora)
+  const criticas = document.getElementById('plan-criticas');
+  const criticasList = document.getElementById('plan-criticas-list');
+  if(criticas && criticasList && (d.criticas||[]).length > 0){
+    criticas.style.display = _planoExpandido ? 'block' : 'none';
+    criticasList.innerHTML = (d.criticas||[]).map(c=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,69,96,.08);border-radius:8px;margin-bottom:4px;font-size:12px">
+        <span style="color:#EEE9E0">${c.nome||c.descricao||'Conta'}</span>
+        <span style="color:#ff6b6b;font-weight:700">R$${parseFloat(c.valor||0).toFixed(0)}</span>
+      </div>`).join('');
+  }
+  // Contas para renegociar
+  const renegocia = document.getElementById('plan-renegocia');
+  const renegociaList = document.getElementById('plan-renegocia-list');
+  if(renegocia && renegociaList && (d.renegociaveis||[]).length > 0){
+    renegocia.style.display = _planoExpandido ? 'block' : 'none';
+    renegociaList.innerHTML = (d.renegociaveis||[]).map(c=>{
+      const novaData = new Date(c.nova_data_sugerida+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+      const vencOrig = new Date(c.vencimento+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+      return `<div style="padding:10px 12px;background:rgba(240,180,41,.06);border:1px solid rgba(240,180,41,.2);border-radius:10px;margin-bottom:6px;font-size:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="color:#EEE9E0;font-weight:600">${c.nome||c.descricao||'Conta'}</span>
+          <span style="color:#F0B429;font-weight:700">R$${parseFloat(c.valor||0).toFixed(0)}</span>
+        </div>
+        <div style="color:rgba(238,233,224,.5)">Vence ${vencOrig} → pedir prazo até <b style="color:#F0B429">${novaData}</b> (+${c.prazo_extra_dias}d)</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// Carrega ao abrir a aba Contas
+(function(){
+  var ni = document.getElementById('ni-contas');
+  if(ni) ni.addEventListener('click', function(){ setTimeout(carregarPlanejador, 300); });
+  // Também ao carregar o app se já estiver na aba contas
+  setTimeout(function(){ if(window.MID) carregarPlanejador(); }, 4000);
+})();
 </script>
 </body>

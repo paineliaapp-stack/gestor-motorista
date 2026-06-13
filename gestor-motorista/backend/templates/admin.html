@@ -6,6 +6,7 @@
 <title>Painel.IA — Admin</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { overflow-x: hidden; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0c14; color: #e2e8f0; min-height: 100vh; }
 
 .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
@@ -22,7 +23,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .nav-item:hover { color: #e2e8f0; background: #1a1d2e; }
 .nav-item.ativo { color: #fff; background: #1e2240; border-left-color: #6366f1; }
 .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
-.main { margin-left: 200px; padding: 28px 32px; max-width: 1400px; }
+.main { margin-left: 200px; padding: 28px 32px; max-width: 1400px; min-width: 0; overflow-x: hidden; }
 .page { display: none; }
 .page.ativo { display: block; }
 
@@ -140,7 +141,7 @@ tr:hover td { background: #1e2240; }
     <div class="nav-item ativo" onclick="irPara('pg-dashboard',this)"><span class="icon">📊</span> Dashboard</div>
     <div class="nav-item" onclick="irPara('pg-usuarios',this)"><span class="icon">👥</span> Usuários</div>
     <div class="nav-item" onclick="irPara('pg-remarketing',this)"><span class="icon">📧</span> Remarketing</div>
-    <div class="nav-item" onclick="irPara('pg-suporte',this)"><span class="icon">🎫</span> Suporte</div>
+    <div class="nav-item" id="nav-suporte" onclick="irPara('pg-suporte',this);limparBadgeSuporte()"><span class="icon">🎫</span> Suporte<span id="badge-suporte" style="display:none;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;margin-left:auto;flex-shrink:0" id="badge-suporte">0</span></div>
   </div>
 
   <div class="main">
@@ -573,14 +574,51 @@ function renderTickets() {
       <!-- Ações: responsivas com flex-wrap -->
       <div style="display:flex;flex-wrap:wrap;gap:8px">
         ${t.status==='aberto'?`<button style="padding:8px 14px;background:rgba(0,216,151,.12);border:1px solid rgba(0,216,151,.3);color:#00D897;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap" onclick="resolverTicket('${t.id}')">✓ Resolvido</button>`:''}
-        <button style="padding:8px 14px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);color:#60a5fa;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap" onclick="responderTicket('${t.email}','${(t.assunto||'').replace(/'/g,"\'")}')">📧 Responder</button>
+        <button style="padding:8px 14px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);color:#60a5fa;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap" onclick="responderTicket('${t.email}','${(t.assunto||'').replace(/'/g,"\'")}','${t.id}')">📧 Responder</button>
+      </div>
+
+      <div id="resp-${t.id}" style="display:none;margin-top:12px">
+        <textarea id="ta-${t.id}" placeholder="Digite sua resposta (aparece no app + envia email)..." style="width:100%;height:80px;background:rgba(255,255,255,.05);border:1px solid rgba(96,165,250,.3);border-radius:10px;color:#fff;font-size:13px;padding:10px;font-family:inherit;resize:none;outline:none;margin-bottom:8px"></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="rbtn-${t.id}" onclick="enviarResposta('${t.id}','${t.email}','${(t.assunto||\'\').replace(/\'/g,\"\\\")}')" style="padding:8px 16px;background:rgba(0,216,151,.15);border:1px solid rgba(0,216,151,.4);color:#00D897;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">Enviar no app + email</button>
+          <button onclick="document.getElementById('resp-${t.id}').style.display='none'" style="padding:8px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#94a3b8;border-radius:8px;font-size:12px;cursor:pointer">Cancelar</button>
+        </div>
+        ${t.resposta_admin ? '<div style=\"margin-top:10px;padding:10px;background:rgba(0,216,151,.05);border-radius:8px;border-left:3px solid #00D897\"><div style=\"font-size:10px;color:#00D897;margin-bottom:4px\">RESPOSTA ANTERIOR</div><div style=\"font-size:12px;color:#94a3b8\">' + t.resposta_admin + '</div></div>' : ''}
       </div>
     </div>
   `).join('');
   document.getElementById('ticketsWrap').innerHTML = cards;
 }
 
-function responderTicket(email, assunto){
+function responderTicket(email, assunto, ticketId){
+  if(ticketId){
+    const wrap = document.getElementById('resp-' + ticketId);
+    if(wrap){ wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none'; return; }
+  }
+  const subject = encodeURIComponent('Re: ' + assunto + ' — Painel.IA');
+  const body = encodeURIComponent('Olá,\n\nObrigado por entrar em contato com o Painel.IA.\n\n[Sua resposta aqui]\n\nEquipe Painel.IA');
+  window.location = 'mailto:' + email + '?subject=' + subject + '&body=' + body;
+}
+
+async function enviarResposta(ticketId, email, assunto){
+  const ta = document.getElementById('ta-' + ticketId);
+  const resposta = (ta ? ta.value : '').trim();
+  if(!resposta){ if(ta) ta.style.borderColor='#ef4444'; return; }
+  const btn = document.getElementById('rbtn-' + ticketId);
+  if(btn){ btn.textContent='Enviando...'; btn.disabled=true; }
+  try{
+    await req('/admin/tickets/' + ticketId + '/responder', {method:'POST', body: JSON.stringify({resposta})});
+    const wrap = document.getElementById('resp-' + ticketId);
+    if(wrap) wrap.innerHTML = '<div style="color:#00D897;font-size:13px;padding:12px;background:rgba(0,216,151,.08);border-radius:8px">✅ Resposta enviada — aparece no app do usuário</div>';
+    // Também abre email
+    setTimeout(()=>{ window.location = 'mailto:' + email + '?subject=' + encodeURIComponent('Re: Suporte — Painel.IA') + '&body=' + encodeURIComponent(resposta); }, 500);
+    await carregarTickets();
+  }catch(e){
+    if(btn){ btn.textContent='Enviar no app + email'; btn.disabled=false; }
+  }
+}
+
+function _old_responderTicket(email, assunto){
   // Abre o email com template pré-preenchido
   const subject = encodeURIComponent('Re: ' + assunto + ' — Painel.IA');
   const body = encodeURIComponent('Olá,\n\nObrigado por entrar em contato com o Painel.IA.\n\n[Sua resposta aqui]\n\nEquipe Painel.IA');
@@ -595,6 +633,26 @@ async function resolverTicket(id) {
   } catch(e) {
     alert('Erro: ' + e.message);
   }
+}
+
+// Badge vermelho no Suporte
+function atualizarBadgeSuporte(n){
+  const b = document.getElementById('badge-suporte');
+  if(!b) return;
+  if(n > 0){
+    b.textContent = n > 9 ? '9+' : n;
+    b.style.display = 'inline-flex';
+    document.getElementById('nav-suporte').style.borderTopColor = '#ef4444';
+    document.getElementById('nav-suporte').style.color = '#fca5a5';
+  } else {
+    b.style.display = 'none';
+    document.getElementById('nav-suporte').style.borderTopColor = '';
+    document.getElementById('nav-suporte').style.color = '';
+  }
+}
+function limparBadgeSuporte(){
+  atualizarBadgeSuporte(0);
+  sessionStorage.setItem('suporte_visto', Date.now());
 }
 
 // Inicialização

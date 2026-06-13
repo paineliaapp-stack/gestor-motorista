@@ -359,6 +359,39 @@ async def listar_tickets(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/suporte/respostas/{motorista_id}")
+async def respostas_suporte(motorista_id: str, uid: str = Depends(get_uid_from_token)):
+    """Busca respostas do admin para os tickets do usuário."""
+    if motorista_id != uid:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    try:
+        r = supabase.table("tickets_suporte").select("id,assunto,mensagem,resposta_admin,status,criado_em").eq("motorista_id", motorista_id).order("criado_em", desc=True).limit(10).execute()
+        return {"tickets": r.data or []}
+    except Exception as e:
+        log_erro("respostas_suporte_erro", erro=e)
+        return {"tickets": []}
+
+
+@router.post("/admin/tickets/{ticket_id}/responder")
+async def responder_ticket(ticket_id: str, dados: dict = Body(...), x_admin_token: str = Header(default="")):
+    """Admin responde um ticket — resposta aparece no app do usuário."""
+    if not os.getenv("ADMIN_TOKEN") or x_admin_token != os.getenv("ADMIN_TOKEN"):
+        raise HTTPException(status_code=401, detail="Não autorizado")
+    resposta = (dados.get("resposta") or "").strip()
+    if not resposta:
+        raise HTTPException(status_code=400, detail="Resposta vazia")
+    try:
+        supabase.table("tickets_suporte").update({
+            "resposta_admin": resposta,
+            "status": "respondido",
+            "atualizado_em": _agora().isoformat()
+        }).eq("id", ticket_id).execute()
+        return {"ok": True}
+    except Exception as e:
+        log_erro("responder_ticket_erro", erro=e)
+        return {"ok": False, "erro": str(e)}
+
+
 @router.patch("/admin/tickets/{ticket_id}")
 async def atualizar_ticket(
     ticket_id: str,
