@@ -2,9 +2,10 @@
 import os
 import datetime as _dt
 import httpx as _httpx
-from fastapi import APIRouter, Body, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Query, Request
 from core.supabase_client import supabase
 from core.logging import log_info, log_erro
+from core.security import get_uid_from_token
 
 router = APIRouter()
 
