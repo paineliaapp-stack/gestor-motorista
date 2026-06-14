@@ -1221,7 +1221,26 @@ const _supa = supabase.createClient(
 <div class="toast" id="toast"></div>
 
 <script>
-try{Chart.register(ChartDataLabels);}catch(e){}const API='https://gestor-motorista-production.up.railway.app';
+try{Chart.register(ChartDataLabels);}catch(e){}
+// Plugin de sombra 3D para gráficos de barra — dá volume/profundidade (só em barras)
+const barras3D = {
+  id:'barras3D',
+  beforeDatasetsDraw(chart){
+    const tipo = chart.config.type;
+    if(tipo !== 'bar') return;
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.45)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 4;
+  },
+  afterDatasetsDraw(chart){
+    if(chart.config.type === 'bar') chart.ctx.restore();
+  }
+};
+try{Chart.register(barras3D);}catch(e){}
+const API='https://gestor-motorista-production.up.railway.app';
 
 // Helper global: fetch autenticado — injeta Bearer token em todas as chamadas ao backend
 let _sessionPromise = null;
@@ -1924,8 +1943,8 @@ function renderResumoSemanal(lancamentos) {
               <span style="color:var(--tx)">${k}</span>
               <span><span style="color:${cores[i]};font-weight:600">${fmt(v)}</span>${ganhosSem > 0 ? ` <span style="color:var(--mt);font-size:11px">· ${pctFat}% do que faturou</span>` : ''}</span>
             </div>
-            <div style="background:rgba(255,255,255,.07);border-radius:4px;height:5px">
-              <div style="background:${cores[i]};width:${pct}%;height:5px;border-radius:4px;transition:.4s"></div>
+            <div style="background:rgba(0,0,0,.25);border-radius:999px;height:8px;box-shadow:inset 0 1px 3px rgba(0,0,0,.5)">
+              <div style="background:linear-gradient(180deg,${cores[i]}ee,${cores[i]} 50%,${cores[i]}cc);width:${pct}%;height:8px;border-radius:999px;transition:.4s;box-shadow:0 1px 3px rgba(0,0,0,.35),inset 0 1px 1px rgba(255,255,255,.4)"></div>
             </div>
           </div>`;
         }).join('')}
@@ -2473,7 +2492,16 @@ async function loadDash(){
     document.getElementById('c-despesas').textContent=fmt(d.despesas);
     document.getElementById('c-lucro').textContent=fmt(d.lucro);
     const heroLucro=document.getElementById('hero-lucro');
-    if(heroLucro){heroLucro.textContent=fmt(d.lucro);heroLucro.style.color=d.lucro>=0?'var(--am)':'var(--rd)';}
+    if(heroLucro){
+      heroLucro.textContent=fmt(d.lucro);
+      if(d.lucro>=0){
+        heroLucro.style.color='var(--am)';
+        heroLucro.style.textShadow='0 0 25px rgba(245,166,35,.5), 0 0 50px rgba(245,166,35,.2)';
+      } else {
+        heroLucro.style.color='var(--rd)';
+        heroLucro.style.textShadow='0 0 25px rgba(255,77,106,.5), 0 0 50px rgba(255,77,106,.2)';
+      }
+    }
     const hoje=hojeStr();
     const ganhoHoje=todosLanc.filter(l=>l.data===hoje&&l.tipo==='ganho').reduce((a,l)=>a+parseFloat(l.valor),0);
     const pct=Math.min(100,Math.round(ganhoHoje/META_DIARIA*100));
@@ -2512,19 +2540,6 @@ async function loadDash(){
     const corLucro = '#2ECC8F';
     const corDesp  = '#FF4D6A';
     if(gPizza)gPizza.destroy();
-    // Plugin de sombra: dá profundidade 3D ao donut
-    const sombraDonut = {
-      id:'sombraDonut',
-      beforeDraw(chart){
-        const {ctx}=chart;
-        ctx.save();
-        ctx.shadowColor='rgba(0,0,0,.45)';
-        ctx.shadowBlur=18;
-        ctx.shadowOffsetX=0;
-        ctx.shadowOffsetY=8;
-      },
-      afterDraw(chart){ chart.ctx.restore(); }
-    };
     gPizza=new Chart(document.getElementById('g-pizza'),{
       type:'doughnut',
       data:{
@@ -2532,13 +2547,11 @@ async function loadDash(){
         datasets:[{
           data:[Math.max(0,pctLucro),Math.min(100,pctDesp)],
           backgroundColor:[corLucro, corDesp],
-          borderWidth:3,
-          borderColor:'#0a0c14',
-          hoverOffset:8,
-          borderRadius:4
+          borderWidth:2,
+          borderColor:'#111',
+          hoverOffset:4
         }]
       },
-      plugins:[sombraDonut],
       options:{
         cutout:'68%',
         plugins:{
@@ -2654,7 +2667,7 @@ async function loadDash(){
       const maxV=fontes[0]?.v||1;
       fontes.forEach(f=>{
         const pct=(f.v/totalFontes*100).toFixed(0);
-        lista.innerHTML+=`<div style="display:flex;flex-direction:column;gap:3px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--tx)">${f.e} ${f.n}</span><span style="font-size:12px;font-weight:700;color:var(--tx)">${fmt(f.v)} <span style="color:var(--mt);font-weight:400">${pct}%</span></span></div><div style="background:rgba(255,255,255,.06);border-radius:999px;height:5px;overflow:hidden"><div style="height:5px;border-radius:999px;background:${f.c};width:${(f.v/maxV*100).toFixed(1)}%;transition:width .8s"></div></div></div>`;
+        lista.innerHTML+=`<div style="display:flex;flex-direction:column;gap:3px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--tx)">${f.e} ${f.n}</span><span style="font-size:12px;font-weight:700;color:var(--tx)">${fmt(f.v)} <span style="color:var(--mt);font-weight:400">${pct}%</span></span></div><div style="background:rgba(0,0,0,.25);border-radius:999px;height:8px;overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.5)"><div style="height:8px;border-radius:999px;background:linear-gradient(180deg,${f.c}ee,${f.c} 50%,${f.c}cc);width:${(f.v/maxV*100).toFixed(1)}%;transition:width .8s;box-shadow:0 1px 3px rgba(0,0,0,.35),inset 0 1px 1px rgba(255,255,255,.4)"></div></div></div>`;
       });
     } else if(cardFontes){cardFontes.style.display='none';}
     // Card "Quanto falta faturar" — baseado em CONTAS A PAGAR (não despesas lançadas)
