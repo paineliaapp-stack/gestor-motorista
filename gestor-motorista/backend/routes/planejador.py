@@ -85,10 +85,18 @@ def _sugerir_plano(contas: list[dict], media: float, hoje: _dt.date) -> dict:
     criticas = []
     renegociaveis = []
     
+    # Palavras que indicam conta ESSENCIAL para motorista (nunca renegociar)
+    ESSENCIAIS = ("carro", "veículo", "veiculo", "semanal", "aluguel do carro",
+                  "combustível", "combustivel", "gasolina", "gás", "gas",
+                  "luz", "energia", "água", "agua", "moto", "financiamento")
+    
     for c in contas:
         venc = _dt.date.fromisoformat(str(c["vencimento"])[:10])
         dias_ate_venc = (venc - hoje).days
-        if dias_ate_venc <= 1:  # hoje ou amanhã: não dá pra renegociar
+        desc = (c.get("descricao") or c.get("nome") or "").lower()
+        eh_essencial = any(p in desc for p in ESSENCIAIS)
+        # Essenciais OU que vencem em <=1 dia = críticas (pagar, não mover)
+        if eh_essencial or dias_ate_venc <= 1:
             criticas.append(c)
         else:
             renegociaveis.append(c)
@@ -106,21 +114,35 @@ def _sugerir_plano(contas: list[dict], media: float, hoje: _dt.date) -> dict:
     saldo_acumulado = cap_restante - total_critico
     data_cursor = hoje + _dt.timedelta(days=2)
     
+    # Limite: fim do mês atual (não joga conta pro mês seguinte sem necessidade)
+    if hoje.month == 12:
+        fim_mes = _dt.date(hoje.year, 12, 31)
+    else:
+        fim_mes = _dt.date(hoje.year, hoje.month + 1, 1) - _dt.timedelta(days=1)
+    
     for c in renegociaveis:
         valor = float(c.get("valor") or 0)
-        # Quantos dias trabalhando para acumular esse valor (com 70% do faturamento livre)
-        dias_necessarios = max(1, int(valor / (media * 0.65)) + 1)
+        # Distribui ao longo do mês conforme a capacidade
+        dias_necessarios = max(2, int(valor / (media * 0.5)) + 1)
         nova_data = data_cursor + _dt.timedelta(days=dias_necessarios)
-        data_cursor = nova_data + _dt.timedelta(days=2)  # folga entre contas
+        # NUNCA passa do fim do mês atual
+        if nova_data > fim_mes:
+            nova_data = fim_mes
+        data_cursor = nova_data + _dt.timedelta(days=1)
         
         venc_original = _dt.date.fromisoformat(str(c["vencimento"])[:10])
         prazo_extra = (nova_data - venc_original).days
         
+        # Se não precisa de prazo extra (já cabe), não sugere renegociar
+        if prazo_extra <= 0:
+            criticas.append(c)
+            continue
+        
         plano_renegociado.append({
             **c,
             "nova_data_sugerida": nova_data.isoformat(),
-            "prazo_extra_dias": max(0, prazo_extra),
-            "motivo": f"Mover para {nova_data.strftime('%d/%m')} libera R${media:.0f}/dia para as demais"
+            "prazo_extra_dias": prazo_extra,
+            "motivo": f"Mover para {nova_data.strftime('%d/%m')} libera caixa para as urgentes"
         })
     
     return {
@@ -153,6 +175,12 @@ async def planejador_contas(motorista_id: str, uid: str = Depends(get_uid_from_t
     
     total = sum(float(c.get("valor") or 0) for c in contas)
     
+    # Fim do mês atual (para calcular capacidade real até lá)
+    if hoje.month == 12:
+        fim_mes_data = _dt.date(hoje.year, 12, 31)
+    else:
+        fim_mes_data = _dt.date(hoje.year, hoje.month + 1, 1) - _dt.timedelta(days=1)
+    
     # Calcula necessidade por janela de 30 dias (mais realista)
     hoje_s = hoje.isoformat()
     fim_30d = (hoje + _dt.timedelta(days=30)).isoformat()
@@ -166,19 +194,27 @@ async def planejador_contas(motorista_id: str, uid: str = Depends(get_uid_from_t
     total_7d = sum(float(c.get("valor") or 0) for c in contas_7d)
     necessidade_7d = total_7d / 7 if total_7d > 0 else 0
     
-    # Decide a situação
+    # Capacidade até o fim do mês: quantos dias úteis restam × média
+    dias_restantes_mes = (fim_mes_data - hoje).days + 1 if 'fim_mes_data' in dir() else 30
+    capacidade_mes = media * dias_restantes_mes
+    
+    # Decide a situação considerando o MÊS INTEIRO, não só 7 dias
     if media <= 0:
         situacao = "sem_dados"
         mensagem = "Registre seus ganhos por alguns dias para eu calcular seu faturamento médio e criar um plano."
-    elif necessidade_7d <= media * 1.1:
+    elif capacidade_mes >= total_30d and necessidade_7d <= media * 1.2:
         situacao = "ok"
-        mensagem = f"Tá tranquilo! Com sua média de R${media:.0f}/dia você consegue pagar tudo nos prazos atuais."
+        mensagem = f"Tá tranquilo! Com sua média de R${media:.0f}/dia você cobre tudo até o fim do mês."
+    elif capacidade_mes >= total_30d:
+        # Dá pra pagar no mês, mas os prazos próximos apertam — só reorganizar
+        situacao = "atencao"
+        mensagem = f"Você fatura o suficiente no mês (R${capacidade_mes:.0f}), mas algumas contas vencem muito juntas. Reorganizando os prazos, dá pra pagar tudo sem aperto."
     elif necessidade_7d <= media * 1.5:
         situacao = "atencao"
-        mensagem = f"Atenção: você precisa faturar R${necessidade_7d:.0f}/dia nos próximos 7 dias. Sua média é R${media:.0f}/dia. Dá pra fazer, mas vai precisar de um bom ritmo."
+        mensagem = f"Atenção: os próximos 7 dias pedem R${necessidade_7d:.0f}/dia e sua média é R${media:.0f}/dia. Dá pra fazer com um bom ritmo, ou pedindo prazo em algumas."
     else:
         situacao = "critico"
-        mensagem = f"Os prazos atuais pedem R${necessidade_7d:.0f}/dia, mas sua média é R${media:.0f}/dia — inviável sem renegociar alguns prazos."
+        mensagem = f"Os prazos atuais pedem R${necessidade_7d:.0f}/dia, mas sua média é R${media:.0f}/dia. Vale pedir prazo nas contas não-essenciais para reorganizar."
     
     plano = _sugerir_plano(contas, media, hoje) if situacao in ("critico", "atencao") else {"criticas": contas_7d, "renegociaveis": [], "total_critico": total_7d, "total_renegociavel": 0}
     

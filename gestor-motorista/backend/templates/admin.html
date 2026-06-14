@@ -159,6 +159,7 @@ tr:hover td { background: #1e2240; }
         <div class="card"><div class="lbl">Expirados</div><div class="val r" id="m-exp">—</div></div>
         <div class="card"><div class="lbl">Sem assinatura</div><div class="val p" id="m-sem">—</div></div>
         <div class="card"><div class="lbl">Receita real</div><div class="val g" id="m-receita">—</div></div>
+        <div class="card"><div class="lbl">Custo API (est.)</div><div class="val" style="color:#fbbf24" id="m-custo-api">—</div></div>
         <div class="card"><div class="lbl">Novos 7 dias</div><div class="val b" id="m-novos">—</div></div>
         <div class="card"><div class="lbl">Fundadores (usadas)</div><div class="val y" id="m-vagas">—</div></div>
         <div class="card"><div class="lbl">Total lançamentos</div><div class="val b" id="m-lanc">—</div></div>
@@ -278,14 +279,17 @@ function entrar() {
 }
 
 async function req(path, opts = {}) {
+  const baseHeaders = { 'X-Admin-Token': ADMIN_TOKEN, 'Content-Type': 'application/json' };
   const r = await fetch(path, {
-    headers: { 'X-Admin-Token': ADMIN_TOKEN, 'Content-Type': 'application/json' },
-    ...opts
+    ...opts,
+    headers: { ...baseHeaders, ...(opts.headers||{}) }
   });
   if (r.status === 401 || r.status === 403) {
     document.getElementById('app').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('loginErr').style.display = 'block';
+    const errEl = document.getElementById('loginErr');
+    errEl.style.display = 'block';
+    errEl.textContent = 'Token incorreto OU ADMIN_TOKEN não configurado no servidor (Railway → Variables).';
     throw new Error('Não autorizado');
   }
   if (!r.ok) {
@@ -320,6 +324,9 @@ async function carregarTudo() {
   document.getElementById('m-exp').textContent     = m.expirados ?? '—';
   document.getElementById('m-sem').textContent     = m.sem_assinatura ?? '—';
   document.getElementById('m-receita').textContent = 'R$ ' + (Number(m.receita_total) || 0).toFixed(2);
+  // Custo estimado de API (se o elemento existir)
+  const custoEl = document.getElementById('m-custo-api');
+  if(custoEl) custoEl.textContent = 'R$ ' + (Number(m.custo_api_estimado) || 0).toFixed(2);
   document.getElementById('m-novos').textContent   = m.novos_7_dias ?? '—';
   const usadas = (m.vagas_fundador_total ?? 50) - (m.vagas_fundador_restantes ?? 50);
   document.getElementById('m-vagas').textContent = usadas + ' / ' + (m.vagas_fundador_total ?? 50);
@@ -344,8 +351,8 @@ function renderTopUsuarios(top) {
     <tr>
       <td style="color:#fbbf24;font-weight:700;width:32px">${medalha}</td>
       <td style="color:#60a5fa">${u.email || '—'}</td>
-      <td style="color:#a78bfa;font-weight:600">${apiCalls > 0 ? apiCalls+' chamadas IA' : lanc+' lançamentos'}</td>
-      <td style="color:rgba(255,255,255,.3);font-size:11px">${apiCalls > 0 ? lanc+' lanç.' : ''}</td>
+      <td style="color:#a78bfa;font-weight:600">${apiCalls > 0 ? apiCalls+' chamadas' : lanc+' lanç.'}</td>
+      <td style="color:#fbbf24;font-size:12px">${u.custo_estimado != null && u.custo_estimado > 0 ? 'R$ '+u.custo_estimado.toFixed(2) : '—'}</td>
     </tr>`;
   }).join('');
   el.innerHTML = `<table><tbody>${rows}</tbody></table>`;
