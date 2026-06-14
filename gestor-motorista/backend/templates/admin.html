@@ -434,6 +434,7 @@ function renderTabela() {
         <div>✅ Setup: <span style="color:${u.setup_completo?'#4ade80':'#f87171'}">${u.setup_completo?'Sim':'Não'}</span></div>
         <div style="grid-column:1/-1">🔵 Última atividade: <span style="color:#60a5fa">${fmtDataHora(u.ultimo_lancamento)}</span></div>
       </div>
+      ${renderSemana(u)}
       <div style="display:flex;gap:8px">
         <button style="flex:1;padding:9px;border-radius:10px;border:none;background:#16a34a;color:#fff;font-size:0.82rem;font-weight:700;cursor:pointer" onclick="abrirModal('${u.id}','${esc(u.email)}','${esc(u.nome)}','liberar')">✅ Liberar</button>
         <button style="flex:1;padding:9px;border-radius:10px;border:none;background:#991b1b;color:#fff;font-size:0.82rem;font-weight:700;cursor:pointer" onclick="abrirModal('${u.id}','${esc(u.email)}','${esc(u.nome)}','bloquear')">🚫 Bloquear</button>
@@ -541,6 +542,36 @@ function fmtData(iso) {
   const dt = new Date(s);
   if (isNaN(dt.getTime())) return '—';
   return dt.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}) + ' ' + dt.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
+}
+
+function renderSemana(u){
+  const s = u.semana || {ganho_atual:0,despesa_atual:0,ganho_pass:0,despesa_pass:0};
+  const fmt = v => 'R$ ' + (Number(v)||0).toFixed(0);
+  // Variação de gasto entre semanas
+  const varGasto = s.despesa_pass > 0 ? Math.round(((s.despesa_atual - s.despesa_pass)/s.despesa_pass)*100) : 0;
+  const varCor = varGasto > 0 ? '#f87171' : '#4ade80';
+  const varTxt = s.despesa_pass > 0 ? (varGasto > 0 ? '+' : '') + varGasto + '%' : '—';
+  const apiTxt = u.chamadas_api > 0 ? u.chamadas_api + ' chamadas · ' + fmt(u.custo_api) : 'sem uso de IA';
+  return `
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:8px">📊 Atividade semanal</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.72rem">
+        <div style="background:rgba(0,0,0,.2);border-radius:8px;padding:8px">
+          <div style="color:#64748b;margin-bottom:3px">Esta semana</div>
+          <div style="color:#4ade80">↑ ${fmt(s.ganho_atual)}</div>
+          <div style="color:#f87171">↓ ${fmt(s.despesa_atual)}</div>
+        </div>
+        <div style="background:rgba(0,0,0,.2);border-radius:8px;padding:8px">
+          <div style="color:#64748b;margin-bottom:3px">Semana passada</div>
+          <div style="color:#4ade80;opacity:.7">↑ ${fmt(s.ganho_pass)}</div>
+          <div style="color:#f87171;opacity:.7">↓ ${fmt(s.despesa_pass)}</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:0.7rem;color:#94a3b8">
+        <span>Gasto vs semana passada: <b style="color:${varCor}">${varTxt}</b></span>
+      </div>
+      <div style="margin-top:6px;font-size:0.7rem;color:#a78bfa">🤖 Custo IA: ${apiTxt}</div>
+    </div>`;
 }
 
 function fmtDataHora(iso) {

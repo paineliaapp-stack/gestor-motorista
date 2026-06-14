@@ -210,17 +210,55 @@ async def usuarios(
         mot = supabase.table("motoristas").select("id,nome,setup_completo,meta_diaria").execute()
         mot_map = {r["id"]: r for r in (mot.data or [])}
 
-        # Contagem de lançamentos + data do último por motorista
-        lanc = supabase.table("lancamentos").select("motorista_id,data,created_at").order("created_at", desc=True).execute()
+        # Uso de API por motorista (tabela uso_api, se existir)
+        api_uso_map = {}
+        try:
+            _api = supabase.table("uso_api").select("motorista_id,chamadas").execute()
+            for r in (_api.data or []):
+                mid = r.get("motorista_id")
+                if mid:
+                    api_uso_map[mid] = api_uso_map.get(mid, 0) + int(r.get("chamadas") or 0)
+        except Exception:
+            pass
+
+        # Lançamentos: contagem, último, e atividade por semana (atual vs passada)
+        import datetime as __dt
+        hoje_d = (__dt.datetime.utcnow() - __dt.timedelta(hours=3)).date()
+        # Segunda-feira da semana atual
+        ini_semana_atual = hoje_d - __dt.timedelta(days=hoje_d.weekday())
+        ini_semana_passada = ini_semana_atual - __dt.timedelta(days=7)
+        fim_semana_passada = ini_semana_atual - __dt.timedelta(days=1)
+        s_atual = ini_semana_atual.isoformat()
+        s_pass_ini = ini_semana_passada.isoformat()
+        s_pass_fim = fim_semana_passada.isoformat()
+
+        lanc = supabase.table("lancamentos").select("motorista_id,data,created_at,valor,tipo").order("created_at", desc=True).execute()
         uso_map = {}
-        ultimo_map = {}  # motorista_id -> created_at do último lançamento
+        ultimo_map = {}
+        # Por usuário: {ganho_atual, despesa_atual, ganho_pass, despesa_pass}
+        semana_map = {}
         for l in (lanc.data or []):
             mid = l.get("motorista_id")
-            if mid:
-                uso_map[mid] = uso_map.get(mid, 0) + 1
-                # Como está ordenado desc, o primeiro que aparece é o mais recente
-                if mid not in ultimo_map:
-                    ultimo_map[mid] = l.get("created_at") or l.get("data")
+            if not mid:
+                continue
+            uso_map[mid] = uso_map.get(mid, 0) + 1
+            if mid not in ultimo_map:
+                ultimo_map[mid] = l.get("created_at") or l.get("data")
+            # Atividade semanal
+            d = str(l.get("data", ""))[:10]
+            if mid not in semana_map:
+                semana_map[mid] = {"ganho_atual": 0.0, "despesa_atual": 0.0, "ganho_pass": 0.0, "despesa_pass": 0.0}
+            try:
+                val = float(l.get("valor") or 0)
+            except Exception:
+                val = 0.0
+            tipo = l.get("tipo")
+            if d >= s_atual:
+                if tipo == "ganho": semana_map[mid]["ganho_atual"] += val
+                else: semana_map[mid]["despesa_atual"] += val
+            elif s_pass_ini <= d <= s_pass_fim:
+                if tipo == "ganho": semana_map[mid]["ganho_pass"] += val
+                else: semana_map[mid]["despesa_pass"] += val
 
         ass = supabase.table("assinaturas").select(
             "motorista_id,status,plano_id,trial_inicio,trial_fim,periodo_fim,email_pagamento,criado_em"
@@ -250,6 +288,9 @@ async def usuarios(
                 "meta_diaria":   m.get("meta_diaria"),
                 "lancamentos":   uso_map.get(uid, 0),
                 "ultimo_lancamento": ultimo_map.get(uid),
+                "semana": semana_map.get(uid, {"ganho_atual":0,"despesa_atual":0,"ganho_pass":0,"despesa_pass":0}),
+                "chamadas_api": api_uso_map.get(uid, 0) if 'api_uso_map' in dir() else 0,
+                "custo_api": round((api_uso_map.get(uid, 0) if 'api_uso_map' in dir() else 0) * 0.03, 2),
             })
 
         out.sort(key=lambda x: x.get("lancamentos", 0), reverse=True)
