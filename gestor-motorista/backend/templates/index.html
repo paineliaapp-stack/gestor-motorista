@@ -2951,13 +2951,17 @@ async function loadHist(tipo){
       const sinal=l.tipo==='ganho'?'+':'-';
       const plat=l.plataforma?l.plataforma.charAt(0).toUpperCase()+l.plataforma.slice(1):'';
       const data=l.data?l.data.split('-').reverse().join('/'):'';
-      // Horário do registro (do created_at, ajustado para Brasília UTC-3)
+      // Horário do registro (created_at ou criado_em, ajustado para Brasília UTC-3)
       let hora='';
-      if(l.created_at){
+      const _ts = l.created_at || l.criado_em || l.inserted_at;
+      if(_ts){
         try{
-          const dt=new Date(l.created_at);
-          const dtBR=new Date(dt.getTime()-3*3600000);
-          hora=' · '+String(dtBR.getUTCHours()).padStart(2,'0')+'h'+String(dtBR.getUTCMinutes()).padStart(2,'0');
+          let dt=new Date(_ts);
+          if(isNaN(dt.getTime()) && typeof _ts==='string') dt=new Date(_ts.replace(' ','T')+(_ts.includes('Z')||_ts.includes('+')?'':'Z'));
+          if(!isNaN(dt.getTime())){
+            const dtBR=new Date(dt.getTime()-3*3600000);
+            hora=' · '+String(dtBR.getUTCHours()).padStart(2,'0')+'h'+String(dtBR.getUTCMinutes()).padStart(2,'0');
+          }
         }catch(e){}
       }
       const div=document.createElement('div');div.className='li';div.innerHTML='<div class="li-icon" style="background:'+bg+'">'+c.e+'</div><div class="li-info"><div class="li-cat">'+c.n+'</div><div class="li-meta">'+data+(plat?' · '+plat:'')+'</div></div><div class="li-val" style="color:'+cor+'">'+sinal+fmt(l.valor)+'</div>';const btn=document.createElement('button');btn.textContent='🗑';btn.style='margin-left:12px;background:none;border:none;color:rgba(255,77,106,.5);cursor:pointer;font-size:16px;padding:4px';btn.onclick=()=>deletar(l.id);div.appendChild(btn);el.appendChild(div);
