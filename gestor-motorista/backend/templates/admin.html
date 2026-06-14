@@ -7,12 +7,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.32.0/dist/globe.gl.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { overflow-x: hidden; }
 body {
-  font-family: 'Rajdhani', -apple-system, sans-serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   background: #04060d;
   color: #c8d4e8;
   min-height: 100vh;
@@ -32,14 +32,14 @@ body::before {
 
 .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; position:relative; z-index:1; }
 .login-box { background: rgba(13,20,40,.7); backdrop-filter: blur(20px); border: 1px solid rgba(79,107,255,.3); border-radius: 18px; padding: 44px; width: 380px; text-align: center; box-shadow: 0 0 60px rgba(79,107,255,.15); }
-.login-box h1 { font-family:'Orbitron',sans-serif; font-size: 1.4rem; margin-bottom: 8px; color:#fff; letter-spacing:1px; }
+.login-box h1 { font-family:'Space Grotesk',sans-serif; font-size: 1.4rem; margin-bottom: 8px; color:#fff; letter-spacing:1px; }
 .login-box p { color: #6b7da3; font-size: 0.9rem; margin-bottom: 24px; }
-.login-box input { width: 100%; background: rgba(4,6,13,.8); border: 1px solid rgba(79,107,255,.3); border-radius: 10px; padding: 13px 16px; color: #e2e8f0; font-size: 1rem; margin-bottom: 12px; font-family:'Rajdhani',sans-serif; }
+.login-box input { width: 100%; background: rgba(4,6,13,.8); border: 1px solid rgba(79,107,255,.3); border-radius: 10px; padding: 13px 16px; color: #e2e8f0; font-size: 1rem; margin-bottom: 12px; font-family:'Inter',sans-serif; }
 .login-box input:focus { outline: none; border-color: #4f6bff; box-shadow:0 0 0 3px rgba(79,107,255,.15); }
 
 .app { display: none; position:relative; z-index:1; }
 .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 210px; background: linear-gradient(180deg, rgba(8,13,28,.95), rgba(6,9,20,.95)); backdrop-filter: blur(20px); border-right: 1px solid rgba(79,107,255,.15); padding: 24px 0; z-index: 10; }
-.sidebar .logo { padding: 0 22px 22px; font-family:'Orbitron',sans-serif; font-size: 1.05rem; font-weight: 800; color: #fff; border-bottom: 1px solid rgba(79,107,255,.15); margin-bottom: 18px; letter-spacing:1px; text-shadow:0 0 20px rgba(79,107,255,.5); }
+.sidebar .logo { padding: 0 22px 22px; font-family:'Space Grotesk',sans-serif; font-size: 1.05rem; font-weight: 800; color: #fff; border-bottom: 1px solid rgba(79,107,255,.15); margin-bottom: 18px; letter-spacing:1px; text-shadow:0 0 20px rgba(79,107,255,.5); }
 .nav-item { display: flex; align-items: center; gap: 11px; padding: 12px 22px; cursor: pointer; color: #6b7da3; font-size: 0.92rem; font-weight:600; transition: all .2s; border-left: 3px solid transparent; letter-spacing:.3px; }
 .nav-item:hover { color: #e2e8f0; background: rgba(79,107,255,.06); }
 .nav-item.ativo { color: #fff; background: linear-gradient(90deg, rgba(79,107,255,.15), transparent); border-left-color: #4f6bff; box-shadow: inset 0 0 30px rgba(79,107,255,.1); }
@@ -49,7 +49,7 @@ body::before {
 .page.ativo { display: block; }
 
 .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 26px; }
-.page-header h1 { font-family:'Orbitron',sans-serif; font-size: 1.5rem; color: #fff; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; }
+.page-header h1 { font-family:'Space Grotesk',sans-serif; font-size: 1.5rem; color: #fff; font-weight:800; letter-spacing:.5px; text-transform:uppercase; }
 .page-header .sub { font-size: 0.82rem; color: #4a5a7a; margin-top: 4px; font-family:monospace; letter-spacing:.5px; }
 
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 28px; }
@@ -69,14 +69,14 @@ body::before {
 .card:hover { border-color: rgba(79,107,255,.45); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(79,107,255,.12); }
 .card:hover::before { opacity:1; }
 .card .lbl { font-size: 0.68rem; color: #5a6b8c; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px; font-weight:600; }
-.card .val { font-family:'Orbitron',sans-serif; font-size: 1.9rem; font-weight: 800; color: #fff; line-height: 1; text-shadow:0 0 25px rgba(255,255,255,.15); }
+.card .val { font-family:'Space Grotesk',sans-serif; font-size: 1.9rem; font-weight: 800; color: #fff; line-height: 1; text-shadow:0 0 25px rgba(255,255,255,.15); }
 .card .val.g { color: #34f5a0; text-shadow:0 0 25px rgba(52,245,160,.4); }
 .card .val.b { color: #5b9dff; text-shadow:0 0 25px rgba(91,157,255,.4); }
 .card .val.y { color: #ffc24b; text-shadow:0 0 25px rgba(255,194,75,.4); }
 .card .val.r { color: #ff5e7e; text-shadow:0 0 25px rgba(255,94,126,.4); }
 .card .val.p { color: #b98aff; text-shadow:0 0 25px rgba(185,138,255,.4); }
 
-.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 9px; border: none; cursor: pointer; font-size: 0.88rem; font-weight: 700; font-family:'Rajdhani',sans-serif; letter-spacing:.5px; transition: all .2s; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 9px; border: none; cursor: pointer; font-size: 0.88rem; font-weight: 700; font-family:'Inter',sans-serif; letter-spacing:.5px; transition: all .2s; }
 .btn:hover { transform:translateY(-1px); }
 .btn:disabled { opacity: .4; cursor: not-allowed; }
 .btn-primary { background: linear-gradient(135deg,#4f6bff,#6366f1); color: #fff; box-shadow:0 4px 16px rgba(79,107,255,.3); }
@@ -88,7 +88,7 @@ body::before {
 
 .table-wrap { background: linear-gradient(145deg, rgba(13,22,46,.5), rgba(8,13,28,.5)); backdrop-filter:blur(12px); border: 1px solid rgba(79,107,255,.18); border-radius: 14px; overflow: hidden; }
 .table-toolbar { display: flex; align-items: center; gap: 10px; padding: 16px; border-bottom: 1px solid rgba(79,107,255,.12); flex-wrap: wrap; }
-.search-input { background: rgba(4,6,13,.7); border: 1px solid rgba(79,107,255,.25); border-radius: 9px; padding: 9px 14px; color: #e2e8f0; font-size: 0.9rem; width: 260px; font-family:'Rajdhani',sans-serif; }
+.search-input { background: rgba(4,6,13,.7); border: 1px solid rgba(79,107,255,.25); border-radius: 9px; padding: 9px 14px; color: #e2e8f0; font-size: 0.9rem; width: 260px; font-family:'Inter',sans-serif; }
 .search-input:focus { outline: none; border-color: #4f6bff; box-shadow:0 0 0 3px rgba(79,107,255,.12); }
 .filter-btn { background: rgba(4,6,13,.6); border: 1px solid rgba(79,107,255,.2); border-radius: 8px; padding: 7px 14px; color: #6b7da3; font-size: 0.82rem; font-weight:600; cursor: pointer; transition: all .2s; }
 .filter-btn:hover { border-color:rgba(79,107,255,.4); color:#c8d4e8; }
@@ -110,11 +110,11 @@ tr:hover td { background: rgba(79,107,255,.05); }
 .modal-bg { position: fixed; inset: 0; background: rgba(4,6,13,.8); backdrop-filter:blur(6px); display: none; align-items: center; justify-content: center; z-index: 100; }
 .modal-bg.open { display: flex; }
 .modal { background: linear-gradient(145deg, rgba(13,22,46,.95), rgba(8,13,28,.95)); border: 1px solid rgba(79,107,255,.35); border-radius: 18px; padding: 30px; width: 460px; max-width: 95vw; box-shadow:0 0 80px rgba(79,107,255,.2); }
-.modal h2 { font-family:'Orbitron',sans-serif; font-size: 1.15rem; margin-bottom: 6px; color:#fff; letter-spacing:.5px; }
+.modal h2 { font-family:'Space Grotesk',sans-serif; font-size: 1.15rem; margin-bottom: 6px; color:#fff; letter-spacing:.5px; }
 .modal .sub { font-size: 0.85rem; color: #6b7da3; margin-bottom: 20px; }
 .form-group { margin-bottom: 14px; }
 .form-group label { display: block; font-size: 0.78rem; color: #6b7da3; margin-bottom: 6px; font-weight:600; }
-.form-group select, .form-group input { width: 100%; background: rgba(4,6,13,.7); border: 1px solid rgba(79,107,255,.25); border-radius: 9px; padding: 10px 13px; color: #e2e8f0; font-size: 0.92rem; font-family:'Rajdhani',sans-serif; }
+.form-group select, .form-group input { width: 100%; background: rgba(4,6,13,.7); border: 1px solid rgba(79,107,255,.25); border-radius: 9px; padding: 10px 13px; color: #e2e8f0; font-size: 0.92rem; font-family:'Inter',sans-serif; }
 .form-group select:focus, .form-group input:focus { outline: none; border-color: #4f6bff; }
 .modal-footer { display: flex; gap: 10px; margin-top: 22px; justify-content: flex-end; }
 .msg { padding: 10px 14px; border-radius: 9px; font-size: 0.85rem; margin-top: 12px; }
@@ -133,7 +133,7 @@ tr:hover td { background: rgba(79,107,255,.05); }
   .login-box { width: 90%; padding: 30px 22px; }
 }
 
-.info-dot { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%; background:rgba(79,107,255,.18); color:#8aa0d0; font-size:10px; font-weight:700; margin-left:6px; cursor:pointer; vertical-align:middle; font-family:'Rajdhani',sans-serif; }
+.info-dot { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%; background:rgba(79,107,255,.18); color:#8aa0d0; font-size:10px; font-weight:700; margin-left:6px; cursor:pointer; vertical-align:middle; font-family:'Inter',sans-serif; }
 .info-dot:hover { background:rgba(79,107,255,.4); color:#fff; }
 .card { position:relative; }
 .info-pop { position:absolute; top:100%; left:0; right:0; z-index:50; margin-top:4px; background:rgba(13,22,46,.97); backdrop-filter:blur(12px); border:1px solid rgba(79,107,255,.4); border-radius:10px; padding:11px 13px; font-size:11px; line-height:1.5; color:#c8d4e8; box-shadow:0 8px 30px rgba(0,0,0,.6); display:none; text-align:left; font-weight:400; text-transform:none; letter-spacing:0; }
@@ -178,7 +178,7 @@ tr:hover td { background: rgba(79,107,255,.05); }
       <div style="background:radial-gradient(ellipse at 50% 0%, #0d1b3a 0%, #060912 70%);border:1px solid rgba(99,102,241,.25);border-radius:18px;padding:18px;margin-bottom:24px;position:relative;overflow:hidden">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:10px;position:relative;z-index:2">
           <div>
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#fff">🌐 Mapa de Comando</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#fff">🌐 Mapa de Comando</div>
             <div style="font-size:11px;color:#64748b;letter-spacing:.5px">arraste para girar · scroll para zoom · clique numa cidade</div>
           </div>
           <div style="display:flex;gap:16px;font-size:12px;flex-wrap:wrap">
@@ -208,7 +208,15 @@ tr:hover td { background: rgba(79,107,255,.05); }
       </div>
       <!-- Top usuários -->
       <div class="table-wrap" style="margin-bottom:24px">
-        <div style="padding:14px 16px;border-bottom:1px solid #1e2435;font-size:0.85rem;font-weight:600;color:#fff">🏆 Mais ativos (por uso da IA)</div>
+        <div style="padding:14px 16px;border-bottom:1px solid #1e2435;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <span style="font-size:0.85rem;font-weight:600;color:#fff">🏆 Mais ativos (por uso da IA)</span>
+          <div style="display:flex;gap:6px">
+            <button class="filter-btn ativo" id="perTotal" onclick="mudarPeriodoRanking('total',this)">Total</button>
+            <button class="filter-btn" id="perMes" onclick="mudarPeriodoRanking('mes',this)">Mês</button>
+            <button class="filter-btn" id="perSemana" onclick="mudarPeriodoRanking('semana',this)">Semana</button>
+            <button class="filter-btn" id="perDia" onclick="mudarPeriodoRanking('dia',this)">Hoje</button>
+          </div>
+        </div>
         <div id="topUsuariosWrap"><div class="loading"><div class="spin"></div></div></div>
       </div>
     </div>
@@ -515,9 +523,27 @@ async function carregarTudo() {
   renderTopUsuarios(m.top_usuarios || []);
 }
 
+let _periodoRanking = 'total';
+async function mudarPeriodoRanking(p, btn){
+  _periodoRanking = p;
+  ['perTotal','perMes','perSemana','perDia'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.classList.remove('ativo');
+  });
+  if(btn) btn.classList.add('ativo');
+  // Recarrega só o ranking com o novo período
+  const el = document.getElementById('topUsuariosWrap');
+  el.innerHTML = '<div class="loading"><div class="spin"></div></div>';
+  try{
+    const m = await req('/admin/metricas?periodo='+p);
+    renderTopUsuarios(m.top_usuarios || []);
+  }catch(e){ el.innerHTML = '<div class="empty">Erro ao carregar</div>'; }
+}
+
 function renderTopUsuarios(top) {
   const el = document.getElementById('topUsuariosWrap');
   if (!top.length) { el.innerHTML = '<div class="empty">Nenhum uso ainda</div>'; return; }
+  const labelPer = {total:'desde sempre', mes:'este mês', semana:'esta semana', dia:'hoje'}[_periodoRanking] || '';
   const rows = top.map((u, i) => {
     const medalha = ['🥇','🥈','🥉','4°','5°','6°','7°','8°'][i] || (i+1)+'°';
     const apiCalls = (u.chamadas_api ?? 0);
@@ -530,7 +556,7 @@ function renderTopUsuarios(top) {
       <td style="color:#fbbf24;font-size:12px">${u.custo_estimado != null && u.custo_estimado > 0 ? 'R$ '+u.custo_estimado.toFixed(2) : '—'}</td>
     </tr>`;
   }).join('');
-  el.innerHTML = `<table><tbody>${rows}</tbody></table>`;
+  el.innerHTML = `<div style="padding:8px 16px;font-size:11px;color:#5a6b8c;text-transform:uppercase;letter-spacing:.05em">Período: ${labelPer}</div><table><tbody>${rows}</tbody></table>`;
 }
 
 async function carregarUsuarios() {
@@ -748,7 +774,7 @@ async function carregarMarketing(){
 
     wrap.innerHTML = `
       <!-- MÉTRICAS DE RECEITA -->
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:1px;color:#5b9dff;margin-bottom:12px;font-weight:700">📈 Receita</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:1px;color:#5b9dff;margin-bottom:12px;font-weight:700">📈 Receita</div>
       <div class="cards">
         ${metCard('mrr', fmt(m.mrr), 'g')}
         ${metCard('arr', fmt(m.arr), 'g')}
@@ -757,7 +783,7 @@ async function carregarMarketing(){
       </div>
 
       <!-- MÉTRICAS DE AQUISIÇÃO -->
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:1px;color:#b98aff;margin:24px 0 12px;font-weight:700">🎯 Aquisição & Retenção</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:1px;color:#b98aff;margin:24px 0 12px;font-weight:700">🎯 Aquisição & Retenção</div>
       <div class="cards">
         ${metCard('cac', fmt(m.cac), 'y')}
         ${metCard('ltv', fmt(m.ltv), 'g')}
@@ -770,7 +796,7 @@ async function carregarMarketing(){
       </div>
 
       <!-- INVESTIMENTO -->
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:1px;color:#ffc24b;margin:24px 0 12px;font-weight:700">💸 Investimento em Marketing</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:1px;color:#ffc24b;margin:24px 0 12px;font-weight:700">💸 Investimento em Marketing</div>
       <div class="cards">
         <div class="card"><div class="lbl">Total investido</div><div class="val y">${fmt(d.total_invest)}</div></div>
         <div class="card"><div class="lbl">Investido este mês</div><div class="val y">${fmt(d.invest_mes)}</div></div>
@@ -852,13 +878,13 @@ async function removerInvest(id){
 
 
 async function removerUsuario(id, email){
-  const c1 = confirm('⚠️ ATENÇÃO: isso vai APAGAR PERMANENTEMENTE todos os dados de ' + email + ' (lançamentos, contas, assinatura, histórico).\n\nEssa ação NÃO pode ser desfeita. Continuar?');
+  const c1 = confirm('⚠️ Remover ' + email + '?\n\nTodos os dados (lançamentos, contas, assinatura) serão apagados, MAS ficam guardados na lixeira e podem ser recuperados depois. Continuar?');
   if(!c1) return;
   const digite = prompt('Para confirmar, digite REMOVER (em maiúsculas):');
   if(digite !== 'REMOVER'){ alert('Cancelado — você não digitou REMOVER.'); return; }
   try{
     await req('/admin/remover-usuario', {method:'POST', body: JSON.stringify({motorista_id: id})});
-    alert('✅ Usuário removido. Todos os dados foram apagados.');
+    alert('✅ Usuário removido e arquivado na lixeira. Você pode recuperá-lo se precisar.');
     await carregarUsuarios();
     await carregarTudo();
   }catch(e){

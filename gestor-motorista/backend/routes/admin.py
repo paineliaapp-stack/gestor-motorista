@@ -221,7 +221,7 @@ async def marketing_remover(inv_id: str, x_admin_token: str = Header(default="")
 
 
 @router.get("/admin/metricas")
-async def metricas(x_admin_token: str = Header(default="")):
+async def metricas(x_admin_token: str = Header(default=""), periodo: str = Query(default="total")):
     _check(x_admin_token)
     out = {
         "total_usuarios": 0, "em_trial": 0, "ativos": 0,
@@ -311,14 +311,27 @@ async def metricas(x_admin_token: str = Header(default="")):
             pass
 
         # Uso de API REAL (chamadas Gemini) — o que importa pro custo
+        # Filtro de período para o ranking: dia, semana, mes ou total
+        _hoje_p = (_dt.datetime.utcnow() - _dt.timedelta(hours=3)).date()
+        if periodo == "dia":
+            _ini_p = _hoje_p.isoformat()
+        elif periodo == "semana":
+            _ini_p = (_hoje_p - _dt.timedelta(days=_hoje_p.weekday())).isoformat()
+        elif periodo == "mes":
+            _ini_p = _hoje_p.replace(day=1).isoformat()
+        else:
+            _ini_p = None  # total
         api_uso = {}
         try:
-            ua = supabase.table("uso_api").select("motorista_id,chamadas").execute()
+            ua = supabase.table("uso_api").select("motorista_id,chamadas,data").execute()
             for r in (ua.data or []):
+                if _ini_p and str(r.get("data",""))[:10] < _ini_p:
+                    continue
                 k = r["motorista_id"]
                 api_uso[k] = api_uso.get(k, 0) + int(r.get("chamadas") or 0)
         except Exception:
             pass
+        out["periodo"] = periodo
         out["total_chamadas_api"] = sum(api_uso.values())
         # Contagem de lançamentos por origem (chat vs manual)
         try:
@@ -493,30 +506,92 @@ async def buscar_usuario(request: Request, email: str = ""):
 
 @router.post("/admin/remover-usuario")
 async def remover_usuario(request: Request, dados: dict = Body(...)):
-    """Remove COMPLETAMENTE um usuário: lançamentos, contas, assinaturas, turnos, etc.
-    Ação irreversível — usar com cuidado. Não apaga a conta de auth (Google), mas zera todos os dados."""
+    """Remove um usuário, mas ARQUIVA todos os dados na lixeira (usuarios_removidos)
+    para possível recuperação. Não apaga a conta de auth (Google)."""
     tok = request.headers.get("X-Admin-Token", "")
     _check(tok)
     mid = dados.get("motorista_id") or dados.get("id")
     if not mid:
         raise HTTPException(status_code=400, detail="motorista_id obrigatório")
-    apagados = {}
-    # Apaga de todas as tabelas relacionadas
-    for tabela in ["lancamentos", "contas", "assinaturas", "turnos", "metas_dia", "uso_api",
-                   "tickets_suporte", "plano_compromissos", "pagamentos", "metas"]:
+
+    tabelas = ["lancamentos", "contas", "assinaturas", "turnos", "metas_dia", "uso_api",
+               "tickets_suporte", "plano_compromissos", "pagamentos", "metas", "motoristas"]
+
+    # 1. ARQUIVA: lê todos os dados do usuário antes de apagar
+    arquivo = {}
+    email = ""
+    for tabela in tabelas:
         try:
-            r = supabase.table(tabela).delete().eq("motorista_id", mid).execute()
+            campo = "id" if tabela == "motoristas" else "motorista_id"
+            r = supabase.table(tabela).select("*").eq(campo, mid).execute()
+            arquivo[tabela] = r.data or []
+            if tabela == "motoristas" and r.data:
+                email = r.data[0].get("email") or r.data[0].get("nome") or ""
+        except Exception:
+            arquivo[tabela] = []
+    # Salva o snapshot na lixeira
+    try:
+        supabase.table("usuarios_removidos").insert({
+            "motorista_id": mid, "email": email, "dados": arquivo
+        }).execute()
+    except Exception as e:
+        log_erro("arquivar_usuario_erro", erro=e)
+
+    # 2. APAGA das tabelas operacionais
+    apagados = {}
+    for tabela in tabelas:
+        try:
+            campo = "id" if tabela == "motoristas" else "motorista_id"
+            r = supabase.table(tabela).delete().eq(campo, mid).execute()
             apagados[tabela] = len(r.data or [])
         except Exception:
             pass
-    # Apaga o registro do motorista por último (FK)
-    try:
-        supabase.table("motoristas").delete().eq("id", mid).execute()
-        apagados["motoristas"] = 1
-    except Exception:
-        pass
     log_info("admin_remover_usuario", mid=mid[:8], apagados=str(apagados))
-    return {"ok": True, "apagados": apagados}
+    return {"ok": True, "apagados": apagados, "arquivado": True}
+
+
+@router.get("/admin/lixeira")
+async def lixeira_listar(x_admin_token: str = Header(default="")):
+    """Lista usuários removidos (recuperáveis)."""
+    _check(x_admin_token)
+    try:
+        r = supabase.table("usuarios_removidos").select("id,motorista_id,email,removido_em").order("removido_em", desc=True).execute()
+        return {"ok": True, "removidos": r.data or []}
+    except Exception:
+        return {"ok": False, "removidos": []}
+
+
+@router.post("/admin/restaurar-usuario")
+async def restaurar_usuario(dados: dict = Body(...), x_admin_token: str = Header(default="")):
+    """Restaura um usuário da lixeira de volta para as tabelas operacionais."""
+    _check(x_admin_token)
+    arq_id = dados.get("arquivo_id")
+    if not arq_id:
+        raise HTTPException(status_code=400, detail="arquivo_id obrigatório")
+    try:
+        r = supabase.table("usuarios_removidos").select("*").eq("id", arq_id).execute()
+        if not r.data:
+            return {"ok": False, "erro": "Arquivo não encontrado"}
+        arquivo = r.data[0].get("dados") or {}
+        restaurados = {}
+        # Reinsere motoristas primeiro (FK), depois o resto
+        ordem = ["motoristas", "assinaturas", "lancamentos", "contas", "turnos", "metas_dia",
+                 "uso_api", "tickets_suporte", "plano_compromissos", "pagamentos", "metas"]
+        for tabela in ordem:
+            linhas = arquivo.get(tabela) or []
+            if linhas:
+                try:
+                    supabase.table(tabela).insert(linhas).execute()
+                    restaurados[tabela] = len(linhas)
+                except Exception:
+                    pass
+        # Remove da lixeira
+        supabase.table("usuarios_removidos").delete().eq("id", arq_id).execute()
+        log_info("admin_restaurar_usuario", arq=arq_id[:8])
+        return {"ok": True, "restaurados": restaurados}
+    except Exception as e:
+        log_erro("restaurar_usuario_erro", erro=e)
+        return {"ok": False}
 
 
 @router.post("/admin/liberar")
