@@ -91,3 +91,26 @@ def buscar_motorista(telefone: str, uid: str = Depends(get_uid_from_token)):
     if str(res.data[0].get("id")) != uid:
         raise HTTPException(status_code=403, detail="Acesso negado")
     return res.data[0]
+
+
+@router.post("/salvar-localizacao")
+async def salvar_localizacao(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    """Salva lat/lon e cidade do motorista (capturado via clima) para o mapa do admin."""
+    lat = dados.get("lat")
+    lon = dados.get("lon")
+    cidade = dados.get("cidade")
+    estado = dados.get("estado")
+    if lat is None or lon is None:
+        return {"ok": False, "erro": "lat/lon obrigatórios"}
+    try:
+        upd = {
+            "lat": round(float(lat), 4),
+            "lon": round(float(lon), 4),
+        }
+        if cidade: upd["cidade"] = cidade
+        if estado: upd["estado"] = estado
+        supabase.table("motoristas").update(upd).eq("id", uid).execute()
+        return {"ok": True}
+    except Exception as e:
+        log_erro("salvar_localizacao_erro", erro=e)
+        return {"ok": False}

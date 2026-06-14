@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Painel.IA — Admin</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/globe.gl@2.32.0/dist/globe.gl.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { overflow-x: hidden; }
@@ -159,6 +161,24 @@ tr:hover td { background: #1e2240; }
         <div><h1>Dashboard</h1><div class="sub" id="ultimaAtualizacao"></div></div>
         <button class="btn btn-gray btn-sm" onclick="carregarTudo()">↻ Atualizar</button>
       </div>
+
+      <!-- GLOBO 3D DE USUÁRIOS -->
+      <div style="background:radial-gradient(ellipse at 50% 0%, #0d1b3a 0%, #060912 70%);border:1px solid rgba(99,102,241,.25);border-radius:18px;padding:18px;margin-bottom:24px;position:relative;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:10px;position:relative;z-index:2">
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#fff">🌐 Mapa de Comando</div>
+            <div style="font-size:11px;color:#64748b;letter-spacing:.5px">arraste para girar · scroll para zoom · clique numa cidade</div>
+          </div>
+          <div style="display:flex;gap:16px;font-size:12px;flex-wrap:wrap">
+            <span style="color:#4ade80">● <b id="mapa-com-loc">0</b> localizados</span>
+            <span style="color:#64748b">○ <b id="mapa-sem-loc">0</b> sem GPS</span>
+          </div>
+        </div>
+        <div id="globo-usuarios" style="width:100%;height:460px;position:relative;z-index:1;cursor:grab"></div>
+        <div id="globo-info" style="position:absolute;bottom:18px;left:18px;z-index:3;background:rgba(13,27,58,.85);backdrop-filter:blur(10px);border:1px solid rgba(99,102,241,.3);border-radius:12px;padding:12px 16px;font-size:13px;color:#fff;display:none;max-width:240px"></div>
+        <div id="globo-ranking" style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;font-size:12px;position:relative;z-index:2"></div>
+      </div>
+
       <div class="cards">
         <div class="card"><div class="lbl">Total usuários<span class="info-dot" onclick="_toggleInfo(this)">i</span></div><div class="info-pop">Total de pessoas cadastradas no app desde o início (inclui trial, ativos e inativos).</div><div class="val b" id="m-total">—</div></div>
         <div class="card"><div class="lbl">Em trial<span class="info-dot" onclick="_toggleInfo(this)">i</span></div><div class="info-pop">Usuários no período de teste grátis de 24h que ainda não assinaram.</div><div class="val y" id="m-trial">—</div></div>
@@ -334,8 +354,85 @@ async function iniciar() {
   try { carregarUsuarios(); } catch(e) { console.error('usuários:', e); }
 }
 
+
+// ════ GLOBO 3D DE USUÁRIOS (estilo dashboard de comando) ════
+let _globoInstance = null;
+async function carregarGlobo(){
+  try{
+    const d = await req('/admin/mapa-usuarios');
+    document.getElementById('mapa-com-loc').textContent = d.total_com_localizacao || 0;
+    document.getElementById('mapa-sem-loc').textContent = d.total_sem_localizacao || 0;
+    const pontos = d.pontos || [];
+
+    // Ranking de cidades (top 5)
+    const rk = document.getElementById('globo-ranking');
+    if(rk){
+      rk.innerHTML = pontos.slice(0,5).map((p,i)=>{
+        const medalhas = ['🥇','🥈','🥉','4º','5º'];
+        return `<div style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25);border-radius:20px;padding:5px 12px;color:#c7d2fe">
+          ${medalhas[i]} ${p.cidade}${p.estado?'/'+p.estado:''} · <b style="color:#fff">${p.total}</b></div>`;
+      }).join('') || '<span style="color:#64748b">Nenhum usuário com localização ainda. Os dados aparecem conforme os usuários abrem o app e permitem localização.</span>';
+    }
+
+    const el = document.getElementById('globo-usuarios');
+    if(!el || typeof Globe === 'undefined') return;
+
+    // Cor por densidade
+    const maxT = Math.max(...pontos.map(p=>p.total), 1);
+    const ptData = pontos.map(p=>({
+      lat: p.lat, lng: p.lon,
+      size: 0.3 + (p.total/maxT)*1.2,
+      color: p.total >= maxT*0.66 ? '#ff4d6a' : (p.total >= maxT*0.33 ? '#f5a623' : '#4ade80'),
+      cidade: p.cidade, estado: p.estado, total: p.total
+    }));
+
+    if(_globoInstance){
+      _globoInstance.pointsData(ptData);
+      return;
+    }
+
+    _globoInstance = Globe()(el)
+      .globeImageUrl('https://unpkg.com/three-globe@2.31.0/example/img/earth-night.jpg')
+      .bumpImageUrl('https://unpkg.com/three-globe@2.31.0/example/img/earth-topology.png')
+      .backgroundColor('rgba(0,0,0,0)')
+      .atmosphereColor('#4f6bff')
+      .atmosphereAltitude(0.18)
+      .pointsData(ptData)
+      .pointLat('lat').pointLng('lng')
+      .pointColor('color')
+      .pointAltitude(d=>d.size*0.08)
+      .pointRadius(d=>0.4 + d.size*0.3)
+      .pointLabel(d=>`<div style="background:#0d1b3a;border:1px solid #4f6bff;border-radius:8px;padding:6px 10px;color:#fff;font-size:12px"><b>${d.cidade}${d.estado?'/'+d.estado:''}</b><br>${d.total} usuário${d.total>1?'s':''}</div>`)
+      .onPointClick(d=>{
+        const info = document.getElementById('globo-info');
+        if(info){
+          info.style.display='block';
+          info.innerHTML = `<div style="font-size:15px;font-weight:700;margin-bottom:4px">📍 ${d.cidade}${d.estado?'/'+d.estado:''}</div><div style="color:#a5b4fc">${d.total} usuário${d.total>1?'s':''} aqui</div>`;
+        }
+        _globoInstance.pointOfView({lat:d.lat, lng:d.lng, altitude:1.5}, 1000);
+      });
+
+    // Tamanho responsivo
+    const w = el.clientWidth;
+    _globoInstance.width(w).height(460);
+
+    // Auto-rotação suave
+    _globoInstance.controls().autoRotate = true;
+    _globoInstance.controls().autoRotateSpeed = 0.5;
+
+    // Centraliza no Brasil (maioria dos usuários)
+    _globoInstance.pointOfView({lat:-15, lng:-50, altitude:2}, 0);
+
+    // Redimensiona ao mudar a janela
+    window.addEventListener('resize', ()=>{
+      if(_globoInstance) _globoInstance.width(el.clientWidth);
+    });
+  }catch(e){ console.warn('globo:', e); }
+}
+
 async function carregarTudo() {
   const m = await req('/admin/metricas');
+  carregarGlobo();
   document.getElementById('m-total').textContent   = m.total_usuarios ?? '—';
   document.getElementById('m-trial').textContent   = m.em_trial ?? '—';
   document.getElementById('m-ativos').textContent  = m.ativos ?? '—';

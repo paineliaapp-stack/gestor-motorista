@@ -67,6 +67,42 @@ async def diag_token(x_admin_token: str = Header(default="")):
     }
 
 
+@router.get("/admin/mapa-usuarios")
+async def mapa_usuarios(x_admin_token: str = Header(default="")):
+    """Agrega usuários por cidade/coordenada para o mapa do admin."""
+    _check(x_admin_token)
+    try:
+        mot = supabase.table("motoristas").select("id,cidade,estado,lat,lon").execute()
+        # Agrupa por cidade
+        cidades = {}
+        com_loc = 0
+        for m in (mot.data or []):
+            if m.get("lat") is None or m.get("lon") is None:
+                continue
+            com_loc += 1
+            cidade = (m.get("cidade") or "Desconhecida").strip()
+            key = cidade
+            if key not in cidades:
+                cidades[key] = {
+                    "cidade": cidade,
+                    "estado": m.get("estado") or "",
+                    "lat": float(m["lat"]),
+                    "lon": float(m["lon"]),
+                    "total": 0
+                }
+            cidades[key]["total"] += 1
+        pontos = sorted(cidades.values(), key=lambda x: x["total"], reverse=True)
+        return {
+            "ok": True,
+            "total_com_localizacao": com_loc,
+            "total_sem_localizacao": len(mot.data or []) - com_loc,
+            "pontos": pontos
+        }
+    except Exception as e:
+        log_erro("mapa_usuarios_erro", erro=e)
+        return {"ok": False, "pontos": []}
+
+
 @router.get("/admin/metricas")
 async def metricas(x_admin_token: str = Header(default="")):
     _check(x_admin_token)

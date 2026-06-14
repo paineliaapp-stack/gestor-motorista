@@ -5902,6 +5902,14 @@ async function carregarClima(){
         const r = await authFetch(API+`/api/weather?lat=${pos.coords.latitude.toFixed(3)}&lon=${pos.coords.longitude.toFixed(3)}`);
         if(!r || !r.ok) return;
         const d = await r.json();
+        // Salva a localização no perfil (1x por sessão) para o mapa do admin
+        if(!sessionStorage.getItem('locSalva')){
+          sessionStorage.setItem('locSalva','1');
+          authFetch(API+'/salvar-localizacao', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({lat: pos.coords.latitude, lon: pos.coords.longitude, cidade: d.cidade || '', estado: d.estado || ''})
+          }).catch(()=>{});
+        }
         if(!d.ok || !d.chuva_36h || !d.janelas.length) return;
         const j = d.janelas[0];
         // Cruza com a média do dia da semana do próprio motorista, se já carregada
