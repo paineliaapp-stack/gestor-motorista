@@ -2431,7 +2431,18 @@ async function loadDash(){
     if(el) el.style.display='none';
   });
   // Verifica contas vencendo + pré-carrega para meta mensal
-  authFetch(API+'/contas/'+MID).then(r=>r.json()).then(c=>{window._contas=c;alertaContasVencendo(c);try{renderMetaMensal();}catch(e){}}).catch(()=>{});
+  authFetch(API+'/contas/'+MID).then(r=>r.json()).then(c=>{
+    window._contas=c;
+    alertaContasVencendo(c);
+    // Atualiza card "Contas a pagar" no topo
+    const pendentes = c.filter(x=>!x.pago);
+    const totalPend = pendentes.reduce((s,x)=>s+Math.max(0,parseFloat(x.valor)-parseFloat(x.valor_pago||0)),0);
+    const elPend = document.getElementById('c-contas-pend');
+    if(elPend){
+      elPend.textContent = 'R$ '+totalPend.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    }
+    try{renderMetaMensal();}catch(e){}
+  }).catch(()=>{});
   try{
     const r=await authFetch(API+'/resumo/'+MID);
     const d=await r.json();
