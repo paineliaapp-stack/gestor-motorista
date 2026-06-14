@@ -587,7 +587,7 @@ function renderTickets() {
       <div id="resp-${t.id}" style="display:none;margin-top:12px">
         <textarea id="ta-${t.id}" placeholder="Digite sua resposta (aparece no app + envia email)..." style="width:100%;height:80px;background:rgba(255,255,255,.05);border:1px solid rgba(96,165,250,.3);border-radius:10px;color:#fff;font-size:13px;padding:10px;font-family:inherit;resize:none;outline:none;margin-bottom:8px"></textarea>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button id="rbtn-${t.id}" onclick="enviarResposta('${t.id}','${t.email}','${(t.assunto||\'\').replace(/\'/g,\"\\\")}')" style="padding:8px 16px;background:rgba(0,216,151,.15);border:1px solid rgba(0,216,151,.4);color:#00D897;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">Enviar no app + email</button>
+          <button id="rbtn-${t.id}" onclick="enviarResposta('${t.id}','${t.email}')" style="padding:8px 16px;background:rgba(0,216,151,.15);border:1px solid rgba(0,216,151,.4);color:#00D897;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">Enviar no app + email</button>
           <button onclick="document.getElementById('resp-${t.id}').style.display='none'" style="padding:8px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#94a3b8;border-radius:8px;font-size:12px;cursor:pointer">Cancelar</button>
         </div>
         ${t.resposta_admin ? '<div style=\"margin-top:10px;padding:10px;background:rgba(0,216,151,.05);border-radius:8px;border-left:3px solid #00D897\"><div style=\"font-size:10px;color:#00D897;margin-bottom:4px\">RESPOSTA ANTERIOR</div><div style=\"font-size:12px;color:#94a3b8\">' + t.resposta_admin + '</div></div>' : ''}
