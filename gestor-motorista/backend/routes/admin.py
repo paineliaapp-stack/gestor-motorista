@@ -103,6 +103,123 @@ async def mapa_usuarios(x_admin_token: str = Header(default="")):
         return {"ok": False, "pontos": []}
 
 
+# ═══════════════ MARKETING & MÉTRICAS DE NEGÓCIO ═══════════════
+
+@router.get("/admin/marketing")
+async def marketing_listar(x_admin_token: str = Header(default="")):
+    """Lista investimentos de marketing + métricas de SaaS (CAC, LTV, churn, MRR, ROI, etc)."""
+    _check(x_admin_token)
+    hoje = (_dt.datetime.utcnow() - _dt.timedelta(hours=3)).date()
+    ini_mes = hoje.replace(day=1).isoformat()
+    out = {"investimentos": [], "total_invest": 0.0, "invest_mes": 0.0, "por_categoria": {}, "metricas": {}}
+
+    # 1. Investimentos
+    try:
+        inv = supabase.table("marketing_investimentos").select("*").order("data", desc=True).execute()
+        for r in (inv.data or []):
+            v = float(r.get("valor") or 0)
+            out["investimentos"].append({
+                "id": r.get("id"), "data": r.get("data"), "categoria": r.get("categoria"),
+                "valor": v, "descricao": r.get("descricao") or ""
+            })
+            out["total_invest"] += v
+            if str(r.get("data", ""))[:10] >= ini_mes:
+                out["invest_mes"] += v
+            cat = r.get("categoria") or "Outros"
+            out["por_categoria"][cat] = out["por_categoria"].get(cat, 0) + v
+    except Exception as e:
+        log_erro("marketing_listar_erro", erro=e)
+
+    # 2. Dados para métricas de SaaS
+    try:
+        ass = supabase.table("assinaturas").select("status,plano_id,mp_subscription_id,criado_em").execute()
+        precos = {"fundador": 19.0, "pro": 29.0}
+        clientes_pagantes = [r for r in (ass.data or []) if r.get("status") == "ativo" and r.get("mp_subscription_id")]
+        n_pagantes = len(clientes_pagantes)
+        mrr = sum(precos.get(r.get("plano_id", ""), 0) for r in clientes_pagantes)
+        # Churn: cancelados/expirados sobre o total que já foi ativo
+        n_expirados = sum(1 for r in (ass.data or []) if r.get("status") in ("expirado", "cancelado", "bloqueado"))
+        base_ativa = n_pagantes + n_expirados
+        churn = round((n_expirados / base_ativa * 100), 1) if base_ativa > 0 else 0.0
+
+        total_invest = out["total_invest"]
+        # CAC = total investido / nº de clientes adquiridos (pagantes)
+        cac = round(total_invest / n_pagantes, 2) if n_pagantes > 0 else 0.0
+        # Ticket médio mensal
+        ticket = round(mrr / n_pagantes, 2) if n_pagantes > 0 else 0.0
+        # Tempo de vida médio (meses) = 1/churn mensal. Se churn 0, assume 24 meses (estimativa conservadora)
+        churn_frac = churn / 100 if churn > 0 else (1/24)
+        vida_meses = round(1 / churn_frac, 1) if churn_frac > 0 else 24.0
+        # LTV = ticket médio × tempo de vida
+        ltv = round(ticket * vida_meses, 2)
+        # ROI = (receita gerada - investimento) / investimento
+        receita_total_estimada = mrr * vida_meses  # receita projetada da base atual
+        roi = round(((receita_total_estimada - total_invest) / total_invest * 100), 1) if total_invest > 0 else 0.0
+        # Payback (meses para recuperar o CAC)
+        payback = round(cac / ticket, 1) if ticket > 0 else 0.0
+        # LTV/CAC ratio (saudável > 3)
+        ltv_cac = round(ltv / cac, 1) if cac > 0 else 0.0
+        # ARPU (receita média por usuário, incluindo não-pagantes)
+        total_users = len(ass.data or [])
+        arpu = round(mrr / total_users, 2) if total_users > 0 else 0.0
+        # Taxa de conversão trial→pago
+        n_trial = sum(1 for r in (ass.data or []) if r.get("status") == "trial")
+        conv = round((n_pagantes / (n_pagantes + n_trial + n_expirados) * 100), 1) if (n_pagantes + n_trial + n_expirados) > 0 else 0.0
+
+        out["metricas"] = {
+            "mrr": round(mrr, 2),
+            "arr": round(mrr * 12, 2),
+            "clientes_pagantes": n_pagantes,
+            "cac": cac,
+            "ltv": ltv,
+            "ltv_cac": ltv_cac,
+            "churn": churn,
+            "ticket_medio": ticket,
+            "arpu": arpu,
+            "roi": roi,
+            "payback": payback,
+            "vida_meses": vida_meses,
+            "conversao": conv,
+        }
+    except Exception as e:
+        log_erro("marketing_metricas_erro", erro=e)
+
+    out["total_invest"] = round(out["total_invest"], 2)
+    out["invest_mes"] = round(out["invest_mes"], 2)
+    return out
+
+
+@router.post("/admin/marketing")
+async def marketing_adicionar(dados: dict = Body(...), x_admin_token: str = Header(default="")):
+    """Registra um novo investimento de marketing."""
+    _check(x_admin_token)
+    data = dados.get("data") or (_dt.datetime.utcnow() - _dt.timedelta(hours=3)).date().isoformat()
+    categoria = (dados.get("categoria") or "Outros").strip()
+    valor = dados.get("valor")
+    descricao = (dados.get("descricao") or "").strip()
+    if valor is None:
+        raise HTTPException(status_code=400, detail="valor obrigatório")
+    try:
+        supabase.table("marketing_investimentos").insert({
+            "data": data, "categoria": categoria, "valor": float(valor), "descricao": descricao
+        }).execute()
+        return {"ok": True}
+    except Exception as e:
+        log_erro("marketing_add_erro", erro=e)
+        return {"ok": False}
+
+
+@router.delete("/admin/marketing/{inv_id}")
+async def marketing_remover(inv_id: str, x_admin_token: str = Header(default="")):
+    """Remove um investimento de marketing."""
+    _check(x_admin_token)
+    try:
+        supabase.table("marketing_investimentos").delete().eq("id", inv_id).execute()
+        return {"ok": True}
+    except Exception:
+        return {"ok": False}
+
+
 @router.get("/admin/metricas")
 async def metricas(x_admin_token: str = Header(default="")):
     _check(x_admin_token)

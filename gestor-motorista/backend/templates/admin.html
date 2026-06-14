@@ -161,6 +161,7 @@ tr:hover td { background: rgba(79,107,255,.05); }
     <div class="nav-item ativo" onclick="irPara('pg-dashboard',this)"><span class="icon">📊</span> Dashboard</div>
     <div class="nav-item" onclick="irPara('pg-usuarios',this)"><span class="icon">👥</span> Usuários</div>
     <div class="nav-item" onclick="irPara('pg-remarketing',this)"><span class="icon">📧</span> Remarketing</div>
+    <div class="nav-item" onclick="irPara('pg-marketing',this);carregarMarketing()"><span class="icon">💰</span> Marketing</div>
     <div class="nav-item" id="nav-suporte" onclick="irPara('pg-suporte',this);limparBadgeSuporte()"><span class="icon">🎫</span> Suporte<span id="badge-suporte" style="display:none;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;margin-left:auto;flex-shrink:0" id="badge-suporte">0</span></div>
   </div>
 
@@ -248,6 +249,17 @@ tr:hover td { background: rgba(79,107,255,.05); }
       </div>
     </div>
 
+    <!-- MARKETING & MÉTRICAS DE NEGÓCIO -->
+    <div class="page" id="pg-marketing">
+      <div class="page-header">
+        <div><h1>Marketing & Vendas</h1><div class="sub">Investimentos e métricas do negócio</div></div>
+        <button class="btn btn-primary btn-sm" onclick="abrirModalInvest()">+ Registrar gasto</button>
+      </div>
+      <div id="marketingWrap">
+        <div class="loading"><div class="spin"></div> Carregando...</div>
+      </div>
+    </div>
+
     <!-- SUPORTE -->
     <div class="page" id="pg-suporte">
       <div class="page-header">
@@ -298,6 +310,40 @@ tr:hover td { background: rgba(79,107,255,.05); }
     <div class="modal-footer">
       <button class="btn btn-gray" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" id="modalConfirmar" onclick="confirmarAcao()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalInvestBg" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <h2>Registrar gasto de marketing</h2>
+    <div class="sub">Tráfego pago, influencer, ou qualquer investimento</div>
+    <div class="form-group">
+      <label>Data</label>
+      <input type="date" id="inv-data">
+    </div>
+    <div class="form-group">
+      <label>Categoria</label>
+      <select id="inv-categoria">
+        <option value="Tráfego pago">🎯 Tráfego pago (Meta, Google)</option>
+        <option value="Influencer">⭐ Influencer / Criador</option>
+        <option value="Conteúdo">📹 Conteúdo / Produção</option>
+        <option value="Ferramentas">🛠 Ferramentas / Software</option>
+        <option value="Indicação">🤝 Programa de indicação</option>
+        <option value="Outros">📦 Outros</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Valor (R$)</label>
+      <input type="number" id="inv-valor" placeholder="0,00" step="0.01" min="0">
+    </div>
+    <div class="form-group">
+      <label>Descrição (opcional)</label>
+      <input type="text" id="inv-desc" placeholder="Ex: campanha story @fulano">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="document.getElementById('modalInvestBg').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarInvest()">Salvar gasto</button>
     </div>
   </div>
 </div>
@@ -655,6 +701,155 @@ function fmtData(iso) {
   if (isNaN(dt.getTime())) return '—';
   return dt.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}) + ' ' + dt.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
 }
+
+// ═══════════════ MARKETING & MÉTRICAS DE NEGÓCIO ═══════════════
+const _SIGLAS = {
+  mrr: ['MRR', 'Monthly Recurring Revenue — Receita Recorrente Mensal. Soma das assinaturas ativas pagantes por mês. É o coração de um negócio de assinatura.'],
+  arr: ['ARR', 'Annual Recurring Revenue — Receita Recorrente Anual. É o MRR × 12, ou seja, quanto você fatura em um ano se a base atual se mantiver.'],
+  cac: ['CAC', 'Custo de Aquisição de Cliente. Quanto você gasta em marketing para conquistar 1 cliente pagante. Fórmula: total investido ÷ nº de clientes. Quanto menor, melhor.'],
+  ltv: ['LTV', 'Lifetime Value — Valor do Tempo de Vida. Quanto um cliente gera de receita durante todo o tempo que fica com você. Fórmula: ticket médio × meses de permanência.'],
+  ltv_cac: ['LTV/CAC', 'Razão entre o valor do cliente e o custo de adquiri-lo. Acima de 3 é saudável (você ganha 3× o que gastou para trazer o cliente). Abaixo de 1 você perde dinheiro.'],
+  churn: ['CHURN', 'Taxa de cancelamento. Percentual de clientes que deixam de pagar. Quanto menor, melhor — churn alto significa que você precisa correr só para repor quem sai.'],
+  ticket_medio: ['TICKET MÉDIO', 'Valor médio que cada cliente paga por mês. Fórmula: MRR ÷ nº de pagantes.'],
+  arpu: ['ARPU', 'Average Revenue Per User — Receita Média por Usuário. Diferente do ticket, considera TODOS os usuários (incluindo os que não pagam). Mostra o quanto cada cadastro vale em média.'],
+  roi: ['ROI', 'Return On Investment — Retorno sobre Investimento. Quanto você ganhou em relação ao que investiu, em %. ROI de 200% significa que cada R$1 investido virou R$3.'],
+  payback: ['PAYBACK', 'Tempo (em meses) para recuperar o CAC de um cliente. Se o payback é 2 meses, depois desse tempo o cliente passa a dar lucro.'],
+  conversao: ['CONVERSÃO', 'Percentual de usuários que viraram pagantes (de trial/cadastro para assinatura paga). Mede a eficiência do seu funil.'],
+  vida_meses: ['TEMPO DE VIDA', 'Quantos meses, em média, um cliente permanece pagando antes de cancelar. Calculado a partir do churn.'],
+};
+
+async function carregarMarketing(){
+  const wrap = document.getElementById('marketingWrap');
+  try{
+    const d = await req('/admin/marketing');
+    const m = d.metricas || {};
+    const fmt = v => 'R$ ' + (Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const fmtNum = v => (Number(v)||0).toLocaleString('pt-BR');
+
+    // Card de métrica com bolinha de info
+    const metCard = (key, valor, cor) => {
+      const [sigla, desc] = _SIGLAS[key] || [key, ''];
+      return `<div class="card">
+        <div class="lbl">${sigla}<span class="info-dot" onclick="_toggleInfo(this)">i</span></div>
+        <div class="info-pop">${desc}</div>
+        <div class="val ${cor}">${valor}</div>
+      </div>`;
+    };
+
+    // Saúde do LTV/CAC
+    const ltvCacCor = (m.ltv_cac >= 3) ? 'g' : (m.ltv_cac >= 1 ? 'y' : 'r');
+    const churnCor = (m.churn <= 5) ? 'g' : (m.churn <= 15 ? 'y' : 'r');
+    const roiCor = (m.roi >= 0) ? 'g' : 'r';
+
+    // Investimentos por categoria
+    const catEntries = Object.entries(d.por_categoria || {}).sort((a,b)=>b[1]-a[1]);
+    const totalCat = catEntries.reduce((s,[,v])=>s+v,0) || 1;
+    const coresCat = ['#5b9dff','#b98aff','#34f5a0','#ffc24b','#ff5e7e','#22d3ee'];
+
+    wrap.innerHTML = `
+      <!-- MÉTRICAS DE RECEITA -->
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:1px;color:#5b9dff;margin-bottom:12px;font-weight:700">📈 Receita</div>
+      <div class="cards">
+        ${metCard('mrr', fmt(m.mrr), 'g')}
+        ${metCard('arr', fmt(m.arr), 'g')}
+        ${metCard('ticket_medio', fmt(m.ticket_medio), 'b')}
+        ${metCard('arpu', fmt(m.arpu), 'b')}
+      </div>
+
+      <!-- MÉTRICAS DE AQUISIÇÃO -->
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:1px;color:#b98aff;margin:24px 0 12px;font-weight:700">🎯 Aquisição & Retenção</div>
+      <div class="cards">
+        ${metCard('cac', fmt(m.cac), 'y')}
+        ${metCard('ltv', fmt(m.ltv), 'g')}
+        ${metCard('ltv_cac', (m.ltv_cac||0)+'x', ltvCacCor)}
+        ${metCard('churn', (m.churn||0)+'%', churnCor)}
+        ${metCard('payback', (m.payback||0)+' meses', 'b')}
+        ${metCard('conversao', (m.conversao||0)+'%', 'p')}
+        ${metCard('vida_meses', (m.vida_meses||0)+' meses', 'b')}
+        ${metCard('roi', (m.roi||0)+'%', roiCor)}
+      </div>
+
+      <!-- INVESTIMENTO -->
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:1px;color:#ffc24b;margin:24px 0 12px;font-weight:700">💸 Investimento em Marketing</div>
+      <div class="cards">
+        <div class="card"><div class="lbl">Total investido</div><div class="val y">${fmt(d.total_invest)}</div></div>
+        <div class="card"><div class="lbl">Investido este mês</div><div class="val y">${fmt(d.invest_mes)}</div></div>
+        <div class="card"><div class="lbl">Clientes pagantes</div><div class="val g">${fmtNum(m.clientes_pagantes)}</div></div>
+      </div>
+
+      ${catEntries.length ? `
+      <div class="table-wrap" style="margin-top:16px;padding:18px">
+        <div style="font-size:0.8rem;color:#5a6b8c;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;font-weight:700">Por categoria</div>
+        ${catEntries.map(([cat,v],i)=>{
+          const pct = Math.round(v/totalCat*100);
+          const cor = coresCat[i%coresCat.length];
+          return `<div style="margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:5px">
+              <span style="color:#c8d4e8;font-weight:600">${cat}</span>
+              <span><b style="color:${cor}">${fmt(v)}</b> <span style="color:#5a6b8c;font-size:0.8rem">· ${pct}%</span></span>
+            </div>
+            <div style="background:rgba(79,107,255,.1);border-radius:5px;height:7px;overflow:hidden">
+              <div style="background:${cor};width:${pct}%;height:7px;border-radius:5px;box-shadow:0 0 12px ${cor}"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>` : ''}
+
+      <!-- LISTA DE GASTOS -->
+      <div class="table-wrap" style="margin-top:16px">
+        <div class="table-toolbar"><b style="color:#c8d4e8;font-size:0.9rem">Histórico de gastos</b></div>
+        <table>
+          <thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th style="text-align:right">Valor</th><th></th></tr></thead>
+          <tbody>
+            ${(d.investimentos||[]).length ? d.investimentos.map(inv=>`
+              <tr>
+                <td style="color:#8aa0d0;white-space:nowrap">${_fmtData(inv.data)}</td>
+                <td><span class="badge" style="background:rgba(91,157,255,.12);color:#5b9dff;border:1px solid rgba(91,157,255,.3)">${inv.categoria}</span></td>
+                <td style="color:#9cb0d4">${inv.descricao||'—'}</td>
+                <td style="text-align:right;color:#ffc24b;font-weight:700;white-space:nowrap">${fmt(inv.valor)}</td>
+                <td style="text-align:right"><button onclick="removerInvest('${inv.id}')" style="background:none;border:none;color:#ff5e7e;cursor:pointer;font-size:1rem">🗑️</button></td>
+              </tr>`).join('') : '<tr><td colspan="5" class="empty">Nenhum gasto registrado ainda. Clique em "+ Registrar gasto".</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }catch(e){
+    wrap.innerHTML = '<div class="empty">Erro ao carregar. Rode a migration 008_marketing.sql no Supabase.</div>';
+  }
+}
+
+function _fmtData(d){
+  if(!d) return '—';
+  const p = String(d).slice(0,10).split('-');
+  return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : d;
+}
+
+function abrirModalInvest(){
+  const hoje = new Date().toISOString().slice(0,10);
+  const m = document.getElementById('modal-invest');
+  if(m){ document.getElementById('inv-data').value = hoje; document.getElementById('modalInvestBg').classList.add('open'); }
+}
+
+async function salvarInvest(){
+  const data = document.getElementById('inv-data').value;
+  const categoria = document.getElementById('inv-categoria').value;
+  const valor = parseFloat(document.getElementById('inv-valor').value);
+  const descricao = document.getElementById('inv-desc').value;
+  if(!valor || valor <= 0){ alert('Informe um valor válido.'); return; }
+  try{
+    await req('/admin/marketing', {method:'POST', body: JSON.stringify({data, categoria, valor, descricao})});
+    document.getElementById('modalInvestBg').classList.remove('open');
+    document.getElementById('inv-valor').value = '';
+    document.getElementById('inv-desc').value = '';
+    await carregarMarketing();
+  }catch(e){ alert('Erro ao salvar.'); }
+}
+
+async function removerInvest(id){
+  if(!confirm('Remover este gasto?')) return;
+  try{ await req('/admin/marketing/'+id, {method:'DELETE'}); await carregarMarketing(); }catch(e){}
+}
+
 
 async function removerUsuario(id, email){
   const c1 = confirm('⚠️ ATENÇÃO: isso vai APAGAR PERMANENTEMENTE todos os dados de ' + email + ' (lançamentos, contas, assinatura, histórico).\n\nEssa ação NÃO pode ser desfeita. Continuar?');
