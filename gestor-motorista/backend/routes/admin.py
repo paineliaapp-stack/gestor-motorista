@@ -164,7 +164,7 @@ async def metricas(x_admin_token: str = Header(default="")):
         except Exception:
             pass
         out["total_chamadas_api"] = sum(api_uso.values())
-        # Custo estimado: ~R$0,03 por chamada (referência Gemini flash — ajustar com valor real depois)
+        # Custo estimado: ~R$0,01 por chamada (Gemini 2.5 Flash real, conservador)
         CUSTO_POR_CHAMADA = 0.01  # Gemini 2.5 Flash: ~$0,0019/chamada (~R$0,01). Conservador.
         out["custo_api_estimado"] = round(sum(api_uso.values()) * CUSTO_POR_CHAMADA, 2)
 
@@ -175,7 +175,7 @@ async def metricas(x_admin_token: str = Header(default="")):
             {"id": mid,
              "email": auth_map.get(mid, "—") if auth_map.get(mid, "").strip() and "@" in auth_map.get(mid,"") else (mid[:8] + "…"),
              "chamadas_api": api_uso.get(mid, 0),
-             "custo_estimado": round(api_uso.get(mid, 0) * 0.03, 2),
+             "custo_estimado": round(api_uso.get(mid, 0) * 0.01, 2),
              "lancamentos": v["lancamentos"]}
             for mid, v in top
         ]
