@@ -21,28 +21,6 @@ class Lancamento(BaseModel):
     km_rodados: Optional[float] = None
     data: Optional[date] = None
 
-@router.get("/diag-lancamentos/{motorista_id}")
-async def diag_lancamentos(motorista_id: str, uid: str = Depends(get_uid_from_token)):
-    """Diagnóstico: mostra data vs created_at para achar lançamentos com data errada."""
-    if motorista_id != uid:
-        raise HTTPException(status_code=403, detail="Acesso negado")
-    import datetime as _d
-    hoje = (_d.datetime.utcnow() - _d.timedelta(hours=3)).date().isoformat()
-    r = supabase.table("lancamentos").select("id,tipo,valor,descricao,plataforma,data,created_at").eq("motorista_id", motorista_id).eq("data", hoje).execute()
-    out = []
-    for l in (r.data or []):
-        criado = str(l.get("created_at",""))[:10]
-        out.append({
-            "desc": l.get("descricao") or l.get("plataforma") or "?",
-            "valor": l.get("valor"),
-            "tipo": l.get("tipo"),
-            "data": l.get("data"),
-            "criado_em": criado,
-            "data_bate_criacao": l.get("data") == criado
-        })
-    return {"hoje": hoje, "total_hoje": len(out), "lancamentos": out}
-
-
 @router.post("/lancamentos")
 async def criar_lancamento(l: Lancamento, uid: str = Depends(get_uid_from_token)):
     if l.motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
