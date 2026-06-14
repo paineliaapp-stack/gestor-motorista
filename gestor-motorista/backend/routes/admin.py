@@ -210,13 +210,17 @@ async def usuarios(
         mot = supabase.table("motoristas").select("id,nome,setup_completo,meta_diaria").execute()
         mot_map = {r["id"]: r for r in (mot.data or [])}
 
-        # Contagem de lançamentos por motorista
-        lanc = supabase.table("lancamentos").select("motorista_id").execute()
+        # Contagem de lançamentos + data do último por motorista
+        lanc = supabase.table("lancamentos").select("motorista_id,data,created_at").order("created_at", desc=True).execute()
         uso_map = {}
+        ultimo_map = {}  # motorista_id -> created_at do último lançamento
         for l in (lanc.data or []):
             mid = l.get("motorista_id")
             if mid:
                 uso_map[mid] = uso_map.get(mid, 0) + 1
+                # Como está ordenado desc, o primeiro que aparece é o mais recente
+                if mid not in ultimo_map:
+                    ultimo_map[mid] = l.get("created_at") or l.get("data")
 
         ass = supabase.table("assinaturas").select(
             "motorista_id,status,plano_id,trial_inicio,trial_fim,periodo_fim,email_pagamento,criado_em"
@@ -245,6 +249,7 @@ async def usuarios(
                 "setup_completo": m.get("setup_completo", False),
                 "meta_diaria":   m.get("meta_diaria"),
                 "lancamentos":   uso_map.get(uid, 0),
+                "ultimo_lancamento": ultimo_map.get(uid),
             })
 
         out.sort(key=lambda x: x.get("lancamentos", 0), reverse=True)

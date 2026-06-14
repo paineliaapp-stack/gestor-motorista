@@ -118,6 +118,13 @@ tr:hover td { background: #1e2240; }
   .main { margin-left: 0; padding: 16px 14px 64px 14px; }
   .login-box { width: 90%; padding: 28px 20px; }
 }
+
+    .info-dot { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%; background:rgba(255,255,255,.1); color:#94a3b8; font-size:10px; font-weight:700; margin-left:6px; cursor:pointer; vertical-align:middle; }
+    .info-dot:hover { background:rgba(99,102,241,.3); color:#fff; }
+    .card { position:relative; }
+    .info-pop { position:absolute; top:100%; left:0; right:0; z-index:50; margin-top:4px; background:#1a1d2e; border:1px solid rgba(99,102,241,.4); border-radius:10px; padding:10px 12px; font-size:11px; line-height:1.5; color:#cbd5e0; box-shadow:0 8px 24px rgba(0,0,0,.5); display:none; text-align:left; font-weight:400; text-transform:none; letter-spacing:0; }
+    .info-pop.show { display:block; }
+
 </style>
 
 </head>
@@ -153,19 +160,19 @@ tr:hover td { background: #1e2240; }
         <button class="btn btn-gray btn-sm" onclick="carregarTudo()">↻ Atualizar</button>
       </div>
       <div class="cards">
-        <div class="card"><div class="lbl">Total usuários</div><div class="val b" id="m-total">—</div></div>
-        <div class="card"><div class="lbl">Em trial</div><div class="val y" id="m-trial">—</div></div>
-        <div class="card"><div class="lbl">Ativos</div><div class="val g" id="m-ativos">—</div></div>
-        <div class="card"><div class="lbl">Expirados</div><div class="val r" id="m-exp">—</div></div>
-        <div class="card"><div class="lbl">Sem assinatura</div><div class="val p" id="m-sem">—</div></div>
-        <div class="card"><div class="lbl">Receita real</div><div class="val g" id="m-receita">—</div></div>
-        <div class="card"><div class="lbl">Custo API (est.)</div><div class="val" style="color:#fbbf24" id="m-custo-api">—</div></div>
-        <div class="card"><div class="lbl">Novos 7 dias</div><div class="val b" id="m-novos">—</div></div>
-        <div class="card"><div class="lbl">Fundadores (usadas)</div><div class="val y" id="m-vagas">—</div></div>
-        <div class="card"><div class="lbl">Total lançamentos</div><div class="val b" id="m-lanc">—</div></div>
-        <div class="card"><div class="lbl">Usuários ativos</div><div class="val g" id="m-com-uso">—</div></div>
-        <div class="card"><div class="lbl">Sem uso nenhum</div><div class="val r" id="m-sem-uso">—</div></div>
-        <div class="card"><div class="lbl">Tickets abertos</div><div class="val y" id="m-tickets">—</div></div>
+        <div class="card"><div class="lbl">Total usuários<span class="info-dot" onclick="_toggleInfo(this)">i</span></div><div class="info-pop">Total de pessoas cadastradas no app desde o início (inclui trial, ativos e inativos).</div><div class="val b" id="m-total">—</div></div>
+        <div class="card"><div class="lbl">Em trial<span class="info-dot" onclick="_toggleInfo(this)">i</span></div><div class="info-pop">Usuários no período de teste grátis de 24h que ainda não assinaram.</div><div class="val y" id="m-trial">—</div></div>
+        <div class="card"><div class="lbl">Ativos<span class="info-dot" onclick="_toggleInfo(this)">i</span></div><div class="info-pop">Usuários com assinatura paga e ativa neste momento.</div><div class="val g" id="m-ativos">—</div></div>
+        <div class="card"><div class="lbl">Expirados<span class="info-dot" onclick="_toggleInfo(this)">i</span></div><div class="info-pop">Usuários cujo trial ou assinatura venceu e não renovaram.</div><div class="val r" id="m-exp">—</div></div>
+        <div class="card"><div class="lbl">Sem assinatura<span class="info-dot" onclick="_toggleInfo(this)">i</span></div><div class="info-pop">Cadastrados que nunca iniciaram trial nem assinaram.</div><div class="val p" id="m-sem">—</div></div>
+        <div class="card"><div class="lbl">Receita real<span class="info-dot" onclick="_toggleInfo(this)">i</span></div><div class="info-pop">Soma das assinaturas ativas pagas (R$19 × ativos). Não inclui testes manuais.</div><div class="val g" id="m-receita">—</div></div>
+        <div class="card"><div class="lbl">Custo API (est.)<span class="info-dot" onclick="_toggleInfo(this)">i</span></div><div class="info-pop">Custo TOTAL estimado de todas as chamadas à IA no período (R$0,03 por chamada, valor de referência). É quanto você gasta com a IA somando todos os usuários.</div><div class="val" style="color:#fbbf24" id="m-custo-api">—</div></div>
+        <div class="card"><div class="lbl">Novos 7 dias<span class="info-dot" onclick="_toggleInfo(this)">i</span></div><div class="info-pop">Quantos usuários novos se cadastraram nos últimos 7 dias.</div><div class="val b" id="m-novos">—</div></div>
+        <div class="card"><div class="lbl">Fundadores (usadas)<span class="info-dot" onclick="_toggleInfo(this)">i</span></div><div class="info-pop">Vagas do plano Fundador já preenchidas, de 50 no total.</div><div class="val y" id="m-vagas">—</div></div>
+        <div class="card"><div class="lbl">Total lançamentos<span class="info-dot" onclick="_toggleInfo(this)">i</span></div><div class="info-pop">Total de registros financeiros (ganhos + despesas) feitos por TODOS os usuários somados. Cada vez que alguém registra um ganho ou gasto, conta 1.</div><div class="val b" id="m-lanc">—</div></div>
+        <div class="card"><div class="lbl">Usuários ativos<span class="info-dot" onclick="_toggleInfo(this)">i</span></div><div class="info-pop">Quantos usuários distintos já usaram o app de fato (fizeram pelo menos 1 lançamento ou chamada de IA).</div><div class="val g" id="m-com-uso">—</div></div>
+        <div class="card"><div class="lbl">Sem uso nenhum<span class="info-dot" onclick="_toggleInfo(this)">i</span></div><div class="info-pop">Usuários cadastrados que nunca registraram nada nem usaram a IA.</div><div class="val r" id="m-sem-uso">—</div></div>
+        <div class="card"><div class="lbl">Tickets abertos<span class="info-dot" onclick="_toggleInfo(this)">i</span></div><div class="info-pop">Mensagens de suporte aguardando sua resposta.</div><div class="val y" id="m-tickets">—</div></div>
       </div>
       <!-- Top usuários -->
       <div class="table-wrap" style="margin-bottom:24px">
@@ -266,6 +273,17 @@ tr:hover td { background: #1e2240; }
 
 <script>
 let ADMIN_TOKEN = '';
+
+function _toggleInfo(el){
+  const pop = el.closest('.card').querySelector('.info-pop');
+  const aberto = pop.classList.contains('show');
+  // Fecha todos
+  document.querySelectorAll('.info-pop.show').forEach(p=>p.classList.remove('show'));
+  if(!aberto) pop.classList.add('show');
+  event.stopPropagation();
+}
+document.addEventListener('click', ()=> document.querySelectorAll('.info-pop.show').forEach(p=>p.classList.remove('show')));
+
 let todosUsuarios = [];
 let filtroStatus = 'all';
 
@@ -414,6 +432,7 @@ function renderTabela() {
         <div>⏳ Expira: <span style="color:#94a3b8">${fmtExpira(u)}</span></div>
         <div>📊 Lançamentos: <span style="color:#94a3b8">${u.lancamentos||0}</span></div>
         <div>✅ Setup: <span style="color:${u.setup_completo?'#4ade80':'#f87171'}">${u.setup_completo?'Sim':'Não'}</span></div>
+        <div style="grid-column:1/-1">🔵 Última atividade: <span style="color:#60a5fa">${fmtDataHora(u.ultimo_lancamento)}</span></div>
       </div>
       <div style="display:flex;gap:8px">
         <button style="flex:1;padding:9px;border-radius:10px;border:none;background:#16a34a;color:#fff;font-size:0.82rem;font-weight:700;cursor:pointer" onclick="abrirModal('${u.id}','${esc(u.email)}','${esc(u.nome)}','liberar')">✅ Liberar</button>
@@ -517,6 +536,20 @@ async function copiarTodosEmails() {
 function fmtData(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('pt-BR') + ' ' + new Date(iso).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+
+function fmtDataHora(iso) {
+  if (!iso) return '<span style="color:#374151">Nunca</span>';
+  const dt = new Date(iso);
+  if (isNaN(dt.getTime())) return '<span style="color:#374151">—</span>';
+  const dataHora = dt.toLocaleDateString('pt-BR') + ' às ' + dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  // Tempo relativo
+  const diffMin = Math.floor((Date.now() - dt.getTime()) / 60000);
+  let rel = '';
+  if (diffMin < 60) rel = 'há ' + diffMin + 'min';
+  else if (diffMin < 1440) rel = 'há ' + Math.floor(diffMin/60) + 'h';
+  else rel = 'há ' + Math.floor(diffMin/1440) + 'd';
+  return dataHora + ' <span style="color:#64748b">(' + rel + ')</span>';
 }
 
 function fmtExpira(u) {
