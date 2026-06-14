@@ -328,8 +328,16 @@ async def liberar_acesso(request: Request, dados: dict = Body(...)):
             # Já existe assinatura: só atualiza (preserva plano_id e todo o histórico)
             supabase.table("assinaturas").update(upd).eq("id", ass.data[0]["id"]).execute()
         else:
-            # Não existe ainda: INSERT precisa de plano_id (coluna NOT NULL).
-            # Bloquear alguém sem assinatura → usa 'fundador' como placeholder do registro.
+            # Garante que o motorista existe na tabela motoristas (FK da assinaturas).
+            # Usuários que só têm conta de auth mas nunca abriram o app não estão lá.
+            try:
+                existe = supabase.table("motoristas").select("id").eq("id", mid).limit(1).execute()
+                if not existe.data:
+                    # Cria registro mínimo para satisfazer a foreign key
+                    supabase.table("motoristas").insert({"id": mid, "nome": "—", "setup_completo": False}).execute()
+            except Exception as _e:
+                log_erro("admin_criar_motorista_minimo_erro", erro=_e)
+            # INSERT precisa de plano_id (coluna NOT NULL).
             ins = {"motorista_id": mid, "plano_id": plano, **upd}
             ins.setdefault("plano_id", "fundador")
             supabase.table("assinaturas").insert(ins).execute()
