@@ -352,7 +352,7 @@ async function carregarTudo() {
   const usadas = (m.vagas_fundador_total ?? 50) - (m.vagas_fundador_restantes ?? 50);
   document.getElementById('m-vagas').textContent = usadas + ' / ' + (m.vagas_fundador_total ?? 50);
   // novos cards
-  document.getElementById('m-lanc').textContent    = (m.total_lancamentos ?? 0).toLocaleString('pt-BR');
+  document.getElementById('m-lanc').innerHTML    = (m.total_lancamentos ?? 0).toLocaleString('pt-BR') + ((m.lanc_por_chat || m.lanc_por_manual) ? ' <span style="font-size:0.5em;color:#94a3b8;font-weight:400;display:block;margin-top:4px">💬 ' + (m.lanc_por_chat||0) + ' via chat · ✍️ ' + (m.lanc_por_manual||0) + ' manual' + (m.lanc_sem_origem ? ' · ' + m.lanc_sem_origem + ' antigos' : '') + '</span>' : '');
   document.getElementById('m-com-uso').textContent = m.usuarios_com_lancamentos ?? '—';
   document.getElementById('m-sem-uso').textContent = m.usuarios_sem_uso ?? '—';
   document.getElementById('m-tickets').textContent = m.tickets_abertos ?? '0';
@@ -442,6 +442,7 @@ function renderTabela() {
         <button style="flex:1;padding:9px;border-radius:10px;border:none;background:#16a34a;color:#fff;font-size:0.82rem;font-weight:700;cursor:pointer" onclick="abrirModal('${u.id}','${esc(u.email)}','${esc(u.nome)}','liberar')">✅ Liberar</button>
         <button style="flex:1;padding:9px;border-radius:10px;border:none;background:#991b1b;color:#fff;font-size:0.82rem;font-weight:700;cursor:pointer" onclick="abrirModal('${u.id}','${esc(u.email)}','${esc(u.nome)}','bloquear')">🚫 Bloquear</button>
       </div>
+      <button style="width:100%;margin-top:8px;padding:8px;border-radius:10px;border:1px solid rgba(220,38,38,.4);background:transparent;color:#f87171;font-size:0.75rem;font-weight:600;cursor:pointer" onclick="removerUsuario('${u.id}','${esc(u.email)}')">🗑️ Remover usuário (apaga todos os dados)</button>
     </div>
   `).join('');
 
@@ -545,6 +546,21 @@ function fmtData(iso) {
   const dt = new Date(s);
   if (isNaN(dt.getTime())) return '—';
   return dt.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}) + ' ' + dt.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
+}
+
+async function removerUsuario(id, email){
+  const c1 = confirm('⚠️ ATENÇÃO: isso vai APAGAR PERMANENTEMENTE todos os dados de ' + email + ' (lançamentos, contas, assinatura, histórico).\n\nEssa ação NÃO pode ser desfeita. Continuar?');
+  if(!c1) return;
+  const digite = prompt('Para confirmar, digite REMOVER (em maiúsculas):');
+  if(digite !== 'REMOVER'){ alert('Cancelado — você não digitou REMOVER.'); return; }
+  try{
+    await req('/admin/remover-usuario', {method:'POST', body: JSON.stringify({motorista_id: id})});
+    alert('✅ Usuário removido. Todos os dados foram apagados.');
+    await carregarUsuarios();
+    await carregarTudo();
+  }catch(e){
+    alert('Erro ao remover. Tente de novo.');
+  }
 }
 
 function renderSemana(u){

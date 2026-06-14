@@ -512,6 +512,7 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
                     _veic = _veiculo_ativo(motorista_id)
                     if _veic: dados["veiculo"] = _veic
                 except Exception: pass
+                dados["origem"] = "chat"
                 supabase.table("lancamentos").insert(dados).execute()
                 acoes_executadas.append("lancamento_registrado")
                 # AUTO-ABATE: se for despesa, verifica se existe conta pendente com nome similar e abate

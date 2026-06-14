@@ -101,7 +101,7 @@ async def metricas(x_admin_token: str = Header(default="")):
         log_erro("admin_auth_erro", erro=e)
 
     try:
-        ass = supabase.table("assinaturas").select("status,plano_id").execute()
+        ass = supabase.table("assinaturas").select("status,plano_id,mp_subscription_id").execute()
         precos = {"fundador": 19.0, "pro": 29.0}
         for r in (ass.data or []):
             s = r.get("status", "")
@@ -109,7 +109,10 @@ async def metricas(x_admin_token: str = Header(default="")):
                 out["em_trial"] += 1
             elif s == "ativo":
                 out["ativos"] += 1
-                out["receita_total"] += precos.get(r.get("plano_id", ""), 0)
+                # Receita real = SÓ pagamentos via MercadoPago (tem mp_subscription_id).
+                # Liberações manuais de teste no admin NÃO contam como receita.
+                if r.get("mp_subscription_id"):
+                    out["receita_total"] += precos.get(r.get("plano_id", ""), 0)
                 if r.get("plano_id") == "fundador":
                     out["fundadores"] += 1
                 elif r.get("plano_id") == "pro":
@@ -164,6 +167,19 @@ async def metricas(x_admin_token: str = Header(default="")):
         except Exception:
             pass
         out["total_chamadas_api"] = sum(api_uso.values())
+        # Contagem de lançamentos por origem (chat vs manual)
+        try:
+            _lanc_org = supabase.table("lancamentos").select("origem").execute()
+            _por_chat = sum(1 for l in (_lanc_org.data or []) if l.get("origem") == "chat")
+            _por_manual = sum(1 for l in (_lanc_org.data or []) if l.get("origem") == "manual")
+            _sem_origem = sum(1 for l in (_lanc_org.data or []) if not l.get("origem"))
+            out["lanc_por_chat"] = _por_chat
+            out["lanc_por_manual"] = _por_manual
+            out["lanc_sem_origem"] = _sem_origem
+        except Exception:
+            out["lanc_por_chat"] = 0
+            out["lanc_por_manual"] = 0
+            out["lanc_sem_origem"] = 0
         # Custo estimado: ~R$0,01 por chamada (Gemini 2.5 Flash real, conservador)
         CUSTO_POR_CHAMADA = 0.01  # Gemini 2.5 Flash: ~$0,0019/chamada (~R$0,01). Conservador.
         out["custo_api_estimado"] = round(sum(api_uso.values()) * CUSTO_POR_CHAMADA, 2)
@@ -321,6 +337,34 @@ async def buscar_usuario(request: Request, email: str = ""):
 
 
 # ── Liberar acesso ────────────────────────────────────────────────────────────
+
+@router.post("/admin/remover-usuario")
+async def remover_usuario(request: Request, dados: dict = Body(...)):
+    """Remove COMPLETAMENTE um usuário: lançamentos, contas, assinaturas, turnos, etc.
+    Ação irreversível — usar com cuidado. Não apaga a conta de auth (Google), mas zera todos os dados."""
+    tok = request.headers.get("X-Admin-Token", "")
+    _check(tok)
+    mid = dados.get("motorista_id") or dados.get("id")
+    if not mid:
+        raise HTTPException(status_code=400, detail="motorista_id obrigatório")
+    apagados = {}
+    # Apaga de todas as tabelas relacionadas
+    for tabela in ["lancamentos", "contas", "assinaturas", "turnos", "metas_dia", "uso_api",
+                   "tickets_suporte", "plano_compromissos", "pagamentos", "metas"]:
+        try:
+            r = supabase.table(tabela).delete().eq("motorista_id", mid).execute()
+            apagados[tabela] = len(r.data or [])
+        except Exception:
+            pass
+    # Apaga o registro do motorista por último (FK)
+    try:
+        supabase.table("motoristas").delete().eq("id", mid).execute()
+        apagados["motoristas"] = 1
+    except Exception:
+        pass
+    log_info("admin_remover_usuario", mid=mid[:8], apagados=str(apagados))
+    return {"ok": True, "apagados": apagados}
+
 
 @router.post("/admin/liberar")
 async def liberar_acesso(request: Request, dados: dict = Body(...)):

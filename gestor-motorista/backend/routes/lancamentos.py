@@ -26,6 +26,7 @@ async def criar_lancamento(l: Lancamento, uid: str = Depends(get_uid_from_token)
     if l.motorista_id != uid: raise HTTPException(status_code=403, detail="Acesso negado")
     dados = l.dict()
     dados["data"] = str(dados.get("data") or hoje_brasil())
+    if not dados.get("origem"): dados["origem"] = "manual"
     res = supabase.table("lancamentos").insert(dados).execute()
     return res.data
 
