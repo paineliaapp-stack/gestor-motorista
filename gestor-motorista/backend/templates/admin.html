@@ -535,18 +535,29 @@ async function copiarTodosEmails() {
 
 function fmtData(iso) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('pt-BR') + ' ' + new Date(iso).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  let s = String(iso);
+  if (s.includes(' ') && !s.includes('T')) s = s.replace(' ', 'T');
+  if (!s.endsWith('Z') && !s.match(/[+-]\d{2}:?\d{2}$/)) s = s + 'Z';
+  const dt = new Date(s);
+  if (isNaN(dt.getTime())) return '—';
+  return dt.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}) + ' ' + dt.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
 }
 
 function fmtDataHora(iso) {
   if (!iso) return '<span style="color:#374151">Nunca</span>';
-  const dt = new Date(iso);
+  // Garante que o timestamp seja interpretado como UTC (banco grava em UTC)
+  let s = String(iso);
+  if (s.includes(' ') && !s.includes('T')) s = s.replace(' ', 'T');
+  if (!s.endsWith('Z') && !s.match(/[+-]\d{2}:?\d{2}$/)) s = s + 'Z';
+  const dt = new Date(s);
   if (isNaN(dt.getTime())) return '<span style="color:#374151">—</span>';
-  const dataHora = dt.toLocaleDateString('pt-BR') + ' às ' + dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  // Tempo relativo
-  const diffMin = Math.floor((Date.now() - dt.getTime()) / 60000);
+  // Exibe no fuso de Brasília
+  const dataHora = dt.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}) + ' às ' + dt.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
+  // Tempo relativo (nunca negativo)
+  const diffMin = Math.max(0, Math.floor((Date.now() - dt.getTime()) / 60000));
   let rel = '';
-  if (diffMin < 60) rel = 'há ' + diffMin + 'min';
+  if (diffMin < 1) rel = 'agora';
+  else if (diffMin < 60) rel = 'há ' + diffMin + 'min';
   else if (diffMin < 1440) rel = 'há ' + Math.floor(diffMin/60) + 'h';
   else rel = 'há ' + Math.floor(diffMin/1440) + 'd';
   return dataHora + ' <span style="color:#64748b">(' + rel + ')</span>';
