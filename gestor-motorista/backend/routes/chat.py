@@ -518,22 +518,45 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
                 if dados["tipo"] == "despesa" and dados.get("descricao"):
                     try:
                         desc_desp = dados["descricao"].lower().strip()
-                        contas_pend = supabase.table("contas").select("id,descricao,valor,valor_pago").eq("motorista_id", motorista_id).eq("pago", False).execute()
+                        # Grupos de sinônimos: pagamentos do mesmo tipo de conta
+                        SINONIMOS = [
+                            {"carro","aluguel","aluguel carro","semanal","semanal do carro","locacao","locação","veiculo","veículo"},
+                            {"gas","gás","botijao","botijão"},
+                            {"luz","energia","eletrica","elétrica"},
+                            {"agua","água"},
+                            {"mercado","feira","supermercado"},
+                            {"moto","aluguel moto","semanal moto"},
+                        ]
+                        def _mesmo_grupo(a, b):
+                            for grp in SINONIMOS:
+                                if any(s in a for s in grp) and any(s in b for s in grp):
+                                    return True
+                            return False
+                        contas_pend = supabase.table("contas").select("id,descricao,valor,valor_pago,vencimento").eq("motorista_id", motorista_id).eq("pago", False).order("vencimento").execute()
                         for cp in (contas_pend.data or []):
                             nome_conta = cp["descricao"].lower()
-                            # Verifica se a descrição da despesa está contida no nome da conta ou vice-versa
-                            if desc_desp in nome_conta or nome_conta.split()[0] in desc_desp:
+                            # Match: contido OU primeira palavra OU mesmo grupo de sinônimos
+                            casou = (desc_desp in nome_conta or nome_conta in desc_desp
+                                     or nome_conta.split()[0] in desc_desp
+                                     or _mesmo_grupo(desc_desp, nome_conta))
+                            if casou:
                                 valor_despesa = float(dados["valor"])
                                 ja_pago = float(cp.get("valor_pago") or 0)
                                 valor_total_conta = float(cp["valor"])
-                                novo_pago = ja_pago + valor_despesa
-                                if novo_pago >= valor_total_conta - 0.01:
+                                saldo_conta = valor_total_conta - ja_pago
+                                # Se pagou MAIS que o saldo (juros/multa): quita a conta e registra a diferença
+                                if valor_despesa >= saldo_conta - 0.01:
                                     supabase.table("contas").update({"pago": True, "valor_pago": valor_total_conta}).eq("id", cp["id"]).execute()
+                                    diferenca = round(valor_despesa - saldo_conta, 2)
+                                    if diferenca > 0.5:
+                                        acoes_executadas.append(f"conta_quitada_com_juros:{diferenca:.2f}")
+                                    else:
+                                        acoes_executadas.append("conta_abatida_auto")
                                 else:
-                                    supabase.table("contas").update({"valor_pago": novo_pago}).eq("id", cp["id"]).execute()
-                                acoes_executadas.append("conta_abatida_auto")
+                                    supabase.table("contas").update({"valor_pago": ja_pago + valor_despesa}).eq("id", cp["id"]).execute()
+                                    acoes_executadas.append("conta_abatida_auto")
                                 break
-                    except: pass
+                    except Exception: pass
 
             elif acao.get("acao") == "deletar_conta":
                 # Remove uma conta a pagar pelo nome
