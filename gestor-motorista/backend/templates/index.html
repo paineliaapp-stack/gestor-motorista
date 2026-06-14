@@ -1944,7 +1944,7 @@ function renderResumoSemanal(lancamentos) {
               <span><span style="color:${cores[i]};font-weight:600">${fmt(v)}</span>${ganhosSem > 0 ? ` <span style="color:var(--mt);font-size:11px">· ${pctFat}% do que faturou</span>` : ''}</span>
             </div>
             <div style="background:rgba(0,0,0,.25);border-radius:999px;height:8px;box-shadow:inset 0 1px 3px rgba(0,0,0,.5)">
-              <div style="background:linear-gradient(180deg,${cores[i]}ee,${cores[i]} 50%,${cores[i]}cc);width:${pct}%;height:8px;border-radius:999px;transition:.4s;box-shadow:0 1px 3px rgba(0,0,0,.35),inset 0 1px 1px rgba(255,255,255,.4)"></div>
+              <div style="background:${cores[i]};background-image:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 45%,rgba(0,0,0,.2));width:${pct}%;height:8px;border-radius:999px;transition:.4s;box-shadow:0 1px 3px rgba(0,0,0,.35),inset 0 1px 1px rgba(255,255,255,.3)"></div>
             </div>
           </div>`;
         }).join('')}
@@ -2667,7 +2667,7 @@ async function loadDash(){
       const maxV=fontes[0]?.v||1;
       fontes.forEach(f=>{
         const pct=(f.v/totalFontes*100).toFixed(0);
-        lista.innerHTML+=`<div style="display:flex;flex-direction:column;gap:3px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--tx)">${f.e} ${f.n}</span><span style="font-size:12px;font-weight:700;color:var(--tx)">${fmt(f.v)} <span style="color:var(--mt);font-weight:400">${pct}%</span></span></div><div style="background:rgba(0,0,0,.25);border-radius:999px;height:8px;overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.5)"><div style="height:8px;border-radius:999px;background:linear-gradient(180deg,${f.c}ee,${f.c} 50%,${f.c}cc);width:${(f.v/maxV*100).toFixed(1)}%;transition:width .8s;box-shadow:0 1px 3px rgba(0,0,0,.35),inset 0 1px 1px rgba(255,255,255,.4)"></div></div></div>`;
+        lista.innerHTML+=`<div style="display:flex;flex-direction:column;gap:3px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--tx)">${f.e} ${f.n}</span><span style="font-size:12px;font-weight:700;color:var(--tx)">${fmt(f.v)} <span style="color:var(--mt);font-weight:400">${pct}%</span></span></div><div style="background:rgba(0,0,0,.25);border-radius:999px;height:8px;overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.5)"><div style="height:8px;border-radius:999px;background:${f.c};background-image:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 45%,rgba(0,0,0,.2));width:${(f.v/maxV*100).toFixed(1)}%;transition:width .8s;box-shadow:0 1px 3px rgba(0,0,0,.35),inset 0 1px 1px rgba(255,255,255,.3)"></div></div></div>`;
       });
     } else if(cardFontes){cardFontes.style.display='none';}
     // Card "Quanto falta faturar" — baseado em CONTAS A PAGAR (não despesas lançadas)
@@ -2882,7 +2882,7 @@ async function loadDash(){
     const gPlatCanvas = document.getElementById('g-plataforma');
     if(gPlatCanvas) gPlatCanvas.height = Math.max(80, platFilt.length * 44);
     if(window.gPlat)window.gPlat.destroy();
-    window.gPlat=new Chart(document.getElementById('g-plataforma'),{type:'bar',data:{labels:platLabels,datasets:[{data:platVals.map(v=>Math.round(v*100)/100),backgroundColor:platColors,borderWidth:0,borderRadius:6,label:'Faturamento'}]},options:{indexAxis:'y',plugins:{legend:{display:false},datalabels:{display:false},tooltip:{callbacks:{label:(c)=>'R$ '+parseFloat(c.raw).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}}},scales:{x:{ticks:{color:'rgba(255,255,255,.4)',maxTicksLimit:5,callback:(v)=>'R$'+Math.round(v).toLocaleString('pt-BR'),font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true},y:{ticks:{color:'rgba(255,255,255,.8)',font:{size:13,weight:'600'}},grid:{display:false}}}}});
+    window.gPlat=new Chart(document.getElementById('g-plataforma'),{type:'bar',data:{labels:platLabels,datasets:[{data:platVals.map(v=>Math.round(v*100)/100),backgroundColor:platColors,borderWidth:0,borderRadius:6,minBarLength:8,label:'Faturamento'}]},options:{indexAxis:'y',plugins:{legend:{display:false},datalabels:{display:false},tooltip:{callbacks:{label:(c)=>'R$ '+parseFloat(c.raw).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}}},scales:{x:{ticks:{color:'rgba(255,255,255,.4)',maxTicksLimit:5,callback:(v)=>'R$'+Math.round(v).toLocaleString('pt-BR'),font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true},y:{ticks:{color:'rgba(255,255,255,.8)',font:{size:13,weight:'600'}},grid:{display:false}}}}});
     // Agrupa despesas por categoria — usa a chave CATS quando disponível
     const ct={};
     todosLanc.filter(l=>l.tipo==='despesa').forEach(l=>{
