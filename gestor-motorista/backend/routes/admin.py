@@ -52,6 +52,21 @@ async def _auth_user_by_email(email: str):
 
 # ── Métricas ──────────────────────────────────────────────────────────────────
 
+@router.get("/admin/diag-token")
+async def diag_token(x_admin_token: str = Header(default="")):
+    """Diagnóstico: confirma se o token enviado bate com o configurado (sem expor valores)."""
+    esperado = os.getenv("ADMIN_TOKEN", "")
+    return {
+        "admin_token_configurado": bool(esperado),
+        "tamanho_esperado": len(esperado),
+        "tamanho_recebido": len(x_admin_token),
+        "primeiros_3_esperado": esperado[:3] if esperado else "",
+        "primeiros_3_recebido": x_admin_token[:3] if x_admin_token else "",
+        "batem": esperado == x_admin_token and bool(esperado),
+        "tem_espaco_no_recebido": x_admin_token != x_admin_token.strip(),
+    }
+
+
 @router.get("/admin/metricas")
 async def metricas(x_admin_token: str = Header(default="")):
     _check(x_admin_token)
