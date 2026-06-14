@@ -1917,11 +1917,12 @@ function renderResumoSemanal(lancamentos) {
       <div style="display:flex;flex-direction:column;gap:6px">
         ${topCats.map(([k,v],i)=>{
           const pct = Math.round(v/maxCat*100);
+          const pctFat = ganhosSem > 0 ? Math.round(v/ganhosSem*100) : 0;
           const cores = ['#ff4d6a','#f5a623','#4e9eff'];
           return `<div>
             <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
               <span style="color:var(--tx)">${k}</span>
-              <span style="color:${cores[i]};font-weight:600">${fmt(v)}</span>
+              <span><span style="color:${cores[i]};font-weight:600">${fmt(v)}</span>${ganhosSem > 0 ? ` <span style="color:var(--mt);font-size:11px">· ${pctFat}% do que faturou</span>` : ''}</span>
             </div>
             <div style="background:rgba(255,255,255,.07);border-radius:4px;height:5px">
               <div style="background:${cores[i]};width:${pct}%;height:5px;border-radius:4px;transition:.4s"></div>
