@@ -477,7 +477,6 @@ async def billing_webhook(request: Request):
                             "periodo_fim": fim.isoformat(),
                             "email_pagamento": _email,
                             "mp_payment_id": str(rid),
-                            "ciclo": ciclo,
                             "atualizado_em": _agora().isoformat(),
                         }).execute()
                         # Decrementa vaga de fundador só na ativação nova
