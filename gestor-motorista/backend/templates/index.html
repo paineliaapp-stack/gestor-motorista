@@ -5744,6 +5744,48 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         }
       } catch(e) { /* billing opcional */ }
     }, 1800);
+    // ── Polling rápido quando retorna de pagamento PIX ──
+    if(window.MID && localStorage.getItem('pia_pix_aguardando_'+window.MID)){
+      const _pixTs = parseInt(localStorage.getItem('pia_pix_aguardando_'+window.MID)||'0');
+      const _pixMin = (Date.now() - _pixTs) / 60000;
+      // Se retornou dentro de 30 min, faz polling a cada 5s por 2 min para detectar o pagamento
+      if(_pixMin < 30){
+        let _pixTentativas = 0;
+        const _pixPoll = setInterval(async function(){
+          _pixTentativas++;
+          if(_pixTentativas > 24){ clearInterval(_pixPoll); return; } // para após 2 min
+          try{
+            const _bPix = await authFetch(API+'/billing/status');
+            if(!_bPix.ok) return;
+            const _bsP = await _bPix.json();
+            if(_bsP.status === 'active' || _bsP.status === 'ativo'){
+              clearInterval(_pixPoll);
+              localStorage.removeItem('pia_pix_aguardando_'+(window.MID||''));
+              window._billingStatus = _bsP;
+              window._planoAtivo = true;
+              // Atualiza o chip
+              const _cpix = document.getElementById('trial-chip');
+              if(_cpix){
+                _cpix.textContent = '⭐ ' + (_bsP.plano === 'fundador' ? 'Fundador' : 'Ativo');
+                _cpix.style.color = '#00D897'; _cpix.style.borderColor = 'rgba(0,216,151,.4)'; _cpix.style.background = 'rgba(0,216,151,.1)';
+                _cpix.style.cursor = 'default'; _cpix.onclick = null;
+              }
+              // Fecha o overlay de upgrade se estiver aberto
+              const _ovpix = document.getElementById('upgrade-overlay');
+              if(_ovpix) _ovpix.remove();
+              // Mostra notificação
+              const _notif = document.createElement('div');
+              _notif.style='position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#00D897;color:#000;padding:12px 24px;border-radius:12px;font-weight:700;font-size:15px;z-index:99999;box-shadow:0 4px 20px rgba(0,216,151,.4)';
+              _notif.textContent = '✅ Pagamento confirmado! Seja bem-vindo ao Painel.IA 🎉';
+              document.body.appendChild(_notif);
+              setTimeout(function(){ _notif.remove(); }, 5000);
+            }
+          }catch(e){}
+        }, 5000);
+      } else {
+        localStorage.removeItem('pia_pix_aguardando_'+(window.MID||''));
+      }
+    }
     // ── Bloqueio em tempo real: verifica a cada 5 min sem precisar de logout ──
     if(!window._billingInterval){
       window._billingInterval = setInterval(async function(){
@@ -6468,7 +6510,12 @@ async function _pagar(plano, ciclo, metodo){
       r = await authFetch(API+'/billing/checkout-pix', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({plano_id:plano, ciclo, email})});
     }
     const d = await r.json();
-    if (d.init_point) { window.location.href = d.init_point; }
+    if (d.init_point) {
+      // Abre o checkout do MP na mesma aba
+      // Ao voltar, polling vai detectar o pagamento e atualizar
+      if(window.MID) localStorage.setItem('pia_pix_aguardando_'+window.MID, Date.now());
+      window.location.href = d.init_point;
+    }
     else { alert(d.erro || 'Não foi possível iniciar o pagamento. Tente de novo.'); if(btn){ btn.style.opacity='1'; btn.style.pointerEvents='auto'; } }
   } catch(e) { alert('Falha de conexão. Tente de novo.'); if(btn){ btn.style.opacity='1'; btn.style.pointerEvents='auto'; } }
 }

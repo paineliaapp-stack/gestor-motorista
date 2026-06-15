@@ -72,6 +72,23 @@ async def billing_status(uid: str = Depends(get_uid_from_token)):
         return {"status": "trial", "plano": None, "trial_restante_ms": 86400000,
                 "trial_expira_em": None, "pode_usar": True, "vagas_fundador": 50}
 
+    # Se não tem assinatura por uid, verifica se pagou via PIX por email antes de logar
+    if ass is None or ass.get("status") == "trial":
+        try:
+            email_usuario = await _email_do_usuario(uid)
+            if email_usuario:
+                rp = supabase.table("assinaturas").select("*").eq("email_pagamento", email_usuario).eq("status", "active").order("criado_em", desc=True).limit(1).execute()
+                pix_ass = (rp.data or [None])[0]
+                if pix_ass and not pix_ass.get("motorista_id"):
+                    # Vincula o pagamento PIX ao usuário agora que logou
+                    supabase.table("assinaturas").update({"motorista_id": uid, "atualizado_em": _agora().isoformat()}).eq("id", pix_ass["id"]).execute()
+                    log_info("pix_vinculado", uid=uid, email=email_usuario)
+                    ass = {**pix_ass, "motorista_id": uid}
+                elif pix_ass and pix_ass.get("motorista_id") == uid:
+                    ass = pix_ass
+        except Exception as e:
+            log_erro("billing_vincular_pix_erro", erro=e)
+
     if ass is None:
         trial_fim = _agora() + _dt.timedelta(hours=24)
         try:
