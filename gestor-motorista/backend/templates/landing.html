@@ -711,32 +711,63 @@ document.querySelectorAll('.reveal,.era').forEach(r=>obs.observe(r));
 </script>
 <script>
 async function comprarDireto(){
-  // Cria um modal bonito em vez de alert() feio
   var modal = document.createElement('div');
-  modal.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px';
-  modal.innerHTML=`<div style="background:#0d1117;border:1px solid rgba(240,180,41,.4);border-radius:20px;padding:28px 24px;max-width:360px;width:100%">
+  modal.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
+  modal.innerHTML=`<div style="background:#0d1117;border:1px solid rgba(240,180,41,.4);border-radius:20px;padding:26px 22px;max-width:360px;width:100%">
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;margin-bottom:6px">Assinar Plano Fundador</div>
-    <div style="font-size:13px;color:rgba(238,233,224,.5);margin-bottom:18px">R$19/mês · preço travado por 1 ano</div>
-    <input id="checkout-email" type="email" placeholder="seu@email.com" style="width:100%;padding:12px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;font-size:15px;margin-bottom:12px;outline:none;font-family:inherit">
+    <div style="font-size:13px;color:rgba(238,233,224,.5);margin-bottom:16px">Escolha como quer pagar</div>
+    <input id="checkout-email" type="email" placeholder="seu@email.com" style="width:100%;padding:12px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;font-size:15px;margin-bottom:14px;outline:none;font-family:inherit">
     <div id="checkout-erro" style="color:#ff6b6b;font-size:12px;margin-bottom:10px;display:none"></div>
-    <button id="checkout-btn" onclick="fazerCheckout(this)" style="width:100%;padding:14px;background:#F0B429;border:none;border-radius:12px;color:#000;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit">Ir para pagamento →</button>
-    <button onclick="this.closest('[style]').remove()" style="width:100%;padding:10px;margin-top:8px;background:none;border:none;color:rgba(255,255,255,.3);font-size:13px;cursor:pointer">Cancelar</button>
+
+    <div onclick="fazerCheckoutPix('anual',this)" style="position:relative;border:2px solid #00D897;border-radius:14px;padding:15px;background:linear-gradient(135deg,rgba(0,216,151,.1),transparent);cursor:pointer;margin-bottom:10px">
+      <div style="position:absolute;top:-9px;right:12px;background:#00D897;color:#000;font-size:9px;font-weight:800;padding:2px 9px;border-radius:20px">MELHOR OFERTA</div>
+      <div style="font-size:14px;font-weight:800;color:#f3f4f6">⚡ PIX Anual — R$190</div>
+      <div style="font-size:11px;color:#00D897;margin-top:2px">2 meses grátis · economize R$38</div>
+    </div>
+
+    <div onclick="fazerCheckoutPix('mensal',this)" style="border:1.5px solid rgba(255,255,255,.15);border-radius:14px;padding:15px;cursor:pointer;margin-bottom:10px">
+      <div style="font-size:14px;font-weight:800;color:#f3f4f6">⚡ PIX Mensal — R$19</div>
+      <div style="font-size:11px;color:rgba(238,233,224,.4);margin-top:2px">Paga todo mês (a gente te lembra)</div>
+    </div>
+
+    <div onclick="fazerCheckout(this)" style="border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:13px;cursor:pointer;margin-bottom:14px;opacity:.85">
+      <div style="font-size:13px;font-weight:600;color:rgba(238,233,224,.8)">💳 Cartão — R$19/mês (renova sozinho)</div>
+    </div>
+
+    <button onclick="this.closest('[style]').remove()" style="width:100%;padding:10px;background:none;border:none;color:rgba(255,255,255,.3);font-size:13px;cursor:pointer">Cancelar</button>
   </div>`;
   document.body.appendChild(modal);
   setTimeout(()=>{ var inp=document.getElementById('checkout-email'); if(inp) inp.focus(); },100);
 }
 
-async function fazerCheckout(btn){
+function _emailCheckout(){
   var email=(document.getElementById('checkout-email').value||'').trim().toLowerCase();
   var erro=document.getElementById('checkout-erro');
-  if(!email||!email.includes('@')){ erro.textContent='Informe um email válido'; erro.style.display='block'; return; }
-  erro.style.display='none'; btn.textContent='Aguarde...'; btn.disabled=true;
+  if(!email||!email.includes('@')){ erro.textContent='Informe um email válido'; erro.style.display='block'; return null; }
+  erro.style.display='none';
+  return email;
+}
+
+async function fazerCheckoutPix(ciclo, el){
+  var email=_emailCheckout(); if(!email) return;
+  el.style.opacity='.5'; el.style.pointerEvents='none';
+  try{
+    const r=await fetch('/billing/checkout-pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,plano_id:'fundador',ciclo})});
+    const d=await r.json();
+    if(d.init_point){ window.location.href=d.init_point; }
+    else{ var erro=document.getElementById('checkout-erro'); erro.textContent=d.erro||'Erro ao iniciar. Tente de novo.'; erro.style.display='block'; el.style.opacity='1'; el.style.pointerEvents='auto'; }
+  }catch(e){ var erro=document.getElementById('checkout-erro'); erro.textContent='Falha de conexão.'; erro.style.display='block'; el.style.opacity='1'; el.style.pointerEvents='auto'; }
+}
+
+async function fazerCheckout(el){
+  var email=_emailCheckout(); if(!email) return;
+  el.style.opacity='.5'; el.style.pointerEvents='none';
   try{
     const r=await fetch('/billing/checkout-publico',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
     const d=await r.json();
     if(d.init_point){ window.location.href=d.init_point; }
-    else{ erro.textContent=d.erro||'Erro ao iniciar pagamento. Tente o teste grátis.'; erro.style.display='block'; btn.textContent='Ir para pagamento →'; btn.disabled=false; }
-  }catch(e){ erro.textContent='Falha de conexão. Tente novamente.'; erro.style.display='block'; btn.textContent='Ir para pagamento →'; btn.disabled=false; }
+    else{ var erro=document.getElementById('checkout-erro'); erro.textContent=d.erro||'Erro ao iniciar pagamento.'; erro.style.display='block'; el.style.opacity='1'; el.style.pointerEvents='auto'; }
+  }catch(e){ var erro=document.getElementById('checkout-erro'); erro.textContent='Falha de conexão.'; erro.style.display='block'; el.style.opacity='1'; el.style.pointerEvents='auto'; }
 }
 </script>
 </body>
