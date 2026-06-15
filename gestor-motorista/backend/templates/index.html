@@ -5590,24 +5590,15 @@ document.addEventListener('DOMContentLoaded', async ()=>{
           if (!document.getElementById('banner-confirmar-pag')) {
             const banner = document.createElement('div');
             banner.id = 'banner-confirmar-pag';
-            banner.style.cssText = 'position:fixed;bottom:70px;left:12px;right:12px;z-index:9990;background:#1a2e1a;border:1px solid rgba(74,222,128,.3);border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px';
+            banner.style.cssText = 'position:fixed;bottom:96px;left:12px;right:12px;z-index:9990;background:linear-gradient(135deg,#00D897,#00b87f);border-radius:14px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 8px 24px rgba(0,216,151,.4)';
             banner.innerHTML = `
               <div>
-                <div style="font-size:12px;font-weight:700;color:#4ade80">Já comprou o acesso?</div>
-                <div style="font-size:11px;color:#86efac;margin-top:2px">Clique para confirmar e ativar o plano</div>
+                <div style="font-size:13px;font-weight:800;color:#003d2b">✅ Já comprou o acesso?</div>
+                <div style="font-size:11px;color:rgba(0,61,43,.75);margin-top:2px">Toque para confirmar e ativar seu plano</div>
               </div>
-              <button onclick="_verificarPagamento()" style="background:#4ade80;border:none;border-radius:8px;color:#052e16;font-size:12px;font-weight:800;padding:8px 14px;cursor:pointer;white-space:nowrap">Confirmar ✓</button>
+              <button onclick="_verificarPagamento()" style="background:#003d2b;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:800;padding:9px 16px;cursor:pointer;white-space:nowrap">Confirmar ✓</button>
             `;
-            // Fecha ao clicar fora
-            const fechar = document.createElement('button');
-            fechar.style.cssText = 'position:absolute;top:6px;right:8px;background:none;border:none;color:#4a5568;font-size:14px;cursor:pointer;line-height:1;padding:0';
-            fechar.textContent = '×';
-            fechar.onclick = () => { banner.remove(); sessionStorage.setItem('banner-pag-fechado','1'); };
-            banner.style.position = 'fixed';
-            banner.appendChild(fechar);
-            if (!sessionStorage.getItem('banner-pag-fechado')) {
-              document.body.appendChild(banner);
-            }
+            document.body.appendChild(banner);
           }
         } else {
           // expirado/bloqueado/cancelado
