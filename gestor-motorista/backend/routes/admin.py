@@ -76,6 +76,15 @@ async def mapa_usuarios(x_admin_token: str = Header(default="")):
         # Agrupa por cidade
         cidades = {}
         com_loc = 0
+        # Buscar emails do auth
+        auth_data = {}
+        try:
+            users_auth = supabase.table("motoristas").select("id,nome,email").execute()
+            for u in (users_auth.data or []):
+                auth_data[u["id"]] = {"nome": u.get("nome",""), "email": u.get("email","")}
+        except:
+            pass
+
         for m in (mot.data or []):
             if m.get("lat") is None or m.get("lon") is None:
                 continue
@@ -88,9 +97,16 @@ async def mapa_usuarios(x_admin_token: str = Header(default="")):
                     "estado": m.get("estado") or "",
                     "lat": float(m["lat"]),
                     "lon": float(m["lon"]),
-                    "total": 0
+                    "total": 0,
+                    "usuarios": []
                 }
             cidades[key]["total"] += 1
+            info_u = auth_data.get(m["id"], {})
+            cidades[key]["usuarios"].append({
+                "id": m["id"],
+                "nome": info_u.get("nome") or "—",
+                "email": info_u.get("email") or ""
+            })
         pontos = sorted(cidades.values(), key=lambda x: x["total"], reverse=True)
         return {
             "ok": True,
