@@ -61,7 +61,6 @@ async def vagas_fundador():
     return {"vagas": _vagas_fundador()}
 
 
-@router.get("/billing/status")
 async def _salvar_email_motorista(uid: str):
     """Salva o email do usuário auth na tabela motoristas para buscas por email."""
     try:
@@ -72,6 +71,7 @@ async def _salvar_email_motorista(uid: str):
         pass
 
 
+@router.get("/billing/status")
 async def billing_status(uid: str = Depends(get_uid_from_token)):
     try:
         r = supabase.table("assinaturas").select("*").eq("motorista_id", uid).order("criado_em", desc=True).limit(1).execute()
