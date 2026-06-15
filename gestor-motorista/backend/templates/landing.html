@@ -5,25 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Painel.IA — Fala quanto fez. O app pensa o resto.</title>
 <meta name="description" content="O gestor financeiro com IA para motoristas de aplicativo. Registre falando, veja quanto sobra, nunca mais atrase a semanal do carro.">
-
-<!-- Open Graph (WhatsApp, Facebook, LinkedIn) -->
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://gestor-motorista-production.up.railway.app">
-<meta property="og:title" content="Painel.IA — Fala quanto fez. O app pensa o resto.">
-<meta property="og:description" content="O gestor financeiro com IA para motoristas de app. Registre falando, veja quanto sobra, nunca mais atrase a semanal do carro.">
-<meta property="og:image" content="https://gestor-motorista-production.up.railway.app/static/icon-512.png">
-<meta property="og:image:width" content="512">
-<meta property="og:image:height" content="512">
-<meta property="og:locale" content="pt_BR">
-<meta property="og:site_name" content="Painel.IA">
-
-<!-- Twitter Card -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Painel.IA — Fala quanto fez. O app pensa o resto.">
-<meta name="twitter:description" content="O gestor financeiro com IA para motoristas de app. Registre falando, veja quanto sobra.">
-<meta name="twitter:image" content="https://gestor-motorista-production.up.railway.app/static/icon-512.png">
-
-<meta name="theme-color" content="#F0B429">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=Caveat:wght@600&display=swap" rel="stylesheet">
 <style>
@@ -252,7 +233,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
 <nav>
   <div class="nav-in">
     <div class="logo">
-      <div class="logo-mark" style="padding:0;overflow:hidden"><img src="/static/icon-512.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>
+      <div class="logo-mark">P</div>
       <span>Painel<span class="ia">.IA</span></span>
     </div>
     <div style="display:flex;gap:10px">
@@ -271,7 +252,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
         <h1>Fala quanto fez.<br><span class="am">O app pensa</span><br>o resto.</h1>
         <p>"Fiz 350 na Uber, paguei 90 de gasolina" — pronto, registrado. O Gestor com IA calcula seu lucro real, prioriza a semanal do carro e mostra quanto vai sobrar no bolso.</p>
         <div class="hero-ctas">
-          <a href="/" class="btn btn-am btn-hero">Começar grátis agora</a>
+          <a href="#" onclick="abrirModalPlano('fundador');return false;" class="btn btn-am btn-hero">Começar grátis agora</a>
         </div>
         <div class="hero-note">Sem cartão de crédito · funciona no navegador · seus dados são só seus</div>
       </div>
@@ -360,7 +341,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
           <div class="rl">Estimativa mês</div>
         </div>
       </div>
-      <div class="calc-cta">O Painel.IA calcula isso automaticamente, todo dia. <a href="/">Testar grátis →</a></div>
+      <div class="calc-cta">O Painel.IA calcula isso automaticamente, todo dia. <a href="#" onclick="abrirModalPlano('fundador');return false;">Testar grátis →</a></div>
     </div>
   </section>
 
@@ -586,18 +567,25 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
       <h2>Menos que um café por dia.<br>Controle do mês inteiro.</h2>
       <p class="sec-sub" style="margin:0 auto 36px">Comece com <b style="color:#00D897">24h grátis</b> — sem cartão. Fundadores travam o preço por 1 ano.</p>
     </div>
-    <div style="max-width:440px;margin:0 auto 30px;text-align:center">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:7px">⚡ Preço de fundador — <b id="vagas-num" style="color:#F0B429">por tempo limitado</b></div>
-      <div style="height:8px;background:rgba(255,255,255,.07);border-radius:6px;overflow:hidden"><div id="vagas-fill" style="height:100%;width:30%;background:linear-gradient(90deg,#F0B429,#00D897);border-radius:6px;transition:width 1.3s cubic-bezier(.2,.8,.2,1)"></div></div>
+    <div style="max-width:420px;margin:0 auto 36px;text-align:center">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:7px">Vagas de Fundador restantes</div>
+      <div style="height:8px;background:rgba(255,255,255,.07);border-radius:6px;overflow:hidden"><div id="vagas-fill" style="height:100%;width:0;background:linear-gradient(90deg,#F0B429,#00D897);border-radius:6px;transition:width 1.3s cubic-bezier(.2,.8,.2,1)"></div></div>
+      <div id="vagas-num" style="font-size:12px;color:#F0B429;margin-top:7px;font-weight:700">carregando…</div>
     </div>
-    <div style="max-width:400px;margin:0 auto">
-      <div style="border:1.5px solid rgba(240,180,41,.55);border-radius:22px;padding:32px 26px;position:relative;background:linear-gradient(135deg,rgba(240,180,41,.08),transparent)">
-        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#F0B429;color:#000;font-size:11px;font-weight:800;padding:4px 16px;border-radius:20px;white-space:nowrap">🔥 PLANO FUNDADOR</div>
-        <div style="display:flex;align-items:baseline;gap:8px;justify-content:center;margin:10px 0 4px"><span style="font-size:16px;color:var(--faint);text-decoration:line-through">R$29</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:900;color:#F0B429">R$19</span><span style="font-size:14px;color:var(--muted)">/mês</span></div>
-        <div style="font-size:12px;color:#00D897;margin-bottom:20px;text-align:center">🔒 preço travado por 1 ano — para sempre fundador</div>
-        <div style="font-size:14px;color:var(--muted);line-height:2.1">✓ Gestor com IA ilimitado<br>✓ Histórico financeiro completo<br>✓ Plano financeiro inteligente<br>✓ Previsão do tempo na sua região<br>✓ Modo carro e moto<br>✓ Alertas de vencimento de contas<br>✓ Card do Dia para compartilhar</div>
-        <a href="/" class="btn btn-am" style="display:block;text-align:center;margin-top:22px;padding:16px;font-size:16px">Começar com 24h grátis</a>
-        <button onclick="comprarDireto()" style="display:block;width:100%;text-align:center;margin-top:10px;padding:13px;font-size:14px;background:none;border:1px solid rgba(240,180,41,.4);border-radius:12px;color:#F0B429;font-weight:700;cursor:pointer;font-family:inherit">Já quero assinar — pular o teste</button>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;max-width:640px;margin:0 auto">
+      <div style="border:1.5px solid rgba(240,180,41,.55);border-radius:20px;padding:26px 22px;position:relative;background:linear-gradient(135deg,rgba(240,180,41,.08),transparent)">
+        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#F0B429;color:#000;font-size:10.5px;font-weight:800;padding:4px 14px;border-radius:20px;white-space:nowrap">🔥 FUNDADOR</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin:8px 0 4px"><span style="font-size:14px;color:var(--faint);text-decoration:line-through">R$29</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;color:#F0B429">R$19</span><span style="font-size:13px;color:var(--muted)">/mês</span></div>
+        <div style="font-size:11.5px;color:#00D897;margin-bottom:14px">preço travado por 1 ano</div>
+        <div style="font-size:13px;color:var(--muted);line-height:2">✓ Gestor com IA ilimitado<br>✓ Histórico completo<br>✓ Plano financeiro inteligente<br>✓ Previsão do tempo<br>✓ Modo motoboy<br>✓ Alertas de vencimento</div>
+        <a href="#" onclick="abrirModalPlano('fundador');return false;" class="btn btn-am" style="display:block;text-align:center;margin-top:16px;padding:14px">Começar com 24h grátis</a>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:20px;padding:26px 22px;background:var(--card)">
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px">Pro</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px"><span style="font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:900">R$29</span><span style="font-size:13px;color:var(--muted)">/mês</span></div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px">sem fidelidade · cancele quando quiser</div>
+        <div style="font-size:13px;color:var(--muted);line-height:2">✓ Gestor com IA ilimitado<br>✓ Histórico completo<br>✓ Plano financeiro inteligente<br>✓ Previsão do tempo<br>✓ Modo motoboy<br>✓ Alertas de vencimento<br>✓ <b style="color:#e2e8f0">Relatório PDF mensal</b><br>✓ <b style="color:#e2e8f0">Exportar dados (Excel/CSV)</b><br>✓ <b style="color:#e2e8f0">Suporte prioritário</b></div>
+        <a href="#" onclick="abrirModalPlano('pro');return false;" class="btn btn-ghost" style="display:block;text-align:center;margin-top:16px;padding:14px">Começar com 24h grátis</a>
       </div>
     </div>
     <div style="text-align:center;font-size:12px;color:var(--faint);margin-top:22px">✅ 24h de teste grátis · sem cartão · cancele quando quiser · seus dados são sempre seus</div>
@@ -608,12 +596,12 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
   <div class="sec-eyebrow" style="text-align:center">Chega de dirigir no escuro</div>
   <h2>Quanto sobrou<br>do seu mês passado?</h2>
   <p>Se você precisou pensar, você precisa do Painel.IA.</p>
-  <a href="/" class="btn btn-am btn-hero">Descobrir agora — grátis</a>
+  <a href="#" onclick="abrirModalPlano('fundador');return false;" class="btn btn-am btn-hero">Descobrir agora — grátis</a>
   <div style="margin-top:16px;font-size:12px;color:var(--faint)">Sem cartão · funciona no celular · grátis para começar</div>
 </div>
 
 <footer>
-  Painel.IA © 2026 · <a href="/termos" style="color:var(--faint)">Termos</a> · <a href="/privacidade" style="color:var(--faint)">Privacidade</a>
+  Painel.IA © 2026 · <a href="/static/termos.html" style="color:var(--faint)">Termos</a> · <a href="/static/privacidade.html" style="color:var(--faint)">Privacidade</a>
 </footer>
 
 
@@ -689,86 +677,153 @@ document.querySelectorAll('.era-vid').forEach(v=>vidObs.observe(v));
 document.addEventListener('touchstart',()=>{document.querySelectorAll('.era-vid').forEach(v=>{if(v.paused)v.play().catch(()=>{})})},{once:true,passive:true});
 
 /* Vagas Fundador ao vivo */
-// Vagas: mostra escassez sem revelar números baixos (app novo)
-(function(){
-  fetch('/billing/vagas-fundador').then(r=>r.json()).then(d=>{
-    const v = d.vagas ?? 50;
-    const usadas = 50 - v;
-    // Só mostra contagem específica quando já houver tração real (>10 fundadores)
-    if(usadas >= 10){
-      document.getElementById('vagas-num').textContent = 'só restam ' + v + ' vagas';
-      document.getElementById('vagas-fill').style.width = (usadas/50*100) + '%';
-    } else {
-      document.getElementById('vagas-num').textContent = 'vagas limitadas';
-      document.getElementById('vagas-fill').style.width = '30%';
-    }
-  }).catch(()=>{});
-})();
+fetch('/billing/vagas-fundador').then(r=>r.json()).then(d=>{
+  const restantes = d.vagas ?? 50;
+  const usadas = 50 - restantes;
+  const pct = Math.min(100, Math.round(usadas / 50 * 100));
+  if(restantes <= 0){
+    document.getElementById('vagas-num').textContent = '🔴 Sem vagas fundador disponíveis';
+    document.getElementById('vagas-fill').style.background = '#ef4444';
+  } else if(restantes <= 10){
+    document.getElementById('vagas-num').textContent = '🔥 Apenas ' + restantes + ' vagas restantes de 50';
+  } else {
+    document.getElementById('vagas-num').textContent = restantes + ' de 50 vagas disponíveis';
+  }
+  setTimeout(()=>{ document.getElementById('vagas-fill').style.width = pct+'%'; }, 300);
+}).catch(()=>{ document.getElementById('vagas-num').textContent = 'vagas limitadas'; });
 
 /* Reveals */
 const obs=new IntersectionObserver(es=>{es.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*60);obs.unobserve(e.target)}})},{threshold:.1});
 document.querySelectorAll('.reveal,.era').forEach(r=>obs.observe(r));
 </script>
+
+<!-- ── MODAL CHECKOUT ───────────────────────────────────────────────── -->
+<div id="modal-checkout" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#111827;border:1px solid #2d3748;border-radius:20px;width:100%;max-width:420px;padding:32px 28px;position:relative">
+    <button onclick="fecharModalPlano()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#718096;font-size:1.3rem;cursor:pointer;line-height:1">✕</button>
+    <div id="modal-badge" style="display:inline-block;background:#F0B429;color:#000;font-size:10px;font-weight:800;padding:3px 12px;border-radius:20px;margin-bottom:14px">🔥 FUNDADOR</div>
+    <h2 style="font-size:1.3rem;color:#fff;margin-bottom:4px" id="modal-titulo">Plano Fundador</h2>
+    <div style="display:flex;align-items:baseline;gap:6px;margin:10px 0 6px">
+      <span id="modal-preco-old" style="font-size:13px;color:#718096;text-decoration:line-through">R$29</span>
+      <span id="modal-preco" style="font-size:2.4rem;font-weight:900;color:#F0B429;font-family:'Barlow Condensed',sans-serif">R$19</span>
+      <span style="color:#718096;font-size:13px">/mês</span>
+    </div>
+    <div id="modal-detalhe" style="font-size:12px;color:#00D897;margin-bottom:20px">preço travado por 1 ano · 24h grátis para testar</div>
+
+    <div id="modal-step1">
+      <div style="font-size:0.85rem;color:#a0aec0;margin-bottom:10px">Qual é o seu email?</div>
+      <input id="modal-email" type="email" placeholder="seu@email.com" autocomplete="email"
+        style="width:100%;box-sizing:border-box;background:#0a0c14;border:1px solid #2d3748;border-radius:10px;padding:12px 14px;color:#fff;font-size:0.95rem;margin-bottom:12px">
+      <button onclick="irParaCheckout()" id="modal-btn"
+        style="width:100%;background:#F0B429;color:#000;border:none;border-radius:10px;padding:14px;font-size:1rem;font-weight:800;cursor:pointer">
+        Começar 24h grátis →
+      </button>
+      <div style="font-size:11px;color:#4a5568;text-align:center;margin-top:10px">Sem cartão agora · o trial começa ao entrar no app</div>
+    </div>
+
+    <div id="modal-step2" style="display:none;text-align:center;padding:20px 0">
+      <div style="width:28px;height:28px;border:3px solid #2d3748;border-top-color:#F0B429;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px"></div>
+      <div style="color:#a0aec0;font-size:0.9rem">Preparando seu acesso…</div>
+    </div>
+
+    <div id="modal-step3" style="display:none;text-align:center">
+      <div style="font-size:2rem;margin-bottom:12px">✅</div>
+      <div style="color:#4ade80;font-weight:700;font-size:1rem;margin-bottom:6px">Conta criada!</div>
+      <div style="color:#a0aec0;font-size:0.85rem;margin-bottom:20px">Você tem 24h grátis. Para manter o acesso depois do trial, assine agora:</div>
+      <a id="modal-mp-link" href="#" target="_blank"
+        style="display:block;background:#00b1ea;color:#fff;border-radius:10px;padding:13px;font-weight:700;font-size:0.95rem;text-decoration:none;margin-bottom:10px">
+        💳 Assinar no Mercado Pago
+      </a>
+      <a href="/" id="modal-app-link"
+        style="display:block;background:#1a1d2e;border:1px solid #2d3748;color:#e2e8f0;border-radius:10px;padding:12px;font-size:0.9rem;text-decoration:none">
+        Entrar no app agora →
+      </a>
+    </div>
+
+    <div id="modal-erro" style="display:none;background:#2d1b1b;color:#f87171;border-radius:8px;padding:10px 14px;font-size:0.83rem;margin-top:12px"></div>
+  </div>
+</div>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
 <script>
-async function comprarDireto(){
-  var modal = document.createElement('div');
-  modal.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
-  modal.innerHTML=`<div style="background:#0d1117;border:1px solid rgba(240,180,41,.4);border-radius:20px;padding:26px 22px;max-width:360px;width:100%">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;margin-bottom:6px">Assinar Plano Fundador</div>
-    <div style="font-size:13px;color:rgba(238,233,224,.5);margin-bottom:16px">Escolha como quer pagar</div>
-    <input id="checkout-email" type="email" placeholder="seu@email.com" style="width:100%;padding:12px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;font-size:15px;margin-bottom:14px;outline:none;font-family:inherit">
-    <div id="checkout-erro" style="color:#ff6b6b;font-size:12px;margin-bottom:10px;display:none"></div>
+let _modalPlano = 'fundador';
 
-    <div onclick="fazerCheckoutPix('anual',this)" style="position:relative;border:2px solid #00D897;border-radius:14px;padding:15px;background:linear-gradient(135deg,rgba(0,216,151,.1),transparent);cursor:pointer;margin-bottom:10px">
-      <div style="position:absolute;top:-9px;right:12px;background:#00D897;color:#000;font-size:9px;font-weight:800;padding:2px 9px;border-radius:20px">MELHOR OFERTA</div>
-      <div style="font-size:14px;font-weight:800;color:#f3f4f6">⚡ PIX Anual — R$190</div>
-      <div style="font-size:11px;color:#00D897;margin-top:2px">2 meses grátis · economize R$38</div>
-    </div>
-
-    <div onclick="fazerCheckoutPix('mensal',this)" style="border:1.5px solid rgba(255,255,255,.15);border-radius:14px;padding:15px;cursor:pointer;margin-bottom:10px">
-      <div style="font-size:14px;font-weight:800;color:#f3f4f6">⚡ PIX Mensal — R$19</div>
-      <div style="font-size:11px;color:rgba(238,233,224,.4);margin-top:2px">Paga todo mês (a gente te lembra)</div>
-    </div>
-
-    <div onclick="fazerCheckout(this)" style="border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:13px;cursor:pointer;margin-bottom:14px;opacity:.85">
-      <div style="font-size:13px;font-weight:600;color:rgba(238,233,224,.8)">💳 Cartão — R$19/mês (renova sozinho)</div>
-    </div>
-
-    <button onclick="this.closest('[style]').remove()" style="width:100%;padding:10px;background:none;border:none;color:rgba(255,255,255,.3);font-size:13px;cursor:pointer">Cancelar</button>
-  </div>`;
-  document.body.appendChild(modal);
-  setTimeout(()=>{ var inp=document.getElementById('checkout-email'); if(inp) inp.focus(); },100);
+function abrirModalPlano(plano) {
+  _modalPlano = plano || 'fundador';
+  const isFundador = _modalPlano === 'fundador';
+  document.getElementById('modal-badge').style.display = isFundador ? 'inline-block' : 'none';
+  document.getElementById('modal-titulo').textContent = isFundador ? 'Plano Fundador' : 'Plano Pro';
+  document.getElementById('modal-preco').textContent  = isFundador ? 'R$19' : 'R$29';
+  document.getElementById('modal-preco-old').style.display = isFundador ? 'inline' : 'none';
+  document.getElementById('modal-detalhe').textContent = isFundador
+    ? 'preço travado por 1 ano · 24h grátis para testar'
+    : '24h grátis para testar · cancele quando quiser';
+  ['modal-step1','modal-step2','modal-step3'].forEach(id => {
+    document.getElementById(id).style.display = id === 'modal-step1' ? 'block' : 'none';
+  });
+  document.getElementById('modal-erro').style.display = 'none';
+  document.getElementById('modal-email').value = '';
+  const m = document.getElementById('modal-checkout');
+  m.style.display = 'flex';
+  setTimeout(() => document.getElementById('modal-email').focus(), 120);
 }
 
-function _emailCheckout(){
-  var email=(document.getElementById('checkout-email').value||'').trim().toLowerCase();
-  var erro=document.getElementById('checkout-erro');
-  if(!email||!email.includes('@')){ erro.textContent='Informe um email válido'; erro.style.display='block'; return null; }
-  erro.style.display='none';
-  return email;
+function fecharModalPlano() {
+  document.getElementById('modal-checkout').style.display = 'none';
 }
 
-async function fazerCheckoutPix(ciclo, el){
-  var email=_emailCheckout(); if(!email) return;
-  el.style.opacity='.5'; el.style.pointerEvents='none';
-  try{
-    const r=await fetch('/billing/checkout-pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,plano_id:'fundador',ciclo})});
-    const d=await r.json();
-    if(d.init_point){ window.location.href=d.init_point; }
-    else{ var erro=document.getElementById('checkout-erro'); erro.textContent=d.erro||'Erro ao iniciar. Tente de novo.'; erro.style.display='block'; el.style.opacity='1'; el.style.pointerEvents='auto'; }
-  }catch(e){ var erro=document.getElementById('checkout-erro'); erro.textContent='Falha de conexão.'; erro.style.display='block'; el.style.opacity='1'; el.style.pointerEvents='auto'; }
-}
+document.getElementById('modal-checkout').addEventListener('click', function(e) {
+  if (e.target === this) fecharModalPlano();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharModalPlano(); });
+document.getElementById('modal-email').addEventListener('keydown', e => {
+  if (e.key === 'Enter') irParaCheckout();
+});
 
-async function fazerCheckout(el){
-  var email=_emailCheckout(); if(!email) return;
-  el.style.opacity='.5'; el.style.pointerEvents='none';
-  try{
-    const r=await fetch('/billing/checkout-publico',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
-    const d=await r.json();
-    if(d.init_point){ window.location.href=d.init_point; }
-    else{ var erro=document.getElementById('checkout-erro'); erro.textContent=d.erro||'Erro ao iniciar pagamento.'; erro.style.display='block'; el.style.opacity='1'; el.style.pointerEvents='auto'; }
-  }catch(e){ var erro=document.getElementById('checkout-erro'); erro.textContent='Falha de conexão.'; erro.style.display='block'; el.style.opacity='1'; el.style.pointerEvents='auto'; }
+async function irParaCheckout() {
+  const email = document.getElementById('modal-email').value.trim();
+  if (!email || !email.includes('@')) {
+    document.getElementById('modal-email').style.borderColor = '#f87171';
+    document.getElementById('modal-email').focus();
+    return;
+  }
+  document.getElementById('modal-email').style.borderColor = '#2d3748';
+  const btn = document.getElementById('modal-btn');
+  btn.disabled = true;
+  document.getElementById('modal-step1').style.display = 'none';
+  document.getElementById('modal-step2').style.display = 'block';
+  document.getElementById('modal-erro').style.display  = 'none';
+
+  try {
+    const r = await fetch('/billing/criar-checkout-landing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, plano_id: _modalPlano })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Erro ao criar conta');
+
+    document.getElementById('modal-step2').style.display = 'none';
+    document.getElementById('modal-step3').style.display = 'block';
+    const mpLink = document.getElementById('modal-mp-link');
+    if (d.checkout_url) {
+      mpLink.href = d.checkout_url;
+    } else {
+      mpLink.style.display = 'none';
+    }
+  } catch(e) {
+    document.getElementById('modal-step2').style.display = 'none';
+    document.getElementById('modal-step1').style.display = 'block';
+    const err = document.getElementById('modal-erro');
+    err.textContent = e.message;
+    err.style.display = 'block';
+    btn.disabled = false;
+  }
 }
 </script>
+
 </body>
 </html>
