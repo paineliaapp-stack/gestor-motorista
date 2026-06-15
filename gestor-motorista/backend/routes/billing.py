@@ -465,25 +465,48 @@ async def billing_webhook(request: Request):
                     dias = 365 if ciclo == "anual" else 30
                     fim = _agora() + _dt.timedelta(days=dias)
                     try:
-                        # Ativa por email (se já existe usuário) ou registra pendente para vincular no login
                         ja_ativo = False
                         if uid_pix:
-                            atual = supabase.table("assinaturas").select("status").eq("motorista_id", uid_pix).order("criado_em", desc=True).limit(1).execute()
-                            ja_ativo = (atual.data or [{}])[0].get("status") == "active"
-                        supabase.table("assinaturas").upsert({
-                            "motorista_id": uid_pix, "plano_id": plano_id,
-                            "status": "active",
-                            "periodo_inicio": _agora().isoformat(),
-                            "periodo_fim": fim.isoformat(),
-                            "email_pagamento": _email,
-                            "mp_payment_id": str(rid),
-                            "atualizado_em": _agora().isoformat(),
-                        }).execute()
+                            atual = supabase.table("assinaturas").select("id,status").eq("motorista_id", uid_pix).order("criado_em", desc=True).limit(1).execute()
+                            ass_atual = (atual.data or [{}])[0]
+                            ja_ativo = ass_atual.get("status") == "active"
+                            ass_id = ass_atual.get("id")
+                            if ass_id:
+                                # Atualiza a linha existente — mais seguro que upsert sem conflito
+                                supabase.table("assinaturas").update({
+                                    "plano_id": plano_id,
+                                    "status": "active",
+                                    "periodo_inicio": _agora().isoformat(),
+                                    "periodo_fim": fim.isoformat(),
+                                    "email_pagamento": _email,
+                                    "mp_subscription_id": str(rid),  # reusa coluna existente
+                                    "atualizado_em": _agora().isoformat(),
+                                }).eq("id", ass_id).execute()
+                            else:
+                                # Não tem linha ainda — cria
+                                supabase.table("assinaturas").insert({
+                                    "motorista_id": uid_pix, "plano_id": plano_id,
+                                    "status": "active",
+                                    "periodo_inicio": _agora().isoformat(),
+                                    "periodo_fim": fim.isoformat(),
+                                    "email_pagamento": _email,
+                                    "mp_subscription_id": str(rid),
+                                }).execute()
+                        else:
+                            # Usuário ainda não logou — guarda por email para vincular no login
+                            supabase.table("assinaturas").insert({
+                                "motorista_id": None, "plano_id": plano_id,
+                                "status": "active",
+                                "periodo_inicio": _agora().isoformat(),
+                                "periodo_fim": fim.isoformat(),
+                                "email_pagamento": _email,
+                                "mp_subscription_id": str(rid),
+                            }).execute()
                         # Decrementa vaga de fundador só na ativação nova
                         if plano_id == "fundador" and not ja_ativo:
                             v = _vagas_fundador()
                             supabase.table("planos").update({"vagas_restantes": max(0, v - 1)}).eq("id", "fundador").execute()
-                        log_info("pix_ativado", email=_email, ciclo=ciclo, plano=plano_id)
+                        log_info("pix_ativado", email=_email, ciclo=ciclo, plano=plano_id, uid=uid_pix)
                     except Exception as e:
                         log_erro("pix_ativar_erro", erro=e)
                     # Email de pagamento confirmado
