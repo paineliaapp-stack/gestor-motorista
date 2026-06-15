@@ -12,7 +12,7 @@ _ALLOWED_ORIGINS = [
 # ── Push (VAPID) ──
 VAPID_PUBLIC_KEY  = os.getenv("VAPID_PUBLIC_KEY", "BCy8ETKpP9jIkSHcogzLDgCUlOq3ZuKQ84nnF9Td7Wya6K-q-TUH0NIloBgDPaArR6lhEVt-KhOevVWgG8PCg98")
 VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "MHcCAQEEIJRY2GzyzckkCKFiuCqMNYnJ+yNeLnXMjcklMTydxMq6oAoGCCqGSM49\nAwEHoUQDQgAELLwRMqk/2MiRIdyiDMsOAJSU6rdm4pDziecX1N3tbJror6r5NQfQ\n0iWgGAM9oCtHqWERW34qE569VaAbw8KD3w==")
-VAPID_EMAIL       = os.getenv("VAPID_EMAIL", "mailto:admin@painelia.app")
+VAPID_EMAIL       = os.getenv("VAPID_EMAIL", "mailto:painelia.contato@gmail.com")
 
 # ── WhatsApp / Evolution API ──
 ANTHROPIC_KEY = os.getenv("GEMINI_API_KEY", "")

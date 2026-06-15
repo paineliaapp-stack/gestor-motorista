@@ -3,7 +3,9 @@ import os
 import httpx
 from core.logging import log_info, log_warn, log_erro
 
-_FROM = "Painel.IA <noreply@painelia.app>"
+# Remetente: usa EMAIL_FROM se configurado (quando tiver domínio próprio verificado no Resend).
+# Padrão: domínio de teste grátis do Resend (onboarding@resend.dev) — funciona sem comprar domínio.
+_FROM = os.getenv("EMAIL_FROM", "Painel.IA <onboarding@resend.dev>")
 _APP = "https://gestor-motorista-production.up.railway.app"
 
 
