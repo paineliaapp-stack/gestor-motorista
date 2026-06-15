@@ -267,28 +267,19 @@ async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
         agora = _agora()
         ass = _buscar_assinatura(uid)
 
-        # Se já está ativo, retorna sem fazer nada
-        if ass and ass.get("status") == "ativo":
-            return {"verificado": True, "ativado": True, "ja_ativo": True, "plano": ass.get("plano_id"), "mensagem": "Plano já ativo"}
-
         async with httpx.AsyncClient(timeout=15) as c:
+            # Busca por fundador e por pro
             aprovado = None
-            aprovado_plano = None
             for plano in ["fundador", "pro"]:
-                # IMPORTANTE: external_reference precisa ser URL-encoded
-                ref = f"{uid}|{plano}"
-                import urllib.parse
-                ref_encoded = urllib.parse.quote(ref, safe="")
                 r = await c.get(
-                    f"https://api.mercadopago.com/v1/payments/search?external_reference={ref_encoded}&sort=date_created&criteria=desc&limit=5",
+                    f"https://api.mercadopago.com/v1/payments/search?external_reference={uid}|{plano}&sort=date_created&criteria=desc&limit=3",
                     headers={"Authorization": f"Bearer {MP_ACCESS_TOKEN}"}
                 )
-                log_info("verificar_pagamento_busca", plano=plano, status_code=r.status_code, total=r.json().get("paging", {}).get("total", 0) if r.status_code == 200 else "erro")
                 if r.status_code == 200:
                     for pag in r.json().get("results", []):
                         if pag.get("status") == "approved":
                             aprovado = pag
-                            aprovado_plano = plano
+                            aprovado["_plano"] = plano
                             break
                 if aprovado:
                     break
@@ -296,13 +287,13 @@ async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
         if not aprovado:
             return {
                 "verificado": False,
-                "mensagem": "Pagamento aprovado não encontrado. Aguarde alguns minutos e tente novamente.",
+                "mensagem": "Pagamento nao encontrado. Aguarde alguns minutos e tente novamente.",
                 "status_atual": ass["status"] if ass else "sem_assinatura"
             }
 
         payment_id = str(aprovado["id"])
         valor = aprovado.get("transaction_amount", 0)
-        plano_id = aprovado_plano
+        plano_id = aprovado["_plano"]
         periodo_fim = agora + timedelta(days=30)
 
         if ass:
@@ -348,7 +339,7 @@ async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
             "verificado": True,
             "ativado": True,
             "plano": plano_id,
-            "mensagem": f"Plano {plano_id} ativado com sucesso!",
+            "mensagem": f"Plano {plano_id} ativado!",
             "periodo_fim": periodo_fim.isoformat(),
         }
 
