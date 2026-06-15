@@ -632,6 +632,21 @@ const _supa = supabase.createClient(
   </div>
 </header>
 
+<!-- BARRA PAGAMENTO PENDENTE — aparece quando pagou mas não ativou -->
+<div id="barra-pagamento-pendente" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(90deg,#065f46,#047857);padding:12px 16px;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 2px 12px rgba(0,0,0,.5)">
+  <div style="display:flex;align-items:center;gap:10px;min-width:0">
+    <span style="font-size:18px;flex-shrink:0">✅</span>
+    <div style="min-width:0">
+      <div style="font-size:13px;font-weight:800;color:#d1fae5">Pagamento identificado!</div>
+      <div style="font-size:11px;color:#a7f3d0;margin-top:1px">Clique para ativar seu plano agora</div>
+    </div>
+  </div>
+  <button onclick="_ativarPagamentoPendente()" id="btn-ativar-pendente"
+    style="background:#F0B429;border:none;border-radius:10px;color:#000;font-size:13px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap;flex-shrink:0">
+    Ativar agora →
+  </button>
+</div>
+
 <nav class="sidenav">
   <button id="ni-dashboard" class="ni active" onclick="goPage(this,'dashboard')"><span class="ni-icon">📊</span><span class="tip">Dashboard</span></button>
   <button id="ni-registrar" class="ni" onclick="goPage(this,'registrar')"><span class="ni-icon">➕</span><span class="tip">Registrar</span></button>
@@ -5958,6 +5973,8 @@ async function irParaCheckoutUpgrade() {
     window.open(url, '_blank');
     document.getElementById('modal-upgrade').style.display = 'none';
     _abrirModalAguardePagamento(url);
+    // Mostra barra verde no topo como sinal visual persistente
+    setTimeout(_mostrarBarraPagamentoPendente, 500);
 
   } catch(e) {
     const err = document.getElementById('upgrade-erro');
@@ -5969,16 +5986,62 @@ async function irParaCheckoutUpgrade() {
   }
 }
 
-// Checa status do billing e mostra banner se em trial
+// Ativa pagamento pendente via botão da barra verde
+async function _ativarPagamentoPendente() {
+  const btn = document.getElementById('btn-ativar-pendente');
+  if (btn) { btn.disabled = true; btn.textContent = 'Ativando...'; }
+  const ativado = await _verificarPagamentoServidor(false);
+  if (!ativado) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Ativar agora →'; }
+    // Tenta verificar manual mesmo assim
+    const barra = document.getElementById('barra-pagamento-pendente');
+    if (barra) {
+      barra.style.background = 'linear-gradient(90deg,#7f1d1d,#991b1b)';
+      barra.querySelector('div[style*="font-size:13px"]').textContent = 'Pagamento não confirmado ainda';
+      barra.querySelector('div[style*="font-size:11px"]').textContent = 'Aguarde 1-2 min e tente novamente';
+    }
+  }
+}
+
+// Checa status do billing: trial, expirado, ou pagamento pendente
 async function verificarTrialBanner() {
-  if (sessionStorage.getItem('trial-banner-fechado')) return;
   try {
     const r = await authFetch(API + '/billing/status');
     if (!r.ok) return;
     const d = await r.json();
     const status = d.status;
-    if (status !== 'trial' && status !== 'expirado') return;
 
+    // Se já está ativo, não mostra nada
+    if (status === 'ativo') {
+      // Esconde qualquer banner/barra que possa estar visível
+      const b = document.getElementById('barra-pagamento-pendente');
+      if (b) b.style.display = 'none';
+      const tb = document.getElementById('trial-banner');
+      if (tb) tb.style.display = 'none';
+      return;
+    }
+
+    // Se é trial, verifica se tem pagamento pendente no MP (pagou mas não ativou)
+    if (status === 'trial' || status === 'expirado' || status === 'sem_assinatura') {
+      // Verifica silenciosamente se tem pagamento aprovado no MP
+      try {
+        const rv = await authFetch(API + '/billing/verificar-pagamento', { method: 'POST' });
+        const dv = await rv.json();
+        if (dv.verificado && dv.ativado) {
+          // Ativou automaticamente
+          _mostrarSucessoPagamento(dv.plano);
+          return;
+        }
+        if (dv.verificado === false && dv.status_atual) {
+          // Tem pagamento no MP mas não ativou ainda — mostra barra verde
+          // Só mostra se o status retornou algo que indique pagamento pendente
+          // (o endpoint retorna verificado:false quando não encontrou — não mostrar barra nesse caso)
+        }
+      } catch(e) {}
+    }
+
+    // Banner de trial expirando (só mostra quando falta < 12h)
+    if (sessionStorage.getItem('trial-banner-fechado')) return;
     const banner = document.getElementById('trial-banner');
     const titulo = document.getElementById('trial-banner-titulo');
     const sub    = document.getElementById('trial-banner-sub');
@@ -5990,16 +6053,27 @@ async function verificarTrialBanner() {
       if (ico) ico.textContent = '🔒';
       titulo.textContent = 'Seu trial expirou';
       sub.textContent = 'Assine para continuar usando o Painel.IA';
+      banner.style.display = 'flex';
     } else if (status === 'trial' && d.periodo_fim) {
       const fim = new Date(d.periodo_fim);
       const horas = Math.max(0, Math.floor((fim - new Date()) / 36e5));
       if (horas > 12) return;
       titulo.textContent = horas > 0 ? `Trial expira em ${horas}h` : 'Trial expira hoje!';
       sub.textContent = 'Assine agora para não perder o acesso';
+      banner.style.display = 'flex';
     }
-
-    banner.style.display = 'flex';
   } catch(e) {}
+}
+
+// Mostra barra verde quando usuário acabou de pagar (vem do modal de pagamento)
+function _mostrarBarraPagamentoPendente() {
+  const barra = document.getElementById('barra-pagamento-pendente');
+  if (barra) {
+    barra.style.display = 'flex';
+    // Ajusta o topbar para não sobrepor
+    const topbar = document.querySelector('.topbar');
+    if (topbar) topbar.style.marginTop = '48px';
+  }
 }
 
 document.addEventListener('app-ready', verificarTrialBanner);
@@ -6007,7 +6081,7 @@ setTimeout(() => {
   if (typeof authFetch === 'function' && typeof API !== 'undefined') {
     verificarTrialBanner();
   }
-}, 5000);
+}, 3000);
 </script>
 
 </body>
