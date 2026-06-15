@@ -73,6 +73,8 @@ async def _salvar_email_motorista(uid: str):
 
 @router.get("/billing/status")
 async def billing_status(uid: str = Depends(get_uid_from_token)):
+    # Salva o email SEMPRE — necessário para o webhook PIX encontrar o usuário
+    asyncio.ensure_future(_salvar_email_motorista(uid))
     try:
         r = supabase.table("assinaturas").select("*").eq("motorista_id", uid).order("criado_em", desc=True).limit(1).execute()
         ass = (r.data or [None])[0]
@@ -110,8 +112,6 @@ async def billing_status(uid: str = Depends(get_uid_from_token)):
             }).execute()
         except Exception as e:
             log_erro("trial_criar_erro", erro=e)
-        # Salva o email em motoristas para buscas futuras por email (webhook PIX, etc.)
-        asyncio.ensure_future(_salvar_email_motorista(uid))
         # Email de boas-vindas em background — nunca atrasa a resposta
         async def _bg():
             email = await _email_do_usuario(uid)
@@ -536,6 +536,66 @@ async def billing_webhook(request: Request):
     except Exception as e:
         log_erro("webhook_erro", erro=e)
     return {"ok": True}
+
+
+@router.post("/billing/reprocessar-pix")
+async def reprocessar_pix(uid: str = Depends(get_uid_from_token)):
+    """Usuário pagou mas o plano não ativou. Busca o pagamento pelo email e ativa."""
+    token = os.getenv("MP_ACCESS_TOKEN", "")
+    if not token:
+        return {"ok": False, "erro": "Token MP não configurado"}
+    try:
+        email = await _email_do_usuario(uid)
+        if not email:
+            return {"ok": False, "erro": "Email não encontrado"}
+        # Busca pagamentos aprovados do email nos últimos 7 dias
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.get(
+                f"{_MP_API}/v1/payments/search",
+                headers={"Authorization": f"Bearer {token}"},
+                params={"payer.email": email, "status": "approved", "sort": "date_created", "criteria": "desc", "limit": 5}
+            )
+            data = r.json() if r.status_code == 200 else {}
+        pagamentos = (data.get("results") or [])
+        if not pagamentos:
+            return {"ok": False, "erro": "Nenhum pagamento aprovado encontrado para este email"}
+        # Pega o mais recente
+        pg = pagamentos[0]
+        ext = pg.get("external_reference", "")
+        pg_id = pg.get("id")
+        log_info("reprocessar_pix", uid=uid, email=email, pg_id=pg_id, ext=ext)
+        if not ext.startswith("pix|"):
+            return {"ok": False, "erro": "Pagamento encontrado mas não é PIX do Painel.IA"}
+        partes = ext.split("|")
+        plano_id = partes[2] if len(partes) > 2 else "fundador"
+        ciclo = partes[3] if len(partes) > 3 else "mensal"
+        dias = 365 if ciclo == "anual" else 30
+        fim = _agora() + _dt.timedelta(days=dias)
+        # Busca a assinatura atual do usuário
+        ass_r = supabase.table("assinaturas").select("id,status").eq("motorista_id", uid).order("criado_em", desc=True).limit(1).execute()
+        ass = (ass_r.data or [None])[0]
+        if ass:
+            supabase.table("assinaturas").update({
+                "plano_id": plano_id, "status": "active",
+                "periodo_inicio": _agora().isoformat(),
+                "periodo_fim": fim.isoformat(),
+                "email_pagamento": email,
+                "mp_subscription_id": str(pg_id),
+                "atualizado_em": _agora().isoformat(),
+            }).eq("id", ass["id"]).execute()
+        else:
+            supabase.table("assinaturas").insert({
+                "motorista_id": uid, "plano_id": plano_id, "status": "active",
+                "periodo_inicio": _agora().isoformat(),
+                "periodo_fim": fim.isoformat(),
+                "email_pagamento": email,
+                "mp_subscription_id": str(pg_id),
+            }).execute()
+        log_info("reprocessar_pix_ok", uid=uid, plano=plano_id)
+        return {"ok": True, "plano": plano_id, "expira_em": fim.isoformat()}
+    except Exception as e:
+        log_erro("reprocessar_pix_erro", erro=e)
+        return {"ok": False, "erro": str(e)}
 
 
 @router.post("/billing/cancelar")

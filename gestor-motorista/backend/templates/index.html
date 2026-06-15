@@ -5779,7 +5779,15 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         let _pixTentativas = 0;
         const _pixPoll = setInterval(async function(){
           _pixTentativas++;
-          if(_pixTentativas > 24){ clearInterval(_pixPoll); return; } // para após 2 min
+          if(_pixTentativas > 24){
+            clearInterval(_pixPoll);
+            // Polling esgotou — oferece botão de reprocessar
+            const _btn = document.createElement('div');
+            _btn.style='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e2435;border:1px solid rgba(240,180,41,.4);color:#f3f4f6;padding:14px 20px;border-radius:14px;font-size:14px;z-index:99999;text-align:center;max-width:90vw;box-shadow:0 4px 20px rgba(0,0,0,.5)';
+            _btn.innerHTML = '⏳ Pagamento ainda processando...<br><button onclick="window._reprocessarPix(this.parentNode)" style="margin-top:10px;background:#F0B429;color:#000;border:none;border-radius:8px;padding:10px 20px;font-weight:700;font-size:14px;cursor:pointer">🔄 Verificar pagamento</button>';
+            document.body.appendChild(_btn);
+            return;
+          }
           try{
             const _bPix = await authFetch(API+'/billing/status');
             if(!_bPix.ok) return;
@@ -6435,6 +6443,32 @@ setTimeout(function(){
 </script>
 <script>
 /* ════ BILLING UI ════ */
+async function _reprocessarPix(container){
+  if(container) container.innerHTML = '⏳ Verificando pagamento...';
+  try{
+    const r = await authFetch(API+'/billing/reprocessar-pix', {method:'POST'});
+    const d = await r.json();
+    if(d.ok){
+      if(container) container.remove();
+      window._billingStatus = {status:'active', plano:d.plano, pode_usar:true};
+      window._planoAtivo = true;
+      const _cp = document.getElementById('trial-chip');
+      if(_cp){ _cp.textContent='⭐ Fundador'; _cp.style.color='#00D897'; _cp.style.borderColor='rgba(0,216,151,.4)'; _cp.style.background='rgba(0,216,151,.1)'; _cp.style.cursor='default'; _cp.onclick=null; }
+      const _ov = document.getElementById('upgrade-overlay');
+      if(_ov) _ov.remove();
+      const _n = document.createElement('div');
+      _n.style='position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#00D897;color:#000;padding:12px 24px;border-radius:12px;font-weight:700;font-size:15px;z-index:99999';
+      _n.textContent='✅ Plano ativado! Seja bem-vindo 🎉';
+      document.body.appendChild(_n);
+      setTimeout(function(){ _n.remove(); }, 5000);
+    } else {
+      if(container) container.innerHTML = '❌ '+d.erro+'<br><small>Entre em contato: suporte@painelia.app</small>';
+    }
+  }catch(e){
+    if(container) container.innerHTML = '❌ Erro ao verificar. Tente novamente.';
+  }
+}
+
 function _mostrarOverlayUpgrade(bs){
   if(document.getElementById('upgrade-overlay')) return;
   bs = bs || window._billingStatus || {};
