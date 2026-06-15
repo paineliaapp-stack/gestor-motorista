@@ -6264,9 +6264,70 @@ async function _irCheckout(plano){
   try {
     const r = await authFetch(API+'/billing/criar-checkout', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({plano_id:plano||'fundador', email})});
     const d = await r.json();
-    if (d.init_point) { window.location.href = d.init_point; }
-    else { alert(d.erro || 'Não foi possível iniciar o pagamento. Tente de novo.'); }
+    if (d.init_point) {
+      // Abre MP em nova aba — app fica aberto
+      window.open(d.init_point, '_blank');
+      // Fecha modal de planos
+      const mp = document.getElementById('modal-planos');
+      if(mp) mp.remove();
+      // Mostra aviso com botão "Já paguei"
+      _mostrarAvisoPagamento();
+    } else {
+      alert(d.erro || 'Não foi possível iniciar o pagamento. Tente de novo.');
+    }
   } catch(e) { alert('Falha de conexão. Tente de novo.'); }
+}
+
+function _mostrarAvisoPagamento(){
+  const ant = document.getElementById('aviso-pagamento');
+  if(ant) ant.remove();
+  const div = document.createElement('div');
+  div.id = 'aviso-pagamento';
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px';
+  div.innerHTML = `
+    <div style="background:#111827;border:1px solid #2d3748;border-radius:20px;width:100%;max-width:360px;padding:28px 22px;text-align:center">
+      <div style="font-size:2.2rem;margin-bottom:12px">💳</div>
+      <div style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:8px">Conclua o pagamento</div>
+      <div style="font-size:13px;color:#94a3b8;line-height:1.6;margin-bottom:8px">
+        O Mercado Pago foi aberto em outra aba.<br>
+        Após confirmar, aguarde <strong style="color:#F0B429">3 a 5 minutos</strong> e clique abaixo.
+      </div>
+      <div style="font-size:11px;color:#4a5568;margin-bottom:20px">Você também receberá um email de confirmação.</div>
+      <button id="btn-verificar-pag" onclick="_verificarPagamento()" style="width:100%;background:#F0B429;border:none;border-radius:12px;color:#0a0a0a;font-size:15px;font-weight:800;padding:15px;cursor:pointer;margin-bottom:10px">
+        ✅ Já paguei — verificar agora
+      </button>
+      <button onclick="document.getElementById('aviso-pagamento').remove()" style="background:none;border:none;color:#4a5568;font-size:12px;cursor:pointer;padding:8px">
+        Voltar e verificar depois
+      </button>
+    </div>`;
+  document.body.appendChild(div);
+}
+
+async function _verificarPagamento(){
+  const btn = document.getElementById('btn-verificar-pag');
+  if(btn){ btn.disabled=true; btn.textContent='Verificando...'; }
+  try {
+    const r = await authFetch(API+'/billing/verificar-pagamento', {method:'POST'});
+    const d = await r.json();
+    if(d.ativado){
+      document.getElementById('aviso-pagamento')?.remove();
+      // Toast de sucesso
+      const t = document.createElement('div');
+      t.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:#065f46;color:#d1fae5;padding:14px 24px;border-radius:14px;font-size:14px;font-weight:700;z-index:99999;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.5)';
+      t.innerHTML = '✅ Plano ativado! Bem-vindo ao Painel.IA';
+      document.body.appendChild(t);
+      setTimeout(()=>{ t.remove(); location.reload(); }, 3000);
+    } else {
+      if(btn){ btn.disabled=false; btn.textContent='✅ Já paguei — verificar novamente'; }
+      const msg = document.createElement('div');
+      msg.style.cssText = 'font-size:12px;color:#f87171;margin-top:8px';
+      msg.textContent = d.mensagem || 'Pagamento ainda não confirmado. Aguarde alguns minutos e tente novamente.';
+      btn?.parentNode?.insertBefore(msg, btn.nextSibling);
+      setTimeout(()=>msg.remove(), 5000);
+    }
+  } catch(e) {
+    if(btn){ btn.disabled=false; btn.textContent='✅ Já paguei — verificar novamente'; }
+  }
 }
 </script>
 <script>

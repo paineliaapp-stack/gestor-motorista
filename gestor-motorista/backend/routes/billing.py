@@ -304,6 +304,104 @@ async def billing_webhook(request: Request):
     return {"ok": True}
 
 
+@router.post("/billing/verificar-pagamento")
+async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
+    """Usuário clica 'Já paguei' — busca pagamento aprovado no MP e ativa."""
+    import urllib.parse
+    token = os.getenv("MP_ACCESS_TOKEN", "")
+    if not token:
+        return {"ativado": False, "mensagem": "Pagamento não configurado"}
+    try:
+        agora = _agora()
+        # Busca assinatura atual
+        r = supabase.table("assinaturas").select("*").eq("motorista_id", uid).order("criado_em", desc=True).limit(1).execute()
+        ass = (r.data or [None])[0]
+
+        # Já está ativo?
+        if ass and ass.get("status") in ("active", "ativo"):
+            return {"ativado": True, "mensagem": "Plano já ativo", "plano": ass.get("plano_id")}
+
+        # Busca pagamentos aprovados no MP por external_reference
+        aprovado = None
+        plano_ativado = None
+        async with httpx.AsyncClient(timeout=15) as c:
+            for plano in ["fundador", "pro"]:
+                ref = urllib.parse.quote(f"{uid}|{plano}", safe="")
+                # Busca pagamento único (topic=payment)
+                r2 = await c.get(
+                    f"{_MP_API}/v1/payments/search?external_reference={ref}&sort=date_created&criteria=desc&limit=5",
+                    headers={"Authorization": f"Bearer {token}"}
+                )
+                log_info("verificar_busca", plano=plano, status=r2.status_code)
+                if r2.status_code == 200:
+                    for pg in r2.json().get("results", []):
+                        if pg.get("status") == "approved":
+                            aprovado = pg
+                            plano_ativado = plano
+                            break
+                if aprovado:
+                    break
+
+            if not aprovado:
+                # Tenta também preapproval (assinatura recorrente)
+                sub_id = ass.get("mp_subscription_id") if ass else None
+                if sub_id:
+                    r3 = await c.get(f"{_MP_API}/preapproval/{sub_id}",
+                                     headers={"Authorization": f"Bearer {token}"})
+                    if r3.status_code == 200:
+                        pre = r3.json()
+                        if pre.get("status") == "authorized":
+                            plano_ativado = ass.get("plano_id", "fundador")
+                            aprovado = {"id": sub_id, "transaction_amount": _PRECOS.get(plano_ativado, 19)}
+
+        if not aprovado:
+            return {"ativado": False, "mensagem": "Pagamento aprovado não encontrado. Aguarde alguns minutos e tente novamente."}
+
+        # Ativa assinatura
+        periodo_fim = agora + _dt.timedelta(days=30)
+        if ass:
+            supabase.table("assinaturas").update({
+                "status": "active",
+                "plano_id": plano_ativado,
+                "periodo_inicio": agora.isoformat(),
+                "periodo_fim": periodo_fim.isoformat(),
+                "mp_subscription_id": str(aprovado.get("id", "")),
+                "atualizado_em": agora.isoformat(),
+            }).eq("id", ass["id"]).execute()
+        else:
+            supabase.table("assinaturas").insert({
+                "motorista_id": uid, "plano_id": plano_ativado,
+                "status": "active",
+                "periodo_inicio": agora.isoformat(),
+                "periodo_fim": periodo_fim.isoformat(),
+                "mp_subscription_id": str(aprovado.get("id", "")),
+            }).execute()
+
+        # Decrementa vaga fundador
+        if plano_ativado == "fundador":
+            try:
+                v = _vagas_fundador()
+                supabase.table("planos").update({"vagas_restantes": max(0, v - 1)}).eq("id", "fundador").execute()
+            except Exception:
+                pass
+
+        # Email de confirmação
+        try:
+            email = await _email_do_usuario(uid)
+            if email:
+                from services.email_service import email_pagamento_confirmado
+                await email_pagamento_confirmado(email, _nome_do_motorista(uid), _NOMES.get(plano_ativado, plano_ativado), _PRECOS.get(plano_ativado, 0))
+        except Exception as e:
+            log_erro("email_confirmacao_erro", erro=e)
+
+        log_info("pagamento_verificado_manual", uid=uid, plano=plano_ativado)
+        return {"ativado": True, "plano": plano_ativado, "mensagem": f"Plano {plano_ativado} ativado!"}
+
+    except Exception as e:
+        log_erro("verificar_pagamento_erro", erro=e)
+        return {"ativado": False, "mensagem": "Erro interno. Tente novamente."}
+
+
 @router.post("/billing/cancelar")
 async def cancelar(uid: str = Depends(get_uid_from_token)):
     token = os.getenv("MP_ACCESS_TOKEN", "")
