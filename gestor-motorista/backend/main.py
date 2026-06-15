@@ -36,6 +36,83 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.on_event("startup")
 async def startup_scheduler():
     await push_service.startup_scheduler()
+    # Scheduler de assinaturas: verifica expiração a cada hora
+    import asyncio
+    asyncio.ensure_future(_scheduler_assinaturas())
+
+async def _scheduler_assinaturas():
+    import asyncio
+    import datetime as _dt
+    from core.supabase_client import supabase
+    from core.logging import log_info, log_erro
+    from services.email_service import email_trial_expirando, email_trial_expirado, email_pagamento_falhou
+    import os, httpx
+
+    await asyncio.sleep(30)  # aguarda app estabilizar
+
+    while True:
+        try:
+            agora = _dt.datetime.now(_dt.timezone.utc)
+
+            # 1. Bloquear assinaturas pagas vencidas (periodo_fim no passado)
+            vencidas = supabase.table("assinaturas").select("id,motorista_id,plano_id,periodo_fim,email_pagamento").eq("status", "active").lt("periodo_fim", agora.isoformat()).execute()
+            for ass in (vencidas.data or []):
+                try:
+                    supabase.table("assinaturas").update({"status": "expired", "atualizado_em": agora.isoformat()}).eq("id", ass["id"]).execute()
+                    log_info("assinatura_expirada", motorista_id=ass["motorista_id"])
+                    # Email avisando que expirou
+                    email = ass.get("email_pagamento") or ""
+                    if not email:
+                        _url = os.getenv("SUPABASE_URL",""); _key = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY","")
+                        async with httpx.AsyncClient(timeout=8) as c:
+                            r = await c.get(f"{_url}/auth/v1/admin/users/{ass['motorista_id']}", headers={"apikey":_key,"Authorization":f"Bearer {_key}"})
+                            if r.status_code == 200: email = r.json().get("email","")
+                    if email:
+                        await email_pagamento_falhou(email, "motorista")
+                except Exception as e:
+                    log_erro("scheduler_expirar_erro", erro=e)
+
+            # 2. Trial expirando em 6h — mandar aviso
+            em_6h = (agora + _dt.timedelta(hours=6)).isoformat()
+            expirando = supabase.table("assinaturas").select("id,motorista_id,trial_fim,email_pagamento").eq("status","trial").lt("trial_fim", em_6h).gt("trial_fim", agora.isoformat()).eq("email_expirando_enviado", False).execute()
+            for ass in (expirando.data or []):
+                try:
+                    email = ass.get("email_pagamento") or ""
+                    if not email:
+                        _url = os.getenv("SUPABASE_URL",""); _key = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY","")
+                        async with httpx.AsyncClient(timeout=8) as c:
+                            r = await c.get(f"{_url}/auth/v1/admin/users/{ass['motorista_id']}", headers={"apikey":_key,"Authorization":f"Bearer {_key}"})
+                            if r.status_code == 200: email = r.json().get("email","")
+                    if email:
+                        tf = _dt.datetime.fromisoformat(str(ass["trial_fim"]).replace("Z","+00:00"))
+                        horas = max(1, int((tf - agora).total_seconds() / 3600))
+                        await email_trial_expirando(email, "motorista", horas)
+                    supabase.table("assinaturas").update({"email_expirando_enviado": True}).eq("id", ass["id"]).execute()
+                except Exception as e:
+                    log_erro("scheduler_trial_expirando_erro", erro=e)
+
+            # 3. Trial expirado — bloquear e mandar email
+            expirados = supabase.table("assinaturas").select("id,motorista_id,trial_fim,email_pagamento").eq("status","trial").lt("trial_fim", agora.isoformat()).execute()
+            for ass in (expirados.data or []):
+                try:
+                    supabase.table("assinaturas").update({"status":"expired","atualizado_em":agora.isoformat()}).eq("id",ass["id"]).execute()
+                    email = ass.get("email_pagamento") or ""
+                    if not email:
+                        _url = os.getenv("SUPABASE_URL",""); _key = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY","")
+                        async with httpx.AsyncClient(timeout=8) as c:
+                            r = await c.get(f"{_url}/auth/v1/admin/users/{ass['motorista_id']}", headers={"apikey":_key,"Authorization":f"Bearer {_key}"})
+                            if r.status_code == 200: email = r.json().get("email","")
+                    if email:
+                        await email_trial_expirado(email, "motorista")
+                    log_info("trial_expirado", motorista_id=ass["motorista_id"])
+                except Exception as e:
+                    log_erro("scheduler_trial_expirado_erro", erro=e)
+
+            log_info("scheduler_assinaturas_ok", vencidas=len(vencidas.data or []), expirando=len(expirando.data or []), expirados=len(expirados.data or []))
+        except Exception as e:
+            log_erro("scheduler_assinaturas_erro", erro=e)
+
+        await asyncio.sleep(3600)  # roda a cada 1 hora
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
