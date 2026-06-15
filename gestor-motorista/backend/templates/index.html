@@ -3061,7 +3061,7 @@ async function loadHist(tipo){
         head.innerHTML='<div style="flex:1;height:1px;background:rgba(255,255,255,.07)"></div>'+
           '<span style="font-size:12px;font-weight:700;color:var(--am);background:rgba(245,166,35,.12);padding:5px 14px;border-radius:999px;white-space:nowrap">'+labelDia(l.data)+'</span>'+
           '<span style="font-size:11px;color:var(--mt);white-space:nowrap">'+(gDia>0?'<span style="color:var(--gn)">+'+fmt(gDia)+'</span>':'')+(gDia>0&&dDia>0?' · ':'')+(dDia>0?'<span style="color:var(--rd)">-'+fmt(dDia)+'</span>':'')+'</span>'+
-          '<div style="flex:1;height:1px;background:rgba(255,255,255,.07)"></div>';
+          '<div style="flex:1;height:1px;background:rgba(255,255,255,.07)"></div>'+(gDia!==undefined?'<span style="font-size:11px;font-weight:700;margin-left:6px;color:'+(gDia-dDia>=0?'#00D897':'#ff4d6a')+ '">='+fmt(Math.abs(gDia-dDia))+(gDia-dDia<0?' 🔴':' ✅')+'</span>':'')+'\n        </div>';
         el.appendChild(head);
       }
       const c=CATS.find(x=>x.k===l.descricao)||{e:l.tipo==='ganho'?'💰':'📦',n:l.plataforma||l.descricao||'-'};

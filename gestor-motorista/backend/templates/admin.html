@@ -479,8 +479,14 @@ async function carregarGlobo(){
       .onPointClick(d=>{
         const info = document.getElementById('globo-info');
         if(info){
+          const lista = (d.usuarios||[]).map(u=>
+            `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#F0B429,#e67e22);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;flex-shrink:0">${(u.nome||'?')[0].toUpperCase()}</div>
+              <div><div style="font-size:12px;font-weight:600;color:#fff">${u.nome||'Usuário'}</div><div style="font-size:10px;color:#a5b4fc">${u.email||u.id.slice(0,8)+'...'}</div></div>
+            </div>`
+          ).join('');
           info.style.display='block';
-          info.innerHTML = `<div style="font-size:15px;font-weight:700;margin-bottom:4px">📍 ${d.cidade}${d.estado?'/'+d.estado:''}</div><div style="color:#a5b4fc">${d.total} usuário${d.total>1?'s':''} aqui</div>`;
+          info.innerHTML = `<div style="font-size:14px;font-weight:700;margin-bottom:8px;color:#F0B429">📍 ${d.cidade}${d.estado?'/'+d.estado:''} · ${d.total} usuário${d.total>1?'s':''}</div>${lista}<button onclick="this.closest('#globo-info').style.display='none'" style="margin-top:8px;width:100%;padding:5px;border:none;border-radius:6px;background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:11px">Fechar</button>`;
         }
         _globoInstance.pointOfView({lat:d.lat, lng:d.lng, altitude:1.5}, 1000);
       });
@@ -860,8 +866,7 @@ function _fmtData(d){
 
 function abrirModalInvest(){
   const hoje = new Date().toISOString().slice(0,10);
-  const m = document.getElementById('modal-invest');
-  if(m){ document.getElementById('inv-data').value = hoje; document.getElementById('modalInvestBg').classList.add('open'); }
+  document.getElementById('inv-data').value = hoje; document.getElementById('modalInvestBg').classList.add('open');
 }
 
 async function salvarInvest(){
