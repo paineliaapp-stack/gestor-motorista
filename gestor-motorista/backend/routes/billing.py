@@ -17,6 +17,8 @@ router = APIRouter()
 _MP_API = "https://api.mercadopago.com"
 _APP_URL = "https://gestor-motorista-production.up.railway.app"
 _PRECOS = {"fundador": 19.00, "pro": 29.00}
+# Preço anual: 12 meses com desconto (paga ~10 meses, ganha 2)
+_PRECOS_ANUAL = {"fundador": 190.00, "pro": 290.00}
 _NOMES = {"fundador": "Plano Fundador", "pro": "Plano Pro"}
 
 
@@ -152,6 +154,65 @@ async def checkout_publico(dados: dict = Body(...)):
         return {"init_point": data["init_point"]}
     except Exception as e:
         log_erro("checkout_publico_erro", erro=e)
+        return {"erro": "Falha de conexão"}
+
+
+@router.post("/billing/checkout-pix")
+async def checkout_pix(dados: dict = Body(...)):
+    """Checkout via PIX (pagamento avulso). Aceita ciclo mensal ou anual.
+    PIX não renova sozinho — o cliente paga manualmente quando vence (mandamos lembrete por email).
+    Vincula por email após o pagamento (igual ao checkout-publico)."""
+    plano_id = dados.get("plano_id", "fundador")
+    ciclo = dados.get("ciclo", "mensal")  # "mensal" ou "anual"
+    email = (dados.get("email") or "").strip().lower()
+    if plano_id not in _PRECOS:
+        return {"erro": "Plano inválido"}
+    if not email or "@" not in email:
+        return {"erro": "Informe um email válido"}
+    if plano_id == "fundador" and _vagas_fundador() <= 0:
+        return {"erro": "Vagas do Plano Fundador esgotadas"}
+    token = os.getenv("MP_ACCESS_TOKEN", "")
+    if not token:
+        return {"erro": "Pagamento ainda não configurado — tente em instantes"}
+
+    valor = _PRECOS_ANUAL[plano_id] if ciclo == "anual" else _PRECOS[plano_id]
+    titulo = f"Painel.IA — {_NOMES[plano_id]} ({'Anual' if ciclo == 'anual' else 'Mensal'})"
+    # Preference: pagamento avulso que aceita PIX. external_reference vincula por email + ciclo.
+    payload = {
+        "items": [{
+            "title": titulo,
+            "quantity": 1,
+            "unit_price": valor,
+            "currency_id": "BRL",
+        }],
+        "payer": {"email": email},
+        "external_reference": f"pix|email:{email}|{plano_id}|{ciclo}",
+        "payment_methods": {
+            # PIX como destaque; exclui boleto (demora a compensar). Cartão fica disponível como secundário.
+            "excluded_payment_types": [{"id": "ticket"}],
+            "installments": 1,
+        },
+        "back_urls": {
+            "success": f"{_APP_URL}/?pagamento=ok&email={email}",
+            "pending": f"{_APP_URL}/?pagamento=pendente&email={email}",
+            "failure": f"{_APP_URL}/?pagamento=falhou",
+        },
+        "auto_return": "approved",
+        "notification_url": f"{_APP_URL}/billing/webhook",
+        "statement_descriptor": "PAINEL.IA",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.post(f"{_MP_API}/checkout/preferences",
+                             headers={"Authorization": f"Bearer {token}"}, json=payload)
+            data = r.json()
+        if r.status_code >= 400 or "init_point" not in data:
+            log_warn("checkout_pix_falhou", status=r.status_code, body=str(data)[:300])
+            return {"erro": "Não foi possível iniciar o pagamento — tente novamente"}
+        log_info("checkout_pix_criado", email=email, ciclo=ciclo, plano=plano_id)
+        return {"init_point": data["init_point"]}
+    except Exception as e:
+        log_erro("checkout_pix_erro", erro=e)
         return {"erro": "Falha de conexão"}
 
 
@@ -312,12 +373,69 @@ async def billing_webhook(request: Request):
                 r = await c.get(f"{_MP_API}/v1/payments/{rid}", headers={"Authorization": f"Bearer {token}"})
                 pg = r.json() if r.status_code == 200 else {}
             ext = pg.get("external_reference", "")
-            if "|" in ext:
-                uid, _ = ext.split("|", 1)
+            pg_status = pg.get("status", "")
+            # Formato novo do PIX: "pix|email:x@y|plano|ciclo"
+            if ext.startswith("pix|"):
+                partes = ext.split("|")
+                _email = partes[1][6:] if len(partes) > 1 and partes[1].startswith("email:") else ""
+                plano_id = partes[2] if len(partes) > 2 else "fundador"
+                ciclo = partes[3] if len(partes) > 3 else "mensal"
+                # Registra o pagamento
+                uid_pix = None
+                try:
+                    _r = supabase.table("motoristas").select("id").eq("email_pagamento", _email).limit(1).execute()
+                    if _r.data:
+                        uid_pix = _r.data[0]["id"]
+                except Exception:
+                    pass
+                if pg_status == "approved":
+                    # Calcula o fim do período (30 dias ou 365 dias)
+                    dias = 365 if ciclo == "anual" else 30
+                    fim = _agora() + _dt.timedelta(days=dias)
+                    try:
+                        # Ativa por email (se já existe usuário) ou registra pendente para vincular no login
+                        ja_ativo = False
+                        if uid_pix:
+                            atual = supabase.table("assinaturas").select("status").eq("motorista_id", uid_pix).order("criado_em", desc=True).limit(1).execute()
+                            ja_ativo = (atual.data or [{}])[0].get("status") == "active"
+                        supabase.table("assinaturas").upsert({
+                            "motorista_id": uid_pix, "plano_id": plano_id,
+                            "status": "active",
+                            "periodo_inicio": _agora().isoformat(),
+                            "periodo_fim": fim.isoformat(),
+                            "email_pagamento": _email,
+                            "mp_payment_id": str(rid),
+                            "ciclo": ciclo,
+                            "atualizado_em": _agora().isoformat(),
+                        }).execute()
+                        # Decrementa vaga de fundador só na ativação nova
+                        if plano_id == "fundador" and not ja_ativo:
+                            v = _vagas_fundador()
+                            supabase.table("planos").update({"vagas_restantes": max(0, v - 1)}).eq("id", "fundador").execute()
+                        log_info("pix_ativado", email=_email, ciclo=ciclo, plano=plano_id)
+                    except Exception as e:
+                        log_erro("pix_ativar_erro", erro=e)
+                    # Email de pagamento confirmado
+                    try:
+                        from services.email_service import email_pagamento_confirmado
+                        _valor = _PRECOS_ANUAL[plano_id] if ciclo == "anual" else _PRECOS[plano_id]
+                        await email_pagamento_confirmado(_email, "", _NOMES.get(plano_id, plano_id), _valor)
+                    except Exception:
+                        pass
                 try:
                     supabase.table("pagamentos").insert({
-                        "motorista_id": uid, "mp_payment_id": str(rid),
-                        "valor": pg.get("transaction_amount"), "status": pg.get("status"),
+                        "motorista_id": uid_pix, "mp_payment_id": str(rid),
+                        "valor": pg.get("transaction_amount"), "status": pg_status,
+                    }).execute()
+                except Exception:
+                    pass
+            # Formato antigo (cartão avulso com uid direto)
+            elif "|" in ext:
+                uid_pg, _ = ext.split("|", 1)
+                try:
+                    supabase.table("pagamentos").insert({
+                        "motorista_id": uid_pg, "mp_payment_id": str(rid),
+                        "valor": pg.get("transaction_amount"), "status": pg_status,
                     }).execute()
                 except Exception:
                     pass
