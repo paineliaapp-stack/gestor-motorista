@@ -254,6 +254,99 @@ async def criar_checkout_landing(dados: dict = Body(...)):
     }
 
 
+
+
+@router.post("/verificar-pagamento")
+async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
+    """
+    Usuário chama quando o webhook falhou. Consulta o MP e ativa se encontrar aprovado.
+    """
+    if not MP_ACCESS_TOKEN:
+        raise HTTPException(status_code=503, detail="Pagamento nao configurado")
+    try:
+        agora = _agora()
+        ass = _buscar_assinatura(uid)
+
+        async with httpx.AsyncClient(timeout=15) as c:
+            # Busca por fundador e por pro
+            aprovado = None
+            for plano in ["fundador", "pro"]:
+                r = await c.get(
+                    f"https://api.mercadopago.com/v1/payments/search?external_reference={uid}|{plano}&sort=date_created&criteria=desc&limit=3",
+                    headers={"Authorization": f"Bearer {MP_ACCESS_TOKEN}"}
+                )
+                if r.status_code == 200:
+                    for pag in r.json().get("results", []):
+                        if pag.get("status") == "approved":
+                            aprovado = pag
+                            aprovado["_plano"] = plano
+                            break
+                if aprovado:
+                    break
+
+        if not aprovado:
+            return {
+                "verificado": False,
+                "mensagem": "Pagamento nao encontrado. Aguarde alguns minutos e tente novamente.",
+                "status_atual": ass["status"] if ass else "sem_assinatura"
+            }
+
+        payment_id = str(aprovado["id"])
+        valor = aprovado.get("transaction_amount", 0)
+        plano_id = aprovado["_plano"]
+        periodo_fim = agora + timedelta(days=30)
+
+        if ass:
+            supabase.table("assinaturas").update({
+                "status": "ativo",
+                "plano_id": plano_id,
+                "periodo_inicio": agora.isoformat(),
+                "periodo_fim": periodo_fim.isoformat(),
+                "mp_subscription_id": payment_id,
+                "atualizado_em": agora.isoformat(),
+            }).eq("id", ass["id"]).execute()
+            ass_id = ass["id"]
+        else:
+            nova = supabase.table("assinaturas").insert({
+                "motorista_id": uid,
+                "plano_id": plano_id,
+                "status": "ativo",
+                "periodo_inicio": agora.isoformat(),
+                "periodo_fim": periodo_fim.isoformat(),
+                "mp_subscription_id": payment_id,
+            }).execute()
+            ass_id = nova.data[0]["id"]
+
+        try:
+            supabase.table("pagamentos").insert({
+                "assinatura_id": ass_id,
+                "motorista_id": uid,
+                "mp_payment_id": payment_id,
+                "valor": valor,
+                "status": "aprovado",
+            }).execute()
+        except Exception:
+            pass
+
+        if plano_id == "fundador":
+            try:
+                supabase.rpc("decrementar_vaga_fundador", {}).execute()
+            except Exception:
+                pass
+
+        log_info("pagamento_verificado_manual", motorista_id=uid, plano=plano_id, valor=valor)
+        return {
+            "verificado": True,
+            "ativado": True,
+            "plano": plano_id,
+            "mensagem": f"Plano {plano_id} ativado!",
+            "periodo_fim": periodo_fim.isoformat(),
+        }
+
+    except Exception as e:
+        log_erro("verificar_pagamento_erro", erro=e)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/webhook")
 async def webhook_mp(request: Request):
     """Recebe notificações do Mercado Pago e ativa assinatura."""

@@ -48,17 +48,65 @@ async def metricas(request: Request):
         plano_fundador = supabase.table("planos").select("vagas_restantes, vagas_total").eq("id", "fundador").execute()
         vagas = plano_fundador.data[0] if plano_fundador.data else {}
 
+        # Lançamentos: total e ranking de uso por motorista_id
+        lanc_res = supabase.table("lancamentos").select("motorista_id, valor, tipo").execute()
+        lanc_data = lanc_res.data or []
+
+        total_lancamentos = len(lanc_data)
+
+        # Agrupa por motorista_id
+        from collections import defaultdict
+        uso_por_user = defaultdict(lambda: {"count": 0, "receita": 0.0})
+        for l in lanc_data:
+            mid = l.get("motorista_id", "")
+            if not mid:
+                continue
+            uso_por_user[mid]["count"] += 1
+            if l.get("tipo") in ("ganho", "renda_extra", None):
+                uso_por_user[mid]["receita"] += float(l.get("valor") or 0)
+
+        usuarios_com_uso = len(uso_por_user)
+        # Total de motoristas cadastrados (sem assinatura) vs com lançamentos
+        todos_motoristas = supabase.table("motoristas").select("id").execute()
+        total_motoristas = len(todos_motoristas.data or [])
+        sem_uso = max(0, total_motoristas - usuarios_com_uso)
+
+        # Ranking top 5 mais ativos
+        ranking_raw = sorted(uso_por_user.items(), key=lambda x: x[1]["count"], reverse=True)[:5]
+        # Enriquece com email
+        ranking = []
+        for mid, info in ranking_raw:
+            ass_r = supabase.table("assinaturas").select("email_pagamento").eq("motorista_id", mid).limit(1).execute()
+            email = (ass_r.data or [{}])[0].get("email_pagamento") or mid[:8] + "…"
+            ranking.append({"email": email, "lancamentos": info["count"], "receita": round(info["receita"], 2)})
+
+        # Tickets abertos
+        try:
+            tickets_res = supabase.table("tickets_suporte").select("id").eq("status", "aberto").execute()
+            tickets_abertos = len(tickets_res.data or [])
+        except Exception:
+            tickets_abertos = 0
+
+        # Sem assinatura (não tem linha em assinaturas)
+        sem_assinatura = total_motoristas - total
+
         return {
-            "total_usuarios": total,
+            "total_usuarios": total_motoristas,
             "em_trial": em_trial,
             "ativos": ativos,
             "expirados": expirados,
+            "sem_assinatura": max(0, sem_assinatura),
             "fundadores": fundadores,
             "pro": pro,
             "receita_total": round(receita, 2),
             "novos_7_dias": novos_7d,
             "vagas_fundador_restantes": vagas.get("vagas_restantes"),
             "vagas_fundador_total": vagas.get("vagas_total"),
+            "total_lancamentos": total_lancamentos,
+            "usuarios_com_uso": usuarios_com_uso,
+            "sem_uso": sem_uso,
+            "tickets_abertos": tickets_abertos,
+            "ranking_uso": ranking,
         }
     except Exception as e:
         log_erro("admin_metricas_erro", erro=e)

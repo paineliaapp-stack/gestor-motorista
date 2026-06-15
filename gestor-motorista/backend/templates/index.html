@@ -5835,13 +5835,115 @@ function abrirModalUpgrade() {
   document.getElementById('modal-upgrade').style.display = 'flex';
 }
 
+// ── Polling de verificação de pagamento ─────────────────────────────────────
+let _payPollingTimer = null;
+
+function _pararPollingPagamento() {
+  if (_payPollingTimer) { clearInterval(_payPollingTimer); _payPollingTimer = null; }
+}
+
+async function _verificarPagamentoServidor(silent) {
+  try {
+    const r = await authFetch(API + '/billing/verificar-pagamento', { method: 'POST' });
+    const d = await r.json();
+    if (d.verificado && d.ativado) {
+      _pararPollingPagamento();
+      // Fecha modal de pagamento se estiver aberto
+      const mp = document.getElementById('modal-pagamento-aguarde');
+      if (mp) mp.remove();
+      // Mostra sucesso e recarrega status
+      _mostrarSucessoPagamento(d.plano);
+    } else if (!silent) {
+      return false;
+    }
+    return d.ativado;
+  } catch(e) {
+    return false;
+  }
+}
+
+function _mostrarSucessoPagamento(plano) {
+  // Remove overlay de upgrade se existir
+  const ov = document.getElementById('modal-upgrade');
+  if (ov) ov.style.display = 'none';
+  const banner = document.getElementById('trial-banner');
+  if (banner) banner.style.display = 'none';
+  // Mostra toast de sucesso
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#065f46;color:#d1fae5;padding:14px 22px;border-radius:14px;font-size:14px;font-weight:700;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.5);text-align:center';
+  toast.innerHTML = `✅ Plano ${plano} ativado!<br><span style="font-size:12px;font-weight:400;opacity:.85">Bem-vindo ao Painel.IA</span>`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+  // Recarrega página para refletir novo status
+  setTimeout(() => location.reload(), 4200);
+}
+
+function _abrirModalAguardePagamento(url) {
+  // Remove modal anterior se existir
+  const ant = document.getElementById('modal-pagamento-aguarde');
+  if (ant) ant.remove();
+
+  const m = document.createElement('div');
+  m.id = 'modal-pagamento-aguarde';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML = `
+    <div style="background:#111827;border:1px solid #2d3748;border-radius:20px;width:100%;max-width:380px;padding:28px 22px;text-align:center">
+      <div style="font-size:2rem;margin-bottom:12px">💳</div>
+      <h3 style="color:#fff;font-size:1.1rem;margin-bottom:8px">Pagamento em andamento</h3>
+      <p style="color:#718096;font-size:13px;margin-bottom:20px;line-height:1.5">
+        Conclua o pagamento no Mercado Pago.<br>
+        Quando confirmar, volte aqui e clique em <strong style="color:#F0B429">"Já paguei"</strong>.
+      </p>
+      <div id="pay-status-msg" style="font-size:12px;color:#4a5568;margin-bottom:16px">Verificando automaticamente...</div>
+      <button onclick="_verificarManual()" id="btn-ja-paguei"
+        style="width:100%;background:#F0B429;border:none;border-radius:12px;color:#000;font-weight:800;font-size:15px;padding:14px;cursor:pointer;margin-bottom:10px">
+        ✅ Já paguei — verificar agora
+      </button>
+      <button onclick="_reabrirMP('${url}')"
+        style="width:100%;background:#1a1d2e;border:1px solid #2d3748;border-radius:12px;color:#a0aec0;font-size:13px;padding:12px;cursor:pointer;margin-bottom:10px">
+        🔗 Reabrir link do Mercado Pago
+      </button>
+      <button onclick="document.getElementById('modal-pagamento-aguarde').remove();_pararPollingPagamento()"
+        style="background:none;border:none;color:#4a5568;font-size:12px;cursor:pointer;padding:8px">
+        Cancelar
+      </button>
+    </div>`;
+  document.body.appendChild(m);
+
+  // Inicia polling automático a cada 10s
+  _pararPollingPagamento();
+  _payPollingTimer = setInterval(async () => {
+    const msg = document.getElementById('pay-status-msg');
+    if (msg) msg.textContent = 'Verificando pagamento...';
+    const ativado = await _verificarPagamentoServidor(true);
+    if (!ativado && msg) msg.textContent = 'Aguardando confirmação do Mercado Pago...';
+  }, 10000);
+}
+
+function _reabrirMP(url) {
+  window.open(url, '_blank');
+}
+
+async function _verificarManual() {
+  const btn = document.getElementById('btn-ja-paguei');
+  const msg = document.getElementById('pay-status-msg');
+  if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
+  if (msg) msg.textContent = 'Consultando o Mercado Pago...';
+
+  const ativado = await _verificarPagamentoServidor(false);
+  if (!ativado) {
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Já paguei — verificar novamente'; }
+    if (msg) msg.style.cssText += ';color:#f87171';
+    if (msg) msg.textContent = 'Pagamento ainda não encontrado. Aguarde 1-2 min e tente novamente.';
+  }
+}
+
 async function irParaCheckoutUpgrade() {
   const btn = document.getElementById('upgrade-btn');
   btn.disabled = true;
-  btn.textContent = 'Aguarde...';
+  btn.textContent = 'Gerando link...';
   document.getElementById('upgrade-erro').style.display = 'none';
   try {
-    const tok = await getToken();
     const r = await authFetch(API + '/billing/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -5849,9 +5951,14 @@ async function irParaCheckoutUpgrade() {
     });
     const d = await r.json();
     if (!r.ok) throw new Error(d.detail || 'Erro ao criar checkout');
-    const url = d.url || d.sandbox_url;
-    if (url) window.open(url, '_blank');
-    else throw new Error('URL de pagamento não retornada');
+    const url = d.url || d.sandbox_url || d.checkout_url;
+    if (!url) throw new Error('Link de pagamento não retornado');
+
+    // Abre o MP e mostra modal de aguarde
+    window.open(url, '_blank');
+    document.getElementById('modal-upgrade').style.display = 'none';
+    _abrirModalAguardePagamento(url);
+
   } catch(e) {
     const err = document.getElementById('upgrade-erro');
     err.textContent = e.message;
@@ -5869,7 +5976,7 @@ async function verificarTrialBanner() {
     const r = await authFetch(API + '/billing/status');
     if (!r.ok) return;
     const d = await r.json();
-    const status = d.status; // trial, ativo, expirado, sem_assinatura
+    const status = d.status;
     if (status !== 'trial' && status !== 'expirado') return;
 
     const banner = document.getElementById('trial-banner');
@@ -5879,30 +5986,23 @@ async function verificarTrialBanner() {
 
     if (status === 'expirado') {
       banner.style.background = 'linear-gradient(135deg,#450a0a,#7f1d1d)';
-      banner.querySelector('div[style*="font-size:22px"]').textContent = '🔒';
+      const ico = banner.querySelector('div[style*="font-size:22px"]');
+      if (ico) ico.textContent = '🔒';
       titulo.textContent = 'Seu trial expirou';
       sub.textContent = 'Assine para continuar usando o Painel.IA';
-    } else if (status === 'trial') {
-      // Calcula horas restantes
-      if (d.periodo_fim) {
-        const fim = new Date(d.periodo_fim);
-        const agora = new Date();
-        const horas = Math.max(0, Math.floor((fim - agora) / 36e5));
-        if (horas > 12) return; // Só mostra quando falta menos de 12h
-        titulo.textContent = horas > 0 ? `Trial expira em ${horas}h` : 'Trial expira hoje!';
-        sub.textContent = 'Assine agora para não perder o acesso';
-      }
+    } else if (status === 'trial' && d.periodo_fim) {
+      const fim = new Date(d.periodo_fim);
+      const horas = Math.max(0, Math.floor((fim - new Date()) / 36e5));
+      if (horas > 12) return;
+      titulo.textContent = horas > 0 ? `Trial expira em ${horas}h` : 'Trial expira hoje!';
+      sub.textContent = 'Assine agora para não perder o acesso';
     }
 
     banner.style.display = 'flex';
-  } catch(e) {
-    // Silencioso
-  }
+  } catch(e) {}
 }
 
-// Roda após o init do app
 document.addEventListener('app-ready', verificarTrialBanner);
-// Fallback: roda 5s após carregamento
 setTimeout(() => {
   if (typeof authFetch === 'function' && typeof API !== 'undefined') {
     verificarTrialBanner();
