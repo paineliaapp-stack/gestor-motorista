@@ -5715,6 +5715,10 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     NOME = setUserUI(session);
     const upRes = await authFetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})});
     const upData = await upRes.json();
+    // ── Setup: se novo usuário, inicia onboarding ──
+    if(upData && upData.setup_completo === false){
+      ativarSetupMode();
+    }
     // ── Retorno de pagamento MP (PIX aprovado) ──
     (function(){
       const _p = new URLSearchParams(window.location.search);
