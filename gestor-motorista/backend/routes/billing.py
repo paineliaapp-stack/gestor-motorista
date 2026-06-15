@@ -1,452 +1,325 @@
-"""Billing: trial automático, status de assinatura, checkout Mercado Pago, webhook."""
-import os, httpx, secrets, string
-from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Body, Depends, HTTPException, Request
-from core.supabase_client import supabase, _supabase_url, _supabase_service_key
+"""Billing: trial 24h, planos, checkout MercadoPago (preapproval) e webhook.
+
+Tudo via httpx — sem SDK extra. Envs: MP_ACCESS_TOKEN, MP_WEBHOOK_SECRET (opcional).
+Endpoints degradam graciosamente: sem tabela/env, retornam estado seguro em vez de 500.
+"""
+import os
+import asyncio
+import datetime as _dt
+import httpx
+from fastapi import APIRouter, Body, Depends, Request, HTTPException
+from core.supabase_client import supabase
 from core.security import get_uid_from_token
-from core.logging import log_info, log_erro
+from core.logging import log_info, log_warn, log_erro
 
-router = APIRouter(prefix="/billing", tags=["billing"])
+router = APIRouter()
 
-MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN", "")
-APP_URL = os.getenv("APP_URL", "https://gestor-motorista-production.up.railway.app")
+_MP_API = "https://api.mercadopago.com"
+_APP_URL = "https://gestor-motorista-production.up.railway.app"
+_PRECOS = {"fundador": 19.00, "pro": 29.00}
+_NOMES = {"fundador": "Plano Fundador", "pro": "Plano Pro"}
 
-PLANO_FUNDADOR_PRECO = 1900   # centavos
-PLANO_PRO_PRECO      = 2900
-
-# ── Helpers ─────────────────────────────────────────────────────────────────
 
 def _agora():
-    return datetime.now(timezone.utc)
+    return _dt.datetime.now(_dt.timezone.utc)
 
-def _buscar_assinatura(motorista_id: str):
-    res = supabase.table("assinaturas").select("*").eq("motorista_id", motorista_id).order("criado_em", desc=True).limit(1).execute()
-    return res.data[0] if res.data else None
 
-def _criar_trial(motorista_id: str) -> dict:
-    agora = _agora()
-    trial_fim = agora + timedelta(hours=24)
-    data = {
-        "motorista_id": motorista_id,
-        "plano_id": "fundador",
-        "status": "trial",
-        "trial_inicio": agora.isoformat(),
-        "trial_fim": trial_fim.isoformat(),
-    }
-    res = supabase.table("assinaturas").insert(data).execute()
-    return res.data[0]
-
-# ── Rotas ────────────────────────────────────────────────────────────────────
-
-@router.get("/status")
-async def billing_status(uid: str = Depends(get_uid_from_token)):
-    """Retorna o status atual da assinatura. Cria trial se for primeira vez."""
+def _vagas_fundador() -> int:
     try:
-        ass = _buscar_assinatura(uid)
-        if not ass:
-            ass = _criar_trial(uid)
-            log_info("trial_criado", motorista_id=uid)
-
-        status = ass["status"]
-        agora = _agora()
-
-        # Trial expirou? Atualiza para 'expirado'
-        if status == "trial" and ass.get("trial_fim"):
-            trial_fim = datetime.fromisoformat(ass["trial_fim"].replace("Z", "+00:00"))
-            if agora > trial_fim:
-                supabase.table("assinaturas").update({"status": "expirado"}).eq("id", ass["id"]).execute()
-                status = "expirado"
-
-        # Assinatura paga expirou?
-        if status == "ativo" and ass.get("periodo_fim"):
-            periodo_fim = datetime.fromisoformat(ass["periodo_fim"].replace("Z", "+00:00"))
-            if agora > periodo_fim:
-                supabase.table("assinaturas").update({"status": "expirado"}).eq("id", ass["id"]).execute()
-                status = "expirado"
-
-        # Calcular horas restantes do trial
-        horas_restantes = None
-        if status == "trial" and ass.get("trial_fim"):
-            trial_fim = datetime.fromisoformat(ass["trial_fim"].replace("Z", "+00:00"))
-            diff = (trial_fim - agora).total_seconds()
-            horas_restantes = max(0, int(diff / 3600))
-
-        return {
-            "status": status,
-            "plano": ass.get("plano_id"),
-            "trial_fim": ass.get("trial_fim"),
-            "horas_restantes": horas_restantes,
-            "periodo_fim": ass.get("periodo_fim"),
-        }
+        r = supabase.table("planos").select("vagas_restantes").eq("id", "fundador").execute()
+        return int((r.data or [{}])[0].get("vagas_restantes") or 0)
     except Exception as e:
-        log_erro("billing_status_erro", erro=e)
-        # Em caso de erro, retorna trial para não bloquear usuário
-        return {"status": "trial", "horas_restantes": 24, "erro": str(e)}
+        log_erro("vagas_erro", erro=e)
+        return 0
 
 
-@router.post("/checkout")
-async def criar_checkout(
-    dados: dict = Body(...),
-    uid: str = Depends(get_uid_from_token)
-):
-    """Cria preferência de pagamento no Mercado Pago e retorna link."""
-    plano_id = dados.get("plano_id", "fundador")
-    email = dados.get("email", "")
-
-    if not MP_ACCESS_TOKEN:
-        raise HTTPException(status_code=503, detail="Pagamento não configurado ainda.")
-
-    preco = PLANO_FUNDADOR_PRECO if plano_id == "fundador" else PLANO_PRO_PRECO
-    titulo = "Painel.IA – Plano Fundador" if plano_id == "fundador" else "Painel.IA – Plano Pro"
-
-    payload = {
-        "items": [{
-            "title": titulo,
-            "quantity": 1,
-            "unit_price": preco / 100,
-            "currency_id": "BRL",
-        }],
-        "payer": {"email": email} if email else {},
-        "back_urls": {
-            "success": f"{APP_URL}/?pagamento=sucesso",
-            "failure": f"{APP_URL}/?pagamento=falha",
-            "pending": f"{APP_URL}/?pagamento=pendente",
-        },
-        "auto_return": "approved",
-        "notification_url": f"{APP_URL}/billing/webhook",
-        "external_reference": f"{uid}|{plano_id}",
-        "statement_descriptor": "PAINEL.IA",
-    }
-
+async def _email_do_usuario(uid: str) -> str:
+    """Busca o email no Supabase Auth via admin API."""
     try:
-        async with httpx.AsyncClient(timeout=10) as c:
-            r = await c.post(
-                "https://api.mercadopago.com/checkout/preferences",
-                json=payload,
-                headers={"Authorization": f"Bearer {MP_ACCESS_TOKEN}"}
-            )
-        if r.status_code != 201:
-            log_erro("mp_checkout_erro", status=r.status_code, body=r.text[:200])
-            raise HTTPException(status_code=502, detail="Erro ao criar pagamento.")
-
-        data = r.json()
-        # Salva email na assinatura para remarketing
-        if email:
-            ass = _buscar_assinatura(uid)
-            if ass:
-                supabase.table("assinaturas").update({"email_pagamento": email}).eq("id", ass["id"]).execute()
-
-        log_info("checkout_criado", motorista_id=uid, plano=plano_id)
-        return {"url": data.get("init_point"), "sandbox_url": data.get("sandbox_init_point")}
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        log_erro("checkout_excecao", erro=e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/vagas-fundador")
-async def vagas_fundador():
-    """Retorna vagas restantes do plano fundador (endpoint público)."""
-    try:
-        res = supabase.table("planos").select("vagas_restantes").eq("id", "fundador").execute()
-        vagas = res.data[0]["vagas_restantes"] if res.data else 50
-        return {"vagas": vagas}
+        url = os.getenv("SUPABASE_URL", "")
+        key = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY", "")
+        async with httpx.AsyncClient(timeout=8) as c:
+            r = await c.get(f"{url}/auth/v1/admin/users/{uid}",
+                            headers={"apikey": key, "Authorization": f"Bearer {key}"})
+            return (r.json() or {}).get("email", "") if r.status_code == 200 else ""
     except Exception:
-        return {"vagas": 50}
+        return ""
 
 
-@router.post("/criar-checkout-landing")
-async def criar_checkout_landing(dados: dict = Body(...)):
-    """
-    Endpoint público para a landing page:
-    1. Cria conta no Supabase Auth se não existir
-    2. Inicia trial de 24h
-    3. Gera link de checkout Mercado Pago
-    """
-    email = (dados.get("email") or "").strip().lower()
-    plano_id = dados.get("plano_id", "fundador")
-
-    if not email or "@" not in email:
-        raise HTTPException(status_code=400, detail="Email inválido.")
-
-    headers = {
-        "apikey": _supabase_service_key,
-        "Authorization": f"Bearer {_supabase_service_key}",
-        "Content-Type": "application/json",
-    }
-    motorista_id = None
-
+def _nome_do_motorista(uid: str) -> str:
     try:
-        async with httpx.AsyncClient(timeout=10) as c:
-            r = await c.get(
-                f"{_supabase_url}/auth/v1/admin/users?email={email}",
-                headers=headers,
-            )
-            if r.status_code == 200:
-                users = r.json().get("users", [])
-                if users:
-                    motorista_id = users[0]["id"]
+        r = supabase.table("motoristas").select("nome").eq("id", uid).execute()
+        return (r.data or [{}])[0].get("nome") or "motorista"
+    except Exception:
+        return "motorista"
 
-            if not motorista_id:
-                senha_temp = secrets.token_urlsafe(16)
-                r2 = await c.post(
-                    f"{_supabase_url}/auth/v1/admin/users",
-                    headers=headers,
-                    json={
-                        "email": email,
-                        "password": senha_temp,
-                        "email_confirm": True,
-                        "user_metadata": {"origem": "landing"},
-                    },
-                )
-                if r2.status_code not in (200, 201):
-                    raise HTTPException(status_code=502, detail="Erro ao criar conta.")
-                motorista_id = r2.json()["id"]
-                log_info("conta_criada_landing", email=email, uid=motorista_id)
 
-    except HTTPException:
-        raise
+@router.get("/billing/vagas-fundador")
+async def vagas_fundador():
+    return {"vagas": _vagas_fundador()}
+
+
+@router.get("/billing/status")
+async def billing_status(uid: str = Depends(get_uid_from_token)):
+    try:
+        r = supabase.table("assinaturas").select("*").eq("motorista_id", uid).order("criado_em", desc=True).limit(1).execute()
+        ass = (r.data or [None])[0]
     except Exception as e:
-        log_erro("landing_auth_erro", erro=e)
-        raise HTTPException(status_code=500, detail="Erro ao processar cadastro.")
+        # Tabela ainda não existe → não bloquear ninguém
+        log_erro("billing_status_erro", erro=e)
+        return {"status": "trial", "plano": None, "trial_restante_ms": 86400000,
+                "trial_expira_em": None, "pode_usar": True, "vagas_fundador": 50}
 
-    ass = _buscar_assinatura(motorista_id)
-    if not ass:
-        _criar_trial(motorista_id)
-
-    checkout_url = None
-    if MP_ACCESS_TOKEN:
-        preco = PLANO_FUNDADOR_PRECO if plano_id == "fundador" else PLANO_PRO_PRECO
-        titulo = "Painel.IA – Plano Fundador" if plano_id == "fundador" else "Painel.IA – Plano Pro"
-        payload = {
-            "items": [{"title": titulo, "quantity": 1, "unit_price": preco / 100, "currency_id": "BRL"}],
-            "payer": {"email": email},
-            "back_urls": {
-                "success": f"{APP_URL}/?pagamento=sucesso",
-                "failure": f"{APP_URL}/?pagamento=falha",
-                "pending": f"{APP_URL}/?pagamento=pendente",
-            },
-            "auto_return": "approved",
-            "notification_url": f"{APP_URL}/billing/webhook",
-            "external_reference": f"{motorista_id}|{plano_id}",
-            "statement_descriptor": "PAINEL.IA",
-        }
+    if ass is None:
+        trial_fim = _agora() + _dt.timedelta(hours=24)
         try:
-            async with httpx.AsyncClient(timeout=10) as c:
-                r = await c.post(
-                    "https://api.mercadopago.com/checkout/preferences",
-                    json=payload,
-                    headers={"Authorization": f"Bearer {MP_ACCESS_TOKEN}"},
-                )
-            if r.status_code == 201:
-                checkout_url = r.json().get("init_point")
+            supabase.table("assinaturas").insert({
+                "motorista_id": uid, "plano_id": "fundador", "status": "trial",
+                "trial_fim": trial_fim.isoformat(),
+            }).execute()
         except Exception as e:
-            log_erro("landing_checkout_mp_erro", erro=e)
+            log_erro("trial_criar_erro", erro=e)
+        # Email de boas-vindas em background — nunca atrasa a resposta
+        async def _bg():
+            email = await _email_do_usuario(uid)
+            if email:
+                from services.email_service import email_boas_vindas
+                await email_boas_vindas(email, _nome_do_motorista(uid))
+        asyncio.ensure_future(_bg())
+        return {"status": "trial", "plano": None, "trial_restante_ms": 86400000,
+                "trial_expira_em": trial_fim.isoformat(), "pode_usar": True,
+                "vagas_fundador": _vagas_fundador()}
 
-    log_info("landing_checkout", email=email, uid=motorista_id, plano=plano_id, tem_mp=bool(checkout_url))
-    return {
-        "ok": True,
-        "trial_ativo": True,
-        "checkout_url": checkout_url,
-        "uid": motorista_id,
-    }
-
-
-
-
-@router.post("/verificar-pagamento")
-async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
-    """
-    Usuário chama quando o webhook falhou. Consulta o MP e ativa se encontrar aprovado.
-    """
-    if not MP_ACCESS_TOKEN:
-        raise HTTPException(status_code=503, detail="Pagamento nao configurado")
-    try:
-        agora = _agora()
-        ass = _buscar_assinatura(uid)
-
-        async with httpx.AsyncClient(timeout=15) as c:
-            # Busca por fundador e por pro
-            aprovado = None
-            for plano in ["fundador", "pro"]:
-                r = await c.get(
-                    f"https://api.mercadopago.com/v1/payments/search?external_reference={uid}|{plano}&sort=date_created&criteria=desc&limit=3",
-                    headers={"Authorization": f"Bearer {MP_ACCESS_TOKEN}"}
-                )
-                if r.status_code == 200:
-                    for pag in r.json().get("results", []):
-                        if pag.get("status") == "approved":
-                            aprovado = pag
-                            aprovado["_plano"] = plano
-                            break
-                if aprovado:
-                    break
-
-        if not aprovado:
-            return {
-                "verificado": False,
-                "mensagem": "Pagamento nao encontrado. Aguarde alguns minutos e tente novamente.",
-                "status_atual": ass["status"] if ass else "sem_assinatura"
-            }
-
-        payment_id = str(aprovado["id"])
-        valor = aprovado.get("transaction_amount", 0)
-        plano_id = aprovado["_plano"]
-        periodo_fim = agora + timedelta(days=30)
-
-        if ass:
-            supabase.table("assinaturas").update({
-                "status": "ativo",
-                "plano_id": plano_id,
-                "periodo_inicio": agora.isoformat(),
-                "periodo_fim": periodo_fim.isoformat(),
-                "mp_subscription_id": payment_id,
-                "atualizado_em": agora.isoformat(),
-            }).eq("id", ass["id"]).execute()
-            ass_id = ass["id"]
-        else:
-            nova = supabase.table("assinaturas").insert({
-                "motorista_id": uid,
-                "plano_id": plano_id,
-                "status": "ativo",
-                "periodo_inicio": agora.isoformat(),
-                "periodo_fim": periodo_fim.isoformat(),
-                "mp_subscription_id": payment_id,
-            }).execute()
-            ass_id = nova.data[0]["id"]
-
+    status = ass.get("status", "trial")
+    trial_fim_raw = ass.get("trial_fim")
+    restante_ms = 0
+    if trial_fim_raw:
         try:
-            supabase.table("pagamentos").insert({
-                "assinatura_id": ass_id,
-                "motorista_id": uid,
-                "mp_payment_id": payment_id,
-                "valor": valor,
-                "status": "aprovado",
-            }).execute()
+            tf = _dt.datetime.fromisoformat(str(trial_fim_raw).replace("Z", "+00:00"))
+            restante_ms = max(0, int((tf - _agora()).total_seconds() * 1000))
         except Exception:
             pass
 
-        if plano_id == "fundador":
-            try:
-                supabase.rpc("decrementar_vaga_fundador", {}).execute()
-            except Exception:
-                pass
+    if status == "trial" and restante_ms <= 0:
+        status = "expired"
+        try:
+            supabase.table("assinaturas").update({"status": "expired", "atualizado_em": _agora().isoformat()}).eq("id", ass["id"]).execute()
+        except Exception:
+            pass
 
-        log_info("pagamento_verificado_manual", motorista_id=uid, plano=plano_id, valor=valor)
-        return {
-            "verificado": True,
-            "ativado": True,
-            "plano": plano_id,
-            "mensagem": f"Plano {plano_id} ativado!",
-            "periodo_fim": periodo_fim.isoformat(),
-        }
+    return {
+        "status": status,
+        "plano": ass.get("plano_id") if status in ("active", "ativo") else None,
+        "trial_restante_ms": restante_ms if status == "trial" else 0,
+        "trial_expira_em": trial_fim_raw,
+        "pode_usar": status in ("trial", "active", "ativo"),  # bloqueado/expired/cancelled = False
+        "vagas_fundador": _vagas_fundador(),
+    }
 
-    except Exception as e:
-        log_erro("verificar_pagamento_erro", erro=e)
-        raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/webhook")
-async def webhook_mp(request: Request):
-    """Recebe notificações do Mercado Pago e ativa assinatura."""
-    # Salva o body bruto para diagnóstico
-    try:
-        raw = await request.body()
-        body = await request.json() if raw else {}
-    except Exception:
-        body = {}
-
-    log_info("webhook_mp_recebido", body=str(body)[:500])
-
-    tipo = body.get("type") or body.get("topic")
-    # Aceita também action=payment.created/updated
-    action = body.get("action", "")
-    if tipo not in ("payment", "preapproval") and "payment" not in action:
-        log_info("webhook_mp_ignorado", tipo=tipo, action=action)
-        return {"ok": True}
-
-    payment_id = (body.get("data") or {}).get("id") or body.get("id") or body.get("data_id")
-    if not payment_id:
-        log_erro("webhook_mp_sem_id", body=str(body)[:200])
-        return {"ok": True}
-
-    if not MP_ACCESS_TOKEN:
-        log_erro("webhook_mp_sem_token")
-        return {"ok": True}
-
+@router.post("/billing/checkout-publico")
+async def checkout_publico(dados: dict = Body(...)):
+    """Compra direta da landing — sem login. Vincula pelo email após o pagamento."""
+    plano_id = "fundador"  # landing vende só o Fundador
+    email = (dados.get("email") or "").strip().lower()
+    if not email or "@" not in email:
+        return {"erro": "Informe um email válido"}
+    if _vagas_fundador() <= 0:
+        return {"erro": "Vagas do Plano Fundador esgotadas"}
+    token = os.getenv("MP_ACCESS_TOKEN", "")
+    if not token:
+        return {"erro": "Pagamento ainda não configurado — tente em instantes"}
+    payload = {
+        "reason": f"Painel.IA — {_NOMES[plano_id]}",
+        "external_reference": f"email:{email}|{plano_id}",  # vincula por email
+        "payer_email": email,
+        "auto_recurring": {
+            "frequency": 1, "frequency_type": "months",
+            "transaction_amount": _PRECOS[plano_id], "currency_id": "BRL",
+        },
+        "back_url": f"{_APP_URL}/?pagamento=ok&email={email}",
+        "status": "pending",
+    }
     try:
         async with httpx.AsyncClient(timeout=15) as c:
-            r = await c.get(
-                f"https://api.mercadopago.com/v1/payments/{payment_id}",
-                headers={"Authorization": f"Bearer {MP_ACCESS_TOKEN}"}
-            )
-        log_info("webhook_mp_consulta", payment_id=payment_id, status_code=r.status_code)
-        if r.status_code != 200:
-            log_erro("webhook_mp_consulta_erro", status=r.status_code, body=r.text[:200])
-            return {"ok": True}
-
-        pagamento = r.json()
-        status_mp = pagamento.get("status")
-        ref = pagamento.get("external_reference", "")
-        valor = pagamento.get("transaction_amount", 0)
-        email_pagador = (pagamento.get("payer") or {}).get("email", "")
-
-        log_info("webhook_mp_pagamento", status=status_mp, ref=ref, valor=valor, email=email_pagador)
-
-        if "|" not in ref:
-            log_erro("webhook_mp_ref_invalido", ref=ref, payment_id=payment_id)
-            return {"ok": True}
-
-        motorista_id, plano_id = ref.split("|", 1)
-
-        if status_mp == "approved":
-            agora = _agora()
-            periodo_fim = agora + timedelta(days=30)
-            ass = _buscar_assinatura(motorista_id)
-
-            if ass:
-                supabase.table("assinaturas").update({
-                    "status": "ativo",
-                    "plano_id": plano_id,
-                    "periodo_inicio": agora.isoformat(),
-                    "periodo_fim": periodo_fim.isoformat(),
-                    "mp_subscription_id": str(payment_id),
-                    "atualizado_em": agora.isoformat(),
-                }).eq("id", ass["id"]).execute()
-                supabase.table("pagamentos").insert({
-                    "assinatura_id": ass["id"],
-                    "motorista_id": motorista_id,
-                    "mp_payment_id": str(payment_id),
-                    "valor": valor,
-                    "status": "aprovado",
-                }).execute()
-            else:
-                nova = supabase.table("assinaturas").insert({
-                    "motorista_id": motorista_id,
-                    "plano_id": plano_id,
-                    "status": "ativo",
-                    "periodo_inicio": agora.isoformat(),
-                    "periodo_fim": periodo_fim.isoformat(),
-                    "mp_subscription_id": str(payment_id),
-                }).execute()
-                supabase.table("pagamentos").insert({
-                    "assinatura_id": nova.data[0]["id"],
-                    "motorista_id": motorista_id,
-                    "mp_payment_id": str(payment_id),
-                    "valor": valor,
-                    "status": "aprovado",
-                }).execute()
-
-            if plano_id == "fundador":
-                try: supabase.rpc("decrementar_vaga_fundador", {}).execute()
-                except: pass
-
-            log_info("pagamento_aprovado", motorista_id=motorista_id, plano=plano_id, valor=valor)
-        else:
-            log_info("webhook_mp_nao_aprovado", status=status_mp, payment_id=payment_id)
-
+            r = await c.post(f"{_MP_API}/preapproval",
+                             headers={"Authorization": f"Bearer {token}"}, json=payload)
+            data = r.json()
+        if r.status_code >= 400 or "init_point" not in data:
+            log_warn("checkout_publico_falhou", status=r.status_code, body=str(data)[:300])
+            return {"erro": "Não foi possível iniciar o pagamento — tente novamente"}
+        log_info("checkout_publico_criado", email=email)
+        return {"init_point": data["init_point"]}
     except Exception as e:
-        log_erro("webhook_mp_erro", erro=str(e))
+        log_erro("checkout_publico_erro", erro=e)
+        return {"erro": "Falha de conexão"}
 
+
+@router.post("/billing/criar-checkout")
+async def criar_checkout(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    plano_id = dados.get("plano_id", "fundador")
+    email = (dados.get("email") or "").strip().lower()
+    if plano_id not in _PRECOS:
+        raise HTTPException(status_code=400, detail="Plano inválido")
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Email inválido")
+    if plano_id == "fundador" and _vagas_fundador() <= 0:
+        return {"erro": "Vagas do Plano Fundador esgotadas"}
+
+    token = os.getenv("MP_ACCESS_TOKEN", "")
+    if not token:
+        return {"erro": "Pagamento ainda não configurado — tente em instantes"}
+
+    payload = {
+        "reason": f"Painel.IA — {_NOMES[plano_id]}",
+        "external_reference": f"{uid}|{plano_id}",
+        "payer_email": email,
+        "auto_recurring": {
+            "frequency": 1, "frequency_type": "months",
+            "transaction_amount": _PRECOS[plano_id], "currency_id": "BRL",
+        },
+        "back_url": f"{_APP_URL}/?pagamento=retorno",
+        "status": "pending",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.post(f"{_MP_API}/preapproval",
+                             headers={"Authorization": f"Bearer {token}"}, json=payload)
+            data = r.json()
+        if r.status_code >= 400 or "init_point" not in data:
+            log_warn("mp_checkout_falhou", status=r.status_code, body=str(data)[:300])
+            return {"erro": "Não foi possível iniciar o pagamento — tente novamente"}
+        # Guarda referência na assinatura mais recente do usuário
+        try:
+            supabase.table("assinaturas").update({
+                "mp_subscription_id": data.get("id"), "email_pagamento": email,
+                "plano_id": plano_id, "atualizado_em": _agora().isoformat(),
+            }).eq("motorista_id", uid).execute()
+        except Exception as e:
+            log_erro("checkout_save_erro", erro=e)
+        log_info("checkout_criado", uid=uid, plano=plano_id)
+        return {"init_point": data["init_point"]}
+    except Exception as e:
+        log_erro("mp_checkout_erro", erro=e)
+        return {"erro": "Falha de conexão com o pagamento"}
+
+
+@router.post("/billing/webhook")
+@router.get("/billing/webhook")
+async def billing_webhook(request: Request):
+    """Notificações do MercadoPago. Busca o recurso na API para confirmar o estado real."""
+    token = os.getenv("MP_ACCESS_TOKEN", "")
+    try:
+        body = {}
+        try:
+            body = await request.json()
+        except Exception:
+            pass
+        params = dict(request.query_params)
+        topic = body.get("type") or body.get("topic") or params.get("type") or params.get("topic") or ""
+        rid = (body.get("data") or {}).get("id") or params.get("data.id") or params.get("id") or ""
+        log_info("mp_webhook", topic=topic, rid=str(rid)[:40])
+        if not token or not rid:
+            return {"ok": True}
+
+        if "preapproval" in topic or "subscription" in topic:
+            async with httpx.AsyncClient(timeout=12) as c:
+                r = await c.get(f"{_MP_API}/preapproval/{rid}", headers={"Authorization": f"Bearer {token}"})
+                pre = r.json() if r.status_code == 200 else {}
+            ext = pre.get("external_reference", "")
+            mp_status = pre.get("status", "")
+            if "|" in ext:
+                ref, plano_id = ext.split("|", 1)
+                # ref = uid direto, ou "email:x@y" (compra na landing → vincula por email)
+                if ref.startswith("email:"):
+                    _email = ref[6:]
+                    uid = None
+                    try:
+                        # Tenta achar o usuário que já criou conta com esse email
+                        _r = supabase.table("motoristas").select("id,email_pagamento").eq("email_pagamento", _email).limit(1).execute()
+                        if _r.data:
+                            uid = _r.data[0]["id"]
+                    except Exception:
+                        pass
+                    # Registra o pagamento por email para vincular quando logar
+                    try:
+                        supabase.table("assinaturas").upsert({
+                            "motorista_id": uid, "plano_id": plano_id,
+                            "status": "active" if mp_status == "authorized" else "pending",
+                            "email_pagamento": _email, "mp_subscription_id": str(rid),
+                            "atualizado_em": _agora().isoformat(),
+                        }).execute() if uid else None
+                    except Exception:
+                        pass
+                    if not uid:
+                        return {"ok": True}  # vincula no login
+                else:
+                    uid = ref
+                if mp_status == "authorized":
+                    # Ativa — decrementa vaga só na transição
+                    try:
+                        atual = supabase.table("assinaturas").select("id,status").eq("motorista_id", uid).order("criado_em", desc=True).limit(1).execute()
+                        ja_ativo = (atual.data or [{}])[0].get("status") == "active"
+                        supabase.table("assinaturas").update({
+                            "status": "active", "plano_id": plano_id,
+                            "periodo_inicio": _agora().isoformat(),
+                            "mp_subscription_id": str(rid),
+                            "atualizado_em": _agora().isoformat(),
+                        }).eq("motorista_id", uid).execute()
+                        if plano_id == "fundador" and not ja_ativo:
+                            v = _vagas_fundador()
+                            supabase.table("planos").update({"vagas_restantes": max(0, v - 1)}).eq("id", "fundador").execute()
+                    except Exception as e:
+                        log_erro("webhook_ativar_erro", erro=e)
+                    email = pre.get("payer_email") or await _email_do_usuario(uid)
+                    if email:
+                        from services.email_service import email_pagamento_confirmado
+                        await email_pagamento_confirmado(email, _nome_do_motorista(uid), _NOMES.get(plano_id, plano_id), _PRECOS.get(plano_id, 0))
+                elif mp_status in ("cancelled", "paused"):
+                    try:
+                        supabase.table("assinaturas").update({"status": "cancelled", "atualizado_em": _agora().isoformat()}).eq("motorista_id", uid).execute()
+                    except Exception:
+                        pass
+                    email = pre.get("payer_email") or await _email_do_usuario(uid)
+                    if email:
+                        from services.email_service import email_pagamento_falhou
+                        await email_pagamento_falhou(email, _nome_do_motorista(uid))
+
+        elif topic == "payment":
+            async with httpx.AsyncClient(timeout=12) as c:
+                r = await c.get(f"{_MP_API}/v1/payments/{rid}", headers={"Authorization": f"Bearer {token}"})
+                pg = r.json() if r.status_code == 200 else {}
+            ext = pg.get("external_reference", "")
+            if "|" in ext:
+                uid, _ = ext.split("|", 1)
+                try:
+                    supabase.table("pagamentos").insert({
+                        "motorista_id": uid, "mp_payment_id": str(rid),
+                        "valor": pg.get("transaction_amount"), "status": pg.get("status"),
+                    }).execute()
+                except Exception:
+                    pass
+    except Exception as e:
+        log_erro("webhook_erro", erro=e)
     return {"ok": True}
+
+
+@router.post("/billing/cancelar")
+async def cancelar(uid: str = Depends(get_uid_from_token)):
+    token = os.getenv("MP_ACCESS_TOKEN", "")
+    try:
+        r = supabase.table("assinaturas").select("id,mp_subscription_id").eq("motorista_id", uid).order("criado_em", desc=True).limit(1).execute()
+        ass = (r.data or [None])[0]
+        if not ass:
+            return {"ok": False, "erro": "Sem assinatura"}
+        sid = ass.get("mp_subscription_id")
+        if sid and token:
+            async with httpx.AsyncClient(timeout=12) as c:
+                await c.put(f"{_MP_API}/preapproval/{sid}",
+                            headers={"Authorization": f"Bearer {token}"},
+                            json={"status": "cancelled"})
+        supabase.table("assinaturas").update({"status": "cancelled", "atualizado_em": _agora().isoformat()}).eq("id", ass["id"]).execute()
+        return {"ok": True}
+    except Exception as e:
+        log_erro("cancelar_erro", erro=e)
+        return {"ok": False, "erro": "Falha ao cancelar"}
