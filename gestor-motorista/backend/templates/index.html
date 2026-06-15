@@ -5901,23 +5901,23 @@ function _abrirModalAguardePagamento(url) {
   const m = document.createElement('div');
   m.id = 'modal-pagamento-aguarde';
   m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px';
+  const temUrl = !!url;
   m.innerHTML = `
     <div style="background:#111827;border:1px solid #2d3748;border-radius:20px;width:100%;max-width:380px;padding:28px 22px;text-align:center">
       <div style="font-size:2rem;margin-bottom:12px">💳</div>
-      <h3 style="color:#fff;font-size:1.1rem;margin-bottom:8px">Pagamento em andamento</h3>
+      <h3 style="color:#fff;font-size:1.1rem;margin-bottom:8px">${temUrl ? 'Pagamento em andamento' : 'Verificando seu pagamento'}</h3>
       <p style="color:#718096;font-size:13px;margin-bottom:20px;line-height:1.5">
-        Conclua o pagamento no Mercado Pago.<br>
-        Quando confirmar, volte aqui e clique em <strong style="color:#F0B429">"Já paguei"</strong>.
+        ${temUrl ? 'Conclua o pagamento no Mercado Pago.<br>Quando confirmar, volte aqui e clique em <strong style="color:#F0B429">\"Já paguei\"</strong>.' : 'Aguarde enquanto confirmamos seu pagamento com o Mercado Pago.'}
       </p>
       <div id="pay-status-msg" style="font-size:12px;color:#4a5568;margin-bottom:16px">Verificando automaticamente...</div>
       <button onclick="_verificarManual()" id="btn-ja-paguei"
         style="width:100%;background:#F0B429;border:none;border-radius:12px;color:#000;font-weight:800;font-size:15px;padding:14px;cursor:pointer;margin-bottom:10px">
         ✅ Já paguei — verificar agora
       </button>
-      <button onclick="_reabrirMP('${url}')"
+      ${temUrl ? `<button onclick="_reabrirMP('${url}')"
         style="width:100%;background:#1a1d2e;border:1px solid #2d3748;border-radius:12px;color:#a0aec0;font-size:13px;padding:12px;cursor:pointer;margin-bottom:10px">
         🔗 Reabrir link do Mercado Pago
-      </button>
+      </button>` : ''}
       <button onclick="document.getElementById('modal-pagamento-aguarde').remove();_pararPollingPagamento()"
         style="background:none;border:none;color:#4a5568;font-size:12px;cursor:pointer;padding:8px">
         Cancelar
@@ -6006,14 +6006,26 @@ async function _ativarPagamentoPendente() {
 // Checa status do billing: trial, expirado, ou pagamento pendente
 async function verificarTrialBanner() {
   try {
+    // Se veio do redirect do Mercado Pago com ?pagamento=sucesso, verifica imediatamente
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('pagamento') === 'sucesso' || params.get('pagamento') === 'pendente') {
+      // Limpa o parâmetro da URL sem recarregar
+      const url = new URL(window.location.href);
+      url.searchParams.delete('pagamento');
+      window.history.replaceState({}, '', url.toString());
+      // Abre modal de "verificando" e checa pagamento
+      _abrirModalAguardePagamento(null);
+      setTimeout(() => _verificarPagamentoServidor(false), 1500);
+      return;
+    }
+
     const r = await authFetch(API + '/billing/status');
     if (!r.ok) return;
     const d = await r.json();
     const status = d.status;
 
-    // Se já está ativo, não mostra nada
+    // Se já está ativo, esconde tudo
     if (status === 'ativo') {
-      // Esconde qualquer banner/barra que possa estar visível
       const b = document.getElementById('barra-pagamento-pendente');
       if (b) b.style.display = 'none';
       const tb = document.getElementById('trial-banner');
@@ -6021,26 +6033,19 @@ async function verificarTrialBanner() {
       return;
     }
 
-    // Se é trial, verifica se tem pagamento pendente no MP (pagou mas não ativou)
+    // Se é trial/expirado, verifica silenciosamente se tem pagamento aprovado no MP
     if (status === 'trial' || status === 'expirado' || status === 'sem_assinatura') {
-      // Verifica silenciosamente se tem pagamento aprovado no MP
       try {
         const rv = await authFetch(API + '/billing/verificar-pagamento', { method: 'POST' });
         const dv = await rv.json();
         if (dv.verificado && dv.ativado) {
-          // Ativou automaticamente
           _mostrarSucessoPagamento(dv.plano);
           return;
-        }
-        if (dv.verificado === false && dv.status_atual) {
-          // Tem pagamento no MP mas não ativou ainda — mostra barra verde
-          // Só mostra se o status retornou algo que indique pagamento pendente
-          // (o endpoint retorna verificado:false quando não encontrou — não mostrar barra nesse caso)
         }
       } catch(e) {}
     }
 
-    // Banner de trial expirando (só mostra quando falta < 12h)
+    // Banner de trial expirando
     if (sessionStorage.getItem('trial-banner-fechado')) return;
     const banner = document.getElementById('trial-banner');
     const titulo = document.getElementById('trial-banner-titulo');
@@ -6054,8 +6059,11 @@ async function verificarTrialBanner() {
       titulo.textContent = 'Seu trial expirou';
       sub.textContent = 'Assine para continuar usando o Painel.IA';
       banner.style.display = 'flex';
-    } else if (status === 'trial' && d.periodo_fim) {
-      const fim = new Date(d.periodo_fim);
+    } else if (status === 'trial') {
+      // CORRIGIDO: usar trial_fim, não periodo_fim
+      const fimStr = d.trial_fim;
+      if (!fimStr) return;
+      const fim = new Date(fimStr);
       const horas = Math.max(0, Math.floor((fim - new Date()) / 36e5));
       if (horas > 12) return;
       titulo.textContent = horas > 0 ? `Trial expira em ${horas}h` : 'Trial expira hoje!';
