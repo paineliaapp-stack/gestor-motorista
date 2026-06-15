@@ -98,6 +98,27 @@ async def deletar_lancamento(lancamento_id: str, uid: str = Depends(get_uid_from
     supabase.table("lancamentos").delete().eq("id", lancamento_id).execute()
     return {"ok": True}
 
+@router.patch("/lancamentos/{lancamento_id}")
+async def editar_lancamento(lancamento_id: str, dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    """Edita valor, data e/ou descrição de um lançamento. Preserva a data original se não for alterada."""
+    check = supabase.table("lancamentos").select("motorista_id").eq("id", lancamento_id).execute()
+    if not check.data or check.data[0]["motorista_id"] != uid:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    upd = {}
+    if dados.get("valor") is not None:
+        try:
+            upd["valor"] = float(dados["valor"])
+        except Exception:
+            raise HTTPException(status_code=400, detail="valor inválido")
+    if dados.get("data"):
+        upd["data"] = str(dados["data"])[:10]
+    if dados.get("descricao") is not None:
+        upd["descricao"] = str(dados["descricao"]).strip()
+    if not upd:
+        return {"ok": False, "erro": "nada para atualizar"}
+    supabase.table("lancamentos").update(upd).eq("id", lancamento_id).execute()
+    return {"ok": True}
+
 @router.post("/admin/limpar-duplicatas")
 async def limpar_duplicatas(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
     """Limpeza de duplicatas — só opera nos dados do próprio usuário autenticado."""

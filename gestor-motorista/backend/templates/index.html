@@ -2958,6 +2958,41 @@ function filtrar(el,tipo){
   loadHist(tipo);
 }
 
+async function abrirEdicaoLanc(l){
+  // Modal simples de edição: valor e data
+  const overlay=document.createElement('div');
+  overlay.style='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  const dataAtual=(l.data||'').slice(0,10);
+  const nome=(CATS.find(x=>x.k===l.descricao)||{n:l.plataforma||l.descricao||'Lançamento'}).n;
+  overlay.innerHTML=`
+    <div style="background:var(--s);border:1px solid var(--b);border-radius:18px;padding:24px;width:100%;max-width:380px" onclick="event.stopPropagation()">
+      <div style="font-size:17px;font-weight:700;color:var(--tx);margin-bottom:4px">✏️ Editar lançamento</div>
+      <div style="font-size:13px;color:var(--mt);margin-bottom:18px">${l.tipo==='ganho'?'💰':'💸'} ${nome}</div>
+      <label style="font-size:12px;color:var(--mt);display:block;margin-bottom:6px">Valor (R$)</label>
+      <input id="edit-valor" type="number" step="0.01" value="${parseFloat(l.valor||0)}" style="width:100%;background:var(--bg);border:1px solid var(--b);border-radius:10px;padding:12px;color:var(--tx);font-size:16px;margin-bottom:14px">
+      <label style="font-size:12px;color:var(--mt);display:block;margin-bottom:6px">Data</label>
+      <input id="edit-data" type="date" value="${dataAtual}" style="width:100%;background:var(--bg);border:1px solid var(--b);border-radius:10px;padding:12px;color:var(--tx);font-size:16px;margin-bottom:20px">
+      <div style="display:flex;gap:10px">
+        <button id="edit-cancelar" style="flex:1;padding:12px;border-radius:10px;border:1px solid var(--b);background:transparent;color:var(--mt);font-weight:600;cursor:pointer">Cancelar</button>
+        <button id="edit-salvar" style="flex:1;padding:12px;border-radius:10px;border:none;background:var(--am);color:#000;font-weight:700;cursor:pointer">Salvar</button>
+      </div>
+    </div>`;
+  overlay.onclick=()=>overlay.remove();
+  document.body.appendChild(overlay);
+  overlay.querySelector('#edit-cancelar').onclick=()=>overlay.remove();
+  overlay.querySelector('#edit-salvar').onclick=async()=>{
+    const valor=parseFloat(document.getElementById('edit-valor').value);
+    const data=document.getElementById('edit-data').value;
+    if(!valor||valor<=0){alert('Informe um valor válido');return;}
+    try{
+      await authFetch(API+'/lancamentos/'+l.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor,data})});
+      overlay.remove();
+      loadHist(_histFiltroTipo);
+      if(typeof carregarDashboard==='function'){try{carregarDashboard();}catch(e){}}
+    }catch(e){alert('Erro ao salvar. Tente de novo.');}
+  };
+}
+
 async function loadHist(tipo){
   if(!MID)return;
   _histFiltroTipo = tipo || _histFiltroTipo;
@@ -3022,9 +3057,11 @@ async function loadHist(tipo){
         const gDia=totDia.filter(x=>x.tipo==='ganho').reduce((s,x)=>s+parseFloat(x.valor||0),0);
         const dDia=totDia.filter(x=>x.tipo==='despesa').reduce((s,x)=>s+parseFloat(x.valor||0),0);
         const head=document.createElement('div');
-        head.style='display:flex;align-items:center;justify-content:space-between;margin:18px 0 8px;padding:0 2px';
-        head.innerHTML='<span style="font-size:12px;font-weight:700;color:var(--am);background:rgba(245,166,35,.1);padding:4px 12px;border-radius:999px">'+labelDia(l.data)+'</span>'+
-          '<span style="font-size:11px;color:var(--mt)">'+(gDia>0?'<span style="color:var(--gn)">+'+fmt(gDia)+'</span>':'')+(gDia>0&&dDia>0?' · ':'')+(dDia>0?'<span style="color:var(--rd)">-'+fmt(dDia)+'</span>':'')+'</span>';
+        head.style='display:flex;align-items:center;gap:10px;margin:22px 0 10px';
+        head.innerHTML='<div style="flex:1;height:1px;background:rgba(255,255,255,.07)"></div>'+
+          '<span style="font-size:12px;font-weight:700;color:var(--am);background:rgba(245,166,35,.12);padding:5px 14px;border-radius:999px;white-space:nowrap">'+labelDia(l.data)+'</span>'+
+          '<span style="font-size:11px;color:var(--mt);white-space:nowrap">'+(gDia>0?'<span style="color:var(--gn)">+'+fmt(gDia)+'</span>':'')+(gDia>0&&dDia>0?' · ':'')+(dDia>0?'<span style="color:var(--rd)">-'+fmt(dDia)+'</span>':'')+'</span>'+
+          '<div style="flex:1;height:1px;background:rgba(255,255,255,.07)"></div>';
         el.appendChild(head);
       }
       const c=CATS.find(x=>x.k===l.descricao)||{e:l.tipo==='ganho'?'💰':'📦',n:l.plataforma||l.descricao||'-'};
@@ -3046,7 +3083,9 @@ async function loadHist(tipo){
         }catch(e){}
       }
       const meta=[hora,plat].filter(Boolean).join(' · ');
-      const div=document.createElement('div');div.className='li';div.innerHTML='<div class="li-icon" style="background:'+bg+'">'+c.e+'</div><div class="li-info"><div class="li-cat">'+c.n+'</div><div class="li-meta">'+meta+'</div></div><div class="li-val" style="color:'+cor+'">'+sinal+fmt(l.valor)+'</div>';const btn=document.createElement('button');btn.textContent='🗑';btn.style='margin-left:12px;background:none;border:none;color:rgba(255,77,106,.5);cursor:pointer;font-size:16px;padding:4px';btn.onclick=()=>deletar(l.id);div.appendChild(btn);el.appendChild(div);
+      const div=document.createElement('div');div.className='li';div.innerHTML='<div class="li-icon" style="background:'+bg+'">'+c.e+'</div><div class="li-info"><div class="li-cat">'+c.n+'</div><div class="li-meta">'+meta+'</div></div><div class="li-val" style="color:'+cor+'">'+sinal+fmt(l.valor)+'</div>';
+      const btnEd=document.createElement('button');btnEd.textContent='✏️';btnEd.style='margin-left:8px;background:none;border:none;color:rgba(91,156,246,.7);cursor:pointer;font-size:15px;padding:4px';btnEd.onclick=()=>abrirEdicaoLanc(l);div.appendChild(btnEd);
+      const btn=document.createElement('button');btn.textContent='🗑';btn.style='margin-left:4px;background:none;border:none;color:rgba(255,77,106,.5);cursor:pointer;font-size:16px;padding:4px';btn.onclick=()=>deletar(l.id);div.appendChild(btn);el.appendChild(div);
     });
   }catch(e){}
 }

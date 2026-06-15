@@ -58,13 +58,13 @@ body::before {
   backdrop-filter: blur(12px);
   border: 1px solid rgba(79,107,255,.18);
   border-radius: 14px; padding: 18px 18px 20px;
-  position: relative; overflow: hidden;
+  position: relative; overflow: visible;
   transition: border-color .25s, transform .25s, box-shadow .25s;
 }
 .card::before {
   content:''; position:absolute; top:0; left:0; right:0; height:2px;
   background: linear-gradient(90deg, transparent, rgba(79,107,255,.6), transparent);
-  opacity:0; transition:opacity .3s;
+  border-radius: 14px 14px 0 0; opacity:0; transition:opacity .3s;
 }
 .card:hover { border-color: rgba(79,107,255,.45); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(79,107,255,.12); }
 .card:hover::before { opacity:1; }
@@ -138,6 +138,7 @@ tr:hover td { background: rgba(79,107,255,.05); }
 .card { position:relative; }
 .info-pop { position:absolute; top:100%; left:0; right:0; z-index:50; margin-top:4px; background:rgba(13,22,46,.97); backdrop-filter:blur(12px); border:1px solid rgba(79,107,255,.4); border-radius:10px; padding:11px 13px; font-size:11px; line-height:1.5; color:#c8d4e8; box-shadow:0 8px 30px rgba(0,0,0,.6); display:none; text-align:left; font-weight:400; text-transform:none; letter-spacing:0; }
 .info-pop.show { display:block; }
+.card:has(.info-pop.show) { z-index:60; }
 </style>
 
 </head>
