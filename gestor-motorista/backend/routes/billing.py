@@ -217,6 +217,37 @@ async def checkout_pix(dados: dict = Body(...)):
         return {"erro": "Falha de conexão"}
 
 
+@router.get("/billing/testar-pix")
+async def testar_pix(email: str = "teste@painelia.app", ciclo: str = "mensal"):
+    """TESTE: abre direto no navegador para validar se o Checkout Pro gera PIX.
+    Ex: /billing/testar-pix?email=seu@email.com&ciclo=mensal
+    Redireciona direto pro checkout do MP (sem cache de app)."""
+    from fastapi.responses import RedirectResponse, JSONResponse
+    token = os.getenv("MP_ACCESS_TOKEN", "")
+    if not token:
+        return JSONResponse({"erro": "MP_ACCESS_TOKEN não configurado"})
+    valor = _PRECOS_ANUAL["fundador"] if ciclo == "anual" else _PRECOS["fundador"]
+    payload = {
+        "items": [{"title": "Painel.IA — Teste PIX", "quantity": 1, "unit_price": valor, "currency_id": "BRL"}],
+        "payer": {"email": email},
+        "external_reference": f"pix|email:{email}|fundador|{ciclo}",
+        "payment_methods": {"excluded_payment_types": [{"id": "ticket"}], "installments": 1},
+        "back_urls": {"success": f"{_APP_URL}/?pagamento=ok"},
+        "notification_url": f"{_APP_URL}/billing/webhook",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.post(f"{_MP_API}/checkout/preferences",
+                             headers={"Authorization": f"Bearer {token}"}, json=payload)
+            data = r.json()
+        # Mostra a resposta crua do MP (pra diagnóstico) OU redireciona
+        if "init_point" in data:
+            return RedirectResponse(data["init_point"])
+        return JSONResponse({"status": r.status_code, "resposta_mp": data})
+    except Exception as e:
+        return JSONResponse({"erro": str(e)})
+
+
 @router.post("/billing/criar-checkout")
 async def criar_checkout(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
     plano_id = dados.get("plano_id", "fundador")
