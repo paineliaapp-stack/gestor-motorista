@@ -5715,6 +5715,28 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     NOME = setUserUI(session);
     const upRes = await authFetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})});
     const upData = await upRes.json();
+    // ── Retorno de pagamento MP (PIX aprovado) ──
+    (function(){
+      const _p = new URLSearchParams(window.location.search);
+      const _pag = _p.get('pagamento');
+      const _pemail = _p.get('email');
+      if(_pag === 'ok' || _pag === 'pendente'){
+        // Limpa os params da URL sem recarregar
+        history.replaceState({}, '', '/');
+        // Marca que há PIX aguardando confirmação
+        if(MID) localStorage.setItem('pia_pix_aguardando_'+MID, Date.now());
+        if(_pag === 'ok'){
+          // Mostra banner de sucesso
+          setTimeout(function(){
+            const _b = document.createElement('div');
+            _b.style = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#00D897;color:#000;padding:14px 24px;border-radius:14px;font-weight:700;font-size:15px;z-index:99999;box-shadow:0 4px 24px rgba(0,216,151,.5);text-align:center;max-width:90vw';
+            _b.innerHTML = '✅ Pagamento confirmado!<br><span style="font-weight:400;font-size:13px">Ativando seu plano...</span>';
+            document.body.appendChild(_b);
+            setTimeout(function(){ _b.remove(); }, 6000);
+          }, 500);
+        }
+      }
+    })();
     // ── BILLING: status do plano (não bloqueia o carregamento) ──
     setTimeout(async () => {
       try {

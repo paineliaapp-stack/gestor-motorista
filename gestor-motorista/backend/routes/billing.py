@@ -62,6 +62,16 @@ async def vagas_fundador():
 
 
 @router.get("/billing/status")
+async def _salvar_email_motorista(uid: str):
+    """Salva o email do usuário auth na tabela motoristas para buscas por email."""
+    try:
+        _e = await _email_do_usuario(uid)
+        if _e:
+            supabase.table("motoristas").update({"email": _e}).eq("id", uid).execute()
+    except Exception:
+        pass
+
+
 async def billing_status(uid: str = Depends(get_uid_from_token)):
     try:
         r = supabase.table("assinaturas").select("*").eq("motorista_id", uid).order("criado_em", desc=True).limit(1).execute()
@@ -98,6 +108,8 @@ async def billing_status(uid: str = Depends(get_uid_from_token)):
             }).execute()
         except Exception as e:
             log_erro("trial_criar_erro", erro=e)
+        # Salva o email em motoristas para buscas futuras por email (webhook PIX, etc.)
+        asyncio.ensure_future(_salvar_email_motorista(uid))
         # Email de boas-vindas em background — nunca atrasa a resposta
         async def _bg():
             email = await _email_do_usuario(uid)
@@ -368,7 +380,7 @@ async def billing_webhook(request: Request):
                     uid = None
                     try:
                         # Tenta achar o usuário que já criou conta com esse email
-                        _r = supabase.table("motoristas").select("id,email_pagamento").eq("email_pagamento", _email).limit(1).execute()
+                        _r = supabase.table("motoristas").select("id").eq("email", _email).limit(1).execute()
                         if _r.data:
                             uid = _r.data[0]["id"]
                     except Exception:
@@ -429,14 +441,23 @@ async def billing_webhook(request: Request):
                 _email = partes[1][6:] if len(partes) > 1 and partes[1].startswith("email:") else ""
                 plano_id = partes[2] if len(partes) > 2 else "fundador"
                 ciclo = partes[3] if len(partes) > 3 else "mensal"
-                # Registra o pagamento
+                # Busca o uid pelo email do auth (campo correto)
                 uid_pix = None
                 try:
-                    _r = supabase.table("motoristas").select("id").eq("email_pagamento", _email).limit(1).execute()
+                    # Tenta primeiro pela tabela motoristas campo email
+                    _r = supabase.table("motoristas").select("id").eq("email", _email).limit(1).execute()
                     if _r.data:
                         uid_pix = _r.data[0]["id"]
                 except Exception:
                     pass
+                if not uid_pix:
+                    try:
+                        # Fallback: busca na tabela de assinaturas por email_pagamento
+                        _ra = supabase.table("assinaturas").select("motorista_id").eq("email_pagamento", _email).not_.is_("motorista_id", "null").limit(1).execute()
+                        if _ra.data:
+                            uid_pix = _ra.data[0]["motorista_id"]
+                    except Exception:
+                        pass
                 if pg_status == "approved":
                     # Calcula o fim do período (30 dias ou 365 dias)
                     dias = 365 if ciclo == "anual" else 30
