@@ -77,10 +77,12 @@ async def billing_status(uid: str = Depends(get_uid_from_token)):
         r = supabase.table("assinaturas").select("*").eq("motorista_id", uid).order("criado_em", desc=True).limit(1).execute()
         ass = (r.data or [None])[0]
     except Exception as e:
-        # Tabela ainda não existe → não bloquear ninguém
-        log_erro("billing_status_erro", erro=e)
-        return {"status": "trial", "plano": None, "trial_restante_ms": 86400000,
-                "trial_expira_em": None, "pode_usar": True, "vagas_fundador": 50}
+        # Tabela ainda não existe → loga mas NÃO bloqueia (degradação graciosa)
+        log_erro("billing_status_erro", erro=str(e))
+        # Retorna trial curto (1h) para não bloquear mas também não liberar para sempre
+        return {"status": "trial", "plano": None, "trial_restante_ms": 3600000,
+                "trial_expira_em": None, "pode_usar": True, "vagas_fundador": 50,
+                "_debug": "tabela_ausente"}
 
     # Se não tem assinatura por uid, verifica se pagou via PIX por email antes de logar
     if ass is None or ass.get("status") == "trial":
