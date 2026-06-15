@@ -6318,29 +6318,36 @@ function _mostrarAvisoPagamento(){
 }
 
 async function _verificarPagamento(){
-  const btn = document.getElementById('btn-verificar-pag');
+  const banner = document.getElementById('banner-confirmar-pag');
+  const btn = banner ? banner.querySelector('button') : null;
+  const txtOriginal = btn ? btn.textContent : 'Confirmar ✓';
   if(btn){ btn.disabled=true; btn.textContent='Verificando...'; }
   try {
     const r = await authFetch(API+'/billing/verificar-pagamento', {method:'POST'});
     const d = await r.json();
     if(d.ativado){
-      document.getElementById('aviso-pagamento')?.remove();
-      // Toast de sucesso
+      if(banner) banner.remove();
       const t = document.createElement('div');
-      t.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:#065f46;color:#d1fae5;padding:14px 24px;border-radius:14px;font-size:14px;font-weight:700;z-index:99999;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.5)';
-      t.innerHTML = '✅ Plano ativado! Bem-vindo ao Painel.IA';
+      t.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:#065f46;color:#d1fae5;padding:16px 26px;border-radius:14px;font-size:15px;font-weight:800;z-index:99999;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.5)';
+      t.innerHTML = '🎉 Plano ativado! Bem-vindo ao Fundador';
       document.body.appendChild(t);
-      setTimeout(()=>{ t.remove(); location.reload(); }, 3000);
+      setTimeout(()=>{ t.remove(); location.reload(); }, 2500);
     } else {
-      if(btn){ btn.disabled=false; btn.textContent='✅ Já paguei — verificar novamente'; }
-      const msg = document.createElement('div');
-      msg.style.cssText = 'font-size:12px;color:#f87171;margin-top:8px';
-      msg.textContent = d.mensagem || 'Pagamento ainda não confirmado. Aguarde alguns minutos e tente novamente.';
-      btn?.parentNode?.insertBefore(msg, btn.nextSibling);
-      setTimeout(()=>msg.remove(), 5000);
+      if(btn){ btn.disabled=false; btn.textContent=txtOriginal; }
+      // Mostra a mensagem num toast visível (não dependente do banner)
+      const m = document.createElement('div');
+      m.style.cssText = 'position:fixed;bottom:160px;left:16px;right:16px;background:#3a1a1a;border:1px solid rgba(248,113,113,.4);color:#fca5a5;padding:14px 16px;border-radius:12px;font-size:13px;z-index:99999;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+      m.textContent = d.mensagem || 'Pagamento ainda não encontrado. Se acabou de pagar via PIX, aguarde 2-5 minutos e tente de novo.';
+      document.body.appendChild(m);
+      setTimeout(()=>m.remove(), 6000);
     }
   } catch(e) {
-    if(btn){ btn.disabled=false; btn.textContent='✅ Já paguei — verificar novamente'; }
+    if(btn){ btn.disabled=false; btn.textContent=txtOriginal; }
+    const m = document.createElement('div');
+    m.style.cssText = 'position:fixed;bottom:160px;left:16px;right:16px;background:#3a1a1a;border:1px solid rgba(248,113,113,.4);color:#fca5a5;padding:14px 16px;border-radius:12px;font-size:13px;z-index:99999;text-align:center';
+    m.textContent = 'Erro de conexão. Tente de novo em instantes.';
+    document.body.appendChild(m);
+    setTimeout(()=>m.remove(), 5000);
   }
 }
 </script>

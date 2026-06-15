@@ -326,9 +326,37 @@ async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
         plano_ativado = None
         ciclo_ativado = "mensal"
         _email_user = await _email_do_usuario(uid)
+        log_info("verificar_inicio", uid=str(uid)[:8], email=_email_user)
         async with httpx.AsyncClient(timeout=15) as c:
-            # Formato 1: PIX/Checkout Pro → "pix|email:EMAIL|plano|ciclo" OU "email:EMAIL|plano"
+            # Formato 0 (mais robusto): busca TODOS os pagamentos do email do pagador e pega o aprovado
             if _email_user:
+                try:
+                    rp = await c.get(
+                        f"{_MP_API}/v1/payments/search",
+                        params={"payer.email": _email_user, "sort": "date_created", "criteria": "desc", "limit": 20},
+                        headers={"Authorization": f"Bearer {token}"}
+                    )
+                    if rp.status_code == 200:
+                        results = rp.json().get("results", [])
+                        log_info("verificar_por_email", qtd=len(results),
+                                 status_list=",".join([str(p.get("status")) for p in results[:5]]))
+                        for pg in results:
+                            if pg.get("status") == "approved":
+                                aprovado = pg
+                                # Tenta extrair plano/ciclo do external_reference
+                                ext = pg.get("external_reference", "") or ""
+                                if "fundador" in ext: plano_ativado = "fundador"
+                                elif "pro" in ext: plano_ativado = "pro"
+                                else: plano_ativado = "fundador"
+                                ciclo_ativado = "anual" if "anual" in ext else "mensal"
+                                break
+                    else:
+                        log_info("verificar_por_email_falhou", status=rp.status_code)
+                except Exception as e:
+                    log_erro("verificar_por_email_erro", erro=e)
+
+            # Formato 1: PIX/Checkout Pro → "pix|email:EMAIL|plano|ciclo" OU "email:EMAIL|plano"
+            if not aprovado and _email_user:
                 refs_tentar = []
                 for plano in ["fundador", "pro"]:
                     refs_tentar.append((f"email:{_email_user}|{plano}", plano, "mensal"))
