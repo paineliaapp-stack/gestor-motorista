@@ -188,9 +188,10 @@ async def checkout_pix(dados: dict = Body(...)):
         "payer": {"email": email},
         "external_reference": f"pix|email:{email}|{plano_id}|{ciclo}",
         "payment_methods": {
-            # PIX como destaque; exclui boleto (demora a compensar). Cartão fica disponível como secundário.
+            # Exclui só boleto. PIX e cartão ficam disponíveis.
             "excluded_payment_types": [{"id": "ticket"}],
             "installments": 1,
+            "default_installments": 1,
         },
         "back_urls": {
             "success": f"{_APP_URL}/?pagamento=ok&email={email}",
