@@ -324,23 +324,45 @@ async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
         # Busca pagamentos aprovados no MP por external_reference
         aprovado = None
         plano_ativado = None
+        ciclo_ativado = "mensal"
+        _email_user = await _email_do_usuario(uid)
         async with httpx.AsyncClient(timeout=15) as c:
-            for plano in ["fundador", "pro"]:
-                ref = urllib.parse.quote(f"{uid}|{plano}", safe="")
-                # Busca pagamento único (topic=payment)
-                r2 = await c.get(
-                    f"{_MP_API}/v1/payments/search?external_reference={ref}&sort=date_created&criteria=desc&limit=5",
-                    headers={"Authorization": f"Bearer {token}"}
-                )
-                log_info("verificar_busca", plano=plano, status=r2.status_code)
-                if r2.status_code == 200:
-                    for pg in r2.json().get("results", []):
-                        if pg.get("status") == "approved":
-                            aprovado = pg
-                            plano_ativado = plano
-                            break
-                if aprovado:
-                    break
+            # Formato 1: PIX/Checkout Pro → "pix|email:EMAIL|plano|ciclo" OU "email:EMAIL|plano"
+            if _email_user:
+                refs_tentar = []
+                for plano in ["fundador", "pro"]:
+                    refs_tentar.append((f"email:{_email_user}|{plano}", plano, "mensal"))
+                    for ciclo in ["mensal", "anual"]:
+                        refs_tentar.append((f"pix|email:{_email_user}|{plano}|{ciclo}", plano, ciclo))
+                for ref_raw, plano, ciclo in refs_tentar:
+                    ref = urllib.parse.quote(ref_raw, safe="")
+                    r1 = await c.get(
+                        f"{_MP_API}/v1/payments/search?external_reference={ref}&sort=date_created&criteria=desc&limit=5",
+                        headers={"Authorization": f"Bearer {token}"}
+                    )
+                    if r1.status_code == 200:
+                        for pg in r1.json().get("results", []):
+                            if pg.get("status") == "approved":
+                                aprovado = pg; plano_ativado = plano; ciclo_ativado = ciclo
+                                break
+                    if aprovado: break
+
+            # Formato 2 (legado): "uid|plano"
+            if not aprovado:
+                for plano in ["fundador", "pro"]:
+                    ref = urllib.parse.quote(f"{uid}|{plano}", safe="")
+                    r2 = await c.get(
+                        f"{_MP_API}/v1/payments/search?external_reference={ref}&sort=date_created&criteria=desc&limit=5",
+                        headers={"Authorization": f"Bearer {token}"}
+                    )
+                    log_info("verificar_busca", plano=plano, status=r2.status_code)
+                    if r2.status_code == 200:
+                        for pg in r2.json().get("results", []):
+                            if pg.get("status") == "approved":
+                                aprovado = pg; plano_ativado = plano
+                                break
+                    if aprovado:
+                        break
 
             if not aprovado:
                 # Tenta também preapproval (assinatura recorrente)
@@ -358,7 +380,8 @@ async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
             return {"ativado": False, "mensagem": "Pagamento aprovado não encontrado. Aguarde alguns minutos e tente novamente."}
 
         # Ativa assinatura
-        periodo_fim = agora + _dt.timedelta(days=30)
+        dias = 365 if ciclo_ativado == "anual" else 30
+        periodo_fim = agora + _dt.timedelta(days=dias)
         if ass:
             supabase.table("assinaturas").update({
                 "status": "active",
