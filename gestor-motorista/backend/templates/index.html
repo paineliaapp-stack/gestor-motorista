@@ -5586,6 +5586,29 @@ document.addEventListener('DOMContentLoaded', async ()=>{
           const h = Math.floor((bs.trial_restante_ms||0) / 3600000);
           chip.textContent = '⏱ ' + (h > 0 ? h + 'h grátis' : 'últimas horas');
           if (h <= 6) { chip.style.color = '#F0B429'; chip.style.borderColor = 'rgba(240,180,41,.4)'; chip.style.background = 'rgba(240,180,41,.1)'; }
+          // Aviso fixo para quem já pagou mas não ativou
+          if (!document.getElementById('banner-confirmar-pag')) {
+            const banner = document.createElement('div');
+            banner.id = 'banner-confirmar-pag';
+            banner.style.cssText = 'position:fixed;bottom:70px;left:12px;right:12px;z-index:9990;background:#1a2e1a;border:1px solid rgba(74,222,128,.3);border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px';
+            banner.innerHTML = `
+              <div>
+                <div style="font-size:12px;font-weight:700;color:#4ade80">Já comprou o acesso?</div>
+                <div style="font-size:11px;color:#86efac;margin-top:2px">Clique para confirmar e ativar o plano</div>
+              </div>
+              <button onclick="_verificarPagamento()" style="background:#4ade80;border:none;border-radius:8px;color:#052e16;font-size:12px;font-weight:800;padding:8px 14px;cursor:pointer;white-space:nowrap">Confirmar ✓</button>
+            `;
+            // Fecha ao clicar fora
+            const fechar = document.createElement('button');
+            fechar.style.cssText = 'position:absolute;top:6px;right:8px;background:none;border:none;color:#4a5568;font-size:14px;cursor:pointer;line-height:1;padding:0';
+            fechar.textContent = '×';
+            fechar.onclick = () => { banner.remove(); sessionStorage.setItem('banner-pag-fechado','1'); };
+            banner.style.position = 'fixed';
+            banner.appendChild(fechar);
+            if (!sessionStorage.getItem('banner-pag-fechado')) {
+              document.body.appendChild(banner);
+            }
+          }
         } else {
           // expirado/bloqueado/cancelado
           chip.style.display = 'block';
