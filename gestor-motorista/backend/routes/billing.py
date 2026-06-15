@@ -350,34 +350,52 @@ async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
 @router.post("/webhook")
 async def webhook_mp(request: Request):
     """Recebe notificações do Mercado Pago e ativa assinatura."""
+    # Salva o body bruto para diagnóstico
     try:
-        body = await request.json()
+        raw = await request.body()
+        body = await request.json() if raw else {}
     except Exception:
-        return {"ok": True}
+        body = {}
+
+    log_info("webhook_mp_recebido", body=str(body)[:500])
 
     tipo = body.get("type") or body.get("topic")
-    if tipo not in ("payment", "preapproval"):
+    # Aceita também action=payment.created/updated
+    action = body.get("action", "")
+    if tipo not in ("payment", "preapproval") and "payment" not in action:
+        log_info("webhook_mp_ignorado", tipo=tipo, action=action)
         return {"ok": True}
 
-    payment_id = body.get("data", {}).get("id") or body.get("id")
-    if not payment_id or not MP_ACCESS_TOKEN:
+    payment_id = (body.get("data") or {}).get("id") or body.get("id") or body.get("data_id")
+    if not payment_id:
+        log_erro("webhook_mp_sem_id", body=str(body)[:200])
+        return {"ok": True}
+
+    if not MP_ACCESS_TOKEN:
+        log_erro("webhook_mp_sem_token")
         return {"ok": True}
 
     try:
-        async with httpx.AsyncClient(timeout=10) as c:
+        async with httpx.AsyncClient(timeout=15) as c:
             r = await c.get(
                 f"https://api.mercadopago.com/v1/payments/{payment_id}",
                 headers={"Authorization": f"Bearer {MP_ACCESS_TOKEN}"}
             )
+        log_info("webhook_mp_consulta", payment_id=payment_id, status_code=r.status_code)
         if r.status_code != 200:
+            log_erro("webhook_mp_consulta_erro", status=r.status_code, body=r.text[:200])
             return {"ok": True}
 
         pagamento = r.json()
         status_mp = pagamento.get("status")
         ref = pagamento.get("external_reference", "")
         valor = pagamento.get("transaction_amount", 0)
+        email_pagador = (pagamento.get("payer") or {}).get("email", "")
+
+        log_info("webhook_mp_pagamento", status=status_mp, ref=ref, valor=valor, email=email_pagador)
 
         if "|" not in ref:
+            log_erro("webhook_mp_ref_invalido", ref=ref, payment_id=payment_id)
             return {"ok": True}
 
         motorista_id, plano_id = ref.split("|", 1)
@@ -396,8 +414,6 @@ async def webhook_mp(request: Request):
                     "mp_subscription_id": str(payment_id),
                     "atualizado_em": agora.isoformat(),
                 }).eq("id", ass["id"]).execute()
-
-                # Registra pagamento
                 supabase.table("pagamentos").insert({
                     "assinatura_id": ass["id"],
                     "motorista_id": motorista_id,
@@ -406,7 +422,6 @@ async def webhook_mp(request: Request):
                     "status": "aprovado",
                 }).execute()
             else:
-                # Cria assinatura ativa do zero (caso raro)
                 nova = supabase.table("assinaturas").insert({
                     "motorista_id": motorista_id,
                     "plano_id": plano_id,
@@ -423,13 +438,15 @@ async def webhook_mp(request: Request):
                     "status": "aprovado",
                 }).execute()
 
-            # Decrementa vagas do plano fundador
             if plano_id == "fundador":
-                supabase.rpc("decrementar_vaga_fundador", {}).execute()
+                try: supabase.rpc("decrementar_vaga_fundador", {}).execute()
+                except: pass
 
             log_info("pagamento_aprovado", motorista_id=motorista_id, plano=plano_id, valor=valor)
+        else:
+            log_info("webhook_mp_nao_aprovado", status=status_mp, payment_id=payment_id)
 
     except Exception as e:
-        log_erro("webhook_mp_erro", erro=e)
+        log_erro("webhook_mp_erro", erro=str(e))
 
     return {"ok": True}
