@@ -209,6 +209,28 @@ async def criar_checkout(dados: dict = Body(...), uid: str = Depends(get_uid_fro
 async def billing_webhook(request: Request):
     """Notificações do MercadoPago. Busca o recurso na API para confirmar o estado real."""
     token = os.getenv("MP_ACCESS_TOKEN", "")
+    # Validação opcional da assinatura (x-signature). Só valida se MP_WEBHOOK_SECRET estiver configurada.
+    # Mesmo sem ela, o webhook consulta a API do MP para confirmar o estado real (não confia na notificação crua).
+    _wh_secret = os.getenv("MP_WEBHOOK_SECRET", "")
+    if _wh_secret:
+        try:
+            import hashlib, hmac
+            x_sig = request.headers.get("x-signature", "")
+            x_req_id = request.headers.get("x-request-id", "")
+            params = dict(request.query_params)
+            data_id = params.get("data.id") or params.get("id") or ""
+            # x-signature vem como "ts=...,v1=..."
+            partes = dict(p.split("=", 1) for p in x_sig.split(",") if "=" in p)
+            ts = partes.get("ts", "")
+            v1 = partes.get("v1", "")
+            if ts and v1:
+                manifest = f"id:{data_id};request-id:{x_req_id};ts:{ts};"
+                calc = hmac.new(_wh_secret.encode(), manifest.encode(), hashlib.sha256).hexdigest()
+                if not hmac.compare_digest(calc, v1):
+                    log_erro("mp_webhook_assinatura_invalida", ts=ts)
+                    return {"ok": False}
+        except Exception as e:
+            log_erro("mp_webhook_sig_erro", erro=e)
     try:
         body = {}
         try:
