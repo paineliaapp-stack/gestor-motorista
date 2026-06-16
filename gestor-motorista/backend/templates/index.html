@@ -5573,6 +5573,14 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     NOME = setUserUI(session);
     const upRes = await authFetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})});
     const upData = await upRes.json();
+    // Registra de qual influencer o usuário veio (código guardado pela landing), 1x
+    try {
+      const _ref = localStorage.getItem('painel_ref');
+      if (_ref && !localStorage.getItem('painel_ref_usado')) {
+        await authFetch(API+'/landing/indicacao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({codigo:_ref, uid:MID})});
+        localStorage.setItem('painel_ref_usado','1');
+      }
+    } catch(e){}
     // ── BILLING: status do plano (não bloqueia o carregamento) ──
     setTimeout(async () => {
       try {

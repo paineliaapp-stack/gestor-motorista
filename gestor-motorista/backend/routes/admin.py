@@ -845,3 +845,95 @@ async def debug_auth(x_admin_token: str = Header(default="")):
         "total": len(data) if isinstance(data, list) else data.get("total", "?"),
         "amostra": data[:2] if isinstance(data, list) else data.get("users", [])[:2],
     }
+
+
+# ── PARCERIAS COM INFLUENCERS ──────────────────────────────────────────────
+
+@router.post("/landing/indicacao")
+async def registrar_indicacao(dados: dict = Body(...)):
+    """Público. Registra de qual influencer o usuário veio (código informado no cadastro)."""
+    codigo = (dados.get("codigo") or "").strip().upper()
+    uid = (dados.get("uid") or "").strip()
+    if not codigo or not uid:
+        return {"ok": False}
+    try:
+        # Valida se o código existe e está ativo
+        p = supabase.table("parcerias").select("codigo,ativo").eq("codigo", codigo).limit(1).execute()
+        if not p.data or not p.data[0].get("ativo", True):
+            return {"ok": False, "motivo": "codigo invalido"}
+        supabase.table("motoristas").update({"indicado_por": codigo}).eq("id", uid).execute()
+        log_info("indicacao_registrada", codigo=codigo)
+        return {"ok": True}
+    except Exception as e:
+        log_erro("registrar_indicacao_erro", erro=str(e))
+        return {"ok": False}
+
+
+@router.get("/admin/parcerias")
+async def listar_parcerias(x_admin_token: str = Header(default="")):
+    """Lista influencers parceiros + quantos clientes cada um trouxe e quanto pagar."""
+    _check(x_admin_token)
+    try:
+        parc = supabase.table("parcerias").select("*").order("criado_em", desc=True).execute()
+        parcerias = parc.data or []
+        # Quantos motoristas vieram de cada código
+        mot = supabase.table("motoristas").select("id,indicado_por").execute()
+        motoristas = mot.data or []
+        # Quais estão com assinatura ativa (pra comissão recorrente)
+        ass = supabase.table("assinaturas").select("motorista_id,status").execute()
+        ativos_ids = {a["motorista_id"] for a in (ass.data or []) if a.get("status") in ("active", "ativo")}
+
+        resultado = []
+        for p in parcerias:
+            cod = (p.get("codigo") or "").upper()
+            indicados = [m for m in motoristas if (m.get("indicado_por") or "").upper() == cod]
+            total_indicados = len(indicados)
+            ativos = sum(1 for m in indicados if m["id"] in ativos_ids)
+            comissao = float(p.get("comissao_por_cliente") or 5.0)
+            resultado.append({
+                **p,
+                "total_indicados": total_indicados,
+                "clientes_ativos": ativos,
+                "a_pagar_mes": round(ativos * comissao, 2),
+            })
+        return {"parcerias": resultado}
+    except Exception as e:
+        log_erro("listar_parcerias_erro", erro=str(e))
+        return {"parcerias": []}
+
+
+@router.post("/admin/parcerias")
+async def criar_parceria(dados: dict = Body(...), x_admin_token: str = Header(default="")):
+    """Cria um novo influencer parceiro."""
+    _check(x_admin_token)
+    nome = (dados.get("nome") or "").strip()
+    codigo = (dados.get("codigo") or "").strip().upper()
+    comissao = dados.get("comissao_por_cliente", 5.0)
+    contato = (dados.get("contato") or "").strip()
+    if not nome or not codigo:
+        return {"ok": False, "erro": "Nome e código são obrigatórios"}
+    try:
+        supabase.table("parcerias").insert({
+            "nome": nome, "codigo": codigo,
+            "comissao_por_cliente": float(comissao), "contato": contato, "ativo": True,
+        }).execute()
+        return {"ok": True}
+    except Exception as e:
+        log_erro("criar_parceria_erro", erro=str(e))
+        return {"ok": False, "erro": "Código já existe ou erro ao criar"}
+
+
+@router.patch("/admin/parcerias/{parceria_id}")
+async def atualizar_parceria(parceria_id: str, dados: dict = Body(...), x_admin_token: str = Header(default="")):
+    """Ativa/desativa ou ajusta uma parceria."""
+    _check(x_admin_token)
+    try:
+        upd = {}
+        if "ativo" in dados: upd["ativo"] = bool(dados["ativo"])
+        if "comissao_por_cliente" in dados: upd["comissao_por_cliente"] = float(dados["comissao_por_cliente"])
+        if upd:
+            supabase.table("parcerias").update(upd).eq("id", parceria_id).execute()
+        return {"ok": True}
+    except Exception as e:
+        log_erro("atualizar_parceria_erro", erro=str(e))
+        return {"ok": False}

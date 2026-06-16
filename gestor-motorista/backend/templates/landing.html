@@ -794,6 +794,11 @@ document.querySelectorAll('.reveal,.era').forEach(r=>obs.observe(r));
 
 <script>
 let _modalPlano = 'fundador';
+// Captura código de indicação do influencer (?ref=CODIGO) e guarda pra usar no cadastro
+try {
+  const _ref = new URLSearchParams(location.search).get('ref');
+  if (_ref) localStorage.setItem('painel_ref', _ref.toUpperCase());
+} catch(e){}
 // ── Tracking simples (visitas e cliques) → aparece no admin ──
 function _trackEvento(tipo){
   try {
