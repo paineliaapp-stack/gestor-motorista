@@ -328,35 +328,8 @@ async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
         _email_user = await _email_do_usuario(uid)
         log_info("verificar_inicio", uid=str(uid)[:8], email=_email_user)
         async with httpx.AsyncClient(timeout=15) as c:
-            # Formato 0 (mais robusto): busca TODOS os pagamentos do email do pagador e pega o aprovado
-            if _email_user:
-                try:
-                    rp = await c.get(
-                        f"{_MP_API}/v1/payments/search",
-                        params={"payer.email": _email_user, "sort": "date_created", "criteria": "desc", "limit": 20},
-                        headers={"Authorization": f"Bearer {token}"}
-                    )
-                    if rp.status_code == 200:
-                        results = rp.json().get("results", [])
-                        log_info("verificar_por_email", qtd=len(results),
-                                 status_list=",".join([str(p.get("status")) for p in results[:5]]))
-                        for pg in results:
-                            if pg.get("status") == "approved":
-                                aprovado = pg
-                                # Tenta extrair plano/ciclo do external_reference
-                                ext = pg.get("external_reference", "") or ""
-                                if "fundador" in ext: plano_ativado = "fundador"
-                                elif "pro" in ext: plano_ativado = "pro"
-                                else: plano_ativado = "fundador"
-                                ciclo_ativado = "anual" if "anual" in ext else "mensal"
-                                break
-                    else:
-                        log_info("verificar_por_email_falhou", status=rp.status_code)
-                except Exception as e:
-                    log_erro("verificar_por_email_erro", erro=e)
-
             # Formato 1: PIX/Checkout Pro → "pix|email:EMAIL|plano|ciclo" OU "email:EMAIL|plano"
-            if not aprovado and _email_user:
+            if _email_user:
                 refs_tentar = []
                 for plano in ["fundador", "pro"]:
                     refs_tentar.append((f"email:{_email_user}|{plano}", plano, "mensal"))
@@ -404,29 +377,35 @@ async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
                             plano_ativado = ass.get("plano_id", "fundador")
                             aprovado = {"id": sub_id, "transaction_amount": _PRECOS.get(plano_ativado, 19)}
 
+        log_info("verificar_resultado", achou=bool(aprovado), plano=plano_ativado, ciclo=ciclo_ativado)
         if not aprovado:
             return {"ativado": False, "mensagem": "Pagamento aprovado não encontrado. Aguarde alguns minutos e tente novamente."}
 
-        # Ativa assinatura
+        # Ativa assinatura — SEMPRE faz UPDATE da linha existente (criada no trial).
+        # Insert dava 409 Conflict porque já existe linha do motorista (constraint unica).
         dias = 365 if ciclo_ativado == "anual" else 30
         periodo_fim = agora + _dt.timedelta(days=dias)
-        if ass:
-            supabase.table("assinaturas").update({
-                "status": "active",
-                "plano_id": plano_ativado,
-                "periodo_inicio": agora.isoformat(),
-                "periodo_fim": periodo_fim.isoformat(),
-                "mp_subscription_id": str(aprovado.get("id", "")),
-                "atualizado_em": agora.isoformat(),
-            }).eq("id", ass["id"]).execute()
-        else:
-            supabase.table("assinaturas").insert({
-                "motorista_id": uid, "plano_id": plano_ativado,
-                "status": "active",
-                "periodo_inicio": agora.isoformat(),
-                "periodo_fim": periodo_fim.isoformat(),
-                "mp_subscription_id": str(aprovado.get("id", "")),
-            }).execute()
+        dados_ativacao = {
+            "status": "active",
+            "plano_id": plano_ativado,
+            "periodo_inicio": agora.isoformat(),
+            "periodo_fim": periodo_fim.isoformat(),
+            "mp_subscription_id": str(aprovado.get("id", "")),
+            "atualizado_em": agora.isoformat(),
+        }
+        try:
+            if ass and ass.get("id"):
+                supabase.table("assinaturas").update(dados_ativacao).eq("id", ass["id"]).execute()
+            else:
+                # Não existe linha → tenta achar por motorista_id e atualizar; se não, cria
+                existe = supabase.table("assinaturas").select("id").eq("motorista_id", uid).limit(1).execute()
+                if existe.data:
+                    supabase.table("assinaturas").update(dados_ativacao).eq("motorista_id", uid).execute()
+                else:
+                    supabase.table("assinaturas").insert({**dados_ativacao, "motorista_id": uid}).execute()
+        except Exception as e:
+            log_erro("ativar_assinatura_erro", erro=e)
+            return {"ativado": False, "mensagem": "Pagamento encontrado, mas erro ao ativar. Contate o suporte."}
 
         # Decrementa vaga fundador
         if plano_ativado == "fundador":
