@@ -16,8 +16,9 @@ router = APIRouter()
 
 _MP_API = "https://api.mercadopago.com"
 _APP_URL = "https://gestor-motorista-production.up.railway.app"
-_PRECOS = {"fundador": 19.00, "pro": 29.00}
-_NOMES = {"fundador": "Plano Fundador", "pro": "Plano Pro"}
+_PRECOS       = {"fundador": 19.00,  "pro": 29.00}
+_PRECOS_ANUAL = {"fundador": 190.00, "pro": 290.00}
+_NOMES        = {"fundador": "Plano Fundador", "pro": "Plano Pro"}
 
 
 def _agora():
@@ -202,6 +203,88 @@ async def criar_checkout(dados: dict = Body(...), uid: str = Depends(get_uid_fro
     except Exception as e:
         log_erro("mp_checkout_erro", erro=e)
         return {"erro": "Falha de conexão com o pagamento"}
+
+
+@router.post("/billing/checkout-pix")
+async def checkout_pix(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
+    """Checkout Pro do MercadoPago — aceita PIX e cartão (mensal ou anual)."""
+    plano_id = dados.get("plano_id", "fundador")
+    ciclo    = dados.get("ciclo", "mensal")   # mensal | anual
+    email    = (dados.get("email") or "").strip().lower()
+
+    if plano_id not in _PRECOS:
+        raise HTTPException(status_code=400, detail="Plano inválido")
+    if ciclo not in ("mensal", "anual"):
+        raise HTTPException(status_code=400, detail="Ciclo inválido")
+    if plano_id == "fundador" and _vagas_fundador() <= 0:
+        return {"erro": "Vagas do Plano Fundador esgotadas"}
+
+    try:
+        from core.supabase_client import supabase as _sb
+        res = _sb.auth.admin.get_user_by_id(uid)
+        if not email and res and res.user:
+            email = res.user.email or ""
+    except Exception:
+        pass
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Email inválido")
+
+    token = os.getenv("MP_ACCESS_TOKEN", "")
+    if not token:
+        return {"erro": "Pagamento ainda não configurado — tente em instantes"}
+
+    preco = _PRECOS_ANUAL[plano_id] if ciclo == "anual" else _PRECOS[plano_id]
+    dias  = 365 if ciclo == "anual" else 30
+    desc  = f"Painel.IA — {_NOMES[plano_id]} ({'Anual' if ciclo == 'anual' else 'Mensal'})"
+
+    payload = {
+        "items": [{
+            "id":          f"painelia_{plano_id}_{ciclo}",
+            "title":       desc,
+            "quantity":    1,
+            "unit_price":  preco,
+            "currency_id": "BRL",
+        }],
+        "payer":               {"email": email},
+        "external_reference":  f"pix|email:{email}|{plano_id}|{ciclo}",
+        "back_urls": {
+            "success": f"{_APP_URL}/?pagamento=ok&email={email}&ciclo={ciclo}",
+            "failure": f"{_APP_URL}/?pagamento=erro",
+            "pending": f"{_APP_URL}/?pagamento=pendente",
+        },
+        "auto_return":         "approved",
+        "payment_methods": {
+            "excluded_payment_types": [{"id": "ticket"}],   # sem boleto
+        },
+        "statement_descriptor": "PAINELIA",
+        "metadata": {"uid": uid, "plano_id": plano_id, "ciclo": ciclo, "dias": dias},
+    }
+    try:
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.post(
+                f"{_MP_API}/checkout/preferences",
+                headers={"Authorization": f"Bearer {token}"},
+                json=payload,
+            )
+            data = r.json()
+        if r.status_code >= 400 or "init_point" not in data:
+            log_warn("checkout_pix_falhou", status=r.status_code, body=str(data)[:300])
+            return {"erro": "Não foi possível gerar o checkout PIX — tente novamente"}
+        # Registrar referência na assinatura
+        try:
+            supabase.table("assinaturas").update({
+                "email_pagamento": email,
+                "plano_id": plano_id,
+                "atualizado_em": _agora().isoformat(),
+            }).eq("motorista_id", uid).execute()
+        except Exception as e:
+            log_erro("checkout_pix_save_erro", erro=e)
+        log_info("checkout_pix_criado", uid=uid[:8], plano=plano_id, ciclo=ciclo, valor=preco)
+        return {"init_point": data["init_point"], "preco": preco, "ciclo": ciclo}
+    except Exception as e:
+        log_erro("checkout_pix_erro", erro=e)
+        return {"erro": "Falha de conexão com o pagamento"}
+
 
 
 @router.post("/billing/webhook")
