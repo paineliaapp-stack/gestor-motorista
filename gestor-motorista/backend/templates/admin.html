@@ -164,6 +164,7 @@ tr:hover td { background: rgba(79,107,255,.05); }
     <div class="nav-item" onclick="irPara('pg-remarketing',this)"><span class="icon">📧</span> Remarketing</div>
     <div class="nav-item" onclick="irPara('pg-marketing',this);carregarMarketing()"><span class="icon">💰</span> Marketing</div>
     <div class="nav-item" id="nav-suporte" onclick="irPara('pg-suporte',this);limparBadgeSuporte()"><span class="icon">🎫</span> Suporte<span id="badge-suporte" style="display:none;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;margin-left:auto;flex-shrink:0" id="badge-suporte">0</span></div>
+    <div class="nav-item" onclick="irPara('pg-lixeira',this);carregarLixeira()"><span class="icon">🗑️</span> Lixeira</div>
   </div>
 
   <div class="main">
@@ -282,6 +283,16 @@ tr:hover td { background: rgba(79,107,255,.05); }
       </div>
       <div id="ticketsWrap">
         <div class="loading"><div class="spin"></div> Carregando tickets...</div>
+      </div>
+    </div>
+
+    <div class="page" id="pg-lixeira">
+      <div class="page-header">
+        <div><h1>🗑️ Lixeira</h1><div class="sub" id="totalLixeira">Usuários removidos — recuperáveis</div></div>
+        <button class="btn btn-gray btn-sm" onclick="carregarLixeira()">↻ Atualizar</button>
+      </div>
+      <div id="lixeiraWrap">
+        <div class="loading"><div class="spin"></div> Carregando lixeira...</div>
       </div>
     </div>
 
@@ -609,11 +620,13 @@ function renderTabela() {
   const cards = lista.map(u => `
     <div style="background:#111320;border:1px solid #1e2435;border-radius:14px;padding:16px;margin-bottom:10px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px">
-        <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
+          <input type="checkbox" class="sel-user" value="${u.id}" onchange="atualizarSelecao()" style="width:18px;height:18px;margin-top:3px;cursor:pointer;accent-color:#4f6bff;flex-shrink:0">
+          <div style="flex:1;min-width:0">
           <div style="font-weight:700;color:#fff;font-size:0.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.nome || '—'}</div>
           <div style="font-size:0.78rem;color:#60a5fa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.email || '—'}</div>
           <div style="font-size:0.68rem;color:#374151;font-family:monospace;margin-top:2px">${(u.id||'').slice(0,16)}…</div>
-        </div>
+        </div></div>
         <span style="flex-shrink:0;font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:20px;background:${statusBg[u.status]||'rgba(107,114,128,.12)'};color:${statusColor[u.status]||'#6b7280'};border:1px solid ${statusColor[u.status]||'#6b7280'}33">${traduzStatus(u.status)}</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;font-size:0.75rem;color:#718096">
@@ -634,7 +647,75 @@ function renderTabela() {
     </div>
   `).join('');
 
-  document.getElementById('tabelaWrap').innerHTML = `<div style="padding:12px">${cards}</div>`;
+  document.getElementById('tabelaWrap').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:6px;background:#0d1322;border:1px solid #1e2435;border-radius:10px">
+      <input type="checkbox" id="selTodos" onchange="selecionarTodos(this)" style="width:18px;height:18px;cursor:pointer;accent-color:#4f6bff">
+      <label for="selTodos" style="font-size:.82rem;color:#94a3b8;cursor:pointer;font-weight:600">Selecionar todos (${lista.length})</label>
+    </div>
+    <div style="padding:0 2px">${cards}</div>`;
+  atualizarSelecao();
+}
+
+// ── SELEÇÃO MÚLTIPLA E AÇÕES EM MASSA ──
+function selecionarTodos(master) {
+  document.querySelectorAll('.sel-user').forEach(cb => { cb.checked = master.checked; });
+  atualizarSelecao();
+}
+
+function idsSelecionados() {
+  return Array.from(document.querySelectorAll('.sel-user:checked')).map(cb => cb.value);
+}
+
+function atualizarSelecao() {
+  const n = idsSelecionados().length;
+  let barra = document.getElementById('barraAcoesMassa');
+  if (n === 0) { if (barra) barra.remove(); return; }
+  if (!barra) {
+    barra = document.createElement('div');
+    barra.id = 'barraAcoesMassa';
+    barra.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:9000;background:linear-gradient(180deg,rgba(13,19,34,.96),rgba(8,13,28,.99));border-top:1px solid rgba(79,107,255,.35);backdrop-filter:blur(12px);padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 -8px 30px rgba(0,0,0,.5)';
+    document.body.appendChild(barra);
+  }
+  barra.innerHTML = `
+    <span id="contadorSel" style="font-size:.9rem;font-weight:800;color:#fff;white-space:nowrap">${n} selecionado(s)</span>
+    <div style="flex:1;min-width:8px"></div>
+    <button onclick="acaoMassa('ativo')" style="padding:10px 16px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-weight:800;font-size:.84rem;cursor:pointer;white-space:nowrap">✅ Ativar</button>
+    <button onclick="acaoMassa('bloqueado')" style="padding:10px 16px;border:none;border-radius:10px;background:#b45309;color:#fff;font-weight:800;font-size:.84rem;cursor:pointer;white-space:nowrap">🚫 Bloquear</button>
+    <button onclick="acaoMassa('excluir')" style="padding:10px 16px;border:none;border-radius:10px;background:#991b1b;color:#fff;font-weight:800;font-size:.84rem;cursor:pointer;white-space:nowrap">🗑️ Excluir</button>
+    <button onclick="limparSelecao()" style="padding:10px 14px;border:1px solid #2d3748;border-radius:10px;background:transparent;color:#94a3b8;font-weight:600;font-size:.84rem;cursor:pointer;white-space:nowrap">Cancelar</button>
+  `;
+}
+
+function limparSelecao() {
+  document.querySelectorAll('.sel-user').forEach(cb => { cb.checked = false; });
+  const m = document.getElementById('selTodos'); if (m) m.checked = false;
+  atualizarSelecao();
+}
+
+async function acaoMassa(tipo) {
+  const ids = idsSelecionados();
+  if (!ids.length) return;
+  const nomes = { ativo:'ATIVAR', bloqueado:'BLOQUEAR', excluir:'EXCLUIR (manda pra lixeira)' };
+  if (!confirm(`${nomes[tipo]} ${ids.length} usuário(s)?` + (tipo==='excluir' ? '\n\nOs dados vão para a lixeira (recuperáveis).' : ''))) return;
+
+  const barra = document.getElementById('barraAcoesMassa');
+  if (barra) barra.innerHTML = '<span style="color:#fff;font-weight:700">Processando ' + ids.length + ' usuário(s)...</span>';
+
+  let ok = 0, falhas = 0;
+  for (const id of ids) {
+    try {
+      if (tipo === 'excluir') {
+        const d = await req('/admin/remover-usuario', { method:'POST', body: JSON.stringify({ motorista_id: id }) });
+        if (d.ok !== false) ok++; else falhas++;
+      } else {
+        const d = await req('/admin/liberar', { method:'POST', body: JSON.stringify({ motorista_id: id, tipo: tipo, plano_id:'fundador', dias: 30 }) });
+        if (d.ok !== false) ok++; else falhas++;
+      }
+    } catch(e) { falhas++; }
+  }
+  alert(`✅ Concluído!\n${ok} usuário(s) processado(s) com sucesso.` + (falhas ? `\n${falhas} falha(s).` : ''));
+  todosUsuarios = [];
+  await carregarUsuarios();
 }
 
 function abrirModal(uid, email, nome, tipo) {
@@ -972,6 +1053,54 @@ function setFiltroTicket(f, el) {
   document.querySelectorAll('#pg-suporte .filter-btn').forEach(b => b.classList.remove('ativo'));
   if (el) el.classList.add('ativo');
   renderTickets();
+}
+
+async function carregarLixeira() {
+  const wrap = document.getElementById('lixeiraWrap');
+  wrap.innerHTML = '<div class="loading"><div class="spin"></div> Carregando lixeira...</div>';
+  try {
+    const d = await req('/admin/lixeira');
+    const itens = d.removidos || [];
+    document.getElementById('totalLixeira').textContent = itens.length + ' usuário(s) removido(s) — recuperáveis';
+    if (!itens.length) {
+      wrap.innerHTML = '<div class="empty">🗑️ Lixeira vazia — nenhum usuário removido.</div>';
+      return;
+    }
+    let rows = itens.map(u => {
+      const data = u.removido_em ? new Date(u.removido_em).toLocaleString('pt-BR') : '—';
+      return `<tr>
+        <td>${esc(u.email) || '<span style="color:#5a6b8c">sem email</span>'}</td>
+        <td style="color:#6b7da3;font-size:.8rem">${data}</td>
+        <td style="text-align:right">
+          <button class="btn btn-sm" style="background:#166534;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-weight:700;cursor:pointer" onclick="restaurarUsuario('${u.id}', this)">♻️ Restaurar</button>
+        </td>
+      </tr>`;
+    }).join('');
+    wrap.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Email</th><th>Removido em</th><th style="text-align:right">Ação</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+  } catch(e) {
+    wrap.innerHTML = '<div class="empty">Erro ao carregar lixeira: ' + e.message + '</div>';
+  }
+}
+
+async function restaurarUsuario(arqId, btn) {
+  if (!confirm('Restaurar este usuário de volta para o sistema?')) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Restaurando...'; }
+  try {
+    const d = await req('/admin/restaurar-usuario', { method:'POST', body: JSON.stringify({ id: arqId }) });
+    if (d.ok) {
+      alert('✅ Usuário restaurado com sucesso!');
+      carregarLixeira();
+      todosUsuarios = []; // força recarregar a lista de usuários
+    } else {
+      alert('Erro: ' + (d.erro || 'não foi possível restaurar'));
+      if (btn) { btn.disabled = false; btn.textContent = '♻️ Restaurar'; }
+    }
+  } catch(e) {
+    alert('Erro ao restaurar: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '♻️ Restaurar'; }
+  }
 }
 
 async function carregarTickets() {
