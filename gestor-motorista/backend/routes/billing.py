@@ -394,7 +394,7 @@ async def billing_webhook(request: Request):
                 try:
                     from supabase_utils import get_user_by_email
                     _ur = supabase.auth.admin.list_users()
-                    for _u in (_ur or []):
+                    for _u in (getattr(_ur, "users", None) or []):
                         if getattr(_u, "email", "") == _email:
                             uid_ativar = str(_u.id)
                             break
@@ -417,7 +417,7 @@ async def billing_webhook(request: Request):
                 plano_ativar = partes[1] if len(partes) > 1 else "fundador"
                 try:
                     _ur = supabase.auth.admin.list_users()
-                    for _u in (_ur or []):
+                    for _u in (getattr(_ur, "users", None) or []):
                         if getattr(_u, "email", "") == _email:
                             uid_ativar = str(_u.id)
                             break
