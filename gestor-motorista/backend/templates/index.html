@@ -5586,17 +5586,18 @@ document.addEventListener('DOMContentLoaded', async ()=>{
           const h = Math.floor((bs.trial_restante_ms||0) / 3600000);
           chip.textContent = '⏱ ' + (h > 0 ? h + 'h grátis' : 'últimas horas');
           if (h <= 6) { chip.style.color = '#F0B429'; chip.style.borderColor = 'rgba(240,180,41,.4)'; chip.style.background = 'rgba(240,180,41,.1)'; }
-          // Aviso fixo para quem já pagou mas não ativou
+          // Banner fixo: comprar acesso OU confirmar quem já pagou
           if (!document.getElementById('banner-confirmar-pag')) {
             const banner = document.createElement('div');
             banner.id = 'banner-confirmar-pag';
-            banner.style.cssText = 'position:fixed;bottom:96px;left:12px;right:12px;z-index:9990;background:linear-gradient(135deg,#00D897,#00b87f);border-radius:14px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 8px 24px rgba(0,216,151,.4)';
+            banner.style.cssText = 'position:fixed;bottom:96px;left:12px;right:12px;z-index:9990;background:linear-gradient(135deg,#00D897,#00b87f);border-radius:14px;padding:13px 16px;box-shadow:0 8px 24px rgba(0,216,151,.4)';
             banner.innerHTML = `
-              <div>
-                <div style="font-size:13px;font-weight:800;color:#003d2b">✅ Já comprou o acesso?</div>
-                <div style="font-size:11px;color:rgba(0,61,43,.75);margin-top:2px">Toque para confirmar e ativar seu plano</div>
+              <div style="font-size:13px;font-weight:800;color:#003d2b;margin-bottom:2px">Garanta seu acesso ao Painel.IA</div>
+              <div style="font-size:11px;color:rgba(0,61,43,.75);margin-bottom:10px">Compre com PIX ou confirme se já pagou</div>
+              <div style="display:flex;gap:8px">
+                <button onclick="_comprarAcesso()" style="flex:1;background:#003d2b;border:none;border-radius:9px;color:#fff;font-size:12.5px;font-weight:800;padding:11px 8px;cursor:pointer">💳 Comprar acesso</button>
+                <button onclick="_verificarPagamento()" style="flex:1;background:rgba(255,255,255,.92);border:none;border-radius:9px;color:#00875a;font-size:12.5px;font-weight:800;padding:11px 8px;cursor:pointer">✅ Já comprei</button>
               </div>
-              <button onclick="_verificarPagamento()" style="background:#003d2b;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:800;padding:9px 16px;cursor:pointer;white-space:nowrap">Confirmar ✓</button>
             `;
             document.body.appendChild(banner);
           }
@@ -6416,6 +6417,31 @@ function _mostrarBannerConfirmar(){
     <button onclick="_verificarPagamento()" style="background:#003d2b;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:800;padding:9px 16px;cursor:pointer;white-space:nowrap">Confirmar ✓</button>
   `;
   document.body.appendChild(banner);
+}
+
+async function _comprarAcesso(){
+  // Abre o checkout PIX do plano Fundador (mensal). No Mercado Pago dá pra escolher PIX.
+  let email = '';
+  try { const {data} = await _supa.auth.getUser(); email = data?.user?.email || ''; } catch(e){}
+  const banner = document.getElementById('banner-confirmar-pag');
+  const btn = banner ? banner.querySelector('button') : null;
+  if(btn){ btn.disabled = true; }
+  try {
+    const r = await authFetch(API+'/billing/checkout-pix', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ plano_id:'fundador', ciclo:'mensal', email })
+    });
+    const d = await r.json();
+    if (d.init_point) {
+      window.location.href = d.init_point;
+    } else {
+      alert(d.erro || 'Não foi possível abrir o pagamento. Tente de novo.');
+      if(btn){ btn.disabled = false; }
+    }
+  } catch(e) {
+    alert('Falha de conexão. Tente de novo.');
+    if(btn){ btn.disabled = false; }
+  }
 }
 
 async function _verificarPagamento(){
