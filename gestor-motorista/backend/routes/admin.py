@@ -105,6 +105,38 @@ async def mapa_usuarios(x_admin_token: str = Header(default="")):
 
 # ═══════════════ MARKETING & MÉTRICAS DE NEGÓCIO ═══════════════
 
+@router.get("/admin/landing-metricas")
+async def landing_metricas(x_admin_token: str = Header(default="")):
+    """Totais de visitas e cliques na landing (essencial pra medir anúncios)."""
+    _check(x_admin_token)
+    try:
+        def _conta(tipo):
+            r = supabase.table("eventos_landing").select("id", count="exact").eq("tipo", tipo).execute()
+            return getattr(r, "count", 0) or 0
+        visitas = _conta("visita")
+        cliques_gratis = _conta("clique_gratis")
+        cliques_assinar = _conta("clique_assinar")
+        # Leads e pagamentos (do que já temos)
+        try:
+            rl = supabase.table("leads_captura").select("id", count="exact").execute()
+            leads = getattr(rl, "count", 0) or 0
+        except Exception:
+            leads = 0
+        total_cliques = cliques_gratis + cliques_assinar
+        taxa_clique = round((total_cliques / visitas * 100), 1) if visitas else 0
+        return {
+            "visitas": visitas,
+            "cliques_gratis": cliques_gratis,
+            "cliques_assinar": cliques_assinar,
+            "total_cliques": total_cliques,
+            "leads": leads,
+            "taxa_clique": taxa_clique,
+        }
+    except Exception as e:
+        log_erro("landing_metricas_erro", erro=e)
+        return {"visitas": 0, "cliques_gratis": 0, "cliques_assinar": 0, "total_cliques": 0, "leads": 0, "taxa_clique": 0}
+
+
 @router.get("/admin/marketing")
 async def marketing_listar(x_admin_token: str = Header(default="")):
     """Lista investimentos de marketing + métricas de SaaS (CAC, LTV, churn, MRR, ROI, etc)."""

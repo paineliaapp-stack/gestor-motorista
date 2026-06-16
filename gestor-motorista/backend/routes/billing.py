@@ -60,6 +60,19 @@ async def vagas_fundador():
     return {"vagas": _vagas_fundador()}
 
 
+@router.post("/landing/evento")
+async def registrar_evento_landing(dados: dict = Body(...)):
+    """Registra evento da landing (visita ou clique) para métricas no admin. Público, sem login."""
+    tipo = (dados.get("tipo") or "").strip()
+    if tipo not in ("visita", "clique_gratis", "clique_assinar"):
+        return {"ok": False}
+    try:
+        supabase.table("eventos_landing").insert({"tipo": tipo}).execute()
+    except Exception:
+        pass  # nunca trava a landing por causa de métrica
+    return {"ok": True}
+
+
 @router.post("/landing/captar")
 async def captar_lead(dados: dict = Body(...)):
     """Captura contato (email ou WhatsApp) da landing — SEM verificação.

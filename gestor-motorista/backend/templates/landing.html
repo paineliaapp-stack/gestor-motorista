@@ -784,8 +784,21 @@ document.querySelectorAll('.reveal,.era').forEach(r=>obs.observe(r));
 
 <script>
 let _modalPlano = 'fundador';
+// ── Tracking simples (visitas e cliques) → aparece no admin ──
+function _trackEvento(tipo){
+  try {
+    fetch('/landing/evento', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ tipo }),
+      keepalive: true
+    });
+  } catch(e){}
+}
+// Conta a visita 1x ao abrir a landing
+try { _trackEvento('visita'); } catch(e){}
 
 function abrirModalAssinar(plano) {
+  try { _trackEvento('clique_assinar'); } catch(e){}
   window._assinarPlano = plano || 'fundador';
   document.getElementById('modal-assinar').style.display = 'flex';
   document.getElementById('assinar-step1').style.display = 'block';
@@ -835,6 +848,7 @@ async function _assinarPix(ciclo) {
 }
 
 function abrirModalPlano(plano) {
+  try { _trackEvento('clique_gratis'); } catch(e){}
   _modalPlano = plano || 'fundador';
   const isFundador = _modalPlano === 'fundador';
   document.getElementById('modal-badge').style.display = isFundador ? 'inline-block' : 'none';

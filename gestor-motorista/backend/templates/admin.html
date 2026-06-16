@@ -208,6 +208,22 @@ tr:hover td { background: rgba(79,107,255,.05); }
         <div class="card"><div class="lbl">Sem uso nenhum<span class="info-dot" onclick="_toggleInfo(this,event)">i</span></div><div class="info-pop">Usuários cadastrados que nunca registraram nada nem usaram a IA.</div><div class="val r" id="m-sem-uso">—</div></div>
         <div class="card"><div class="lbl">Tickets abertos<span class="info-dot" onclick="_toggleInfo(this,event)">i</span></div><div class="info-pop">Mensagens de suporte aguardando sua resposta.</div><div class="val y" id="m-tickets">—</div></div>
       </div>
+      <!-- MÉTRICAS DA LANDING (funil de anúncios) -->
+      <div style="background:#0d1322;border:1px solid #1e2435;border-radius:16px;padding:18px;margin-bottom:24px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div style="font-size:0.95rem;font-weight:800;color:#fff">📊 Landing Page (anúncios)</div>
+          <button class="btn btn-gray btn-sm" onclick="carregarLandingMetricas()">↻ Atualizar</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px">
+          <div style="background:#111320;border:1px solid #1e2435;border-radius:12px;padding:14px"><div style="font-size:11px;color:#6b7da3;margin-bottom:4px">👀 Visitas</div><div style="font-size:1.7rem;font-weight:900;color:#60a5fa" id="lm-visitas">—</div></div>
+          <div style="background:#111320;border:1px solid #1e2435;border-radius:12px;padding:14px"><div style="font-size:11px;color:#6b7da3;margin-bottom:4px">🎁 Clicou "Grátis"</div><div style="font-size:1.7rem;font-weight:900;color:#fbbf24" id="lm-gratis">—</div></div>
+          <div style="background:#111320;border:1px solid #1e2435;border-radius:12px;padding:14px"><div style="font-size:11px;color:#6b7da3;margin-bottom:4px">⚡ Clicou "Assinar"</div><div style="font-size:1.7rem;font-weight:900;color:#00D897" id="lm-assinar">—</div></div>
+          <div style="background:#111320;border:1px solid #1e2435;border-radius:12px;padding:14px"><div style="font-size:11px;color:#6b7da3;margin-bottom:4px">📈 Taxa de clique</div><div style="font-size:1.7rem;font-weight:900;color:#a78bfa" id="lm-taxa">—</div></div>
+          <div style="background:#111320;border:1px solid #1e2435;border-radius:12px;padding:14px"><div style="font-size:11px;color:#6b7da3;margin-bottom:4px">📧 Leads captados</div><div style="font-size:1.7rem;font-weight:900;color:#34d399" id="lm-leads">—</div></div>
+        </div>
+        <div style="font-size:11px;color:#4a5568;margin-top:10px">Visitas = pessoas que abriram a landing · Taxa = cliques ÷ visitas. Útil pra medir se seus anúncios convertem.</div>
+      </div>
+
       <!-- Top usuários -->
       <div class="table-wrap" style="margin-bottom:24px">
         <div style="padding:14px 16px;border-bottom:1px solid #1e2435;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
@@ -517,6 +533,7 @@ async function carregarGlobo(){
 async function carregarTudo() {
   const m = await req('/admin/metricas');
   carregarGlobo();
+  carregarLandingMetricas();
   document.getElementById('m-total').textContent   = m.total_usuarios ?? '—';
   document.getElementById('m-trial').textContent   = m.em_trial ?? '—';
   document.getElementById('m-ativos').textContent  = m.ativos ?? '—';
@@ -1053,6 +1070,19 @@ function setFiltroTicket(f, el) {
   document.querySelectorAll('#pg-suporte .filter-btn').forEach(b => b.classList.remove('ativo'));
   if (el) el.classList.add('ativo');
   renderTickets();
+}
+
+async function carregarLandingMetricas() {
+  try {
+    const d = await req('/admin/landing-metricas');
+    document.getElementById('lm-visitas').textContent = d.visitas ?? 0;
+    document.getElementById('lm-gratis').textContent = d.cliques_gratis ?? 0;
+    document.getElementById('lm-assinar').textContent = d.cliques_assinar ?? 0;
+    document.getElementById('lm-taxa').textContent = (d.taxa_clique ?? 0) + '%';
+    document.getElementById('lm-leads').textContent = d.leads ?? 0;
+  } catch(e) {
+    ['lm-visitas','lm-gratis','lm-assinar','lm-taxa','lm-leads'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='—'; });
+  }
 }
 
 async function carregarLixeira() {
