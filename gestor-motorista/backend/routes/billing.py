@@ -449,13 +449,27 @@ async def billing_webhook(request: Request):
                     periodo_fim = (_agora() + timedelta(days=dias)).isoformat()
                     atual = supabase.table("assinaturas").select("id,status").eq("motorista_id", uid_ativar).order("criado_em", desc=True).limit(1).execute()
                     ja_ativo = (atual.data or [{}])[0].get("status") == "active"
-                    supabase.table("assinaturas").update({
-                        "status": "active", "plano_id": plano_ativar,
-                        "periodo_inicio": _agora().isoformat(),
-                        "periodo_fim": periodo_fim,
-                        "mp_subscription_id": str(rid),
-                        "atualizado_em": _agora().isoformat(),
-                    }).eq("motorista_id", uid_ativar).execute()
+                    ass_id = (atual.data or [{}])[0].get("id")
+                    if ass_id:
+                        # Atualiza registro existente
+                        supabase.table("assinaturas").update({
+                            "status": "active", "plano_id": plano_ativar,
+                            "periodo_inicio": _agora().isoformat(),
+                            "periodo_fim": periodo_fim,
+                            "mp_payment_id": str(rid),
+                            "atualizado_em": _agora().isoformat(),
+                        }).eq("id", ass_id).execute()
+                    else:
+                        # Cria novo registro
+                        supabase.table("assinaturas").insert({
+                            "motorista_id": uid_ativar, "plano_id": plano_ativar,
+                            "status": "active",
+                            "periodo_inicio": _agora().isoformat(),
+                            "periodo_fim": periodo_fim,
+                            "mp_payment_id": str(rid),
+                            "email_pagamento": _email if '_email' in dir() else None,
+                            "atualizado_em": _agora().isoformat(),
+                        }).execute()
                     if plano_ativar == "fundador" and not ja_ativo:
                         v = _vagas_fundador()
                         supabase.table("planos").update({"vagas_restantes": max(0, v - 1)}).eq("id", "fundador").execute()
