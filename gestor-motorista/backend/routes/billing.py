@@ -398,29 +398,30 @@ async def billing_webhook(request: Request):
                         uid_ativar = str(_r.data[0]["id"])
                 except Exception:
                     pass
-                # 2. Auth API por email diretamente (sem iterar todos usuários)
+                # 2. Auth API por email diretamente
                 if not uid_ativar:
                     try:
-                        import os
                         _sb_url = os.getenv("SUPABASE_URL", "")
                         _sb_key = os.getenv("SUPABASE_SERVICE_KEY", "") or os.getenv("SUPABASE_KEY", "")
                         async with httpx.AsyncClient(timeout=8) as _c:
                             _ra = await _c.get(
                                 f"{_sb_url}/auth/v1/admin/users",
                                 headers={"apikey": _sb_key, "Authorization": f"Bearer {_sb_key}"},
-                                params={"email": _email}
+                                params={"filter": f"email.eq.{_email}", "page": 1, "per_page": 1}
                             )
                             if _ra.status_code == 200:
-                                _users = _ra.json().get("users", [])
-                                if _users:
-                                    uid_ativar = str(_users[0]["id"])
-                                    # Salva email na tabela motoristas para próximas vezes
-                                    try:
-                                        supabase.table("motoristas").update({"email": _email}).eq("id", uid_ativar).execute()
-                                    except Exception:
-                                        pass
-                    except Exception:
-                        pass
+                                _rdata = _ra.json()
+                                _users = _rdata.get("users", []) if isinstance(_rdata, dict) else _rdata
+                                for _u in _users:
+                                    if _u.get("email", "").lower() == _email.lower():
+                                        uid_ativar = str(_u["id"])
+                                        try:
+                                            supabase.table("motoristas").update({"email": _email}).eq("id", uid_ativar).execute()
+                                        except Exception:
+                                            pass
+                                        break
+                    except Exception as e:
+                        log_erro("webhook_auth_lookup_erro", erro=str(e))
                 if not uid_ativar:
                     # guarda para vincular no login — mp_payment_id em vez de mp_subscription_id
                     try:
