@@ -105,6 +105,18 @@ async def mapa_usuarios(x_admin_token: str = Header(default="")):
 
 # ═══════════════ MARKETING & MÉTRICAS DE NEGÓCIO ═══════════════
 
+@router.get("/admin/leads-lista")
+async def leads_lista(x_admin_token: str = Header(default="")):
+    """Lista os leads capturados na landing (email/whatsapp), mais recentes primeiro."""
+    _check(x_admin_token)
+    try:
+        r = supabase.table("leads_captura").select("*").order("criado_em", desc=True).limit(500).execute()
+        return {"leads": r.data or []}
+    except Exception as e:
+        log_erro("leads_lista_erro", erro=e)
+        return {"leads": []}
+
+
 @router.get("/admin/landing-metricas")
 async def landing_metricas(x_admin_token: str = Header(default="")):
     """Totais de visitas e cliques na landing (essencial pra medir anúncios)."""
