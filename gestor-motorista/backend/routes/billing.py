@@ -381,6 +381,26 @@ async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
         if not aprovado:
             return {"ativado": False, "mensagem": "Pagamento aprovado não encontrado. Aguarde alguns minutos e tente novamente."}
 
+        # ── PROTEÇÃO ANTI-REUSO ──
+        # Um pagamento só vale UMA vez. Sem isto, o usuário clicaria todo mês e reativaria
+        # com o mesmo pagamento antigo, sem pagar de novo.
+        pg_id = str(aprovado.get("id", ""))
+        # 1) O pagamento já foi usado para ativar antes? (mesmo mp_subscription_id já registrado)
+        if pg_id and ass and str(ass.get("mp_subscription_id") or "") == pg_id:
+            # Esse pagamento já ativou esta assinatura. Se está expirada, precisa de pagamento NOVO.
+            return {"ativado": False, "mensagem": "Este pagamento já foi usado. Para renovar, faça um novo pagamento."}
+        # 2) O pagamento é recente? (aprovado há no máximo 40 dias — cobre o ciclo de 30 dias + folga)
+        try:
+            data_aprov = aprovado.get("date_approved") or aprovado.get("date_created") or ""
+            if data_aprov:
+                dt_aprov = _dt.datetime.fromisoformat(str(data_aprov).replace("Z", "+00:00"))
+                idade_dias = (agora - dt_aprov).total_seconds() / 86400
+                limite = 400 if ciclo_ativado == "anual" else 40
+                if idade_dias > limite:
+                    return {"ativado": False, "mensagem": "Seu último pagamento expirou. Faça um novo pagamento para renovar o acesso."}
+        except Exception as e:
+            log_erro("validar_data_pagamento_erro", erro=str(e))
+
         # Garante que o motorista existe na tabela motoristas (foreign key da assinatura).
         # Sem isso dava erro 23503 (motorista_id ausente em motoristas).
         try:
