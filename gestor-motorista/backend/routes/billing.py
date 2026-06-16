@@ -382,14 +382,11 @@ async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
             return {"ativado": False, "mensagem": "Pagamento aprovado não encontrado. Aguarde alguns minutos e tente novamente."}
 
         # Ativa assinatura — SEMPRE faz UPDATE da linha existente (criada no trial).
-        # Insert dava 409 Conflict porque já existe linha do motorista (constraint unica).
-        dias = 365 if ciclo_ativado == "anual" else 30
-        periodo_fim = agora + _dt.timedelta(days=dias)
+        # Usa SÓ colunas que o webhook ja grava com sucesso (sem periodo_fim, que pode nao existir).
         dados_ativacao = {
             "status": "active",
             "plano_id": plano_ativado,
             "periodo_inicio": agora.isoformat(),
-            "periodo_fim": periodo_fim.isoformat(),
             "mp_subscription_id": str(aprovado.get("id", "")),
             "atualizado_em": agora.isoformat(),
         }
@@ -397,15 +394,14 @@ async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
             if ass and ass.get("id"):
                 supabase.table("assinaturas").update(dados_ativacao).eq("id", ass["id"]).execute()
             else:
-                # Não existe linha → tenta achar por motorista_id e atualizar; se não, cria
                 existe = supabase.table("assinaturas").select("id").eq("motorista_id", uid).limit(1).execute()
                 if existe.data:
                     supabase.table("assinaturas").update(dados_ativacao).eq("motorista_id", uid).execute()
                 else:
                     supabase.table("assinaturas").insert({**dados_ativacao, "motorista_id": uid}).execute()
         except Exception as e:
-            log_erro("ativar_assinatura_erro", erro=e)
-            return {"ativado": False, "mensagem": "Pagamento encontrado, mas erro ao ativar. Contate o suporte."}
+            log_erro("ativar_assinatura_erro", erro=str(e))
+            return {"ativado": False, "mensagem": f"Erro ao ativar: {str(e)[:120]}"}
 
         # Decrementa vaga fundador
         if plano_ativado == "fundador":
