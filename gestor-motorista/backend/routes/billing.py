@@ -390,20 +390,35 @@ async def billing_webhook(request: Request):
                 _email = partes[1][6:] if len(partes) > 1 else ""
                 plano_ativar = partes[2] if len(partes) > 2 else "fundador"
                 ciclo_ativar = partes[3] if len(partes) > 3 else "mensal"
-                # Busca uid pelo email — tabela motoristas primeiro (mais rápido)
+                # Busca uid pelo email — 3 tentativas em cascata
+                # 1. Tabela motoristas (mais rápido — já tem email salvo)
                 try:
                     _r = supabase.table("motoristas").select("id").eq("email", _email).limit(1).execute()
                     if _r.data:
                         uid_ativar = str(_r.data[0]["id"])
                 except Exception:
                     pass
+                # 2. Auth API por email diretamente (sem iterar todos usuários)
                 if not uid_ativar:
                     try:
-                        _ur = supabase.auth.admin.list_users()
-                        for _u in (getattr(_ur, "users", None) or []):
-                            if getattr(_u, "email", "") == _email:
-                                uid_ativar = str(_u.id)
-                                break
+                        import os
+                        _sb_url = os.getenv("SUPABASE_URL", "")
+                        _sb_key = os.getenv("SUPABASE_SERVICE_KEY", "") or os.getenv("SUPABASE_KEY", "")
+                        async with httpx.AsyncClient(timeout=8) as _c:
+                            _ra = await _c.get(
+                                f"{_sb_url}/auth/v1/admin/users",
+                                headers={"apikey": _sb_key, "Authorization": f"Bearer {_sb_key}"},
+                                params={"email": _email}
+                            )
+                            if _ra.status_code == 200:
+                                _users = _ra.json().get("users", [])
+                                if _users:
+                                    uid_ativar = str(_users[0]["id"])
+                                    # Salva email na tabela motoristas para próximas vezes
+                                    try:
+                                        supabase.table("motoristas").update({"email": _email}).eq("id", uid_ativar).execute()
+                                    except Exception:
+                                        pass
                     except Exception:
                         pass
                 if not uid_ativar:
