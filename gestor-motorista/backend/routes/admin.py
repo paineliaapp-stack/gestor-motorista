@@ -123,15 +123,15 @@ async def landing_metricas(x_admin_token: str = Header(default="")):
     _check(x_admin_token)
     try:
         def _conta(tipo):
-            r = supabase.table("eventos_landing").select("id", count="exact").eq("tipo", tipo).execute()
-            return getattr(r, "count", 0) or 0
+            r = supabase.table("eventos_landing").select("id").eq("tipo", tipo).execute()
+            return len(r.data or [])
         visitas = _conta("visita")
         cliques_gratis = _conta("clique_gratis")
         cliques_assinar = _conta("clique_assinar")
-        # Leads e pagamentos (do que já temos)
+        # Leads
         try:
-            rl = supabase.table("leads_captura").select("id", count="exact").execute()
-            leads = getattr(rl, "count", 0) or 0
+            rl = supabase.table("leads_captura").select("id").execute()
+            leads = len(rl.data or [])
         except Exception:
             leads = 0
         total_cliques = cliques_gratis + cliques_assinar

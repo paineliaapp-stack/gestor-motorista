@@ -68,8 +68,9 @@ async def registrar_evento_landing(dados: dict = Body(...)):
         return {"ok": False}
     try:
         supabase.table("eventos_landing").insert({"tipo": tipo}).execute()
-    except Exception:
-        pass  # nunca trava a landing por causa de métrica
+        log_info("evento_landing_ok", tipo=tipo)
+    except Exception as e:
+        log_erro("evento_landing_erro", erro=str(e))  # ver no Railway se a tabela existe
     return {"ok": True}
 
 
