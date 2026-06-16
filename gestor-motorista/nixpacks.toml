@@ -9,3 +9,4 @@ cmds = ["pip install -r backend/requirements.txt", "pip install gunicorn"]
 # 4 workers async (uvicorn) — suporta ~2k-5k conexões simultâneas no Railway
 # workers = 2 * CPUs + 1, mas Railway free tem 1 vCPU → 3 workers
 cmd = "cd backend && gunicorn main:app -w 3 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 120 --graceful-timeout 30 --keep-alive 5 --max-requests 1000 --max-requests-jitter 100"
+# force redeploy Tue Jun 16 03:35:37 UTC 2026
