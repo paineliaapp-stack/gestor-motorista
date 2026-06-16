@@ -390,7 +390,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
         <div class="era-year">ANOS 1920</div>
         <h3>A caderneta de bolso</h3>
         <p>Taxistas anotavam corridas a lápis. Funcionava — até a chuva, até perder, até a letra que nem você entendia depois.</p>
-        <video class="era-vid" loop muted playsinline preload="none" src="/static/landing/era-1920.mp4"></video>
+        <video class="era-vid" autoplay loop muted playsinline preload="metadata" src="/static/landing/era-1920.mp4"></video>
         <div class="era-art"><div class="caderneta">
           terça — 14 corridas<br>
           gasolina ...... 12$000<br>
@@ -403,7 +403,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
         <div class="era-year">ANOS 1960</div>
         <h3>O livro-caixa</h3>
         <p>Colunas de débito e crédito, somadas à mão. Um erro de soma na linha 14 e o mês inteiro fechava errado.</p>
-        <video class="era-vid" loop muted playsinline preload="none" src="/static/landing/era-1960.mp4"></video>
+        <video class="era-vid" autoplay loop muted playsinline preload="metadata" src="/static/landing/era-1960.mp4"></video>
         <div class="era-art"><div class="livrocaixa">
           <div class="col"><span>ENTRADAS</span><span>Cr$ 847,00</span></div>
           <div class="col"><span>SAÍDAS</span><span>Cr$ 612,00</span></div>
@@ -415,7 +415,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
         <div class="era-year">ANOS 1990</div>
         <h3>A planilha</h3>
         <p>O Excel prometia resolver tudo. Mas exigia computador, fórmula e disciplina de contador — depois de 12 horas dirigindo.</p>
-        <video class="era-vid" loop muted playsinline preload="none" src="/static/landing/era-1990.mp4"></video>
+        <video class="era-vid" autoplay loop muted playsinline preload="metadata" src="/static/landing/era-1990.mp4"></video>
         <div class="era-art"><table class="excel">
           <tr><td class="h">A</td><td class="h">B</td><td class="h">C</td></tr>
           <tr><td>Seg</td><td>R$ 180</td><td>=B2-C2</td></tr>
@@ -427,7 +427,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
         <div class="era-year">ANOS 2010</div>
         <h3>Os apps de planilha</h3>
         <p>A planilha foi para o celular — mas continuou sendo planilha. Vinte toques para registrar um dia. Categorias, formulários, menus. Ninguém aguenta por mais de duas semanas.</p>
-        <video class="era-vid" loop muted playsinline preload="none" src="/static/landing/era-2010.mp4"></video>
+        <video class="era-vid" autoplay loop muted playsinline preload="metadata" src="/static/landing/era-2010.mp4"></video>
         <div class="era-art"><div class="appgen">
           <div class="row"><span>Categoria ▾</span><span>obrigatório</span></div>
           <div class="row"><span>Subcategoria ▾</span><span>obrigatório</span></div>
@@ -671,9 +671,9 @@ function toggleFaq(btn){
   if(!isOpen)item.classList.add('open');
 }
 
-/* Vídeos das eras — NÃO toca todos no load (travava ~30s no celular).
-   Só prepara mudo; o IntersectionObserver abaixo dá play quando o vídeo aparece na tela. */
-document.querySelectorAll('.era-vid').forEach(v=>{v.muted=true;v.defaultMuted=true;});
+/* Vídeos das eras — autoplay roda sozinho; observer garante play ao aparecer e pausa ao sair.
+   (O blur do fundo foi desativado no mobile, então isto não trava mais a página.) */
+document.querySelectorAll('.era-vid').forEach(v=>{v.muted=true;v.defaultMuted=true;v.play().catch(()=>{});});
 const vidObs=new IntersectionObserver(es=>{es.forEach(e=>{
   const v=e.target;
   if(e.isIntersecting){v.muted=true;v.play().catch(()=>{});}
