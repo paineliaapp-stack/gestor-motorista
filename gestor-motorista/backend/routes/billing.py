@@ -632,6 +632,11 @@ async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
         if ass and ass.get("status") in ("active", "ativo"):
             return {"ativado": True, "mensagem": "Plano já ativo", "plano": ass.get("plano_id")}
 
+        # BLOQUEADO PELO ADMIN: só o admin pode liberar. Não reativa por pagamento antigo.
+        if ass and ass.get("status") == "bloqueado":
+            return {"ativado": False, "bloqueado": True,
+                    "mensagem": "Sua conta está bloqueada. Fale com o suporte para regularizar."}
+
         # Busca pagamentos aprovados no MP por external_reference
         aprovado = None
         plano_ativado = None

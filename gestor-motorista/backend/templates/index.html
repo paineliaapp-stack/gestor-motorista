@@ -5605,6 +5605,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
                 <button onclick="_comprarAcesso()" style="flex:1;background:#003d2b;border:none;border-radius:9px;color:#fff;font-size:12.5px;font-weight:800;padding:11px 8px;cursor:pointer">💳 Comprar acesso</button>
                 <button onclick="_verificarPagamento()" style="flex:1;background:rgba(255,255,255,.92);border:none;border-radius:9px;color:#00875a;font-size:12.5px;font-weight:800;padding:11px 8px;cursor:pointer">✅ Já comprei</button>
               </div>
+              <div style="text-align:center;margin-top:8px"><a href="#" onclick="_falarSuporte();return false;" style="color:rgba(0,61,43,.7);font-size:11px;font-weight:700;text-decoration:underline">💬 Falar com o suporte</a></div>
             `;
             document.body.appendChild(banner);
           }
@@ -5614,13 +5615,18 @@ document.addEventListener('DOMContentLoaded', async ()=>{
           chip.textContent = '🔒 assinar';
           chip.style.color = '#FF4D6A'; chip.style.borderColor = 'rgba(255,77,106,.4)'; chip.style.background = 'rgba(255,77,106,.1)';
           if (!bs.pode_usar) {
-            // Tenta ativar automaticamente primeiro (webhook pode ter falhado)
-            try {
-              const _rv = await authFetch(API+'/billing/verificar-pagamento', {method:'POST'});
-              const _rd = await _rv.json();
-              if(_rd.ativado){ location.reload(); return; }
-            } catch(e){}
-            _mostrarOverlayUpgrade(bs);
+            // Bloqueado pelo admin: NÃO tenta reativar — só admin libera. Mostra overlay com suporte.
+            if (bs.status === 'bloqueado') {
+              _mostrarOverlayUpgrade(bs);
+            } else {
+              // Expirado: tenta ativar automaticamente (webhook pode ter falhado)
+              try {
+                const _rv = await authFetch(API+'/billing/verificar-pagamento', {method:'POST'});
+                const _rd = await _rv.json();
+                if(_rd.ativado){ location.reload(); return; }
+              } catch(e){}
+              _mostrarOverlayUpgrade(bs);
+            }
           }
         }
       } catch(e) { /* billing opcional */ }
@@ -6251,19 +6257,41 @@ setTimeout(function(){
 function _mostrarOverlayUpgrade(bs){
   if(document.getElementById('upgrade-overlay')) return;
   bs = bs || window._billingStatus || {};
+  const isBloqueadoAdmin = (bs.status === 'bloqueado');
   let totalReg = 0, nLanc = 0;
   try { const lc = window._todosLanc || []; nLanc = lc.length; totalReg = lc.filter(l=>l.tipo==='ganho').reduce((s,l)=>s+(+l.valor||0),0); } catch(e){}
   const ov = document.createElement('div');
   ov.id = 'upgrade-overlay';
   ov.style.cssText = 'position:fixed;inset:0;z-index:9800;background:linear-gradient(180deg,#07090d,#0d1410);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;overflow-y:auto';
-  ov.innerHTML = `
-    <div style="width:72px;height:72px;border-radius:50%;overflow:hidden;margin-bottom:22px;box-shadow:0 0 50px rgba(240,180,41,.3)"><img alt="Logo Painel.IA" src="/static/icon-512.png" style="width:100%;height:100%;object-fit:cover"></div>
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;text-transform:uppercase;line-height:1.1;margin-bottom:12px;color:#f3f4f6">Seu acesso expirou</div>
-    <div style="font-size:14px;color:rgba(238,233,224,.55);max-width:300px;line-height:1.6;margin-bottom:20px">Mas <b style="color:#00D897">tudo que você registrou está salvo</b>.${nLanc>0?` Já são ${nLanc} lançamentos no seu histórico.`:''}</div>
-    <button onclick="_irCheckout('fundador')" style="width:100%;max-width:320px;padding:17px;background:#F0B429;border:none;border-radius:14px;color:#0a0a0a;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:10px">Assinar Fundador — R$19/mês</button>
-    <button onclick="_verificarPagamentoOverlay()" id="btn-confirmar-overlay" style="width:100%;max-width:320px;padding:14px;background:rgba(0,216,151,.15);border:1.5px solid rgba(0,216,151,.4);border-radius:14px;color:#00D897;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:10px">✅ Já paguei — Confirmar acesso</button>
-    <button onclick="document.getElementById('upgrade-overlay').remove();window._modoLeitura=true;_mostrarBannerConfirmar()" style="background:none;border:none;color:rgba(255,255,255,.35);font-size:12.5px;cursor:pointer;text-decoration:underline">Ver dashboard (somente leitura)</button>`;
+
+  if(isBloqueadoAdmin){
+    // Conta bloqueada pelo admin — NÃO oferece reativar por pagamento. Só suporte.
+    ov.innerHTML = `
+      <div style="width:72px;height:72px;border-radius:50%;overflow:hidden;margin-bottom:22px;box-shadow:0 0 50px rgba(255,77,106,.3)"><img alt="Logo Painel.IA" src="/static/icon-512.png" style="width:100%;height:100%;object-fit:cover"></div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;text-transform:uppercase;line-height:1.1;margin-bottom:12px;color:#f3f4f6">Conta bloqueada</div>
+      <div style="font-size:14px;color:rgba(238,233,224,.55);max-width:300px;line-height:1.6;margin-bottom:20px">Sua conta foi bloqueada. <b style="color:#00D897">Seus dados estão salvos.</b> Fale com o suporte para regularizar.</div>
+      <button onclick="_falarSuporte()" style="width:100%;max-width:320px;padding:17px;background:#25D366;border:none;border-radius:14px;color:#003d2b;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:10px">💬 Falar com o suporte</button>`;
+  } else {
+    // Expirado/cancelado — oferece assinar + confirmar + suporte
+    ov.innerHTML = `
+      <div style="width:72px;height:72px;border-radius:50%;overflow:hidden;margin-bottom:22px;box-shadow:0 0 50px rgba(240,180,41,.3)"><img alt="Logo Painel.IA" src="/static/icon-512.png" style="width:100%;height:100%;object-fit:cover"></div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;text-transform:uppercase;line-height:1.1;margin-bottom:12px;color:#f3f4f6">Seu acesso expirou</div>
+      <div style="font-size:14px;color:rgba(238,233,224,.55);max-width:300px;line-height:1.6;margin-bottom:20px">Mas <b style="color:#00D897">tudo que você registrou está salvo</b>.${nLanc>0?` Já são ${nLanc} lançamentos no seu histórico.`:''}</div>
+      <button onclick="_irCheckout('fundador')" style="width:100%;max-width:320px;padding:17px;background:#F0B429;border:none;border-radius:14px;color:#0a0a0a;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:10px">Assinar Fundador — R$19/mês</button>
+      <button onclick="_verificarPagamentoOverlay()" id="btn-confirmar-overlay" style="width:100%;max-width:320px;padding:14px;background:rgba(0,216,151,.15);border:1.5px solid rgba(0,216,151,.4);border-radius:14px;color:#00D897;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:10px">✅ Já paguei — Confirmar acesso</button>
+      <button onclick="_falarSuporte()" style="width:100%;max-width:320px;padding:13px;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.4);border-radius:14px;color:#25D366;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px">💬 Falar com o suporte</button>
+      <button onclick="document.getElementById('upgrade-overlay').remove();window._modoLeitura=true;_mostrarBannerConfirmar()" style="background:none;border:none;color:rgba(255,255,255,.35);font-size:12.5px;cursor:pointer;text-decoration:underline">Ver dashboard (somente leitura)</button>`;
+  }
   document.body.appendChild(ov);
+}
+
+function _falarSuporte(){
+  // Abre o WhatsApp do suporte (ou tela de suporte interna, se preferir)
+  const num = '5541999999999'; // TODO: trocar pelo WhatsApp real do suporte
+  let email = '';
+  try { email = (window._billingStatus && window._billingStatus.email) || ''; } catch(e){}
+  const msg = encodeURIComponent('Olá! Preciso de ajuda com minha conta no Painel.IA.' + (email ? ' Meu email: '+email : ''));
+  window.open('https://wa.me/'+num+'?text='+msg, '_blank');
 }
 
 function _abrirModalPlanos(){
