@@ -25,12 +25,25 @@ async def upsert_motorista(dados: dict = Body(...), uid: str = Depends(get_uid_f
         return {"ok": False, "erro": "ID inválido"}
     # Sanitiza nome — máximo 100 chars, sem HTML
     nome = str(nome)[:100].replace("<", "").replace(">", "").strip() or "Usuário"
+    # Busca email do usuário no auth para salvar na tabela
+    _email_usuario = None
+    try:
+        import os, httpx as _hx
+        _sb_url = os.getenv("SUPABASE_URL", "")
+        _sb_key = os.getenv("SUPABASE_SERVICE_KEY", "") or os.getenv("SUPABASE_KEY", "")
+        async with _hx.AsyncClient(timeout=5) as _c:
+            _r = await _c.get(f"{_sb_url}/auth/v1/admin/users/{uid}",
+                headers={"apikey": _sb_key, "Authorization": f"Bearer {_sb_key}"})
+            if _r.status_code == 200:
+                _email_usuario = _r.json().get("email", "")
+    except Exception:
+        pass
     try:
         res = supabase.table("motoristas").select("id,meta_diaria,comb_diario,setup_completo,plataformas,tipo_veiculo").eq("id", uid).execute()
         if not res.data:
             # Usuário novo — cria registro e sinaliza is_new
             try:
-                supabase.table("motoristas").insert({"id": uid, "nome": nome, "telefone": uid[:8], "meta_diaria": 150, "comb_diario": None, "setup_completo": False}).execute()
+                supabase.table("motoristas").insert({"id": uid, "nome": nome, "telefone": uid[:8], "meta_diaria": 150, "comb_diario": None, "setup_completo": False, "email": _email_usuario}).execute()
             except:
                 supabase.table("motoristas").insert({"id": uid, "nome": nome, "telefone": uid[:8]}).execute()
             return {"ok": True, "meta_diaria": 150, "comb_diario": None, "is_new": True, "setup_completo": False}
@@ -57,6 +70,12 @@ async def upsert_motorista(dados: dict = Body(...), uid: str = Depends(get_uid_f
                 pass
         plataformas = res.data[0].get("plataformas")
         tipo_veiculo = res.data[0].get("tipo_veiculo") or "carro"
+        # Atualiza email se ainda não tem
+        if _email_usuario and not res.data[0].get("email"):
+            try:
+                supabase.table("motoristas").update({"email": _email_usuario}).eq("id", uid).execute()
+            except Exception:
+                pass
         return {"ok": True, "meta_diaria": meta, "comb_diario": comb, "is_new": False, "setup_completo": setup_completo, "plataformas": plataformas, "tipo_veiculo": tipo_veiculo}
     except Exception as e:
         log_erro("upsert_erro", erro=e)
