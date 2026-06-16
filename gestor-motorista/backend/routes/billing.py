@@ -454,10 +454,11 @@ async def billing_webhook(request: Request):
                         if _email_conf:
                             from services.email_service import email_pagamento_confirmado, email_suporte_pos_pagamento
                             import asyncio
+                            # Email 1: confirmação imediata
                             await email_pagamento_confirmado(_email_conf, _nome_conf, _NOMES.get(plano_ativar, plano_ativar), _PRECOS.get(plano_ativar, 19))
-                            # Email de suporte 1h depois (não bloqueia o webhook)
+                            # Email 2: suporte 5 min depois (não bloqueia)
                             async def _enviar_suporte_depois():
-                                await asyncio.sleep(3600)
+                                await asyncio.sleep(300)  # 5 minutos
                                 await email_suporte_pos_pagamento(_email_conf, _nome_conf)
                             asyncio.create_task(_enviar_suporte_depois())
                     except Exception:
