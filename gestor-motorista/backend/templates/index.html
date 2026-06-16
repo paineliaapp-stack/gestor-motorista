@@ -6286,12 +6286,50 @@ function _mostrarOverlayUpgrade(bs){
 }
 
 function _falarSuporte(){
-  // Abre o WhatsApp do suporte (ou tela de suporte interna, se preferir)
-  const num = '5541999999999'; // TODO: trocar pelo WhatsApp real do suporte
+  if(document.getElementById('modal-suporte-rapido')) return;
   let email = '';
-  try { email = (window._billingStatus && window._billingStatus.email) || ''; } catch(e){}
-  const msg = encodeURIComponent('Olá! Preciso de ajuda com minha conta no Painel.IA.' + (email ? ' Meu email: '+email : ''));
-  window.open('https://wa.me/'+num+'?text='+msg, '_blank');
+  try { const u = _supa?.auth?.getUser; } catch(e){}
+  const m = document.createElement('div');
+  m.id = 'modal-suporte-rapido';
+  m.style.cssText = 'position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML = `
+    <div style="background:#15192a;border:1px solid #2d3748;border-radius:18px;max-width:380px;width:100%;padding:24px 22px;position:relative">
+      <button onclick="document.getElementById('modal-suporte-rapido').remove()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#718096;font-size:1.3rem;cursor:pointer;line-height:1">✕</button>
+      <div style="font-size:24px;text-align:center;margin-bottom:6px">💬</div>
+      <h2 style="font-size:1.1rem;color:#fff;text-align:center;margin-bottom:4px">Falar com o suporte</h2>
+      <p style="font-size:12px;color:#a0aec0;text-align:center;margin-bottom:16px">Conte o que aconteceu. Retornamos em até 24h.</p>
+      <input id="sup-email" type="email" placeholder="Seu email" style="width:100%;box-sizing:border-box;background:#0a0c14;border:1px solid #2d3748;border-radius:10px;padding:11px 13px;color:#fff;font-size:14px;margin-bottom:10px">
+      <textarea id="sup-msg" placeholder="Descreva seu problema..." rows="4" style="width:100%;box-sizing:border-box;background:#0a0c14;border:1px solid #2d3748;border-radius:10px;padding:11px 13px;color:#fff;font-size:14px;margin-bottom:12px;resize:vertical"></textarea>
+      <button onclick="_enviarSuporte()" id="sup-btn" style="width:100%;padding:13px;background:#6366f1;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:800;cursor:pointer">Enviar mensagem</button>
+      <div id="sup-resp" style="display:none;font-size:12px;text-align:center;margin-top:10px"></div>
+    </div>`;
+  document.body.appendChild(m);
+  // Preenche email do usuário logado, se houver
+  try { _supa.auth.getUser().then(({data})=>{ const e=data?.user?.email; if(e) document.getElementById('sup-email').value = e; }); } catch(e){}
+}
+
+async function _enviarSuporte(){
+  const email = (document.getElementById('sup-email').value||'').trim();
+  const msg = (document.getElementById('sup-msg').value||'').trim();
+  const resp = document.getElementById('sup-resp');
+  if(!email || !email.includes('@')){ resp.style.display='block'; resp.style.color='#f87171'; resp.textContent='Informe um email válido.'; return; }
+  if(!msg){ resp.style.display='block'; resp.style.color='#f87171'; resp.textContent='Escreva sua mensagem.'; return; }
+  const btn = document.getElementById('sup-btn');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  try {
+    const r = await fetch(API+'/suporte/enviar', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email, mensagem: msg, assunto: 'app', nome: (window.NOME||'') })
+    });
+    const d = await r.json();
+    resp.style.display='block'; resp.style.color='#4ade80';
+    resp.textContent = d.mensagem || 'Mensagem enviada! Retornamos em até 24h.';
+    btn.style.display = 'none';
+    setTimeout(()=>{ const mm=document.getElementById('modal-suporte-rapido'); if(mm) mm.remove(); }, 2500);
+  } catch(e) {
+    resp.style.display='block'; resp.style.color='#f87171'; resp.textContent='Erro ao enviar. Tente de novo.';
+    btn.disabled = false; btn.textContent = 'Enviar mensagem';
+  }
 }
 
 function _abrirModalPlanos(){
