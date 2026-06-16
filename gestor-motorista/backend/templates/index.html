@@ -1287,8 +1287,13 @@ async function authFetch(url, options={}) {
 function hojeStr(){const d=new Date(Date.now()-3*60*60*1000);return d.toISOString().slice(0,10);}
 let MID=null;
 let NOME='Motorista';
-let META_DIARIA=parseFloat(localStorage.getItem('meta')||'150');
-let META_MENSAL=parseFloat(localStorage.getItem('meta_mensal_obj')||'0');
+// Chaves de localStorage SEMPRE por usuário (evita vazar dados entre logins no mesmo navegador).
+function _lsK(chave){ return chave + '_' + (window.MID || MID || localStorage.getItem('mid') || 'anon'); }
+function lsGet(chave){ try { return localStorage.getItem(_lsK(chave)); } catch(e){ return null; } }
+function lsSet(chave, valor){ try { localStorage.setItem(_lsK(chave), valor); } catch(e){} }
+// Metas começam no padrão; o valor real vem do BANCO após o login (fonte da verdade por usuário).
+let META_DIARIA=150;
+let META_MENSAL=0;
 let tipoAtual='ganho',catAtual='',todosLanc=[];
 let _faturadoMesAtual=0; // atualizado pelo loadDash, usado pelo renderMetaMensal
 let gPizza=null,gLinha=null;
@@ -1364,8 +1369,8 @@ async function salvarMetaCard(){
   try{
     await authFetch(API+'/meta-diaria/'+mid,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({meta:nova, comb_diario:novaComb})});
     window.META_DIARIA = nova;
-    localStorage.setItem('meta', nova);
-    if(novaComb){ window.COMB_DIARIO = novaComb; localStorage.setItem('comb_diario', novaComb); }
+    lsSet('meta', nova);
+    if(novaComb){ window.COMB_DIARIO = novaComb; lsSet('comb_diario', novaComb); }
     document.getElementById('meta-valor-txt').textContent = nova.toFixed(0);
     // Atualiza exibição do combustível no card
     const combTxt = document.getElementById('comb-valor-txt');
@@ -1383,7 +1388,7 @@ async function salvarMetaMensal(){
   const v = parseFloat(document.getElementById('mm-input').value||'0');
   if(!v || v < 100){ toast('Informe um valor válido'); return; }
   META_MENSAL = v;
-  localStorage.setItem('meta_mensal_obj', v);
+  lsSet('meta_mensal_obj', v);
   document.getElementById('mm-form').style.display = 'none';
   renderMetaMensal();
   if(window._contas) renderResumoContas();
@@ -1978,7 +1983,7 @@ function atualizarExibicaoMeta(v, comb){
   // Atualiza combustível se veio
   if(comb){
     window.COMB_DIARIO = parseFloat(comb);
-    localStorage.setItem('comb_diario', comb);
+    lsSet('comb_diario', comb);
     const combTxt = document.getElementById('comb-valor-txt');
     if(combTxt) combTxt.textContent = 'R$'+parseFloat(comb).toFixed(0)+'/dia';
     const combInp = document.getElementById('comb-input');
@@ -2258,8 +2263,8 @@ async function obFim(){
     const data=await r.json();
     MID=data[0].id;
     // mid agora vem do Google Auth
-    localStorage.setItem('nome',nome);
-    localStorage.setItem('meta',obMeta);
+    lsSet('nome',nome);
+    lsSet('meta',obMeta);
     META_DIARIA=obMeta;
     NOME=nome;
     document.getElementById('onboarding').style.display='none';
@@ -2432,7 +2437,7 @@ async function atualizarMeta(novaMeta){
   const m = parseFloat(novaMeta);
   if(!m || m <= 0) return false;
   META_DIARIA = m;
-  localStorage.setItem('meta', m);
+  lsSet('meta', m);
   try{
     await authFetch(API+'/meta-diaria/'+MID,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({meta:m})});
   }catch(e){}
@@ -3115,9 +3120,9 @@ async function init(){
   if(_initRodando || _initConcluido) return;
   _initRodando = true;
 
-  const metaSalva=localStorage.getItem('meta');
+  const metaSalva=lsGet('meta');
   if(metaSalva)META_DIARIA=parseFloat(metaSalva);
-  const metaMensalSalva=localStorage.getItem('meta_mensal_obj');
+  const metaMensalSalva=lsGet('meta_mensal_obj');
   if(metaMensalSalva) META_MENSAL=parseFloat(metaMensalSalva);
   // Se não tem no localStorage, busca do banco
   const _midInit = MID || window.MID || localStorage.getItem('mid');
@@ -3125,7 +3130,7 @@ async function init(){
     authFetch(API+'/meta-mensal/'+_midInit).then(r=>r.json()).then(d=>{
       if(d.meta_mensal && d.meta_mensal > 0){
         META_MENSAL = parseFloat(d.meta_mensal);
-        localStorage.setItem('meta_mensal_obj', META_MENSAL);
+        lsSet('meta_mensal_obj', META_MENSAL);
         try{ renderMetaMensal(); }catch(e){}
       }
     }).catch(()=>{});
@@ -3687,7 +3692,7 @@ async function _renderResumoContasAsync(el, calc){
 
   // Meta mensal — lida do card de meta mensal (meta_mensal_obj)
   let metaMensalConfig = 0;
-  try { metaMensalConfig = parseFloat(localStorage.getItem('meta_mensal_obj')||'0'); } catch(e){}
+  try { metaMensalConfig = parseFloat(lsGet('meta_mensal_obj')||'0'); } catch(e){}
 
   const taxaCombEst = combMes > 0 && faturadoMes > 0 ? Math.min(combMes/faturadoMes, 0.45) : (pctComb/100);
   const faturarParaContas = totalPend / (1 - taxaCombEst);
@@ -4607,7 +4612,7 @@ async function enviarSetup() {
       // Salva meta diária localmente
       if (data.setup_dados?.meta_diaria) {
         META_DIARIA = parseFloat(data.setup_dados.meta_diaria);
-        localStorage.setItem('meta', META_DIARIA);
+        lsSet('meta', META_DIARIA);
       }
       // Aguarda uns segundos para o usuário ler a mensagem final
       setTimeout(() => finalizarSetupMode(), 3000);
@@ -5414,12 +5419,14 @@ async function fazerLogout(){
   } catch(e) {
     console.error('signOut error:', e);
   }
-  // Limpa todos os dados locais
+  // Limpa todos os dados locais (incluindo mid, metas, comb — evita vazar pro próximo login)
   try {
-    const keys = Object.keys(localStorage).filter(k => 
-      k.startsWith('sb-') || k.startsWith('supabase') || 
+    const keys = Object.keys(localStorage).filter(k =>
+      k.startsWith('sb-') || k.startsWith('supabase') ||
       k.startsWith('painel_') || k.startsWith('pct_comb_') ||
-      k.startsWith('dashHistory_')
+      k.startsWith('dashHistory_') || k.startsWith('meta') ||
+      k.startsWith('comb_diario') || k.startsWith('pia_') ||
+      k === 'mid'
     );
     keys.forEach(k => localStorage.removeItem(k));
   } catch(e){}
@@ -5534,8 +5541,8 @@ _supa.auth.onAuthStateChange((event, session)=>{
     NOME = setUserUI(session);
     authFetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})})
       .then(r=>r.json()).then(d=>{
-        if(d.meta_diaria){ META_DIARIA=d.meta_diaria; localStorage.setItem('meta',META_DIARIA); }
-        if(d.comb_diario){ window.COMB_DIARIO=d.comb_diario; localStorage.setItem('comb_diario',d.comb_diario); atualizarExibicaoMeta(META_DIARIA, d.comb_diario); }
+        if(d.meta_diaria){ META_DIARIA=d.meta_diaria; lsSet('meta',META_DIARIA); }
+        if(d.comb_diario){ window.COMB_DIARIO=d.comb_diario; lsSet('comb_diario',d.comb_diario); atualizarExibicaoMeta(META_DIARIA, d.comb_diario); }
         // Detecta novo usuário ou setup incompleto
         // Só ativa setup se explicitamente false E não tem histórico de uso
         const _temHistChat = window.chatHistory && window.chatHistory.length > 0;
@@ -5633,17 +5640,17 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       }, 5 * 60 * 1000);
     }
     if(upData.meta_diaria && upData.meta_diaria !== 150){
-      META_DIARIA=upData.meta_diaria; localStorage.setItem('meta',META_DIARIA);
+      META_DIARIA=upData.meta_diaria; lsSet('meta',META_DIARIA);
     } else {
       // Tenta buscar direto do endpoint de meta
       try{
         const mr = await authFetch(API+'/meta-diaria/'+MID);
         const md = await mr.json();
-        if(md.meta_diaria && md.meta_diaria !== 150){ META_DIARIA=md.meta_diaria; localStorage.setItem('meta',META_DIARIA); }
-        else { const ls=parseFloat(localStorage.getItem('meta')); if(ls>0){ META_DIARIA=ls; } }
+        if(md.meta_diaria && md.meta_diaria !== 150){ META_DIARIA=md.meta_diaria; lsSet('meta',META_DIARIA); }
+        else { const ls=parseFloat(lsGet('meta')); if(ls>0){ META_DIARIA=ls; } }
         // Carrega combustível
         if(md.comb_diario){ atualizarExibicaoMeta(META_DIARIA, md.comb_diario); }
-      }catch(e){ const ls=parseFloat(localStorage.getItem('meta')); if(ls>0) META_DIARIA=ls; }
+      }catch(e){ const ls=parseFloat(lsGet('meta')); if(ls>0) META_DIARIA=ls; }
     }
     // Carrega comb_diario do upsert se veio
     if(upData.comb_diario){ atualizarExibicaoMeta(META_DIARIA, upData.comb_diario); }
