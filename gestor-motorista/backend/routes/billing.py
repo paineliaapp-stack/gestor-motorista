@@ -381,6 +381,20 @@ async def verificar_pagamento(uid: str = Depends(get_uid_from_token)):
         if not aprovado:
             return {"ativado": False, "mensagem": "Pagamento aprovado não encontrado. Aguarde alguns minutos e tente novamente."}
 
+        # Garante que o motorista existe na tabela motoristas (foreign key da assinatura).
+        # Sem isso dava erro 23503 (motorista_id ausente em motoristas).
+        try:
+            existe_mot = supabase.table("motoristas").select("id").eq("id", uid).limit(1).execute()
+            if not existe_mot.data:
+                nome_mot = (_email_user.split("@")[0] if _email_user else "motorista")
+                supabase.table("motoristas").insert({
+                    "id": uid, "nome": nome_mot, "telefone": str(uid)[:8],
+                    "meta_diaria": 150, "setup_completo": False,
+                }).execute()
+                log_info("motorista_criado_na_ativacao", uid=str(uid)[:8])
+        except Exception as e:
+            log_erro("criar_motorista_erro", erro=str(e))
+
         # Ativa assinatura — SEMPRE faz UPDATE da linha existente (criada no trial).
         # Usa SÓ colunas que o webhook ja grava com sucesso (sem periodo_fim, que pode nao existir).
         dados_ativacao = {
