@@ -213,6 +213,10 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
   .nav-in .btn{padding:8px 12px!important;font-size:12px!important}
   .nav-hide-mobile{display:none!important}
   .nav-in > div:last-child{gap:7px!important}
+  /* Blur de 110px em telas grandes trava a renderização no celular (10s em branco). Desativa no mobile. */
+  .road{display:none!important}
+  /* No celular, mostra o conteúdo direto (sem esperar scroll) pra não parecer "faltando" */
+  .reveal{opacity:1!important;transform:none!important}
 }
 
 .btn-am{position:relative;overflow:hidden}
