@@ -60,6 +60,40 @@ async def vagas_fundador():
     return {"vagas": _vagas_fundador()}
 
 
+@router.post("/landing/captar")
+async def captar_lead(dados: dict = Body(...)):
+    """Captura contato (email ou WhatsApp) da landing — SEM verificação.
+    Só anota no banco para remarketing e libera a pessoa pra começar o trial."""
+    contato = (dados.get("contato") or dados.get("email") or "").strip()
+    if not contato:
+        return {"ok": False, "erro": "Informe seu contato"}
+    # Detecta se é email ou whatsapp
+    tipo = "email" if "@" in contato else "whatsapp"
+    if tipo == "email":
+        contato = contato.lower()
+    else:
+        # normaliza whatsapp: só dígitos
+        contato = "".join(ch for ch in contato if ch.isdigit())
+        if len(contato) < 10:
+            return {"ok": False, "erro": "WhatsApp inválido"}
+    plano = dados.get("plano_id", "fundador")
+    try:
+        # upsert: se já existe, não duplica (ignora erro de conflito)
+        try:
+            supabase.table("leads_captura").insert({
+                "contato": contato, "tipo": tipo,
+                "plano_interesse": plano, "origem": "landing",
+            }).execute()
+            log_info("lead_captado", tipo=tipo, plano=plano)
+        except Exception:
+            pass  # já existe (índice único) — tudo bem
+        return {"ok": True}
+    except Exception as e:
+        log_erro("captar_lead_erro", erro=e)
+        # Mesmo se falhar o banco, libera a pessoa (não trava a captação)
+        return {"ok": True}
+
+
 @router.get("/billing/status")
 async def billing_status(uid: str = Depends(get_uid_from_token)):
     try:
@@ -283,6 +317,66 @@ async def checkout_pix(dados: dict = Body(...), uid: str = Depends(get_uid_from_
         return {"init_point": data["init_point"], "preco": preco, "ciclo": ciclo}
     except Exception as e:
         log_erro("checkout_pix_erro", erro=e)
+        return {"erro": "Falha de conexão com o pagamento"}
+
+
+@router.post("/billing/checkout-pix-publico")
+async def checkout_pix_publico(dados: dict = Body(...)):
+    """Checkout PIX direto da LANDING — sem login. Para quem já quer assinar.
+    Aceita ciclo mensal (R$19) ou anual (R$190). Vincula por email após pagar."""
+    plano_id = dados.get("plano_id", "fundador")
+    ciclo = dados.get("ciclo", "mensal")
+    email = (dados.get("email") or "").strip().lower()
+    if plano_id not in _PRECOS:
+        return {"erro": "Plano inválido"}
+    if not email or "@" not in email:
+        return {"erro": "Informe um email válido"}
+    if plano_id == "fundador" and _vagas_fundador() <= 0:
+        return {"erro": "Vagas do Plano Fundador esgotadas"}
+    token = os.getenv("MP_ACCESS_TOKEN", "")
+    if not token:
+        return {"erro": "Pagamento ainda não configurado — tente em instantes"}
+
+    preco = _PRECOS_ANUAL[plano_id] if ciclo == "anual" else _PRECOS[plano_id]
+    dias  = 365 if ciclo == "anual" else 30
+    desc  = f"Painel.IA — {_NOMES[plano_id]} ({'Anual' if ciclo == 'anual' else 'Mensal'})"
+    payload = {
+        "items": [{
+            "id": f"painelia_{plano_id}_{ciclo}", "title": desc,
+            "quantity": 1, "unit_price": preco, "currency_id": "BRL",
+        }],
+        "payer": {"email": email},
+        "external_reference": f"pix|email:{email}|{plano_id}|{ciclo}",
+        "back_urls": {
+            "success": f"{_APP_URL}/?pagamento=ok&email={email}&ciclo={ciclo}",
+            "failure": f"{_APP_URL}/?pagamento=erro",
+            "pending": f"{_APP_URL}/?pagamento=pendente",
+        },
+        "auto_return": "approved",
+        "payment_methods": {"excluded_payment_types": [{"id": "ticket"}]},
+        "notification_url": f"{_APP_URL}/billing/webhook",
+        "statement_descriptor": "PAINELIA",
+    }
+    # Também anota como lead (quem tenta comprar é lead quente)
+    try:
+        supabase.table("leads_captura").insert({
+            "contato": email, "tipo": "email",
+            "plano_interesse": plano_id, "origem": "landing-checkout",
+        }).execute()
+    except Exception:
+        pass
+    try:
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.post(f"{_MP_API}/checkout/preferences",
+                             headers={"Authorization": f"Bearer {token}"}, json=payload)
+            data = r.json()
+        if r.status_code >= 400 or "init_point" not in data:
+            log_warn("checkout_pix_pub_falhou", status=r.status_code, body=str(data)[:300])
+            return {"erro": "Não foi possível gerar o checkout PIX — tente novamente"}
+        log_info("checkout_pix_pub_criado", email=email, plano=plano_id, ciclo=ciclo, valor=preco)
+        return {"init_point": data["init_point"], "preco": preco, "ciclo": ciclo}
+    except Exception as e:
+        log_erro("checkout_pix_pub_erro", erro=e)
         return {"erro": "Falha de conexão com o pagamento"}
 
 

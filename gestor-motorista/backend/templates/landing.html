@@ -238,7 +238,8 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
     </div>
     <div style="display:flex;gap:10px">
       <a href="/" class="btn btn-ghost">Entrar</a>
-      <a href="/" class="btn btn-am">Começar grátis</a>
+      <a href="#" onclick="abrirModalAssinar('fundador');return false;" class="btn btn-ghost" style="border-color:rgba(0,216,151,.5);color:#00D897">Assinar</a>
+      <a href="#" onclick="abrirModalPlano('fundador');return false;" class="btn btn-am">Começar grátis</a>
     </div>
   </div>
 </nav>
@@ -744,12 +745,112 @@ document.querySelectorAll('.reveal,.era').forEach(r=>obs.observe(r));
   </div>
 </div>
 
+<!-- ── MODAL ASSINAR (PIX mensal/anual) ───────────────────────────────── -->
+<div id="modal-assinar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#111827;border:1px solid #2d3748;border-radius:20px;width:100%;max-width:440px;padding:32px 28px;position:relative">
+    <button onclick="fecharModalAssinar()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#718096;font-size:1.3rem;cursor:pointer;line-height:1">✕</button>
+    <div style="display:inline-block;background:#00D897;color:#000;font-size:10px;font-weight:800;padding:3px 12px;border-radius:20px;margin-bottom:14px">⚡ ASSINAR AGORA</div>
+    <h2 style="font-size:1.3rem;color:#fff;margin-bottom:4px">Garanta seu acesso</h2>
+    <div style="font-size:12px;color:#a0aec0;margin-bottom:20px">Pague com PIX e ative na hora. Escolha o plano:</div>
+
+    <div id="assinar-step1">
+      <!-- ANUAL (destaque) -->
+      <div onclick="_assinarPix('anual')" id="opt-anual" style="border:2px solid #00D897;border-radius:14px;padding:16px;cursor:pointer;margin-bottom:12px;position:relative;background:rgba(0,216,151,.06)">
+        <div style="position:absolute;top:-9px;right:14px;background:#00D897;color:#000;font-size:9px;font-weight:800;padding:2px 8px;border-radius:10px">ECONOMIZA 2 MESES</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:14px;font-weight:800;color:#fff">PIX Anual</div>
+            <div style="font-size:11px;color:#00D897;margin-top:2px">12 meses · R$15,83/mês</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:1.5rem;font-weight:900;color:#00D897;font-family:'Barlow Condensed',sans-serif">R$190</div>
+            <div style="font-size:10px;color:#718096">à vista</div>
+          </div>
+        </div>
+      </div>
+      <!-- MENSAL -->
+      <div onclick="_assinarPix('mensal')" id="opt-mensal" style="border:1px solid #2d3748;border-radius:14px;padding:16px;cursor:pointer;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:14px;font-weight:800;color:#fff">PIX Mensal</div>
+            <div style="font-size:11px;color:#718096;margin-top:2px">Renova manual todo mês</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:1.5rem;font-weight:900;color:#F0B429;font-family:'Barlow Condensed',sans-serif">R$19</div>
+            <div style="font-size:10px;color:#718096">/mês</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:0.82rem;color:#a0aec0;margin-bottom:8px">Seu email:</div>
+      <input id="assinar-email" type="email" placeholder="seu@email.com" autocomplete="email"
+        style="width:100%;box-sizing:border-box;background:#0a0c14;border:1px solid #2d3748;border-radius:10px;padding:12px 14px;color:#fff;font-size:0.95rem;margin-bottom:6px">
+      <div style="font-size:11px;color:#4a5568;text-align:center;margin-top:8px">Pagamento via Mercado Pago · PIX aprova na hora</div>
+    </div>
+
+    <div id="assinar-step2" style="display:none;text-align:center;padding:24px 0">
+      <div style="width:28px;height:28px;border:3px solid #2d3748;border-top-color:#00D897;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px"></div>
+      <div style="color:#a0aec0;font-size:0.9rem">Gerando seu PIX…</div>
+    </div>
+
+    <div id="assinar-erro" style="display:none;background:#2d1b1b;color:#f87171;border-radius:8px;padding:10px 14px;font-size:0.83rem;margin-top:12px"></div>
+  </div>
+</div>
+
 <style>
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 
 <script>
 let _modalPlano = 'fundador';
+
+function abrirModalAssinar(plano) {
+  window._assinarPlano = plano || 'fundador';
+  document.getElementById('modal-assinar').style.display = 'flex';
+  document.getElementById('assinar-step1').style.display = 'block';
+  document.getElementById('assinar-step2').style.display = 'none';
+  document.getElementById('assinar-erro').style.display = 'none';
+  setTimeout(() => document.getElementById('assinar-email').focus(), 120);
+}
+function fecharModalAssinar() {
+  document.getElementById('modal-assinar').style.display = 'none';
+}
+async function _assinarPix(ciclo) {
+  const email = document.getElementById('assinar-email').value.trim();
+  if (!email || !email.includes('@')) {
+    document.getElementById('assinar-email').style.borderColor = '#f87171';
+    document.getElementById('assinar-email').focus();
+    const err = document.getElementById('assinar-erro');
+    err.textContent = 'Informe seu email antes de escolher o plano.';
+    err.style.display = 'block';
+    return;
+  }
+  document.getElementById('assinar-step1').style.display = 'none';
+  document.getElementById('assinar-step2').style.display = 'block';
+  document.getElementById('assinar-erro').style.display = 'none';
+  try {
+    const r = await fetch('/billing/checkout-pix-publico', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, plano_id: window._assinarPlano || 'fundador', ciclo })
+    });
+    const d = await r.json();
+    if (d.init_point) {
+      window.location.href = d.init_point;
+    } else {
+      document.getElementById('assinar-step2').style.display = 'none';
+      document.getElementById('assinar-step1').style.display = 'block';
+      const err = document.getElementById('assinar-erro');
+      err.textContent = d.erro || 'Não foi possível gerar o PIX. Tente de novo.';
+      err.style.display = 'block';
+    }
+  } catch(e) {
+    document.getElementById('assinar-step2').style.display = 'none';
+    document.getElementById('assinar-step1').style.display = 'block';
+    const err = document.getElementById('assinar-erro');
+    err.textContent = 'Falha de conexão. Tente de novo.';
+    err.style.display = 'block';
+  }
+}
 
 function abrirModalPlano(plano) {
   _modalPlano = plano || 'fundador';
@@ -797,31 +898,17 @@ async function irParaCheckout() {
   document.getElementById('modal-step2').style.display = 'block';
   document.getElementById('modal-erro').style.display  = 'none';
 
+  // Captação SEM verificação — só anota o lead e manda pro app começar grátis.
   try {
-    const r = await fetch('/billing/criar-checkout-landing', {
+    await fetch('/landing/captar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, plano_id: _modalPlano })
+      body: JSON.stringify({ contato: email, plano_id: _modalPlano })
     });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.detail || 'Erro ao criar conta');
+  } catch(e) { /* mesmo se falhar a captação, deixa a pessoa entrar */ }
 
-    document.getElementById('modal-step2').style.display = 'none';
-    document.getElementById('modal-step3').style.display = 'block';
-    const mpLink = document.getElementById('modal-mp-link');
-    if (d.checkout_url) {
-      mpLink.href = d.checkout_url;
-    } else {
-      mpLink.style.display = 'none';
-    }
-  } catch(e) {
-    document.getElementById('modal-step2').style.display = 'none';
-    document.getElementById('modal-step1').style.display = 'block';
-    const err = document.getElementById('modal-erro');
-    err.textContent = e.message;
-    err.style.display = 'block';
-    btn.disabled = false;
-  }
+  // Entra direto no app (o trial de 24h começa ao logar)
+  window.location.href = '/?email=' + encodeURIComponent(email);
 }
 </script>
 
