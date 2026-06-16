@@ -207,6 +207,12 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
   .comp-table{font-size:12px}
   .float-cta{display:block}
   .garantia{flex-direction:column;text-align:center}
+  /* Header compacto no celular pra não cortar */
+  .nav-in{padding:11px 14px}
+  .nav-in .logo span{font-size:15px}
+  .nav-in .btn{padding:8px 12px!important;font-size:12px!important}
+  .nav-hide-mobile{display:none!important}
+  .nav-in > div:last-child{gap:7px!important}
 }
 
 .btn-am{position:relative;overflow:hidden}
@@ -236,8 +242,8 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
       <div class="logo-mark">P</div>
       <span>Painel<span class="ia">.IA</span></span>
     </div>
-    <div style="display:flex;gap:10px">
-      <a href="/" class="btn btn-ghost">Entrar</a>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="/" class="btn btn-ghost nav-hide-mobile">Entrar</a>
       <a href="#" onclick="abrirModalAssinar('fundador');return false;" class="btn btn-ghost" style="border-color:rgba(0,216,151,.5);color:#00D897">Assinar</a>
       <a href="#" onclick="abrirModalPlano('fundador');return false;" class="btn btn-am">Começar grátis</a>
     </div>
@@ -380,7 +386,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
         <div class="era-year">ANOS 1920</div>
         <h3>A caderneta de bolso</h3>
         <p>Taxistas anotavam corridas a lápis. Funcionava — até a chuva, até perder, até a letra que nem você entendia depois.</p>
-        <video class="era-vid" autoplay loop muted playsinline preload="auto" src="/static/landing/era-1920.mp4"></video>
+        <video class="era-vid" autoplay loop muted playsinline preload="metadata" src="/static/landing/era-1920.mp4"></video>
         <div class="era-art"><div class="caderneta">
           terça — 14 corridas<br>
           gasolina ...... 12$000<br>
@@ -393,7 +399,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
         <div class="era-year">ANOS 1960</div>
         <h3>O livro-caixa</h3>
         <p>Colunas de débito e crédito, somadas à mão. Um erro de soma na linha 14 e o mês inteiro fechava errado.</p>
-        <video class="era-vid" autoplay loop muted playsinline preload="auto" src="/static/landing/era-1960.mp4"></video>
+        <video class="era-vid" autoplay loop muted playsinline preload="metadata" src="/static/landing/era-1960.mp4"></video>
         <div class="era-art"><div class="livrocaixa">
           <div class="col"><span>ENTRADAS</span><span>Cr$ 847,00</span></div>
           <div class="col"><span>SAÍDAS</span><span>Cr$ 612,00</span></div>
@@ -405,7 +411,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
         <div class="era-year">ANOS 1990</div>
         <h3>A planilha</h3>
         <p>O Excel prometia resolver tudo. Mas exigia computador, fórmula e disciplina de contador — depois de 12 horas dirigindo.</p>
-        <video class="era-vid" autoplay loop muted playsinline preload="auto" src="/static/landing/era-1990.mp4"></video>
+        <video class="era-vid" autoplay loop muted playsinline preload="metadata" src="/static/landing/era-1990.mp4"></video>
         <div class="era-art"><table class="excel">
           <tr><td class="h">A</td><td class="h">B</td><td class="h">C</td></tr>
           <tr><td>Seg</td><td>R$ 180</td><td>=B2-C2</td></tr>
@@ -417,7 +423,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
         <div class="era-year">ANOS 2010</div>
         <h3>Os apps de planilha</h3>
         <p>A planilha foi para o celular — mas continuou sendo planilha. Vinte toques para registrar um dia. Categorias, formulários, menus. Ninguém aguenta por mais de duas semanas.</p>
-        <video class="era-vid" autoplay loop muted playsinline preload="auto" src="/static/landing/era-2010.mp4"></video>
+        <video class="era-vid" autoplay loop muted playsinline preload="metadata" src="/static/landing/era-2010.mp4"></video>
         <div class="era-art"><div class="appgen">
           <div class="row"><span>Categoria ▾</span><span>obrigatório</span></div>
           <div class="row"><span>Subcategoria ▾</span><span>obrigatório</span></div>
