@@ -5362,13 +5362,13 @@ function abrirInstrucaoInstall(isIOS){
 function fecharBannerInstall(){
   const banner = document.getElementById('install-banner');
   if(banner) banner.style.display = 'none';
-  localStorage.setItem('painel_install_dismissed','1');
+  // Esconde só nesta sessão (volta a aparecer da próxima vez que abrir)
+  sessionStorage.setItem('painel_install_dismissed_sess','1');
 }
 
-// Mostra banner automaticamente (só uma vez por dispositivo)
+// Mostra banner automaticamente (volta a cada sessão até instalar)
 (function(){
-  const INSTALL_KEY = 'painel_install_dismissed';
-  if(localStorage.getItem(INSTALL_KEY)) return;
+  if(sessionStorage.getItem('painel_install_dismissed_sess')) return;
   const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
   if(isStandalone) return;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -6795,4 +6795,66 @@ function _expandirPlano(){
   }, {passive:true});
 })();
 </script>
+
+<!-- ── BANNER INSTALAR APP (criar atalho) ───────────────────────────── -->
+<div id="install-banner" style="display:none;position:fixed;bottom:96px;left:12px;right:12px;z-index:9980;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:14px;padding:12px 14px;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 8px 28px rgba(99,102,241,.5);animation:installPulse 1.4s ease-in-out infinite">
+  <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+    <span style="font-size:22px">📲</span>
+    <div style="min-width:0">
+      <div style="font-size:13px;font-weight:800;color:#fff">Instale o Painel.IA no celular</div>
+      <div id="install-instrucao" style="font-size:11px;color:rgba(255,255,255,.85);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Acesso rápido direto da tela inicial</div>
+    </div>
+  </div>
+  <button id="install-action-btn" style="background:#fff;color:#4f46e5;border:none;border-radius:9px;font-size:12px;font-weight:800;padding:9px 14px;cursor:pointer;white-space:nowrap">Criar atalho</button>
+  <button onclick="fecharBannerInstall()" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:18px;cursor:pointer;line-height:1;padding:0 2px">×</button>
+</div>
+
+<!-- ── MODAL INSTRUÇÕES DE INSTALAÇÃO ───────────────────────────────── -->
+<div id="modal-install" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:10000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#15192a;border:1px solid #2d3748;border-radius:18px;max-width:380px;width:100%;padding:26px 22px;position:relative">
+    <button onclick="document.getElementById('modal-install').style.display='none'" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#718096;font-size:1.3rem;cursor:pointer;line-height:1">✕</button>
+    <div style="font-size:30px;text-align:center;margin-bottom:6px">📲</div>
+    <h2 style="font-size:1.15rem;color:#fff;text-align:center;margin-bottom:4px">Adicione à tela do celular</h2>
+    <p style="font-size:12px;color:#a0aec0;text-align:center;margin-bottom:18px">Fica igual a um app — abre rápido, sem digitar endereço.</p>
+
+    <div id="install-steps-ios" style="display:none">
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
+        <div style="background:#6366f1;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">1</div>
+        <div style="font-size:13px;color:#e2e8f0">Toque no botão <b>Compartilhar</b> <span style="font-size:15px">⎙</span> na barra do Safari (embaixo).</div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
+        <div style="background:#6366f1;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">2</div>
+        <div style="font-size:13px;color:#e2e8f0">Role e toque em <b>Adicionar à Tela de Início</b>.</div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <div style="background:#6366f1;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">3</div>
+        <div style="font-size:13px;color:#e2e8f0">Toque em <b>Adicionar</b>. Pronto! O ícone aparece na tela. 🎉</div>
+      </div>
+    </div>
+
+    <div id="install-steps-android" style="display:none">
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
+        <div style="background:#6366f1;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">1</div>
+        <div style="font-size:13px;color:#e2e8f0">Toque no menu <b>⋮</b> (três pontos) no canto do Chrome.</div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
+        <div style="background:#6366f1;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">2</div>
+        <div style="font-size:13px;color:#e2e8f0">Toque em <b>Adicionar à tela inicial</b> (ou "Instalar app").</div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <div style="background:#6366f1;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">3</div>
+        <div style="font-size:13px;color:#e2e8f0">Confirme em <b>Adicionar</b>. Pronto! 🎉</div>
+      </div>
+    </div>
+
+    <button onclick="document.getElementById('modal-install').style.display='none'" style="width:100%;margin-top:20px;padding:12px;background:#6366f1;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer">Entendi 👍</button>
+  </div>
+</div>
+
+<style>
+@keyframes installPulse {
+  0%, 100% { box-shadow: 0 8px 28px rgba(99,102,241,.5); transform: scale(1); }
+  50% { box-shadow: 0 8px 38px rgba(99,102,241,.85); transform: scale(1.015); }
+}
+</style>
 </body>
