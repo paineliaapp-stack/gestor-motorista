@@ -390,39 +390,52 @@ async def billing_webhook(request: Request):
                 _email = partes[1][6:] if len(partes) > 1 else ""
                 plano_ativar = partes[2] if len(partes) > 2 else "fundador"
                 ciclo_ativar = partes[3] if len(partes) > 3 else "mensal"
-                # Busca uid pelo email
+                # Busca uid pelo email — tabela motoristas primeiro (mais rápido)
                 try:
-                    from supabase_utils import get_user_by_email
-                    _ur = supabase.auth.admin.list_users()
-                    for _u in (getattr(_ur, "users", None) or []):
-                        if getattr(_u, "email", "") == _email:
-                            uid_ativar = str(_u.id)
-                            break
+                    _r = supabase.table("motoristas").select("id").eq("email", _email).limit(1).execute()
+                    if _r.data:
+                        uid_ativar = str(_r.data[0]["id"])
                 except Exception:
                     pass
                 if not uid_ativar:
-                    # guarda para vincular no login
+                    try:
+                        _ur = supabase.auth.admin.list_users()
+                        for _u in (getattr(_ur, "users", None) or []):
+                            if getattr(_u, "email", "") == _email:
+                                uid_ativar = str(_u.id)
+                                break
+                    except Exception:
+                        pass
+                if not uid_ativar:
+                    # guarda para vincular no login — mp_payment_id em vez de mp_subscription_id
                     try:
                         supabase.table("assinaturas").upsert({
                             "email_pagamento": _email, "plano_id": plano_ativar,
-                            "status": "pending_login", "mp_subscription_id": str(rid),
+                            "status": "pending_login", "mp_payment_id": str(rid),
                             "atualizado_em": _agora().isoformat(),
-                        }).execute()
-                    except Exception:
-                        pass
+                        }, on_conflict="email_pagamento").execute()
+                    except Exception as e:
+                        log_erro("webhook_pending_login_erro", erro=e)
             elif ext.startswith("email:"):
                 # email:EMAIL|plano
                 partes = ext.split("|")
                 _email = partes[0][6:]
                 plano_ativar = partes[1] if len(partes) > 1 else "fundador"
                 try:
-                    _ur = supabase.auth.admin.list_users()
-                    for _u in (getattr(_ur, "users", None) or []):
-                        if getattr(_u, "email", "") == _email:
-                            uid_ativar = str(_u.id)
-                            break
+                    _r = supabase.table("motoristas").select("id").eq("email", _email).limit(1).execute()
+                    if _r.data:
+                        uid_ativar = str(_r.data[0]["id"])
                 except Exception:
                     pass
+                if not uid_ativar:
+                    try:
+                        _ur = supabase.auth.admin.list_users()
+                        for _u in (getattr(_ur, "users", None) or []):
+                            if getattr(_u, "email", "") == _email:
+                                uid_ativar = str(_u.id)
+                                break
+                    except Exception:
+                        pass
             elif "|" in ext:
                 # uid|plano (formato antigo)
                 partes = ext.split("|", 1)
