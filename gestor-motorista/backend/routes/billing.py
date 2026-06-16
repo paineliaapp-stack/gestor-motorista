@@ -447,12 +447,19 @@ async def billing_webhook(request: Request):
                         v = _vagas_fundador()
                         supabase.table("planos").update({"vagas_restantes": max(0, v - 1)}).eq("id", "fundador").execute()
                     log_info("webhook_payment_ativado", uid=str(uid_ativar)[:8], plano=plano_ativar)
-                    # Email de confirmação
+                    # Email de confirmação + email de suporte 1h depois
                     try:
                         _email_conf = await _email_do_usuario(uid_ativar)
+                        _nome_conf = _nome_do_motorista(uid_ativar)
                         if _email_conf:
-                            from services.email_service import email_pagamento_confirmado
-                            await email_pagamento_confirmado(_email_conf, _nome_do_motorista(uid_ativar), _NOMES.get(plano_ativar, plano_ativar), _PRECOS.get(plano_ativar, 19))
+                            from services.email_service import email_pagamento_confirmado, email_suporte_pos_pagamento
+                            import asyncio
+                            await email_pagamento_confirmado(_email_conf, _nome_conf, _NOMES.get(plano_ativar, plano_ativar), _PRECOS.get(plano_ativar, 19))
+                            # Email de suporte 1h depois (não bloqueia o webhook)
+                            async def _enviar_suporte_depois():
+                                await asyncio.sleep(3600)
+                                await email_suporte_pos_pagamento(_email_conf, _nome_conf)
+                            asyncio.create_task(_enviar_suporte_depois())
                     except Exception:
                         pass
                 except Exception as e:

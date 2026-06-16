@@ -78,3 +78,13 @@ async def email_pagamento_falhou(email, nome):
              f"{nome}, não conseguimos processar sua assinatura. Seus dados estão salvos — "
              "atualize o método de pagamento para continuar com acesso completo.",
              "Atualizar pagamento", _APP))
+
+async def email_suporte_pos_pagamento(email, nome):
+    """Enviado ~1h após confirmação — pergunta se está tudo certo."""
+    await _enviar(email, f"{nome}, tá gostando do Painel.IA? 👋",
+        _tpl(f"Oi {nome}, tudo certo?",
+             "Seu acesso foi liberado. Só queria saber: <b>conseguiu registrar seus ganhos de hoje?</b> "
+             "Se tiver qualquer dúvida, problema ou sugestão — é só responder esse email. "
+             "Leio todos pessoalmente.<br><br>"
+             "— Renan, fundador do Painel.IA",
+             "Abrir o app agora", _APP))
