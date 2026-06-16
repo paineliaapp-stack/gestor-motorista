@@ -372,16 +372,99 @@ async def billing_webhook(request: Request):
             async with httpx.AsyncClient(timeout=12) as c:
                 r = await c.get(f"{_MP_API}/v1/payments/{rid}", headers={"Authorization": f"Bearer {token}"})
                 pg = r.json() if r.status_code == 200 else {}
-            ext = pg.get("external_reference", "")
-            if "|" in ext:
-                uid, _ = ext.split("|", 1)
+            ext = pg.get("external_reference", "") or ""
+            pg_status = pg.get("status", "")
+            log_info("webhook_payment", ext=ext[:60], pg_status=pg_status)
+
+            # Parseia external_reference nos formatos:
+            # "pix|email:EMAIL|plano|ciclo"  ← checkout PIX
+            # "email:EMAIL|plano"             ← checkout legado
+            # "uid|plano"                     ← formato antigo
+            uid_ativar = None
+            plano_ativar = "fundador"
+            ciclo_ativar = "mensal"
+
+            if ext.startswith("pix|email:"):
+                # pix|email:EMAIL|plano|ciclo
+                partes = ext.split("|")
+                _email = partes[1][6:] if len(partes) > 1 else ""
+                plano_ativar = partes[2] if len(partes) > 2 else "fundador"
+                ciclo_ativar = partes[3] if len(partes) > 3 else "mensal"
+                # Busca uid pelo email
                 try:
-                    supabase.table("pagamentos").insert({
-                        "motorista_id": uid, "mp_payment_id": str(rid),
-                        "valor": pg.get("transaction_amount"), "status": pg.get("status"),
-                    }).execute()
+                    from supabase_utils import get_user_by_email
+                    _ur = supabase.auth.admin.list_users()
+                    for _u in (_ur or []):
+                        if getattr(_u, "email", "") == _email:
+                            uid_ativar = str(_u.id)
+                            break
                 except Exception:
                     pass
+                if not uid_ativar:
+                    # guarda para vincular no login
+                    try:
+                        supabase.table("assinaturas").upsert({
+                            "email_pagamento": _email, "plano_id": plano_ativar,
+                            "status": "pending_login", "mp_subscription_id": str(rid),
+                            "atualizado_em": _agora().isoformat(),
+                        }).execute()
+                    except Exception:
+                        pass
+            elif ext.startswith("email:"):
+                # email:EMAIL|plano
+                partes = ext.split("|")
+                _email = partes[0][6:]
+                plano_ativar = partes[1] if len(partes) > 1 else "fundador"
+                try:
+                    _ur = supabase.auth.admin.list_users()
+                    for _u in (_ur or []):
+                        if getattr(_u, "email", "") == _email:
+                            uid_ativar = str(_u.id)
+                            break
+                except Exception:
+                    pass
+            elif "|" in ext:
+                # uid|plano (formato antigo)
+                partes = ext.split("|", 1)
+                uid_ativar = partes[0]
+                plano_ativar = partes[1] if len(partes) > 1 else "fundador"
+
+            # Ativa se pagamento aprovado
+            if uid_ativar and pg_status == "approved":
+                try:
+                    dias = 365 if ciclo_ativar == "anual" else 30
+                    periodo_fim = (_agora() + timedelta(days=dias)).isoformat()
+                    atual = supabase.table("assinaturas").select("id,status").eq("motorista_id", uid_ativar).order("criado_em", desc=True).limit(1).execute()
+                    ja_ativo = (atual.data or [{}])[0].get("status") == "active"
+                    supabase.table("assinaturas").update({
+                        "status": "active", "plano_id": plano_ativar,
+                        "periodo_inicio": _agora().isoformat(),
+                        "periodo_fim": periodo_fim,
+                        "mp_subscription_id": str(rid),
+                        "atualizado_em": _agora().isoformat(),
+                    }).eq("motorista_id", uid_ativar).execute()
+                    if plano_ativar == "fundador" and not ja_ativo:
+                        v = _vagas_fundador()
+                        supabase.table("planos").update({"vagas_restantes": max(0, v - 1)}).eq("id", "fundador").execute()
+                    log_info("webhook_payment_ativado", uid=str(uid_ativar)[:8], plano=plano_ativar)
+                    # Email de confirmação
+                    try:
+                        _email_conf = await _email_do_usuario(uid_ativar)
+                        if _email_conf:
+                            from services.email_service import email_pagamento_confirmado
+                            await email_pagamento_confirmado(_email_conf, _nome_do_motorista(uid_ativar), _NOMES.get(plano_ativar, plano_ativar), _PRECOS.get(plano_ativar, 19))
+                    except Exception:
+                        pass
+                except Exception as e:
+                    log_erro("webhook_payment_ativar_erro", erro=e)
+            # Salva na tabela pagamentos
+            try:
+                supabase.table("pagamentos").insert({
+                    "motorista_id": uid_ativar, "mp_payment_id": str(rid),
+                    "valor": pg.get("transaction_amount"), "status": pg_status,
+                }).execute()
+            except Exception:
+                pass
     except Exception as e:
         log_erro("webhook_erro", erro=e)
     return {"ok": True}
