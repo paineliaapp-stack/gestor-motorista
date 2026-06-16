@@ -461,7 +461,7 @@ async def billing_webhook(request: Request):
             if uid_ativar and pg_status == "approved":
                 try:
                     dias = 365 if ciclo_ativar == "anual" else 30
-                    periodo_fim = (_agora() + timedelta(days=dias)).isoformat()
+                    periodo_fim = (_agora() + _dt.timedelta(days=dias)).isoformat()
                     atual = supabase.table("assinaturas").select("id,status").eq("motorista_id", uid_ativar).order("criado_em", desc=True).limit(1).execute()
                     ja_ativo = (atual.data or [{}])[0].get("status") == "active"
                     ass_id = (atual.data or [{}])[0].get("id")
@@ -516,7 +516,7 @@ async def billing_webhook(request: Request):
             except Exception:
                 pass
     except Exception as e:
-        log_erro("webhook_erro", erro=e)
+        log_erro("webhook_erro", erro=str(e))
     return {"ok": True}
 
 
