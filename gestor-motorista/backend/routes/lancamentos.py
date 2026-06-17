@@ -114,6 +114,8 @@ async def editar_lancamento(lancamento_id: str, dados: dict = Body(...), uid: st
         upd["data"] = str(dados["data"])[:10]
     if dados.get("descricao") is not None:
         upd["descricao"] = str(dados["descricao"]).strip()
+    if dados.get("plataforma") is not None:
+        upd["plataforma"] = str(dados["plataforma"]).strip()
     if not upd:
         return {"ok": False, "erro": "nada para atualizar"}
     supabase.table("lancamentos").update(upd).eq("id", lancamento_id).execute()

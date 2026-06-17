@@ -2367,6 +2367,48 @@ async function deletar(id){
   }catch(e){toast('Sem conexão',false)}
 }
 
+function editarLancamento(l){
+  const ex = document.getElementById('modal-editar-lanc'); if(ex) ex.remove();
+  const isGanho = l.tipo==='ganho';
+  // Categorias de despesa comuns pra trocar
+  const cats = isGanho
+    ? [['uber','Uber'],['99','99'],['indrive','inDrive'],['ifood','iFood'],['rappi','Rappi'],['outro','Outra']]
+    : [['combustivel','Combustível'],['alimentacao','Alimentação'],['manutencao','Manutenção'],['educacao','Educação'],['lazer','Lazer'],['mercado','Mercado'],['luz_agua','Luz/Água'],['saude','Saúde'],['outros','Outros']];
+  const atual = (l.plataforma||l.descricao||'').toLowerCase();
+  const opts = cats.map(c=>`<option value="${c[0]}" ${atual===c[0]?'selected':''}>${c[1]}</option>`).join('');
+  const m = document.createElement('div');
+  m.id='modal-editar-lanc';
+  m.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML=`<div style="background:#15192a;border:1px solid #2d3748;border-radius:18px;max-width:360px;width:100%;padding:24px;position:relative">
+    <button onclick="document.getElementById('modal-editar-lanc').remove()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#718096;font-size:1.3rem;cursor:pointer">✕</button>
+    <h2 style="font-size:1.1rem;color:#fff;margin-bottom:4px">✏️ Editar lançamento</h2>
+    <p style="font-size:12px;color:#94a3b8;margin-bottom:16px">${isGanho?'Ganho':'Despesa'} · ${l.data?l.data.split('-').reverse().join('/'):''}</p>
+    <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px">Valor (R$)</label>
+    <input id="ed-valor" type="number" step="0.01" value="${parseFloat(l.valor)}" style="width:100%;box-sizing:border-box;background:#0a0c14;border:1px solid #2d3748;border-radius:9px;padding:11px;color:#fff;font-size:15px;margin-bottom:12px">
+    <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px">${isGanho?'Plataforma':'Categoria'}</label>
+    <select id="ed-cat" style="width:100%;box-sizing:border-box;background:#0a0c14;border:1px solid #2d3748;border-radius:9px;padding:11px;color:#fff;font-size:15px;margin-bottom:18px">${opts}</select>
+    <button onclick="salvarEdicaoLanc('${l.id}', ${isGanho})" style="width:100%;padding:12px;background:#4f6bff;border:none;border-radius:10px;color:#fff;font-weight:800;font-size:14px;cursor:pointer">Salvar alterações</button>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+async function salvarEdicaoLanc(id, isGanho){
+  const valor = parseFloat(document.getElementById('ed-valor').value);
+  const cat = document.getElementById('ed-cat').value;
+  if(isNaN(valor) || valor<=0){ toast('Valor inválido',false); return; }
+  const body = { valor };
+  // ganho usa plataforma; despesa usa descricao(categoria)
+  if(isGanho) body.plataforma = cat; else body.descricao = cat;
+  try{
+    const r = await authFetch(API+'/lancamentos/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(r.ok){
+      toast('Atualizado!');
+      const m=document.getElementById('modal-editar-lanc'); if(m) m.remove();
+      loadHist('todos'); loadDash();
+    } else toast('Erro ao salvar',false);
+  }catch(e){ toast('Sem conexão',false); }
+}
+
 // RESUMO SEMANAL
 async function resumoSemanal(){
   if(!MID) return;
@@ -3005,7 +3047,9 @@ async function loadHist(tipo){
           }
         }catch(e){}
       }
-      const div=document.createElement('div');div.className='li';div.innerHTML='<div class="li-icon" style="background:'+bg+'">'+c.e+'</div><div class="li-info"><div class="li-cat">'+c.n+'</div><div class="li-meta">'+data+(plat?' · '+plat:'')+'</div></div><div class="li-val" style="color:'+cor+'">'+sinal+fmt(l.valor)+'</div>';const btn=document.createElement('button');btn.textContent='🗑';btn.style='margin-left:12px;background:none;border:none;color:rgba(255,77,106,.5);cursor:pointer;font-size:16px;padding:4px';btn.onclick=()=>deletar(l.id);div.appendChild(btn);el.appendChild(div);
+      const div=document.createElement('div');div.className='li';div.innerHTML='<div class="li-icon" style="background:'+bg+'">'+c.e+'</div><div class="li-info"><div class="li-cat">'+c.n+'</div><div class="li-meta">'+data+(plat?' · '+plat:'')+hora+'</div></div><div class="li-val" style="color:'+cor+'">'+sinal+fmt(l.valor)+'</div>';
+      const btnEd=document.createElement('button');btnEd.textContent='✏️';btnEd.style='margin-left:8px;background:none;border:none;cursor:pointer;font-size:15px;padding:4px';btnEd.onclick=()=>editarLancamento(l);div.appendChild(btnEd);
+      const btn=document.createElement('button');btn.textContent='🗑';btn.style='margin-left:4px;background:none;border:none;color:rgba(255,77,106,.5);cursor:pointer;font-size:16px;padding:4px';btn.onclick=()=>deletar(l.id);div.appendChild(btn);el.appendChild(div);
     });
   }catch(e){}
 }
