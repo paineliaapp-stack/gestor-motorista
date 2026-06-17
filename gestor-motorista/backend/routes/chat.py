@@ -248,6 +248,25 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
     ganhos_hoje_detalhe = [(l.get("plataforma","?"), float(l.get("valor",0)), l.get("created_at","")) for l in lancamentos_hoje_lista if l["tipo"] == "ganho"]
     despesas_hoje_detalhe = [(l.get("descricao","?"), float(l.get("valor",0)), l.get("created_at","")) for l in lancamentos_hoje_lista if l["tipo"] == "despesa"]
 
+    # Lista dos últimos lançamentos com ID/valor/categoria/hora — pra IA identificar qual cancelar/editar
+    # com precisão (por valor, hora ou categoria) em vez de adivinhar por posição.
+    def _hora_br(ts):
+        try:
+            from datetime import datetime as _d
+            dt = _d.fromisoformat(str(ts).replace("Z","+00:00"))
+            from datetime import timedelta as _td
+            dt = dt - _td(hours=3)
+            return dt.strftime("%Hh%M")
+        except Exception:
+            return "?"
+    _ultimos = sorted(lancamentos_mes, key=lambda x: x.get("created_at",""), reverse=True)[:10]
+    ultimos_lancamentos_txt = "\n".join(
+        f'  #{i+1} [id:{l.get("id")}] {l.get("tipo")} R${float(l.get("valor",0)):.2f} '
+        f'{l.get("plataforma") or l.get("descricao") or "?"} '
+        f'em {l.get("data","?")} {_hora_br(l.get("created_at",""))}'
+        for i, l in enumerate(_ultimos)
+    ) or "  (nenhum lançamento ainda)"
+
     # Lançamentos de ontem (para detecção de duplicata e referências)
     ontem_str_ctx = ontem_str
     lanc_ontem = [l for l in lancamentos_mes if l.get("data","") == ontem_str_ctx]
@@ -284,7 +303,7 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
         _sem_fim = semana_relatorio["fim"]
         _semana_ctx_str = f"\n\n⚠️ CONTEXTO ESPECIAL: Esta conversa é sobre o RELATÓRIO DA SEMANA {_sem_ini} a {_sem_fim}. Ao responder perguntas sobre ganhos, despesas, dias trabalhados ou qualquer dado dessa semana, use SOMENTE os lançamentos desse intervalo de datas — não da semana atual (que começa em {hoje_str})."
 
-    contexto = montar_contexto_chat(_semana_ctx_str=_semana_ctx_str, amanha_str=amanha_str, cap_esforco_chat=cap_esforco_chat, comb_dia_chat=comb_dia_chat, contas_json=contas_json, contas_pendentes=contas_pendentes, daqui2_str=daqui2_str, daqui3_str=daqui3_str, daqui7_str=daqui7_str, deficit_chat=deficit_chat, despesas_hoje=despesas_hoje, despesas_hoje_detalhe=despesas_hoje_detalhe, despesas_mes=despesas_mes, dias_rest_chat=dias_rest_chat, ganhos_hoje=ganhos_hoje, ganhos_hoje_detalhe=ganhos_hoje_detalhe, ganhos_mes=ganhos_mes, ganhos_ontem_detalhe=ganhos_ontem_detalhe, hoje_str=hoje_str, horas_mes=horas_mes, inicio_mes=inicio_mes, lancamentos_mes=lancamentos_mes, lucro_mes=lucro_mes, meta_dia_chat=meta_dia_chat, ontem_str=ontem_str, ontem_str_ctx=ontem_str_ctx, poder_chat=poder_chat, projecao_liq_chat=projecao_liq_chat, proximo_sabado_str=proximo_sabado_str, renda_extra_ctx=renda_extra_ctx, sabado_que_vem_str=sabado_que_vem_str, sabado_str=sabado_str, taxa_comb_pct=taxa_comb_pct, tipo_veiculo=tipo_veiculo, total_pendente=total_pendente)
+    contexto = montar_contexto_chat(_semana_ctx_str=_semana_ctx_str, amanha_str=amanha_str, cap_esforco_chat=cap_esforco_chat, comb_dia_chat=comb_dia_chat, contas_json=contas_json, contas_pendentes=contas_pendentes, daqui2_str=daqui2_str, daqui3_str=daqui3_str, daqui7_str=daqui7_str, deficit_chat=deficit_chat, despesas_hoje=despesas_hoje, despesas_hoje_detalhe=despesas_hoje_detalhe, despesas_mes=despesas_mes, dias_rest_chat=dias_rest_chat, ganhos_hoje=ganhos_hoje, ganhos_hoje_detalhe=ganhos_hoje_detalhe, ganhos_mes=ganhos_mes, ganhos_ontem_detalhe=ganhos_ontem_detalhe, hoje_str=hoje_str, horas_mes=horas_mes, inicio_mes=inicio_mes, lancamentos_mes=lancamentos_mes, lucro_mes=lucro_mes, meta_dia_chat=meta_dia_chat, ontem_str=ontem_str, ontem_str_ctx=ontem_str_ctx, poder_chat=poder_chat, projecao_liq_chat=projecao_liq_chat, proximo_sabado_str=proximo_sabado_str, renda_extra_ctx=renda_extra_ctx, sabado_que_vem_str=sabado_que_vem_str, sabado_str=sabado_str, taxa_comb_pct=taxa_comb_pct, tipo_veiculo=tipo_veiculo, total_pendente=total_pendente, ultimos_lancamentos_txt=ultimos_lancamentos_txt)
 
     # Separa prompt em system_instruction (estático, cacheável) + contexto dinâmico
     # A seção AÇÕES nunca muda → vai para system_instruction → Gemini 2.5 Flash

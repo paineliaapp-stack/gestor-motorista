@@ -3,7 +3,7 @@ Qualquer mudança neste texto altera o comportamento da IA."""
 import json as _json
 
 
-def montar_contexto_chat(*, _semana_ctx_str, amanha_str, cap_esforco_chat, comb_dia_chat, contas_json, contas_pendentes, daqui2_str, daqui3_str, daqui7_str, deficit_chat, despesas_hoje, despesas_hoje_detalhe, despesas_mes, dias_rest_chat, ganhos_hoje, ganhos_hoje_detalhe, ganhos_mes, ganhos_ontem_detalhe, hoje_str, horas_mes, inicio_mes, lancamentos_mes, lucro_mes, meta_dia_chat, ontem_str, ontem_str_ctx, poder_chat, projecao_liq_chat, proximo_sabado_str, renda_extra_ctx, sabado_que_vem_str, sabado_str, taxa_comb_pct, tipo_veiculo, total_pendente):
+def montar_contexto_chat(*, _semana_ctx_str, amanha_str, cap_esforco_chat, comb_dia_chat, contas_json, contas_pendentes, daqui2_str, daqui3_str, daqui7_str, deficit_chat, despesas_hoje, despesas_hoje_detalhe, despesas_mes, dias_rest_chat, ganhos_hoje, ganhos_hoje_detalhe, ganhos_mes, ganhos_ontem_detalhe, hoje_str, horas_mes, inicio_mes, lancamentos_mes, lucro_mes, meta_dia_chat, ontem_str, ontem_str_ctx, poder_chat, projecao_liq_chat, proximo_sabado_str, renda_extra_ctx, sabado_que_vem_str, sabado_str, taxa_comb_pct, tipo_veiculo, total_pendente, ultimos_lancamentos_txt=""):
 
     # Contexto específico por tipo de veículo
     eh_motoboy = tipo_veiculo in ("moto", "ambos")
@@ -83,6 +83,9 @@ HOJE ({hoje_str}):
   Líquido:  R$ {(ganhos_hoje-despesas_hoje):.2f}
   Detalhes: {_json.dumps(ganhos_hoje_detalhe + despesas_hoje_detalhe, ensure_ascii=False)}
   Ontem ({ontem_str_ctx}): {_json.dumps(ganhos_ontem_detalhe, ensure_ascii=False)}
+
+ÚLTIMOS LANÇAMENTOS (use estes IDs para cancelar/editar com precisão):
+{ultimos_lancamentos_txt}
 
 MÊS ATUAL (desde {inicio_mes}):
   Ganhos totais:   R$ {ganhos_mes:.2f}
@@ -184,7 +187,11 @@ PERFIL DO MOTORISTA:
    - "fiz 277 na 99 ontem" + não existe ganho da 99 ontem → registre direto.
    - "total na 99 hoje 326,17 e na uber 84,66": atualize AMBOS nas respectivas plataformas.
    - Ajuste de total de MÊS (não de dia específico): use editar_lancamento_por_id com o id correto.
-   - Se pedir para cancelar/desfazer um registro que acabou de fazer: use deletar_lancamento_por_id com o id mais recente da plataforma
+   - Se pedir para cancelar/desfazer um registro: SEMPRE identifique qual na lista ÚLTIMOS LANÇAMENTOS e use deletar_lancamento_por_id com o id exato. NUNCA use deletar_ultimo_lancamento por posição (apaga errado).
+   - CANCELAMENTO SEGURO (regra crítica, siga sempre):
+     a) Cancele APENAS UM lançamento por vez, exatamente o que o motorista identificou. Nunca apague mais de um, nunca apague de "brinde".
+     b) Se o motorista for específico ("o de 66", "o das 8h44", "o de educação", "o último") e houver UM match claro na lista, use deletar_lancamento_por_id com aquele id. Na resposta, DIGA exatamente o que cancelou: "Cancelei a despesa de R$66 em educação das 08h44. ✅"
+     c) Se for AMBÍGUO (vários parecidos, ou não tem certeza de qual), NÃO cancele nada. Em vez disso, liste os candidatos numerados e pergunte qual: "Qual desses você quer cancelar? 1) R$66 educação 08h44  2) R$190 gás 08h30". Só cancela depois que ele responder.
    - Se pedir para cancelar/desfazer uma DISTRIBUIÇÃO (histórico tem [últimos_ids_distribuicao: [...]]):  use deletar_lancamentos_por_ids com todos os IDs listados
    REGRA DE OURO: motorista de app raramente faz dois faturamentos separados na mesma plataforma no mesmo dia. Se já existe um valor, ele está ATUALIZANDO, não adicionando. Duvide sempre de duplicata no mesmo dia/plataforma.
 
