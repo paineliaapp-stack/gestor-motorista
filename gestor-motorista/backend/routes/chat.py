@@ -399,6 +399,33 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
         parsed = json.loads(texto_parse)
         lista_acoes = parsed.get("acoes", [])
         texto = parsed.get("resposta", "")
+
+        # PROTEÇÃO anti-inflação de valor (ex: usuário manda "350" e a IA entende 350350).
+        # Acontece dentro do modelo; aqui detectamos e corrigimos antes de usar/exibir.
+        try:
+            _m = mensagem.strip().replace("R$","").replace("r$","").replace(" ","")
+            if _m.isdigit() and 1 <= len(_m) <= 6:   # usuário mandou só um número inteiro
+                _su = _m
+                _vu = float(_su)
+                _dup = _su + _su  # ex "350350"
+                def _fix_valor(v):
+                    try:
+                        vi = float(v)
+                        si = str(int(vi)) if vi == int(vi) else None
+                        if si and si == _dup:
+                            return _vu
+                    except Exception: pass
+                    return v
+                for _a in lista_acoes:
+                    if isinstance(_a, dict) and _a.get("valor") is not None:
+                        _a["valor"] = _fix_valor(_a["valor"])
+                # No texto: troca o número duplicado pelo certo (com e sem formatação de milhar)
+                import re as _rfix
+                _dup_fmt = f"{int(_dup):,}".replace(",", ".")   # ex "350.350"
+                texto = texto.replace(_dup_fmt + ",00", _su).replace(_dup_fmt, _su).replace(_dup, _su)
+        except Exception:
+            pass
+
         if not texto or texto.strip() in ("OK", "ok", "", "Entendido.", "Entendido"):
             # Se há ações, gera confirmação automática descrevendo o que foi feito
             if lista_acoes:
