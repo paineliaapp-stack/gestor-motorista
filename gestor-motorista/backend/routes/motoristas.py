@@ -70,6 +70,22 @@ async def upsert_motorista(dados: dict = Body(...), uid: str = Depends(get_uid_f
                 pass
         plataformas = res.data[0].get("plataformas")
         tipo_veiculo = res.data[0].get("tipo_veiculo") or "carro"
+        # GRAVA tipo_veiculo/plataformas se vierem no body (ex: usuário trocou pra moto/ambos).
+        # ANTES isto era ignorado — por isso o modo moto nunca era salvo.
+        _upd_perfil = {}
+        if dados.get("tipo_veiculo") in ("carro", "moto", "ambos"):
+            _upd_perfil["tipo_veiculo"] = dados["tipo_veiculo"]
+            tipo_veiculo = dados["tipo_veiculo"]
+        if dados.get("plataformas") is not None:
+            _pl = dados["plataformas"]
+            _upd_perfil["plataformas"] = ",".join(_pl) if isinstance(_pl, list) else _pl
+            plataformas = _upd_perfil["plataformas"]
+        if _upd_perfil:
+            try:
+                supabase.table("motoristas").update(_upd_perfil).eq("id", uid).execute()
+                log_info("perfil_veiculo_atualizado", uid=str(uid)[:8], tipo=tipo_veiculo)
+            except Exception as e:
+                log_erro("upd_perfil_erro", erro=str(e))
         # Atualiza email se ainda não tem
         if _email_usuario and not res.data[0].get("email"):
             try:
@@ -90,11 +106,13 @@ async def completar_setup(dados: dict = Body(...), uid: str = Depends(get_uid_fr
     meta = dados.get("meta_diaria")
     comb = dados.get("comb_diario")
     plataformas = dados.get("plataformas")
+    tipo_veiculo = dados.get("tipo_veiculo")
     try:
         update = {"setup_completo": True}
         if meta: update["meta_diaria"] = float(meta)
         if comb: update["comb_diario"] = float(comb)
         if plataformas: update["plataformas"] = plataformas
+        if tipo_veiculo in ("carro", "moto", "ambos"): update["tipo_veiculo"] = tipo_veiculo
         supabase.table("motoristas").update(update).eq("id", uid).execute()
         return {"ok": True}
     except Exception as e:
