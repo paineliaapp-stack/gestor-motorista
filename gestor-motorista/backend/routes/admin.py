@@ -250,7 +250,7 @@ async def marketing_adicionar(dados: dict = Body(...), x_admin_token: str = Head
         return {"ok": True}
     except Exception as e:
         log_erro("marketing_add_erro", erro=e)
-        return {"ok": False}
+        return {"ok": False, "erro": str(e)[:300]}
 
 
 @router.delete("/admin/marketing/{inv_id}")
