@@ -646,9 +646,16 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
 
             elif acao.get("acao") == "editar_lancamento_por_id":
                 lid = acao.get("id")
-                novo_valor = acao.get("valor")
-                if lid and novo_valor is not None:
-                    supabase.table("lancamentos").update({"valor": float(novo_valor)}).eq("id", lid).eq("motorista_id", motorista_id).execute()
+                _upd_l = {}
+                if acao.get("valor") is not None:
+                    try: _upd_l["valor"] = float(acao.get("valor"))
+                    except Exception: pass
+                if acao.get("descricao") is not None:
+                    _upd_l["descricao"] = str(acao.get("descricao")).strip()
+                if acao.get("plataforma") is not None:
+                    _upd_l["plataforma"] = str(acao.get("plataforma")).strip()
+                if lid and _upd_l:
+                    supabase.table("lancamentos").update(_upd_l).eq("id", lid).eq("motorista_id", motorista_id).execute()
                     acoes_executadas.append("lancamento_editado")
             elif acao.get("acao") == "registrar_turno":
                 turno_data = {

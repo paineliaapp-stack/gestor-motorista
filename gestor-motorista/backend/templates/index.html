@@ -1315,6 +1315,7 @@ const CATS=[
   {k:'taxa_app',e:'💸',n:'Taxa/Comissão App'},
   {k:'cooperativa',e:'🤝',n:'Cooperativa/Associação'},
   {k:'estoque_loja',e:'🏪',n:'Estoque/Loja'},
+  {k:'marketing',e:'📣',n:'Marketing'},{k:'negocio',e:'💼',n:'Negócio'},
   // Alimentação
   {k:'mercado',e:'🛒',n:'Mercado'},{k:'restaurante',e:'🍔',n:'Restaurante'},
   {k:'lanche',e:'☕',n:'Lanche/Café'},
@@ -2373,7 +2374,7 @@ function editarLancamento(l){
   // Categorias de despesa comuns pra trocar
   const cats = isGanho
     ? [['uber','Uber'],['99','99'],['indrive','inDrive'],['ifood','iFood'],['rappi','Rappi'],['outro','Outra']]
-    : [['combustivel','Combustível'],['alimentacao','Alimentação'],['manutencao','Manutenção'],['educacao','Educação'],['lazer','Lazer'],['mercado','Mercado'],['luz_agua','Luz/Água'],['saude','Saúde'],['outros','Outros']];
+    : [['combustivel','Combustível'],['alimentacao','Alimentação'],['manutencao','Manutenção'],['educacao','Educação'],['marketing','Marketing'],['negocio','Negócio'],['estoque_loja','Estoque/Loja'],['lazer','Lazer'],['mercado','Mercado'],['luz_agua','Luz/Água'],['saude','Saúde'],['outros','Outros']];
   const atual = (l.plataforma||l.descricao||'').toLowerCase();
   const opts = cats.map(c=>`<option value="${c[0]}" ${atual===c[0]?'selected':''}>${c[1]}</option>`).join('');
   const m = document.createElement('div');
