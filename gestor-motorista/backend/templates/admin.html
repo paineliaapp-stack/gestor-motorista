@@ -991,7 +991,8 @@ async function salvarInvest(){
   const descricao = document.getElementById('inv-desc').value;
   if(!valor || valor <= 0){ alert('Informe um valor válido.'); return; }
   try{
-    await req('/admin/marketing', {method:'POST', body: JSON.stringify({data, categoria, valor, descricao})});
+    const r = await req('/admin/marketing', {method:'POST', body: JSON.stringify({data, categoria, valor, descricao})});
+    if(r && r.ok === false){ alert('Não foi possível salvar. Verifique se a tabela de marketing foi criada no banco.'); return; }
     document.getElementById('modalInvestBg').classList.remove('open');
     document.getElementById('inv-valor').value = '';
     document.getElementById('inv-desc').value = '';
