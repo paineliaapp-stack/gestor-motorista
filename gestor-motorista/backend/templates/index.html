@@ -4717,8 +4717,30 @@ function iniciarMsgBoasVindas() {
   if (box && !box.children.length) {
     _boasVindasMostrada = true;
     const primeiroNome = (window.NOME||'').split(' ')[0] || 'motorista';
-    appendMsg('assistant', 'Oi, ' + primeiroNome + '! 👋 Sou seu Gestor Financeiro, tô por dentro de tudo aqui.\n\nPode falar como se fosse no WhatsApp:\n💰 "fiz 350 na Uber"\n💸 "paguei 80 de combustível"\n📋 "tenho conta de aluguel de R$800, vence dia 5"\n❓ "quanto tô ganhando esse mês?"\n\nMe manda sua primeira informação! 🚀');
+    appendMsg('assistant', 'Oi, ' + primeiroNome + '! 👋 Sou seu Gestor. E so me contar o que rolou no seu dia, como no WhatsApp - eu organizo tudo pra você.\\n\\nBora testar agora? Toque num exemplo abaixo:');
+    setTimeout(function(){
+      const box2 = document.getElementById('chat-msgs');
+      if (!box2) return;
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px;padding:0 8px';
+      const exemplos = ['fiz 250 na Uber hoje', 'paguei 90 de gasolina', 'quanto tô ganhando esse mês?'];
+      exemplos.forEach(function(ex){
+        const b = document.createElement('button');
+        b.textContent = ex;
+        b.style.cssText = 'background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.4);border-radius:999px;padding:9px 14px;font-size:13px;color:#a5b4fc;cursor:pointer;font-family:inherit';
+        b.onclick = function(){ _enviarExemplo(ex); wrap.remove(); };
+        wrap.appendChild(b);
+      });
+      box2.appendChild(wrap);
+      box2.scrollTop = box2.scrollHeight;
+    }, 600);
   }
+}
+
+function _enviarExemplo(txt){
+  const inp = document.getElementById('chat-input');
+  if (inp) { inp.value = txt; }
+  if (typeof sendChat === 'function') sendChat();
 }
 
 function alertaContasVencendo(contas) {
