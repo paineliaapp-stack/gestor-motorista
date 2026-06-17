@@ -3035,7 +3035,7 @@ async function loadHist(tipo){
       const sinal=l.tipo==='ganho'?'+':'-';
       const plat=l.plataforma?l.plataforma.charAt(0).toUpperCase()+l.plataforma.slice(1):'';
       const data=l.data?l.data.split('-').reverse().join('/'):'';
-      // Horário do registro (created_at ou criado_em, ajustado para Brasília UTC-3)
+      // Horário do registro — deixa o navegador converter pro fuso local (Brasília)
       let hora='';
       const _ts = l.created_at || l.criado_em || l.inserted_at;
       if(_ts){
@@ -3043,8 +3043,8 @@ async function loadHist(tipo){
           let dt=new Date(_ts);
           if(isNaN(dt.getTime()) && typeof _ts==='string') dt=new Date(_ts.replace(' ','T')+(_ts.includes('Z')||_ts.includes('+')?'':'Z'));
           if(!isNaN(dt.getTime())){
-            const dtBR=new Date(dt.getTime()-3*3600000);
-            hora=' · '+String(dtBR.getUTCHours()).padStart(2,'0')+'h'+String(dtBR.getUTCMinutes()).padStart(2,'0');
+            const hm = dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'});
+            hora=' · '+hm.replace(':','h');
           }
         }catch(e){}
       }

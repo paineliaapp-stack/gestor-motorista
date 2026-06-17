@@ -420,6 +420,38 @@ async def metricas(x_admin_token: str = Header(default=""), periodo: str = Query
 
 # ── Usuários ──────────────────────────────────────────────────────────────────
 
+@router.get("/admin/usuarios-cidade")
+async def usuarios_por_cidade(cidade: str = Query(...), x_admin_token: str = Header(default="")):
+    """Lista os usuários de uma cidade específica (pra clicar no mapa e ver quem são)."""
+    _check(x_admin_token)
+    try:
+        mot = supabase.table("motoristas").select("id,nome,cidade,estado").eq("cidade", cidade).execute()
+        motoristas = mot.data or []
+        # Pega email do auth
+        auth_users = await _auth_users()
+        auth_map = {u["id"]: u for u in auth_users}
+        removidos = set()
+        try:
+            _rem = supabase.table("usuarios_removidos").select("motorista_id").execute()
+            removidos = {r["motorista_id"] for r in (_rem.data or []) if r.get("motorista_id")}
+        except Exception:
+            pass
+        out = []
+        for m in motoristas:
+            if m["id"] in removidos:
+                continue
+            au = auth_map.get(m["id"], {})
+            out.append({
+                "id": m["id"],
+                "nome": m.get("nome") or au.get("user_metadata", {}).get("name") or "—",
+                "email": au.get("email", "—"),
+            })
+        return {"ok": True, "cidade": cidade, "usuarios": out}
+    except Exception as e:
+        log_erro("usuarios_cidade_erro", erro=str(e))
+        return {"ok": False, "usuarios": []}
+
+
 @router.get("/admin/usuarios")
 async def usuarios(
     x_admin_token: str = Header(default=""),
@@ -471,8 +503,18 @@ async def usuarios(
         ).execute()
         ass_map = {r["motorista_id"]: r for r in (ass.data or [])}
 
+        # IDs que estão na lixeira (removidos) — não devem aparecer na lista
+        removidos_ids = set()
+        try:
+            _rem = supabase.table("usuarios_removidos").select("motorista_id").execute()
+            removidos_ids = {r["motorista_id"] for r in (_rem.data or []) if r.get("motorista_id")}
+        except Exception:
+            pass
+
         out = []
         for uid, u in auth_map.items():
+            if uid in removidos_ids:
+                continue  # está na lixeira, não mostra
             m = mot_map.get(uid, {})
             a = ass_map.get(uid, {})
             s = a.get("status", "sem_assinatura")
