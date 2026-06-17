@@ -57,7 +57,17 @@ def privacidade():
 
 @router.get("/admin", response_class=HTMLResponse)
 def admin_page(request: Request):
-    return FileResponse("templates/admin.html", media_type="text/html")
+    with open("templates/admin.html", encoding="utf-8") as f:
+        content = f.read()
+    from fastapi.responses import Response
+    return Response(
+        content=content,
+        media_type="text/html",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+        },
+    )
 
 
 @router.get("/favicon.ico", include_in_schema=False)
