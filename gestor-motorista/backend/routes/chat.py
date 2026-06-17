@@ -520,6 +520,25 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
                     "valor": float(acao.get("valor", 0)),
                     "data": data_final
                 }
+                # PROTEÇÃO anti-concatenação: se o usuário mandou só um número (ex "350")
+                # e a IA retornou esse número duplicado/concatenado (ex 350350), corrige.
+                try:
+                    _msg_limpa = mensagem.strip().replace("R$", "").replace("r$", "").replace(".", "").replace(",", ".").strip()
+                    if _msg_limpa.replace(".", "").isdigit():
+                        _val_user = float(_msg_limpa)
+                        _val_ia = float(dados["valor"])
+                        # Se a IA inflou o valor e a string do valor IA == número do user repetido
+                        _su = str(int(_val_user)) if _val_user == int(_val_user) else None
+                        _si = str(int(_val_ia)) if _val_ia == int(_val_ia) else None
+                        if _su and _si and _si == _su + _su:  # "350350" == "350"+"350"
+                            dados["valor"] = _val_user
+                            log_info("valor_concatenacao_corrigida", de=_si, para=_su)
+                        elif _su and _si and _si != _su and _su in _si and len(_si) >= 2*len(_su):
+                            # outros casos de inflação suspeita: usa o que o usuário digitou
+                            dados["valor"] = _val_user
+                            log_info("valor_inflado_corrigido", de=_si, para=_su)
+                except Exception:
+                    pass
                 if acao.get("plataforma"): dados["plataforma"] = acao["plataforma"]
                 if acao.get("descricao"): dados["descricao"] = acao["descricao"]
                 # Se substituir=true ou tipo=ganho com plataforma+data=hoje, deleta antes de inserir (evita duplicata)
