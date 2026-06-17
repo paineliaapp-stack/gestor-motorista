@@ -5573,6 +5573,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     NOME = setUserUI(session);
     const upRes = await authFetch(API+'/upsert-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:MID,nome:NOME})});
     const upData = await upRes.json();
+    // Sincroniza o tipo de veículo do BANCO (fonte da verdade) com o localStorage,
+    // pra o seletor e o chat ficarem sempre coerentes (resolve seletor mostrar moto mas banco ter carro).
+    if (upData.tipo_veiculo) {
+      try { localStorage.setItem('pia_veiculo_'+(window.MID||MID||''), upData.tipo_veiculo); } catch(e){}
+    }
     // Registra de qual influencer o usuário veio (código guardado pela landing), 1x
     try {
       const _ref = localStorage.getItem('painel_ref');
