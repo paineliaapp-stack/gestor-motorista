@@ -980,8 +980,12 @@ function _fmtData(d){
 
 function abrirModalInvest(){
   const hoje = new Date().toISOString().slice(0,10);
-  const m = document.getElementById('modal-invest');
-  if(m){ document.getElementById('inv-data').value = hoje; document.getElementById('modalInvestBg').classList.add('open'); }
+  const bg = document.getElementById('modalInvestBg');
+  if(bg){
+    const dataInput = document.getElementById('inv-data');
+    if(dataInput) dataInput.value = hoje;
+    bg.classList.add('open');
+  }
 }
 
 async function salvarInvest(){
