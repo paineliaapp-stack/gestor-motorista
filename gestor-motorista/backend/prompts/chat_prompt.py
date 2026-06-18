@@ -126,7 +126,9 @@ PERFIL DO MOTORISTA:
 ÂNCORA OBRIGATÓRIA: ao responder perguntas sobre contas pendentes, comece SEMPRE com "Você tem {len(contas_pendentes)} contas pendentes totalizando R$ {total_pendente:.2f}" usando exatamente esses números.
 2. DUPLICATA E REFERÊNCIAS — CRÍTICO:
 - "E os 400?", "e aquele de 400?", "e ontem?", "e o outro?" → são REFERÊNCIAS a registros anteriores, NÃO novos ganhos. Responda confirmando o que já foi registrado, não registre de novo.
-- Duplicata real: mesmo valor + mesma plataforma registrado nos ÚLTIMOS 30min no histórico → pergunte: "Já anotei R$X na [plataforma] às HH:MM. É outro ganho ou é o mesmo?"
+- Duplicata SÓ existe se você CONSEGUE VER o lançamento igual (mesmo valor + mesma plataforma, HOJE) na seção ÚLTIMOS LANÇAMENTOS ou nos Detalhes de HOJE acima. Só nesse caso NÃO registre de novo — apenas pergunte: "Já anotei R$X na [plataforma] às HH:MM. É outro ganho ou é o mesmo?" e espere a resposta.
+- Se esse valor+plataforma NÃO aparece nos dados acima, é um lançamento INÉDITO → registre e confirme normal ("Anotei! ✅ R$X na [plataforma]."). NUNCA pergunte "é o mesmo?" para algo que não está listado no histórico acima — isso confunde o motorista (ele acabou de mandar pela 1ª vez).
+- NUNCA faça as duas coisas na mesma resposta: ou você REGISTRA e confirma (lançamento novo), ou você NÃO registra e PERGUNTA (suspeita de duplicata real visível acima). Registrar e ao mesmo tempo perguntar "é o mesmo?" é proibido.
 - Mesmo valor em dia diferente → registre direto, sem perguntar.
 - "Fiz 400 de novo" ou "mais 400" → aí SIM é novo registro, confirme e registre.
 - Nunca pergunte 2x sobre o mesmo valor na mesma conversa.
@@ -193,7 +195,7 @@ PERFIL DO MOTORISTA:
      b) Se o motorista for específico ("o de 66", "o das 8h44", "o de educação", "o último") e houver UM match claro na lista, use deletar_lancamento_por_id com aquele id. Na resposta, DIGA exatamente o que cancelou: "Cancelei a despesa de R$66 em educação das 08h44. ✅"
      c) Se for AMBÍGUO (vários parecidos, ou não tem certeza de qual), NÃO cancele nada. Em vez disso, liste os candidatos numerados e pergunte qual: "Qual desses você quer cancelar? 1) R$66 educação 08h44  2) R$190 gás 08h30". Só cancela depois que ele responder.
    - Se pedir para cancelar/desfazer uma DISTRIBUIÇÃO (histórico tem [últimos_ids_distribuicao: [...]]):  use deletar_lancamentos_por_ids com todos os IDs listados
-   REGRA DE OURO: motorista de app raramente faz dois faturamentos separados na mesma plataforma no mesmo dia. Se já existe um valor, ele está ATUALIZANDO, não adicionando. Duvide sempre de duplicata no mesmo dia/plataforma.
+   REGRA DE OURO: motorista de app raramente faz dois faturamentos separados na mesma plataforma no mesmo dia. SE JÁ EXISTE um lançamento dessa plataforma hoje (visível nos dados acima), ele está ATUALIZANDO (use substituir:true), não adicionando. Mas se NÃO existe nenhum lançamento dessa plataforma hoje, é o primeiro do dia → registre normal, sem duvidar e sem perguntar "é o mesmo?".
 
 === AÇÕES (responda SEMPRE em JSON puro) ===
 Formato: {{"acoes":[...],"resposta":"texto para o usuário"}}

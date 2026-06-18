@@ -426,6 +426,54 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
         except Exception:
             pass
 
+        # PROTEÇÃO anti-FALSA-DUPLICATA: às vezes a IA REGISTRA um lançamento novo
+        # e mesmo assim devolve a pergunta de duplicata ("é o mesmo?"), confundindo o
+        # motorista — mesmo sem existir nenhum lançamento igual hoje. Como o contexto
+        # (ganhos/despesas_hoje_detalhe) é o snapshot ANTES desta mensagem, dá pra saber
+        # deterministicamente se o lançamento é inédito. Se for, troca por confirmação limpa.
+        try:
+            _tl = (texto or "").lower()
+            _pergunta_dup = ("é o mesmo" in _tl or "e o mesmo" in _tl
+                             or "ou o mesmo" in _tl or "mesmo lançamento" in _tl
+                             or "mesmo lancamento" in _tl)
+            if _pergunta_dup:
+                _novos = [a for a in lista_acoes
+                          if isinstance(a, dict)
+                          and a.get("acao") == "registrar_lancamento"
+                          and not a.get("substituir")]
+                def _ja_existe_hoje(a):
+                    try:
+                        v = float(a.get("valor", 0) or 0)
+                    except Exception:
+                        return False
+                    if a.get("tipo") == "ganho":
+                        plat = (a.get("plataforma") or "").lower()
+                        return any(abs(vv - v) < 0.01 and (p or "").lower() == plat
+                                   for (p, vv, _ts) in ganhos_hoje_detalhe)
+                    if a.get("tipo") == "despesa":
+                        desc = (a.get("descricao") or a.get("categoria") or "").lower()
+                        return any(abs(vv - v) < 0.01 and (d or "").lower() == desc
+                                   for (d, vv, _ts) in despesas_hoje_detalhe)
+                    return False
+                # há lançamento(s) novo(s) e NENHUM já existia hoje → pergunta indevida
+                if _novos and not any(_ja_existe_hoje(a) for a in _novos):
+                    _partes = []
+                    for a in _novos:
+                        try:
+                            v = float(a.get("valor", 0) or 0)
+                        except Exception:
+                            continue
+                        _vfmt = f"R${int(v)}" if v == int(v) else f"R${v:.2f}".replace(".", ",")
+                        if a.get("tipo") == "ganho":
+                            _partes.append(f"{_vfmt} na {a.get('plataforma') or 'plataforma'}")
+                        else:
+                            _partes.append(f"{_vfmt} de {a.get('descricao') or a.get('categoria') or 'despesa'}")
+                    if _partes:
+                        texto = "Anotei! ✅ " + " e ".join(_partes) + " hoje."
+                        log_info("chat_falsa_duplicata_corrigida", qtd=len(_partes))
+        except Exception:
+            pass
+
         if not texto or texto.strip() in ("OK", "ok", "", "Entendido.", "Entendido"):
             # Se há ações, gera confirmação automática descrevendo o que foi feito
             if lista_acoes:
