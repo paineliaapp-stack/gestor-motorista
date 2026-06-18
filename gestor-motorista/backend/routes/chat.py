@@ -573,6 +573,7 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
             }
         }
 
+    _lanc_deletados_real = 0  # conta linhas de lancamento REALMENTE apagadas (pra nao afirmar "apaguei" sem efeito)
     for linha in linhas_json:
         try:
             acao = linha if isinstance(linha, dict) else json.loads(linha)
@@ -721,21 +722,31 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
                                 else:
                                     break
                             except: break
+                    _del_n = 0
                     for lid in ids_lote:
-                        supabase.table("lancamentos").delete().eq("id", lid).eq("motorista_id", motorista_id).execute()
-                    acoes_executadas.append("lancamento_deletado" if len(ids_lote)==1 else "lancamentos_deletados")
+                        _r = supabase.table("lancamentos").delete().eq("id", lid).eq("motorista_id", motorista_id).execute()
+                        _del_n += len(_r.data or [])
+                    _lanc_deletados_real += _del_n
+                    if _del_n:
+                        acoes_executadas.append("lancamento_deletado" if _del_n==1 else "lancamentos_deletados")
 
             elif acao.get("acao") == "deletar_lancamento_por_id":
                 lid = acao.get("id")
                 if lid:
-                    supabase.table("lancamentos").delete().eq("id", lid).eq("motorista_id", motorista_id).execute()
-                    acoes_executadas.append("lancamento_deletado")
+                    _r = supabase.table("lancamentos").delete().eq("id", lid).eq("motorista_id", motorista_id).execute()
+                    _n = len(_r.data or [])
+                    _lanc_deletados_real += _n
+                    if _n:
+                        acoes_executadas.append("lancamento_deletado")
 
             elif acao.get("acao") == "deletar_lancamentos_por_ids":
                 ids = acao.get("ids", [])
+                _n = 0
                 for lid in ids:
-                    supabase.table("lancamentos").delete().eq("id", lid).eq("motorista_id", motorista_id).execute()
-                if ids:
+                    _r = supabase.table("lancamentos").delete().eq("id", lid).eq("motorista_id", motorista_id).execute()
+                    _n += len(_r.data or [])
+                _lanc_deletados_real += _n
+                if _n:
                     acoes_executadas.append("lancamentos_deletados")
 
             elif acao.get("acao") == "editar_lancamento_por_id":
@@ -902,6 +913,38 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
             import traceback
             log_erro("acao_err", erro=e)
             traceback.print_exc()
+    # ANTI-MENTIRA DE DELEÇÃO: a IA às vezes diz que "apagou/corrigiu" lançamentos
+    # sem a deleção ter acontecido de verdade (ex: tentou apagar "137" e "29" que não
+    # existiam como linhas separadas — o que existia era um lançamento de 166 — então
+    # nada foi removido e ficou duplicado). Se o texto afirma deleção mas NENHUMA linha
+    # foi apagada (e não houve edição), troca por uma resposta honesta.
+    try:
+        _tl = (texto or "").lower()
+        _diz_apagou = any(k in _tl for k in ("apaguei", "apagei", "apagad", "deletei",
+                          "deletad", "exclui", "excluí", "removi", "removid"))
+        if _diz_apagou and _lanc_deletados_real == 0 and "lancamento_editado" not in acoes_executadas:
+            _regs = []
+            for a in lista_acoes:
+                if isinstance(a, dict) and a.get("acao") == "registrar_lancamento":
+                    try:
+                        v = float(a.get("valor", 0) or 0)
+                    except Exception:
+                        continue
+                    _vf = f"R${int(v)}" if v == int(v) else f"R${v:.2f}".replace(".", ",")
+                    if a.get("tipo") == "ganho":
+                        _regs.append(f"{_vf} na {a.get('plataforma') or 'plataforma'}")
+                    else:
+                        _regs.append(f"{_vf} de {a.get('descricao') or a.get('categoria') or 'despesa'}")
+            if _regs:
+                texto = ("Registrei " + " e ".join(_regs) + ". ✅ Mas não localizei o lançamento antigo "
+                         "pra apagar automaticamente — confere no Histórico e toca na 🗑️ se ficou algum duplicado.")
+            else:
+                texto = ("Não localizei o lançamento pra apagar — pode já ter sido removido ou estar com outro valor. "
+                         "Dá uma olhada no Histórico e toca na 🗑️ no que quiser remover.")
+            log_warn("delecao_reivindicada_sem_efeito")
+    except Exception:
+        pass
+
     acao_executada = acoes_executadas[0] if acoes_executadas else None
     # texto já atualizado pelo JSON mode
     # Se a IA disse que registrou mas nenhuma ação foi executada, avisa
