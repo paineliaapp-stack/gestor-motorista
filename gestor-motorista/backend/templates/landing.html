@@ -249,7 +249,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
     <div style="display:flex;gap:10px;align-items:center">
       <a href="/" class="btn btn-ghost nav-hide-mobile">Entrar</a>
       <a href="#" onclick="abrirModalAssinar('fundador');return false;" class="btn btn-ghost" style="border-color:rgba(0,216,151,.5);color:#00D897">Assinar</a>
-      <a href="#" onclick="abrirModalPlano('fundador');return false;" class="btn btn-am">Começar grátis</a>
+      <a href="#" onclick="irParaApp();return false;" class="btn btn-am">Começar grátis</a>
     </div>
   </div>
 </nav>
@@ -263,7 +263,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
         <h1>No fim do mês,<br><span class="am">quanto sobra</span><br>de verdade?</h1>
         <p>Você roda o dia todo, mas depois da gasolina, do aluguel ou financiamento do carro e das contas — quanto realmente fica no seu bolso? O Painel.IA responde isso. Você fala "fiz 350 na Uber, abasteci 90" e ele calcula seu lucro real, avisa o que vence e mostra quanto vai sobrar.</p>
         <div class="hero-ctas">
-          <a href="#" onclick="abrirModalPlano('fundador');return false;" class="btn btn-am btn-hero">Começar grátis agora</a>
+          <a href="#" onclick="irParaApp();return false;" class="btn btn-am btn-hero">Começar grátis agora</a>
         </div>
         <div class="hero-note">Sem cartão de crédito · funciona no navegador · seus dados são só seus</div>
       </div>
@@ -312,6 +312,9 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
     </div>
     <div class="reveal" style="text-align:center;margin-top:32px;font-size:14px;color:var(--muted)">
       ⚡ Registrar o dia inteiro leva <b style="color:var(--verde)">menos de 10 segundos</b> · disponível 24h · começa de graça, sem cartão
+    </div>
+    <div class="reveal" style="text-align:center;margin-top:24px">
+      <a href="#" onclick="irParaApp();return false;" class="btn btn-am btn-hero">Começar grátis agora</a>
     </div>
   </section>
 
@@ -364,6 +367,23 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
           <tr><td>Custo para começar</td><td class="dest" style="color:var(--verde)">R$ 0</td><td>R$ 0</td><td>R$ 0</td><td>R$ 0–29</td></tr>
         </tbody>
       </table>
+    </div>
+  </section>
+
+  <!-- PROVA: O APP RODANDO -->
+  <section style="padding:80px 0 0">
+    <div class="sec-eyebrow">Não é promessa</div>
+    <h2>É o app rodando<br>de verdade.</h2>
+    <p class="reveal" style="text-align:center;max-width:520px;margin:0 auto 34px;color:var(--faint)">Tudo que a tabela ali em cima diz, acontece na tela. Você fala, a IA entende e o número aparece — sem formulário, sem categoria, sem planilha.</p>
+    <div class="reveal" style="display:flex;justify-content:center">
+      <div class="phone" style="padding:0;overflow:hidden;border-radius:30px;max-width:300px;width:100%">
+        <video
+          src="/static/landing/demo-app-2.mp4"
+          poster="/static/landing/demo-app-2-poster.jpg"
+          autoplay loop muted playsinline preload="metadata"
+          style="width:100%;display:block;border-radius:30px"
+        ></video>
+      </div>
     </div>
   </section>
 
@@ -431,6 +451,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
           <div class="chatline"><div class="bub-u">fiz 350 na uber, paguei 90 de gasolina</div></div>
           <div class="chatline"><div class="bub-b">Anotei! ✅ Lucro de hoje: <b>R$ 260</b>. Faltam R$ 140 pra meta — no seu ritmo, mais 6 corridas. A parcela do carro vence amanhã, já separei no plano. 💪</div></div>
         </div>
+        <div style="text-align:center;margin-top:20px"><a href="#" onclick="irParaApp();return false;" class="btn btn-am">Começar grátis agora</a></div>
       </div>
     </div>
   </section>
@@ -498,7 +519,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
         <div style="display:flex;align-items:baseline;gap:8px;margin:8px 0 4px"><span style="font-size:14px;color:var(--faint);text-decoration:line-through">R$29</span><span style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;color:#F0B429">R$19</span><span style="font-size:13px;color:var(--muted)">/mês</span></div>
         <div style="font-size:11.5px;color:#00D897;margin-bottom:14px">preço travado por 1 ano · ou R$190/ano (economiza 2 meses)</div>
         <div style="font-size:13px;color:var(--muted);line-height:2">✓ Gestor com IA ilimitado<br>✓ Histórico completo<br>✓ Plano financeiro inteligente<br>✓ Previsão do tempo<br>✓ Modo motoboy<br>✓ Alertas de vencimento</div>
-        <a href="#" onclick="abrirModalPlano('fundador');return false;" class="btn btn-am" style="display:block;text-align:center;margin-top:16px;padding:14px">Começar com 24h grátis</a>
+        <a href="#" onclick="irParaApp();return false;" class="btn btn-am" style="display:block;text-align:center;margin-top:16px;padding:14px">Começar com 24h grátis</a>
         <a href="#" onclick="abrirModalAssinar('fundador');return false;" style="display:block;text-align:center;margin-top:8px;padding:11px;border:1px solid rgba(0,216,151,.5);border-radius:10px;color:#00D897;font-size:13px;font-weight:700;text-decoration:none">⚡ Assinar com PIX agora</a>
       </div>
     </div>
@@ -510,7 +531,7 @@ footer{border-top:1px solid var(--line);padding:28px 22px;text-align:center;font
   <div class="sec-eyebrow" style="text-align:center">Chega de dirigir no escuro</div>
   <h2>Pare de dirigir<br>no escuro.</h2>
   <p>Se você precisou pensar, você precisa do Painel.IA.</p>
-  <a href="#" onclick="abrirModalPlano('fundador');return false;" class="btn btn-am btn-hero">Descobrir agora — grátis</a>
+  <a href="#" onclick="irParaApp();return false;" class="btn btn-am btn-hero">Descobrir agora — grátis</a>
   <div style="margin-top:16px;font-size:12px;color:var(--faint)">Sem cartão · funciona no celular · grátis para começar</div>
 </div>
 
@@ -751,6 +772,13 @@ async function _assinarPix(ciclo) {
     err.textContent = 'Falha de conexão. Tente de novo.';
     err.style.display = 'block';
   }
+}
+
+function irParaApp() {
+  // Sem captura de e-mail na landing: o login no app é via Google e o lead
+  // é registrado pelo próprio app / painel admin. Tira o atrito do modal.
+  try { _trackEvento('clique_gratis'); } catch(e){}
+  window.location.href = '/';
 }
 
 function abrirModalPlano(plano) {
