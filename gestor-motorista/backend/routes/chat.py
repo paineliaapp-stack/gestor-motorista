@@ -512,6 +512,59 @@ async def chat(dados: dict = Body(...), uid: str = Depends(get_uid_from_token)):
             texto = "Pode repetir? Não entendi bem."
     log_info("chat_exec_acoes", qtd=len(lista_acoes))
     linhas_json = lista_acoes  # já são dicts, não precisa serializar
+
+    # ANTI-DUPLICACAO: a IA às vezes cria 2+ lançamentos IDÊNTICOS de um valor citado
+    # UMA vez (ex: "gastei 2 reais em marketing" -> "Anotei DUAS despesas de R$2").
+    # Só mantém cópias idênticas se o motorista REPETIU o valor (ex "20 e 20") ou usou
+    # palavra de quantidade (duas/dois/várias...). Senão, colapsa pra uma.
+    try:
+        import re as _re
+        _regs_n = sum(1 for a in linhas_json if isinstance(a, dict) and a.get("acao") == "registrar_lancamento")
+        if _regs_n >= 2:
+            _msg_low = (mensagem or "").lower()
+            def _pn(s):
+                s = s.strip()
+                if "," in s: s = s.replace(".", "").replace(",", ".")
+                elif s.count(".") == 1 and len(s.split(".")[1]) == 3: s = s.replace(".", "")
+                try: return float(s)
+                except Exception: return None
+            _nums_msg = [x for x in (_pn(n) for n in _re.findall(r"\d+(?:[.,]\d+)?", _msg_low)) if x is not None]
+            _tem_plural = bool(_re.search(r"(\bduas\b|\bdois\b|\btr[eê]s\b|\bquatro\b|\bcinco\b|\bv[aá]rias?\b|\bv[aá]rios?\b|\bcada\b|\bambas\b|\bambos\b|\d\s*x\b|\bx\s*\d)", _msg_low))
+            def _key(a):
+                return (a.get("tipo"), round(float(a.get("valor", 0) or 0), 2),
+                        (a.get("plataforma") or "").lower(),
+                        (a.get("descricao") or a.get("categoria") or "").lower(),
+                        a.get("data") or "")
+            _vistos, _novas, _colapsou = {}, [], False
+            for a in linhas_json:
+                if isinstance(a, dict) and a.get("acao") == "registrar_lancamento":
+                    try: _v = float(a.get("valor", 0) or 0)
+                    except Exception: _v = None
+                    _ocorr = sum(1 for n in _nums_msg if _v is not None and abs(n - _v) < 0.01)
+                    _permitido = max(_ocorr, 2 if _tem_plural else 1, 1)
+                    k = _key(a)
+                    if _vistos.get(k, 0) >= _permitido:
+                        _colapsou = True
+                        continue  # descarta cópia idêntica excedente
+                    _vistos[k] = _vistos.get(k, 0) + 1
+                _novas.append(a)
+            if _colapsou:
+                lista_acoes = linhas_json = _novas
+                _regs2 = [a for a in _novas if isinstance(a, dict) and a.get("acao") == "registrar_lancamento"]
+                _partes = []
+                for a in _regs2:
+                    try: v = float(a.get("valor", 0) or 0)
+                    except Exception: continue
+                    _vf = f"R${int(v)}" if v == int(v) else f"R${v:.2f}".replace(".", ",")
+                    if a.get("tipo") == "ganho":
+                        _partes.append(f"{_vf} na {a.get('plataforma') or 'plataforma'}")
+                    else:
+                        _partes.append(f"{_vf} de {a.get('descricao') or a.get('categoria') or 'despesa'}")
+                if _partes:
+                    texto = "Anotei! ✅ " + " e ".join(_partes) + " hoje."
+                log_warn("lancamentos_identicos_colapsados")
+    except Exception:
+        pass
     acoes_executadas_count = 0
 
     # === DETECÇÃO DE VALOR ALTO: ganho muito acima da média = pode ser acumulado de vários dias ===
