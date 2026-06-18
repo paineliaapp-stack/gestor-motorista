@@ -26,7 +26,7 @@ async def resumo(motorista_id: str, mes: Optional[int] = None, ano: Optional[int
         fim = f"{ano+1}-01-01"
     else:
         fim = f"{ano}-{mes+1:02d}-01"
-    res = supabase.table("lancamentos").select("*").eq("motorista_id", motorista_id).gte("data", inicio).lt("data", fim).execute()
+    res = supabase.table("lancamentos").select("*").eq("motorista_id", motorista_id).gte("data", inicio).lt("data", fim).order("data", desc=True).order("created_at", desc=True).execute()
     lancamentos = res.data
     ganhos = sum(float(l["valor"]) for l in lancamentos if l["tipo"] == "ganho")
     despesas = sum(float(l["valor"]) for l in lancamentos if l["tipo"] == "despesa")

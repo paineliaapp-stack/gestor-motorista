@@ -3025,7 +3025,14 @@ async function loadHist(tipo){
       
       `<div class="rh-item"><span class="rh-label">💵 Média/dia</span><span class="rh-val am">${fmt(diasTrab>0?ganhosMes/diasTrab:0)}</span></div>`;
 
-    let lancs=allLancs.filter(l=>_histFiltroTipo==='todos'||l.tipo===_histFiltroTipo).reverse();
+    // Ordena de verdade (mais novo no topo). Antes era só .reverse() de um array
+    // sem ORDER BY do banco — depois de delete+insert (ex: "atualize"), a ordem do
+    // Postgres fica imprevisível e lançamentos recentes sumiam no meio da lista.
+    let lancs=allLancs.filter(l=>_histFiltroTipo==='todos'||l.tipo===_histFiltroTipo).slice().sort((a,b)=>{
+      const ka=a.created_at||a.criado_em||a.inserted_at||a.data||'';
+      const kb=b.created_at||b.criado_em||b.inserted_at||b.data||'';
+      return ka<kb?1:ka>kb?-1:0; // desc: mais recente primeiro
+    });
     const el=document.getElementById('lanc-list');el.innerHTML='';
     if(!lancs.length){el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><p>Nenhum lançamento</p></div>';return}
     lancs.forEach(l=>{
