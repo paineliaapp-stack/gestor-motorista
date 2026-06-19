@@ -7052,4 +7052,130 @@ function _expandirPlano(){
   50% { box-shadow: 0 8px 38px rgba(99,102,241,.85); transform: scale(1.015); }
 }
 </style>
+<!-- ===== DEMO (testar antes de logar) — bloco ISOLADO, nao toca em auth/authFetch ===== -->
+<div id="demo-app" style="display:none;position:fixed;inset:0;z-index:99990;background:var(--bg);flex-direction:column;overflow:hidden;font-family:'Outfit',sans-serif">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06)">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;text-transform:uppercase;color:var(--tx)">Painel<span style="color:var(--am)">.IA</span></span>
+      <span style="font-size:10px;font-weight:700;color:#22c55e;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.3);padding:2px 7px;border-radius:999px">DEMO</span>
+    </div>
+    <button onclick="loginGoogle()" style="background:var(--am);color:#1a1a1a;border:none;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Entrar grátis</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px">
+    <div style="background:linear-gradient(135deg,rgba(245,166,35,.12),rgba(245,166,35,.03));border:1px solid rgba(245,166,35,.25);border-radius:16px;padding:18px">
+      <div style="font-size:12px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px">Lucro de hoje</div>
+      <div id="demo-lucro" style="font-size:34px;font-weight:800;color:var(--am);margin:2px 0">R$ 0,00</div>
+      <div id="demo-meta" style="font-size:13px;color:var(--mt)">Hoje: R$ 0,00 de R$ 300,00 de meta</div>
+      <div style="height:7px;background:rgba(255,255,255,.08);border-radius:99px;margin-top:8px;overflow:hidden"><div id="demo-meta-bar" style="height:100%;width:0%;background:var(--am);border-radius:99px;transition:width .5s"></div></div>
+    </div>
+    <div style="display:flex;gap:12px">
+      <div style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px"><div style="font-size:11px;color:var(--mt);text-transform:uppercase">💰 Ganhos hoje</div><div id="demo-ganhos" style="font-size:20px;font-weight:700;color:#22c55e;margin-top:4px">R$ 0,00</div></div>
+      <div style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px"><div style="font-size:11px;color:var(--mt);text-transform:uppercase">💸 Despesas</div><div id="demo-despesas" style="font-size:20px;font-weight:700;color:#ef4444;margin-top:4px">R$ 0,00</div></div>
+    </div>
+    <div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);border-radius:14px;padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--mt);text-transform:uppercase">⚠️ Contas a pagar</span><span id="demo-contas-total" style="font-size:16px;font-weight:700;color:#ef4444">R$ 0,00</span></div>
+      <div id="demo-sobra" style="font-size:12px;color:var(--mt);margin-top:6px"></div>
+    </div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:14px;display:flex;flex-direction:column;min-height:200px">
+      <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:8px">🧠 Gestor Financeiro <span style="font-size:11px;color:#22c55e;font-weight:400">· online</span></div>
+      <div id="demo-chat" style="flex:1;display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:260px"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input id="demo-input" type="text" placeholder="Ex: fiz 350 na uber, paguei 90 de gasolina" onkeydown="if(event.key==='Enter')demo_send()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:11px 14px;color:var(--tx);font-size:14px;font-family:'Outfit',sans-serif;outline:none">
+        <button onclick="demo_send()" style="background:#6366f1;color:#fff;border:none;border-radius:10px;width:46px;font-size:18px;cursor:pointer">➤</button>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;border-top:1px solid rgba(255,255,255,.06);padding:8px 0 max(8px,env(safe-area-inset-bottom))">
+    <div style="flex:1;text-align:center;color:var(--am);font-size:11px"><div style="font-size:20px">📊</div>Dashboard</div>
+    <div onclick="demo_showTrial()" style="flex:1;text-align:center;color:var(--mt);font-size:11px;opacity:.55;cursor:pointer"><div style="font-size:20px">🔒</div>Histórico</div>
+    <div onclick="demo_showTrial()" style="flex:1;text-align:center;color:var(--mt);font-size:11px;opacity:.55;cursor:pointer"><div style="font-size:20px">🔒</div>Contas</div>
+    <div onclick="demo_showTrial()" style="flex:1;text-align:center;color:var(--mt);font-size:11px;opacity:.55;cursor:pointer"><div style="font-size:20px">🔒</div>Metas</div>
+  </div>
+  <div id="demo-trial" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:24px;z-index:5">
+    <div style="background:#12151c;border:1px solid rgba(245,166,35,.3);border-radius:20px;padding:26px;max-width:340px;text-align:center">
+      <div style="font-size:40px">🎉</div>
+      <div style="font-size:19px;font-weight:800;color:var(--tx);margin:8px 0">Olha seu lucro real aparecendo!</div>
+      <div style="font-size:14px;color:var(--mt);line-height:1.55;margin-bottom:20px">Entre com Google e <b style="color:#22c55e">teste 24h grátis</b> — seus lançamentos já ficam salvos. E se curtir, tem uma <b style="color:var(--am)">condição especial de fundador</b>.</div>
+      <button onclick="loginGoogle()" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#1a1a1a;border:none;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;width:100%;font-family:'Outfit',sans-serif">Entrar grátis com Google</button>
+      <div style="font-size:11px;color:var(--mt);margin-top:10px">🔒 Login protegido pelo Google · sem cartão</div>
+      <div onclick="demo_hideTrial()" style="font-size:13px;color:var(--mt);margin-top:14px;cursor:pointer;text-decoration:underline">continuar testando</div>
+    </div>
+  </div>
+</div>
+<script>
+var demoState = { metaDiaria:300, contas:[{nome:'Parcela do carro',valor:870},{nome:'Aluguel',valor:1200}], lancs:[], count:0, trialMostrado:false };
+function demo_fmt(n){ return 'R$ '+(Math.round((n||0)*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function demo_show(){ try{ var tl=document.getElementById('tela-login'); if(tl) tl.style.display='none'; }catch(e){} var el=document.getElementById('demo-app'); if(el){ el.style.display='flex'; } demo_render(); if(!demoState.lancs.length){ demo_addBubble('Fala o que você ganhou e gastou hoje que eu monto tudo. Ex: "fiz 350 na uber, paguei 90 de gasolina" 👇','bot'); } }
+function demo_render(){
+  var g=demoState.lancs.filter(function(l){return l.tipo==='ganho';}).reduce(function(s,l){return s+l.valor;},0);
+  var d=demoState.lancs.filter(function(l){return l.tipo==='despesa';}).reduce(function(s,l){return s+l.valor;},0);
+  var lucro=g-d, contas=demoState.contas.reduce(function(s,c){return s+c.valor;},0), sobra=lucro-contas;
+  var set=function(id,v){var e=document.getElementById(id); if(e) e.textContent=v;};
+  set('demo-lucro',demo_fmt(lucro)); set('demo-ganhos',demo_fmt(g)); set('demo-despesas',demo_fmt(d));
+  set('demo-meta','Hoje: '+demo_fmt(g)+' de '+demo_fmt(demoState.metaDiaria)+' de meta');
+  set('demo-contas-total',demo_fmt(contas));
+  set('demo-sobra', sobra>=0 ? ('Sobra depois das contas: '+demo_fmt(sobra)) : ('Falta '+demo_fmt(-sobra)+' pra cobrir as contas'));
+  var bar=document.getElementById('demo-meta-bar'); if(bar) bar.style.width=Math.max(0,Math.min(100,Math.round(g/demoState.metaDiaria*100)))+'%';
+}
+function demo_addBubble(txt,quem){
+  var c=document.getElementById('demo-chat'); if(!c) return;
+  var b=document.createElement('div');
+  if(quem==='user'){ b.style.cssText='align-self:flex-end;background:#6366f1;color:#fff;padding:9px 13px;border-radius:14px 14px 4px 14px;font-size:14px;max-width:85%'; }
+  else { b.style.cssText='align-self:flex-start;background:rgba(255,255,255,.06);color:var(--tx);padding:9px 13px;border-radius:14px 14px 14px 4px;font-size:14px;max-width:90%'; }
+  b.textContent=txt; c.appendChild(b); c.scrollTop=c.scrollHeight;
+}
+function demo_parse(t){
+  t=(t||'').toLowerCase();
+  var plats=['uber','99','indrive','indriver','ifood','rappi','particular'];
+  var despKw=['gasolina','combustivel','combustível','abasteci','abastecer','gnv','alcool','álcool','parcela','aluguel','almoço','almoco','comida','lanche','mercado','lavagem','manutenção','manutencao','pedagio','pedágio','seguro','conta','luz','água','agua'];
+  var out=[]; var clauses=t.split(/,|;| e |\.| tambem | também /);
+  clauses.forEach(function(c){
+    var m=c.match(/\d+(?:[.,]\d+)?/); if(!m) return;
+    var v=parseFloat(m[0].replace('.','').replace(',','.')); if(!isFinite(v)||v<=0) return;
+    var ganhoWord=/\bfiz\b|ganhei|faturei|recebi|fatur/.test(c);
+    var despWord=/paguei|gastei|abasteci|comprei|despes/.test(c) || despKw.some(function(k){return c.indexOf(k)>=0;});
+    var plat=plats.find(function(p){return c.indexOf(p)>=0;});
+    if(despWord && !ganhoWord){
+      var lk=despKw.find(function(k){return c.indexOf(k)>=0;})||'despesa';
+      out.push({tipo:'despesa',valor:v,label:lk.charAt(0).toUpperCase()+lk.slice(1)});
+    } else {
+      out.push({tipo:'ganho',valor:v,label:plat?plat.toUpperCase():'Ganho'});
+    }
+  });
+  return out;
+}
+function demo_send(){
+  var inp=document.getElementById('demo-input'); if(!inp) return;
+  var txt=(inp.value||'').trim(); if(!txt) return;
+  demo_addBubble(txt,'user'); inp.value='';
+  var items=demo_parse(txt);
+  if(!items.length){ demo_addBubble('Me diz um valor — ex: "fiz 350 na uber, paguei 90 de gasolina".','bot'); return; }
+  items.forEach(function(it){ demoState.lancs.push(it); });
+  demoState.count++;
+  demo_render();
+  var g=demoState.lancs.filter(function(l){return l.tipo==='ganho';}).reduce(function(s,l){return s+l.valor;},0);
+  var d=demoState.lancs.filter(function(l){return l.tipo==='despesa';}).reduce(function(s,l){return s+l.valor;},0);
+  var parts=items.map(function(it){ return (it.tipo==='ganho'?'+':'-')+demo_fmt(it.valor).replace('R$ ','R$')+' '+it.label; });
+  demo_addBubble('Anotei! ✅ '+parts.join(', ')+'. Lucro de hoje: '+demo_fmt(g-d)+'.','bot');
+  if(demoState.count>=3 && !demoState.trialMostrado){ setTimeout(demo_showTrial,900); }
+}
+function demo_showTrial(){ demoState.trialMostrado=true; var e=document.getElementById('demo-trial'); if(e) e.style.display='flex'; }
+function demo_hideTrial(){ var e=document.getElementById('demo-trial'); if(e) e.style.display='none'; }
+(function(){
+  function demo_init(){
+    try{
+      var p=new URLSearchParams(location.search);
+      if(p.get('demo')==='1'){ demo_show(); return; }
+      if(_supa && _supa.auth && _supa.auth.getSession){
+        _supa.auth.getSession().then(function(res){
+          var s=res&&res.data&&res.data.session;
+          if(!(s&&s.user)){ demo_show(); }
+        }).catch(function(){});
+      }
+    }catch(e){}
+  }
+  if(document.readyState!=='loading') demo_init(); else document.addEventListener('DOMContentLoaded',demo_init);
+})();
+</script>
+
 </body>
