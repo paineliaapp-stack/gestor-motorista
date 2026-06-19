@@ -7053,7 +7053,7 @@ function _expandirPlano(){
 }
 </style>
 <!-- ===== DEMO (testar antes de logar) — bloco ISOLADO, nao toca em auth/authFetch ===== -->
-<div id="demo-app" style="display:none;position:fixed;inset:0;z-index:99990;background:var(--bg);flex-direction:column;overflow:hidden;font-family:'Outfit',sans-serif">
+<div id="demo-app" style="display:none;position:fixed;inset:0;z-index:100001;background:var(--bg);flex-direction:column;overflow:hidden;font-family:'Outfit',sans-serif">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06)">
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;text-transform:uppercase;color:var(--tx)">Painel<span style="color:var(--am)">.IA</span></span>
@@ -7105,7 +7105,7 @@ function _expandirPlano(){
 <script>
 var demoState = { metaDiaria:300, contas:[{nome:'Parcela do carro',valor:870},{nome:'Aluguel',valor:1200}], lancs:[], count:0, trialMostrado:false };
 function demo_fmt(n){ return 'R$ '+(Math.round((n||0)*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function demo_show(){ try{ var tl=document.getElementById('tela-login'); if(tl) tl.style.display='none'; }catch(e){} var el=document.getElementById('demo-app'); if(el){ el.style.display='flex'; } demo_render(); if(!demoState.lancs.length){ demo_addBubble('Fala o que você ganhou e gastou hoje que eu monto tudo. Ex: "fiz 350 na uber, paguei 90 de gasolina" 👇','bot'); } }
+function demo_show(){ try{ var tl=document.getElementById('tela-login'); if(tl) tl.style.display='none'; }catch(e){} var el=document.getElementById('demo-app'); if(el){ el.style.display='flex'; } demo_render(); if(!demoState.lancs.length){ demo_addBubble('Fala o que você ganhou e gastou hoje que eu monto tudo. Ex: "fiz 350 na uber, paguei 90 de gasolina" 👇','bot'); } [200,600,1200].forEach(function(ms){ setTimeout(function(){ try{ var t=document.getElementById('tela-login'); if(t && document.getElementById('demo-app') && document.getElementById('demo-app').style.display!=='none') t.style.display='none'; }catch(e){} }, ms); }); }
 function demo_render(){
   var g=demoState.lancs.filter(function(l){return l.tipo==='ganho';}).reduce(function(s,l){return s+l.valor;},0);
   var d=demoState.lancs.filter(function(l){return l.tipo==='despesa';}).reduce(function(s,l){return s+l.valor;},0);
