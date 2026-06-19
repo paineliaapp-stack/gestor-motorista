@@ -7166,6 +7166,10 @@ function demo_hideTrial(){ var e=document.getElementById('demo-trial'); if(e) e.
     try{
       var p=new URLSearchParams(location.search);
       if(p.get('demo')==='1' || /\/demo\/?$/.test(location.pathname)){ demo_show(); return; }
+      // Demo PAUSADA: visitante sem sessão vai pra tela de login aquecida (não auto-abre a demo).
+      // Continua acessível por /demo ou ?demo=1 pra preview/retomada futura.
+      return;
+      // eslint-disable-next-line
       if(_supa && _supa.auth && _supa.auth.getSession){
         _supa.auth.getSession().then(function(res){
           var s=res&&res.data&&res.data.session;
