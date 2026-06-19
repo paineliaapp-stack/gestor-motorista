@@ -25,6 +25,22 @@ def root(request: Request):
         }
     )
 
+@router.get("/demo", response_class=HTMLResponse)
+def demo(request: Request):
+    # Mesma index.html; o JS detecta /demo (ou ?demo=1) e abre a demonstracao.
+    from fastapi.responses import Response
+    with open("templates/index.html", encoding="utf-8") as f:
+        content = f.read()
+    return Response(
+        content=content,
+        media_type="text/html",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        }
+    )
+
 @router.get("/landing", response_class=HTMLResponse)
 def landing(request: Request):
     # FileResponse puro: o CSS/JS da landing tem sequências como "{#" que o

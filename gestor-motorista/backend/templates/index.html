@@ -7165,7 +7165,7 @@ function demo_hideTrial(){ var e=document.getElementById('demo-trial'); if(e) e.
   function demo_init(){
     try{
       var p=new URLSearchParams(location.search);
-      if(p.get('demo')==='1'){ demo_show(); return; }
+      if(p.get('demo')==='1' || /\/demo\/?$/.test(location.pathname)){ demo_show(); return; }
       if(_supa && _supa.auth && _supa.auth.getSession){
         _supa.auth.getSession().then(function(res){
           var s=res&&res.data&&res.data.session;
