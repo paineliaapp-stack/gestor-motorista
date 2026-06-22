@@ -1175,6 +1175,7 @@ const _supa = supabase.createClient(
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#F0B429;margin-bottom:6px">💡 Pedir prazo nestas (torna viável)</div>
       <div id="plan-renegocia-list"></div>
     </div>
+    <div id="plan-quitar" style="display:none;margin-top:10px"></div>
     <button onclick="_expandirPlano()" id="plan-btn-ver" style="width:100%;margin-top:10px;padding:10px;border-radius:10px;border:1px solid rgba(240,180,41,.35);background:rgba(240,180,41,.08);color:#F0B429;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Ver plano completo de renegociação ↓</button>
   </div>
 
@@ -3612,15 +3613,28 @@ function toggleGrupoContas(chave) {
   }
 }
 
+function _contasMesCalc(){
+  const ymA = _ymMesAtual();
+  const contas = (window._contas||[]).filter(c=>!c.pago && _contaNoMes(c,ymA));
+  const total = contas.reduce((s,c)=>s+Math.max(0,parseFloat(c.valor)-parseFloat(c.valor_pago||0)),0);
+  let pct=25; try{ pct=parseFloat(localStorage.getItem('pct_comb_'+(window.MID||''))||'25'); }catch(e){}
+  const bruto = (1-pct/100)>0 ? total/(1-pct/100) : total;
+  const combustivel = bruto - total;
+  const _ag=new Date(Date.now()-3*60*60*1000);
+  const ultDiaMes=new Date(Date.UTC(_ag.getUTCFullYear(),_ag.getUTCMonth()+1,0)).getUTCDate();
+  const diasRest=Math.max(1, ultDiaMes-_ag.getUTCDate()+1);
+  const brutoDia = bruto/diasRest;
+  return {total, pct, bruto, combustivel, diasRest, brutoDia};
+}
+
 function abrirPopupContasMes(){
   try{
     const ymA = _ymMesAtual();
     const _mn = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
     const nomeMes = _mn[parseInt(ymA.slice(5,7))-1];
     const contasMes = (window._contas||[]).filter(c=>!c.pago && _contaNoMes(c,ymA)).sort((a,b)=>new Date(a.vencimento)-new Date(b.vencimento));
-    const total = contasMes.reduce((s,c)=>s+Math.max(0,parseFloat(c.valor)-parseFloat(c.valor_pago||0)),0);
-    let pctC = 25; try{ pctC = parseFloat(localStorage.getItem('pct_comb_'+(window.MID||''))||'25'); }catch(e){}
-    const bruto = (1-pctC/100)>0 ? total/(1-pctC/100) : total;
+    const _cm = _contasMesCalc();
+    const total = _cm.total, pctC = _cm.pct, bruto = _cm.bruto, diasRest = _cm.diasRest, brutoDia = _cm.brutoDia, combustivel = _cm.combustivel;
     const fmtBR = v => v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
     const linhas = contasMes.length ? contasMes.map(c=>{
       const cv = new Date(c.vencimento+'T12:00:00');
@@ -3638,8 +3652,10 @@ function abrirPopupContasMes(){
       </div>
       ${linhas}
       <div style="margin-top:14px;padding:14px;border-radius:12px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25)">
-        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--tx);margin-bottom:8px"><span>Total que vence este mês</span><b style="color:var(--am)">R$ ${fmtBR(total)}</b></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--tx);margin-bottom:6px"><span>Total que vence este mês</span><b style="color:var(--am)">R$ ${fmtBR(total)}</b></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mt);margin-bottom:8px"><span>⛽ Combustível (${pctC}%)</span><span style="color:#FF4D6A">+ R$ ${fmtBR(combustivel)}</span></div>
         <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--tx)"><span>Faturar <b>bruto</b> pra pagar tudo</span><b style="color:#00D897">R$ ${fmtBR(bruto)}</b></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--tx);margin-top:6px"><span>Por dia (faltam ${diasRest} dia${diasRest!==1?'s':''} no mês)</span><b style="color:#00D897">R$ ${fmtBR(brutoDia)}/dia</b></div>
         <div style="font-size:11px;color:var(--mt);margin-top:8px;line-height:1.5">⛽ Já contando que ${pctC}% do bruto vai pra combustível (a matéria-prima do seu trabalho): pra sobrar os R$ ${fmtBR(total)} e quitar as contas, você precisa faturar R$ ${fmtBR(bruto)} bruto.</div>
       </div>
     </div>`;
@@ -3998,6 +4014,17 @@ async function salvarEdicaoConta(id){
   toast('Conta atualizada ✓');
   loadContas();
   try{ loadDash(); }catch(e){}
+}
+
+async function aplicarPrazoSugerido(id, novaData, nome){
+  const dataFmt = (novaData||'').split('-').reverse().join('/');
+  if(!confirm(`Mudar o vencimento de "${nome}" para ${dataFmt}?\n\n⚠️ Faça isso só depois de combinar o novo prazo com quem você deve. O app muda a data aqui, mas a conta só ganha prazo de verdade se a pessoa/empresa aceitar.`)) return;
+  try{
+    await authFetch(API+'/contas/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({vencimento:novaData})});
+    toast('Prazo de "'+nome+'" movido para '+dataFmt+' ✓');
+    try{ loadContas(); }catch(e){}
+    setTimeout(function(){ try{ carregarPlanejador(); }catch(e){} }, 500);
+  }catch(e){ toast('Não consegui atualizar o prazo', false); }
 }
 
 async function editarVencimento(id, vencimentoAtual){
@@ -6991,11 +7018,11 @@ function _expandirPlano(){
     criticasList.innerHTML = (d.criticas||[]).map(c=>`
       <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,69,96,.08);border-radius:8px;margin-bottom:4px;font-size:12px">
         <span style="color:#EEE9E0">${c.descricao||c.nome||'Conta'}</span>
-        <span style="color:#ff6b6b;font-weight:700">R$${parseFloat(c.valor||0).toFixed(0)}</span>
+        <span style="color:#ff6b6b;font-weight:700">R$${Math.max(0,parseFloat(c.valor||0)-parseFloat(c.valor_pago||0)).toFixed(0)}</span>
       </div>`).join('') + `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,69,96,.16);border-radius:8px;margin-top:6px;font-size:13px;font-weight:800">
         <span style="color:#ff6b6b">Total pagar agora</span>
-        <span style="color:#ff6b6b">R$${(d.criticas||[]).reduce((s,c)=>s+parseFloat(c.valor||0),0).toLocaleString('pt-BR',{maximumFractionDigits:0})}</span>
+        <span style="color:#ff6b6b">R$${(d.criticas||[]).reduce((s,c)=>s+Math.max(0,parseFloat(c.valor||0)-parseFloat(c.valor_pago||0)),0).toLocaleString('pt-BR',{maximumFractionDigits:0})}</span>
       </div>`;
   }
   // Contas para renegociar
@@ -7009,15 +7036,32 @@ function _expandirPlano(){
       return `<div style="padding:10px 12px;background:rgba(240,180,41,.06);border:1px solid rgba(240,180,41,.2);border-radius:10px;margin-bottom:6px;font-size:12px">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px">
           <span style="color:#EEE9E0;font-weight:600">${c.descricao||c.nome||'Conta'}</span>
-          <span style="color:#F0B429;font-weight:700">R$${parseFloat(c.valor||0).toFixed(0)}</span>
+          <span style="color:#F0B429;font-weight:700">R$${Math.max(0,parseFloat(c.valor||0)-parseFloat(c.valor_pago||0)).toFixed(0)}</span>
         </div>
         <div style="color:rgba(238,233,224,.5)">Vence ${vencOrig} → pedir prazo até <b style="color:#F0B429">${novaData}</b> (+${c.prazo_extra_dias}d)</div>
+        <button onclick="aplicarPrazoSugerido('${c.id}','${c.nova_data_sugerida}','${(c.descricao||c.nome||'Conta').replace(/['\\]/g,'')}')" style="margin-top:8px;width:100%;background:rgba(240,180,41,.15);border:1px solid rgba(240,180,41,.4);border-radius:8px;color:#F0B429;font-size:12px;font-weight:700;padding:7px;cursor:pointer;font-family:inherit">📅 Aplicar prazo até ${novaData}</button>
       </div>`;
     }).join('') + `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(240,180,41,.16);border-radius:8px;margin-top:6px;font-size:13px;font-weight:800">
         <span style="color:#F0B429">Total pra pedir prazo</span>
-        <span style="color:#F0B429">R$${(d.renegociaveis||[]).reduce((s,c)=>s+parseFloat(c.valor||0),0).toLocaleString('pt-BR',{maximumFractionDigits:0})}</span>
+        <span style="color:#F0B429">R$${(d.renegociaveis||[]).reduce((s,c)=>s+Math.max(0,parseFloat(c.valor||0)-parseFloat(c.valor_pago||0)),0).toLocaleString('pt-BR',{maximumFractionDigits:0})}</span>
       </div>`;
+  }
+  // "Pra quitar tudo" — usa a MESMA função do popup "ver detalhes" (_contasMesCalc), então bate o mesmo valor
+  const quitar = document.getElementById('plan-quitar');
+  if(quitar){
+    if(_planoExpandido){
+      const cm = _contasMesCalc();
+      const f = v => v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+      quitar.style.display = 'block';
+      quitar.innerHTML = `<div style="padding:13px 14px;border-radius:12px;background:rgba(0,216,151,.07);border:1px solid rgba(0,216,151,.25)">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#00D897;margin-bottom:9px;font-weight:700">🎯 Pra quitar tudo este mês</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#EEE9E0;margin-bottom:6px"><span>Total das contas</span><b style="color:#F0B429">R$ ${f(cm.total)}</b></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(238,233,224,.6);margin-bottom:6px"><span>⛽ Combustível (${cm.pct}%)</span><span style="color:#ff6b6b">+ R$ ${f(cm.combustivel)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;color:#EEE9E0;margin-bottom:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.08)"><span>Faturar <b>bruto</b> pra pagar tudo</span><b style="color:#00D897">R$ ${f(cm.bruto)}</b></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;color:#EEE9E0"><span>Por dia (faltam ${cm.diasRest} dia${cm.diasRest!==1?'s':''})</span><b style="color:#00D897">R$ ${f(cm.brutoDia)}/dia</b></div>
+      </div>`;
+    } else { quitar.style.display = 'none'; }
   }
 }
 
