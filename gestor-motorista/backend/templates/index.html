@@ -2684,29 +2684,35 @@ async function loadDash(){
 
     // Estado do toggle (padrão: só app)
     if(window._grafIncluiExtra===undefined) window._grafIncluiExtra=false;
+    if(window._grafDiasCorridos===undefined) window._grafDiasCorridos=false;
 
-    window.renderGraficoLinha = function renderGraficoLinha(incluiExtra){
+    window.renderGraficoLinha = function renderGraficoLinha(incluiExtra, diasCorridos){
       window._grafIncluiExtra=incluiExtra;
+      if(diasCorridos!==undefined) window._grafDiasCorridos=diasCorridos; else diasCorridos=window._grafDiasCorridos||false;
       const pd=incluiExtra?pdTudo:pdApp;
       if(gLinha)gLinha.destroy();
       const diasComGanho=ultDias.filter(x=>pd[x]>0);
-      const mediaLinhaVal=diasComGanho.length?diasComGanho.reduce((s,x)=>s+pd[x],0)/diasComGanho.length:0;
+      const somaGanhos=diasComGanho.reduce((s,x)=>s+pd[x],0);
+      const denom=diasCorridos?ultDias.length:diasComGanho.length;
+      const mediaLinhaVal=denom?somaGanhos/denom:0;
       const mediaArr=ultDias.map(()=>mediaLinhaVal>0?mediaLinhaVal:null);
       const mediaLabelEl=document.getElementById('media-label-linha');
       if(mediaLabelEl){
         if(mediaLinhaVal>0){
-          const totalDias=diasComGanho.length;
+          const totalDias=denom;
+          const descDias=diasCorridos?'dias corridos do mês':'dias com ganho no mês';
           const temExtra=Object.values(pdTudo).some((v,i)=>v!==Object.values(pdApp)[i]);
           const descricao=incluiExtra?'apps + renda extra':'só apps de corrida';
-          const btnExtra=temExtra?`<br><button onclick="renderGraficoLinha(${!incluiExtra})" style="margin-top:5px;padding:3px 10px;border-radius:12px;border:1px solid rgba(78,158,255,.4);background:${incluiExtra?'rgba(78,158,255,.2)':'rgba(255,255,255,.05)'};color:${incluiExtra?'#4E9EFF':'#888'};font-size:11px;cursor:pointer;font-family:inherit">${incluiExtra?'✓ Com renda extra':'+ Incluir renda extra'}</button>`:'';
-          mediaLabelEl.innerHTML=`<span style="color:rgba(78,158,255,.85)">─── </span>Média dos <strong>ganhos por app</strong>: <strong style="color:#fff">R$ ${mediaLinhaVal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}/dia</strong> <span style="color:#888;font-size:10px">(${descricao} · ${totalDias} dia${totalDias!==1?'s':''} com ganho no mês)</span>${btnExtra}`;
+          const btnExtra=temExtra?`<button onclick="renderGraficoLinha(${!incluiExtra}, ${diasCorridos})" style="margin:5px 4px 0 0;padding:3px 10px;border-radius:12px;border:1px solid rgba(78,158,255,.4);background:${incluiExtra?'rgba(78,158,255,.2)':'rgba(255,255,255,.05)'};color:${incluiExtra?'#4E9EFF':'#888'};font-size:11px;cursor:pointer;font-family:inherit">${incluiExtra?'✓ Com renda extra':'+ Incluir renda extra'}</button>`:'';
+          const btnDias=`<button onclick="renderGraficoLinha(${incluiExtra}, ${!diasCorridos})" style="margin:5px 0 0 0;padding:3px 10px;border-radius:12px;border:1px solid rgba(245,166,35,.4);background:rgba(245,166,35,.12);color:#F5A623;font-size:11px;cursor:pointer;font-family:inherit">${diasCorridos?'🗓️ ver por dia trabalhado':'📆 ver por dia corrido'}</button>`;
+          mediaLabelEl.innerHTML=`<span style="color:rgba(78,158,255,.85)">─── </span>Média dos <strong>ganhos por app</strong>: <strong style="color:#fff">R$ ${mediaLinhaVal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}/dia</strong> <span style="color:#888;font-size:10px">(${descricao} · ${totalDias} ${descDias})</span><br>${btnExtra}${btnDias}`;
         } else {
           mediaLabelEl.innerHTML='';
         }
       }
       gLinha=new Chart(document.getElementById('g-linha'),{type:'bar',data:{labels:ultDias.map(x=>x.slice(8)+'/'+x.slice(5,7)),datasets:[{label:'Ganhos',data:ultDias.map(x=>pd[x]),backgroundColor:ultDias.map(x=>pd[x]>0?'rgba(245,166,35,.7)':'rgba(255,255,255,.05)'),borderColor:ultDias.map(x=>pd[x]>0?'#F5A623':'rgba(255,255,255,.08)'),borderWidth:1,borderRadius:4},{type:'line',label:'Média',data:mediaArr,borderColor:'rgba(78,158,255,.85)',backgroundColor:'transparent',borderWidth:2,borderDash:[5,4],pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#4E9EFF',tension:0,order:0}]},options:{plugins:{legend:{display:false},datalabels:{display:false},tooltip:{callbacks:{label:(ctx)=>ctx.dataset.label+': R$ '+parseFloat(ctx.raw||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}}},scales:{x:{ticks:{color:'#555',maxRotation:0,font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#555'},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
     }
-    renderGraficoLinha(window._grafIncluiExtra||false);
+    renderGraficoLinha(window._grafIncluiExtra||false, window._grafDiasCorridos||false);
 
     // Gráfico faturamento por plataforma
     const RENDA_EXTRA_KEYS=['seguro_desemprego','freelance','aluguel_recebido','venda','emprestimo_recebido','bonus','renda_extra'];
@@ -4879,13 +4885,22 @@ function alertaContasVencendo(contas) {
     return;
   }
   el.style.display = 'flex';
-  el.innerHTML = '⚠️ <strong>Contas urgentes:</strong> ' + urgentes.map(c => {
-    const v = new Date(c.vencimento+'T12:00:00');
-    const diff = Math.ceil((v - hoje)/(1000*60*60*24));
+  el.style.flexDirection = 'column';
+  el.style.alignItems = 'flex-start';
+  el.style.gap = '6px';
+  const _diffDe = c => Math.ceil((new Date(c.vencimento+'T12:00:00') - hoje)/(1000*60*60*24));
+  const vencidas = urgentes.filter(c => _diffDe(c) < 0).sort((a,b)=>_diffDe(a)-_diffDe(b));
+  const proximas = urgentes.filter(c => { const d=_diffDe(c); return d>=0 && d<=3; }).sort((a,b)=>_diffDe(a)-_diffDe(b));
+  const _badge = (c, bg, cor) => {
+    const diff = _diffDe(c);
     const label = diff < 0 ? `${Math.abs(diff)}d atrasada` : diff === 0 ? 'hoje' : `${diff}d`;
     const saldo = parseFloat(c.valor) - parseFloat(c.valor_pago||0);
-    return `<span style="background:rgba(255,77,106,.15);border-radius:6px;padding:2px 8px;margin:2px">${c.descricao} — ${saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} (${label})</span>`;
-  }).join('');
+    return `<span style="background:${bg};color:${cor};border-radius:6px;padding:2px 8px;margin:2px;display:inline-block">${c.descricao} — ${saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} (${label})</span>`;
+  };
+  let _htmlUrg = '';
+  if(vencidas.length) _htmlUrg += `<div><strong style="color:#FF4D6A">🔴 Já venceram:</strong> ${vencidas.map(c=>_badge(c,'rgba(255,77,106,.18)','#ffb3c0')).join('')}</div>`;
+  if(proximas.length) _htmlUrg += `<div><strong style="color:#F5A623">🟡 Vencem em até 3 dias:</strong> ${proximas.map(c=>_badge(c,'rgba(245,166,35,.18)','#ffd98a')).join('')}</div>`;
+  el.innerHTML = _htmlUrg;
 
   // Card gestor muda para modo urgência
   const badge = document.getElementById('card-gestor-urgencia');
