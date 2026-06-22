@@ -3770,6 +3770,18 @@ async function _renderResumoContasAsync(el, calc){
   }).join('');
   // Bruto necessário por dia = líquido / (1 - %comb) — o que você precisa faturar para cobrir contas + combustível
   const totalPorDiaContas = totalPorDiaLiq / (1 - _taxaCombDia);
+  // "Por conta por dia" ficou complexo — ocultado (código mantido pra uso futuro). Flip pra true pra reativar.
+  const MOSTRAR_POR_DIA = false;
+  // Lista simples das contas do PRÓXIMO mês (fácil de ler)
+  const _ymProx2 = _ymMesSeguinte();
+  const _mnProx = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][parseInt(_ymProx2.slice(5,7))-1];
+  const contasProx = (window._contas||[]).filter(c=>!c.pago && _contaNoMes(c,_ymProx2)).sort((a,b)=>new Date(a.vencimento)-new Date(b.vencimento));
+  const totalProx = contasProx.reduce((s,c)=>s+Math.max(0,parseFloat(c.valor)-parseFloat(c.valor_pago||0)),0);
+  const linhasProx = contasProx.map(c=>{
+    const cv = new Date(c.vencimento+'T12:00:00');
+    const csaldo = Math.max(0, parseFloat(c.valor)-parseFloat(c.valor_pago||0));
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:8px;background:var(--s)"><div><div style="font-size:12px;font-weight:600">${c.descricao}</div><div style="font-size:10px;color:var(--mt)">vence ${cv.toLocaleDateString('pt-BR')}</div></div><div style="font-weight:700;color:#7aa2ff;font-size:13px">R$ ${csaldo.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>`;
+  }).join('');
 
   let _pctCombPlaceholder = pctComb; // usado no painel abaixo
   const faturadoMes = totalFaturadoPlat + totalRendaExtraMes;
@@ -3831,14 +3843,22 @@ async function _renderResumoContasAsync(el, calc){
       ${linhaPainel('💳','Faturar para pagar todas as contas', fmt2(faturarParaContas), 'var(--rd)', 'bruto — inclui combustível estimado')}
       ${linhaPainel(sobraLiquida>=0?'✅':'⚠️','Sobra líquida estimada', fmt2(sobraLiquida), sobraLiquida>=0?'var(--gn)':'var(--rd)', sobraLabel)}
     </div>
-    <div style="font-size:11px;font-weight:700;color:var(--mt);letter-spacing:.5px;text-transform:uppercase;margin:12px 0 6px">📅 Por conta por dia</div>
+    ${MOSTRAR_POR_DIA ? `<div style="font-size:11px;font-weight:700;color:var(--mt);letter-spacing:.5px;text-transform:uppercase;margin:12px 0 6px">📅 Por conta por dia</div>
     <div style="display:flex;flex-direction:column;gap:6px">
       ${linhasContas}
       <div style="display:flex;justify-content:space-between;padding:8px 12px;border-radius:8px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25)">
         <div style="font-size:12px;font-weight:700">🎯 Faturar por dia (bruto)</div>
         <div style="font-weight:700;color:#818cf8;font-size:14px">R$ ${totalPorDiaContas.toFixed(2)}<span style="font-size:10px;font-weight:400;color:var(--mt)"> /dia · inclui ⛽</span></div>
       </div>
-    </div>
+    </div>` : ''}
+    ${linhasProx ? `<div style="font-size:11px;font-weight:700;color:var(--mt);letter-spacing:.5px;text-transform:uppercase;margin:12px 0 6px">🔜 Próximo mês (${_mnProx})</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${linhasProx}
+      <div style="display:flex;justify-content:space-between;padding:8px 12px;border-radius:8px;background:rgba(122,162,255,.1);border:1px solid rgba(122,162,255,.25)">
+        <div style="font-size:12px;font-weight:700">Total do próximo mês</div>
+        <div style="font-weight:700;color:#7aa2ff;font-size:14px">R$ ${totalProx.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      </div>
+    </div>` : ''}
   `;
   linhas.innerHTML = '';
 
