@@ -1228,6 +1228,10 @@ const _supa = supabase.createClient(
 <div class="toast" id="toast"></div>
 
 <script>
+// Helpers de mês (horário de Brasília) para separar contas do mês atual das dos meses seguintes
+function _ymMesAtual(){ const n=new Date(Date.now()-3*60*60*1000); return n.getUTCFullYear()+'-'+String(n.getUTCMonth()+1).padStart(2,'0'); }
+function _ymMesSeguinte(){ const n=new Date(Date.now()-3*60*60*1000); let y=n.getUTCFullYear(), m=n.getUTCMonth()+2; if(m>12){m-=12;y++;} return y+'-'+String(m).padStart(2,'0'); }
+function _contaNoMes(c, ym){ return !!(c && c.vencimento && String(c.vencimento).slice(0,7)===ym); }
 try{Chart.register(ChartDataLabels);}catch(e){}
 // Plugin de sombra 3D para gráficos de barra — dá volume/profundidade (só em barras)
 const barras3D = {
@@ -1463,9 +1467,10 @@ function renderMetaMensal(){
   const bateuMeta = faturadoAte >= META_MENSAL;
   const projecaoBate = projecao >= META_MENSAL;
 
-  // Total de contas a pagar
+  // Total de contas a pagar — só as que vencem no MÊS ATUAL (as dos meses seguintes não entram)
+  const _ymAtualMM = _ymMesAtual();
   const totalContas = window._contas
-    ? window._contas.filter(c=>!c.pago).reduce((s,c)=>s+Math.max(0,parseFloat(c.valor)-parseFloat(c.valor_pago||0)),0)
+    ? window._contas.filter(c=>!c.pago && _contaNoMes(c,_ymAtualMM)).reduce((s,c)=>s+Math.max(0,parseFloat(c.valor)-parseFloat(c.valor_pago||0)),0)
     : 0;
 
   let pctCombMM = 25;
@@ -1473,7 +1478,7 @@ function renderMetaMensal(){
   const combEstMM = META_MENSAL * (pctCombMM / 100);
   // A sobra real precisa descontar TODAS as contas do mês (pagas + a pagar): as já pagas
   // também saíram do faturamento do mês. Descontar só as pendentes inflava a sobra (esquecia as já pagas).
-  const totalContasMesMM = window._contas ? window._contas.reduce((s,c)=>s+(parseFloat(c.valor)||0),0) : 0;
+  const totalContasMesMM = window._contas ? window._contas.filter(c=>_contaNoMes(c,_ymAtualMM)).reduce((s,c)=>s+(parseFloat(c.valor)||0),0) : 0;
   const liquidoReal = META_MENSAL - combEstMM - totalContasMesMM;
   // Alvos quando a meta não cobre as contas: quanto faturar (bruto) pra empatar e pra sobrar algo no bolso.
   const _taxaCombMM = pctCombMM/100;
@@ -2518,8 +2523,9 @@ async function loadDash(){
   authFetch(API+'/contas/'+MID).then(r=>r.json()).then(c=>{
     window._contas=c;
     alertaContasVencendo(c);
-    // Atualiza card "Contas a pagar" no topo
-    const pendentes = c.filter(x=>!x.pago);
+    // Atualiza card "Contas a pagar" no topo — só as que vencem no mês atual
+    const _ymTop = _ymMesAtual();
+    const pendentes = c.filter(x=>!x.pago && _contaNoMes(x,_ymTop));
     const totalPend = pendentes.reduce((s,x)=>s+Math.max(0,parseFloat(x.valor)-parseFloat(x.valor_pago||0)),0);
     const elPend = document.getElementById('c-contas-pend');
     if(elPend){
@@ -3781,7 +3787,7 @@ async function _renderResumoContasAsync(el, calc){
   // Sobra líquida = meta (ou projeção) - combustível - TODAS as contas do mês (pagas + a pagar).
   // As contas já pagas também saíram do faturamento do mês; descontar só as pendentes inflava a sobra.
   const combProjetado = projecaoFimMes * taxaCombEst;
-  const totalContasMes = window._contas ? window._contas.reduce((s,c)=>s+(parseFloat(c.valor)||0),0) : (totalPend + pagas.reduce((s,c)=>s+(parseFloat(c.valor)||0),0));
+  const totalContasMes = window._contas ? window._contas.filter(c=>_contaNoMes(c,_ymMesAtual())).reduce((s,c)=>s+(parseFloat(c.valor)||0),0) : (totalPend + pagas.reduce((s,c)=>s+(parseFloat(c.valor)||0),0));
   const sobraLiquida = projecaoFimMes - combProjetado - totalContasMes;
   const sobraLabel = metaMensalConfig > 0
     ? `se bater a meta de ${metaMensalConfig.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`
