@@ -6992,7 +6992,11 @@ function _expandirPlano(){
       <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,69,96,.08);border-radius:8px;margin-bottom:4px;font-size:12px">
         <span style="color:#EEE9E0">${c.descricao||c.nome||'Conta'}</span>
         <span style="color:#ff6b6b;font-weight:700">R$${parseFloat(c.valor||0).toFixed(0)}</span>
-      </div>`).join('');
+      </div>`).join('') + `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,69,96,.16);border-radius:8px;margin-top:6px;font-size:13px;font-weight:800">
+        <span style="color:#ff6b6b">Total pagar agora</span>
+        <span style="color:#ff6b6b">R$${(d.criticas||[]).reduce((s,c)=>s+parseFloat(c.valor||0),0).toLocaleString('pt-BR',{maximumFractionDigits:0})}</span>
+      </div>`;
   }
   // Contas para renegociar
   const renegocia = document.getElementById('plan-renegocia');
@@ -7009,7 +7013,11 @@ function _expandirPlano(){
         </div>
         <div style="color:rgba(238,233,224,.5)">Vence ${vencOrig} → pedir prazo até <b style="color:#F0B429">${novaData}</b> (+${c.prazo_extra_dias}d)</div>
       </div>`;
-    }).join('');
+    }).join('') + `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(240,180,41,.16);border-radius:8px;margin-top:6px;font-size:13px;font-weight:800">
+        <span style="color:#F0B429">Total pra pedir prazo</span>
+        <span style="color:#F0B429">R$${(d.renegociaveis||[]).reduce((s,c)=>s+parseFloat(c.valor||0),0).toLocaleString('pt-BR',{maximumFractionDigits:0})}</span>
+      </div>`;
   }
 }
 
