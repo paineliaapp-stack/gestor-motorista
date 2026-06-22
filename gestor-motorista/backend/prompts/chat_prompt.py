@@ -3,7 +3,7 @@ Qualquer mudança neste texto altera o comportamento da IA."""
 import json as _json
 
 
-def montar_contexto_chat(*, _semana_ctx_str, amanha_str, cap_esforco_chat, comb_dia_chat, contas_json, contas_pendentes, daqui2_str, daqui3_str, daqui7_str, deficit_chat, despesas_hoje, despesas_hoje_detalhe, despesas_mes, dias_rest_chat, ganhos_hoje, ganhos_hoje_detalhe, ganhos_mes, ganhos_ontem_detalhe, hoje_str, horas_mes, inicio_mes, lancamentos_mes, lucro_mes, meta_dia_chat, ontem_str, ontem_str_ctx, poder_chat, projecao_liq_chat, proximo_sabado_str, renda_extra_ctx, sabado_que_vem_str, sabado_str, taxa_comb_pct, tipo_veiculo, total_pendente, ultimos_lancamentos_txt=""):
+def montar_contexto_chat(*, _semana_ctx_str, amanha_str, cap_esforco_chat, comb_dia_chat, contas_json, contas_pendentes, daqui2_str, daqui3_str, daqui7_str, deficit_chat, despesas_hoje, despesas_hoje_detalhe, despesas_mes, dias_rest_chat, ganhos_hoje, ganhos_hoje_detalhe, ganhos_mes, ganhos_ontem_detalhe, hoje_str, horas_mes, inicio_mes, lancamentos_mes, lucro_mes, meta_dia_chat, ontem_str, ontem_str_ctx, poder_chat, projecao_liq_chat, proximo_sabado_str, renda_extra_ctx, sabado_que_vem_str, sabado_str, taxa_comb_pct, tipo_veiculo, total_pendente, total_vence_mes=0.0, qtd_vence_mes=0, mes_nome="este mês", ultimos_lancamentos_txt=""):
 
     # Contexto específico por tipo de veículo
     eh_motoboy = tipo_veiculo in ("moto", "ambos")
@@ -102,8 +102,8 @@ HISTÓRICO DE GANHOS (para ajustes — use o id ao editar):
 {chr(10).join(f"  {l['data']} | {l.get('plataforma','?')} | R$ {float(l['valor']):.2f} | id:{l.get('id','?')}" for l in sorted([l for l in lancamentos_mes if l['tipo']=='ganho'], key=lambda x: x['data'], reverse=True)[:30]) or "  Nenhum ganho registrado ainda."}
 
 CONTAS A PAGAR:
-  Total de contas pendentes: {len(contas_pendentes)} contas
-  Valor total pendente:      R$ {total_pendente:.2f}  ← ESTE É O NÚMERO CORRETO
+  Vence ESTE MÊS ({mes_nome}):  {qtd_vence_mes} contas — R$ {total_vence_mes:.2f}  ← USE ESTE quando a pergunta for sobre contas "desse mês" / "esse mês" / "do mês"
+  Total geral pendente:       {len(contas_pendentes)} contas — R$ {total_pendente:.2f}  (inclui contas de meses seguintes)
   Poder de pagamento:        R$ {poder_chat:.2f}
   Déficit:                   R$ {deficit_chat:.2f}
   {f"Esforço diário necessário: R$ {cap_esforco_chat:.2f}/dia (média atual: R$ {meta_dia_chat:.2f}/dia)" if cap_esforco_chat > meta_dia_chat else "Situação controlada — ganhos cobrem as contas."}
@@ -123,7 +123,7 @@ PERFIL DO MOTORISTA:
 === REGRAS CRÍTICAS ===
 1. DADOS INCOMPLETOS: conta sem vencimento → PERGUNTE antes de registrar. Renda futura sem data → PERGUNTE a data.
 1b. NÚMEROS — NUNCA RECALCULE: todos os valores já estão calculados pelo backend na seção DADOS DO SISTEMA acima. Quando o motorista perguntar qualquer valor numérico (total de contas, ganhos do mês, lucro, déficit, etc.), copie o número exato de lá. Nunca some, subtraia ou estime — o backend já fez isso com precisão total. Se houver qualquer divergência entre o que você calcularia e o que está nos DADOS, os DADOS estão certos.
-ÂNCORA OBRIGATÓRIA: ao responder perguntas sobre contas pendentes, comece SEMPRE com "Você tem {len(contas_pendentes)} contas pendentes totalizando R$ {total_pendente:.2f}" usando exatamente esses números.
+ÂNCORA OBRIGATÓRIA: pergunta sobre contas DESTE MÊS ("esse mês", "do mês", "que vencem agora") → comece com "Você tem {qtd_vence_mes} contas que vencem {mes_nome} totalizando R$ {total_vence_mes:.2f}". Pergunta sobre o TOTAL geral de pendências (sem especificar mês) → "Você tem {len(contas_pendentes)} contas pendentes no total (incluindo meses seguintes), R$ {total_pendente:.2f}". Use exatamente esses números; nunca some manualmente.
 2. DUPLICATA E REFERÊNCIAS — CRÍTICO:
 - "E os 400?", "e aquele de 400?", "e ontem?", "e o outro?" → são REFERÊNCIAS a registros anteriores, NÃO novos ganhos. Responda confirmando o que já foi registrado, não registre de novo.
 - Duplicata SÓ existe se você CONSEGUE VER o lançamento igual (mesmo valor + mesma plataforma, HOJE) na seção ÚLTIMOS LANÇAMENTOS ou nos Detalhes de HOJE acima. Só nesse caso NÃO registre de novo — apenas pergunte: "Já anotei R$X na [plataforma] às HH:MM. É outro ganho ou é o mesmo?" e espere a resposta.
