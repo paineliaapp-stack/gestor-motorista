@@ -3617,10 +3617,18 @@ async function _renderResumoContasAsync(el, calc){
   const pagas = window._contas.filter(c=>c.pago);
   const totalPend = pendentes.reduce((s,c)=>s+(parseFloat(c.valor)-parseFloat(c.valor_pago||0)),0);
   const totalPago = pagas.reduce((s,c)=>s+parseFloat(c.valor),0);
+  // Vencimentos por mês (só pendentes)
+  const _ymA = _ymMesAtual(), _ymS = _ymMesSeguinte();
+  const _mn = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const _nomeA = _mn[parseInt(_ymA.slice(5,7))-1], _nomeS = _mn[parseInt(_ymS.slice(5,7))-1];
+  const venceMes = pendentes.filter(c=>_contaNoMes(c,_ymA)).reduce((s,c)=>s+Math.max(0,parseFloat(c.valor)-parseFloat(c.valor_pago||0)),0);
+  const venceProx = pendentes.filter(c=>_contaNoMes(c,_ymS)).reduce((s,c)=>s+Math.max(0,parseFloat(c.valor)-parseFloat(c.valor_pago||0)),0);
   el.innerHTML = `
     <div class="gc" style="text-align:center"><div style="font-size:11px;color:var(--mt);margin-bottom:4px">A PAGAR</div><div style="font-size:20px;font-weight:700;color:var(--rd)">${totalPend.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div>
     <div class="gc" style="text-align:center"><div style="font-size:11px;color:var(--mt);margin-bottom:4px">JÁ PAGO</div><div style="font-size:20px;font-weight:700;color:var(--gn)">${totalPago.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div>
-    <div class="gc" style="text-align:center;grid-column:1/-1"><div style="font-size:11px;color:var(--mt);margin-bottom:4px">TOTAL</div><div style="font-size:20px;font-weight:700">${(totalPend+totalPago).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div>
+    <div class="gc" style="text-align:center;border:1px solid rgba(245,166,35,.3)"><div style="font-size:11px;color:var(--am);margin-bottom:4px">📅 VENCE ESTE MÊS (${_nomeA})</div><div style="font-size:19px;font-weight:700;color:var(--am)">${venceMes.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div>
+    <div class="gc" style="text-align:center"><div style="font-size:11px;color:var(--mt);margin-bottom:4px">PRÓXIMO MÊS (${_nomeS})</div><div style="font-size:19px;font-weight:700;color:#7aa2ff">${venceProx.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div>
+    <div class="gc" style="text-align:center;grid-column:1/-1"><div style="font-size:11px;color:var(--mt);margin-bottom:4px">TOTAL PENDENTE (todos os meses)</div><div style="font-size:20px;font-weight:700">${(totalPend+totalPago).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div>
   `;
   if(!pendentes.length){ calc.style.display='none'; return; }
   calc.style.display='block';
