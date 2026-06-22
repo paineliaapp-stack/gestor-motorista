@@ -1471,7 +1471,10 @@ function renderMetaMensal(){
   let pctCombMM = 25;
   try { pctCombMM = parseFloat(localStorage.getItem('pct_comb_'+(window.MID||''))||'25'); } catch(e){}
   const combEstMM = META_MENSAL * (pctCombMM / 100);
-  const liquidoReal = META_MENSAL - combEstMM - totalContas;
+  // A sobra real precisa descontar TODAS as contas do mês (pagas + a pagar): as já pagas
+  // também saíram do faturamento do mês. Descontar só as pendentes inflava a sobra (esquecia as já pagas).
+  const totalContasMesMM = window._contas ? window._contas.reduce((s,c)=>s+(parseFloat(c.valor)||0),0) : 0;
+  const liquidoReal = META_MENSAL - combEstMM - totalContasMesMM;
   const pctProgresso = Math.min(100, Math.round(faturadoAte/META_MENSAL*100));
   // Atualiza widget lateral do hero
   const _wp = document.getElementById('widget-potencial');
@@ -3768,9 +3771,11 @@ async function _renderResumoContasAsync(el, calc){
   // Se tem meta configurada, usa ela como referência; senão usa projeção da média
   const projecaoFimMes = metaMensalConfig > 0 ? metaMensalConfig : projecaoMedia;
 
-  // Sobra líquida = meta (ou projeção) - combustível - total de contas pendentes
+  // Sobra líquida = meta (ou projeção) - combustível - TODAS as contas do mês (pagas + a pagar).
+  // As contas já pagas também saíram do faturamento do mês; descontar só as pendentes inflava a sobra.
   const combProjetado = projecaoFimMes * taxaCombEst;
-  const sobraLiquida = projecaoFimMes - combProjetado - totalPend;
+  const totalContasMes = window._contas ? window._contas.reduce((s,c)=>s+(parseFloat(c.valor)||0),0) : (totalPend + pagas.reduce((s,c)=>s+(parseFloat(c.valor)||0),0));
+  const sobraLiquida = projecaoFimMes - combProjetado - totalContasMes;
   const sobraLabel = metaMensalConfig > 0
     ? `se bater a meta de ${metaMensalConfig.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`
     : mediaDiaria > 0
