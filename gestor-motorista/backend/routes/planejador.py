@@ -21,9 +21,9 @@ def _hoje():
 
 
 def _media_diaria(mid: str, dias: int = 30) -> float:
-    """Média de faturamento diário real nos últimos N dias."""
+    """Média de faturamento diário real no MÊS ATUAL (alinhada com a Evolução diária do app)."""
     try:
-        ini = (_hoje() - _dt.timedelta(days=dias)).isoformat()
+        ini = _hoje().replace(day=1).isoformat()  # dia 1 do mês atual
         r = supabase.table("lancamentos").select("valor,tipo,data") \
             .eq("motorista_id", mid).eq("tipo", "ganho").gte("data", ini).execute()
         if not r.data:
