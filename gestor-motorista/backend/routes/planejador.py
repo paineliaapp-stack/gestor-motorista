@@ -46,12 +46,17 @@ def _media_diaria(mid: str, dias: int = 30) -> float:
 
 
 def _contas_pendentes(mid: str) -> list[dict]:
-    """Contas pendentes ordenadas por vencimento."""
+    """Contas pendentes do MÊS ATUAL (inclui vencidas/atrasadas; exclui as que vencem em meses seguintes)."""
     try:
-        hoje_s = _hoje().isoformat()
+        hoje = _hoje()
+        # Fim do mês atual
+        if hoje.month == 12:
+            fim_mes = _dt.date(hoje.year, 12, 31)
+        else:
+            fim_mes = _dt.date(hoje.year, hoje.month + 1, 1) - _dt.timedelta(days=1)
         r = supabase.table("contas").select("*") \
             .eq("motorista_id", mid) \
-            .gte("vencimento", hoje_s) \
+            .lte("vencimento", fim_mes.isoformat()) \
             .order("vencimento").execute()
         # Considera pendente: campo 'pago' é False/None (não foi quitado)
         out = []

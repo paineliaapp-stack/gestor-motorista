@@ -2665,9 +2665,11 @@ async function loadDash(){
       else if(pctDesp>50) pizzaCtx.innerHTML='<span style="color:#F5A623">📊 <strong>'+pctDesp.toFixed(0)+'%</strong> do faturamento total foi em despesas — está acima do ideal</span>';
       else pizzaCtx.innerHTML='<span style="color:#2ECC8F">✅ Bom controle! Você ficou com <strong>'+pctLucro.toFixed(0)+'%</strong> do total que ganhou</span>';
     }
-    const hoje14=new Date();
+    // Janela = MÊS ATUAL (dia 1 até hoje), não mais "últimos 14 dias"
+    const _agG=new Date(Date.now()-3*60*60*1000);
+    const _anoG=_agG.getUTCFullYear(), _mesG=_agG.getUTCMonth(), _diaG=_agG.getUTCDate();
     const ultDias=[];
-    for(let i=13;i>=0;i--){const dd=new Date(hoje14);dd.setDate(dd.getDate()-i);ultDias.push(new Date(dd.getTime()-3*60*60*1000).toISOString().slice(0,10));}
+    for(let _d=1;_d<=_diaG;_d++){ ultDias.push(_anoG+'-'+String(_mesG+1).padStart(2,'0')+'-'+String(_d).padStart(2,'0')); }
     // Separa ganhos de app vs renda extra
     const RENDA_EXTRA_KEYS_GRAFICO=['seguro_desemprego','freelance','aluguel_recebido','venda','emprestimo_recebido','bonus','renda_extra'];
     const pdApp={};const pdTudo={};
@@ -2697,7 +2699,7 @@ async function loadDash(){
           const temExtra=Object.values(pdTudo).some((v,i)=>v!==Object.values(pdApp)[i]);
           const descricao=incluiExtra?'apps + renda extra':'só apps de corrida';
           const btnExtra=temExtra?`<br><button onclick="renderGraficoLinha(${!incluiExtra})" style="margin-top:5px;padding:3px 10px;border-radius:12px;border:1px solid rgba(78,158,255,.4);background:${incluiExtra?'rgba(78,158,255,.2)':'rgba(255,255,255,.05)'};color:${incluiExtra?'#4E9EFF':'#888'};font-size:11px;cursor:pointer;font-family:inherit">${incluiExtra?'✓ Com renda extra':'+ Incluir renda extra'}</button>`:'';
-          mediaLabelEl.innerHTML=`<span style="color:rgba(78,158,255,.85)">─── </span>Média dos <strong>ganhos por app</strong>: <strong style="color:#fff">R$ ${mediaLinhaVal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}/dia</strong> <span style="color:#888;font-size:10px">(${descricao} ÷ ${totalDias} dia${totalDias!==1?'s':''})</span>${btnExtra}`;
+          mediaLabelEl.innerHTML=`<span style="color:rgba(78,158,255,.85)">─── </span>Média dos <strong>ganhos por app</strong>: <strong style="color:#fff">R$ ${mediaLinhaVal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}/dia</strong> <span style="color:#888;font-size:10px">(${descricao} · ${totalDias} dia${totalDias!==1?'s':''} com ganho no mês)</span>${btnExtra}`;
         } else {
           mediaLabelEl.innerHTML='';
         }
