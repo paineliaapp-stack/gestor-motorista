@@ -2529,33 +2529,63 @@ function renderGraficoLucroMes(lancs){
     if(!canvas || typeof Chart === 'undefined') return;
     const ag = new Date(Date.now()-3*60*60*1000);
     const ano = ag.getUTCFullYear(), mes = ag.getUTCMonth(), diaHoje = ag.getUTCDate();
-    const labels = [], dataAcum = [];
+    const labels = [], dataAcum = [], dataDia = [], datasFull = [];
     let acum = 0;
     for(let dia=1; dia<=diaHoje; dia++){
-      const ymd = ano+'-'+String(mes+1).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
+      const mm=String(mes+1).padStart(2,'0'), dd=String(dia).padStart(2,'0');
+      const ymd = ano+'-'+mm+'-'+dd;
       let g=0, dsp=0;
       (lancs||[]).forEach(l=>{ if(l.data===ymd){ if(l.tipo==='ganho') g+=parseFloat(l.valor||0); else if(l.tipo==='despesa') dsp+=parseFloat(l.valor||0); } });
-      acum += (g - dsp);
-      labels.push(String(dia).padStart(2,'0'));
+      const lucroDia = g - dsp;
+      acum += lucroDia;
+      labels.push(dd); datasFull.push(dd+'/'+mm);
       dataAcum.push(Math.round(acum*100)/100);
+      dataDia.push(Math.round(lucroDia*100)/100);
     }
     if(window._gLucroMes){ try{ window._gLucroMes.destroy(); }catch(e){} }
     const ctx = canvas.getContext('2d');
     const grad = ctx.createLinearGradient(0,0,0,170);
     grad.addColorStop(0,'rgba(0,216,151,.35)');
     grad.addColorStop(1,'rgba(0,216,151,0)');
+    // Plugin: linha vertical (crosshair) no ponto tocado/clicado
+    const crosshair = {
+      id:'crosshairLucro',
+      afterDraw(chart){
+        const act = chart.tooltip && chart.tooltip._active;
+        if(act && act.length){
+          const c = chart.ctx, x = act[0].element.x, y = act[0].element.y;
+          const top = chart.chartArea.top, bot = chart.chartArea.bottom;
+          c.save();
+          c.beginPath(); c.moveTo(x, top); c.lineTo(x, bot);
+          c.lineWidth = 1.5; c.strokeStyle = 'rgba(0,216,151,.85)'; c.setLineDash([4,3]); c.stroke();
+          c.beginPath(); c.setLineDash([]); c.arc(x, y, 4.5, 0, Math.PI*2); c.fillStyle = '#00D897'; c.fill();
+          c.lineWidth = 2; c.strokeStyle = '#0a0d12'; c.stroke();
+          c.restore();
+        }
+      }
+    };
     window._gLucroMes = new Chart(ctx, {
       type:'line',
-      data:{ labels, datasets:[{ data:dataAcum, borderColor:'#00D897', backgroundColor:grad, fill:true, tension:.4, borderWidth:2.5, pointRadius:0, pointHoverRadius:4 }] },
+      data:{ labels, datasets:[{ data:dataAcum, borderColor:'#00D897', backgroundColor:grad, fill:true, tension:.4, borderWidth:2.5, pointRadius:0, pointHoverRadius:0 }] },
       options:{
         responsive:true, maintainAspectRatio:false,
+        interaction:{ mode:'index', intersect:false },
         plugins:{ legend:{display:false}, datalabels:{display:false},
-          tooltip:{ callbacks:{ label:c=>'Lucro acumulado: R$ '+Number(c.raw).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) } } },
+          tooltip:{
+            displayColors:false,
+            titleFont:{size:12}, bodyFont:{size:12},
+            callbacks:{
+              title:items => items.length ? ('📅 Dia '+datasFull[items[0].dataIndex]) : '',
+              label:c=>'Lucro acumulado: R$ '+Number(c.raw).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}),
+              afterLabel:c=>'No dia: R$ '+Number(dataDia[c.dataIndex]).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})
+            }
+          } },
         scales:{
           x:{ grid:{display:false}, ticks:{ color:'#666', font:{size:10}, maxTicksLimit:8 } },
           y:{ grid:{color:'rgba(255,255,255,.05)'}, ticks:{ color:'#666', font:{size:10}, callback:v=>'R$'+v } }
         }
-      }
+      },
+      plugins:[crosshair]
     });
   }catch(e){ console.warn('graf lucro mes:', e); }
 }
