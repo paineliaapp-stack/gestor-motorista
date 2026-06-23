@@ -16,6 +16,11 @@ from core.logging import log_erro
 router = APIRouter()
 
 
+def _saldo(c: dict) -> float:
+    """Quanto ainda falta pagar nesta conta (valor menos o já pago parcialmente)."""
+    return max(0.0, float(c.get("valor") or 0) - float(c.get("valor_pago") or 0))
+
+
 def _hoje():
     return hoje_brasil()
 
@@ -70,7 +75,7 @@ def _contas_pendentes(mid: str) -> list[dict]:
 
 def _calcular_necessidade_diaria(contas: list[dict], hoje: _dt.date) -> float:
     """Quanto precisa faturar por dia HOJE para pagar tudo nos prazos."""
-    total = sum(float(c.get("valor") or 0) for c in contas)
+    total = sum(_saldo(c) for c in contas)
     # Usa o vencimento mais próximo como horizonte de urgência
     if not contas:
         return 0.0
@@ -107,8 +112,8 @@ def _sugerir_plano(contas: list[dict], media: float, hoje: _dt.date) -> dict:
             renegociaveis.append(c)
     
     # Calcula o total que precisa pagar nas contas críticas agora
-    total_critico = sum(float(c.get("valor") or 0) for c in criticas)
-    total_renegociavel = sum(float(c.get("valor") or 0) for c in renegociaveis)
+    total_critico = sum(_saldo(c) for c in criticas)
+    total_renegociavel = sum(_saldo(c) for c in renegociaveis)
     
     # Capacidade disponível após pagar as críticas (nos próximos 2 dias)
     cap_disponivel_2d = max(0.0, (media * 2) - total_critico)
@@ -178,7 +183,7 @@ async def planejador_contas(motorista_id: str, uid: str = Depends(get_uid_from_t
             "criticas": [], "renegociaveis": [], "total": 0
         }
     
-    total = sum(float(c.get("valor") or 0) for c in contas)
+    total = sum(_saldo(c) for c in contas)
     
     # Fim do mês atual (para calcular capacidade real até lá)
     if hoje.month == 12:
@@ -190,13 +195,13 @@ async def planejador_contas(motorista_id: str, uid: str = Depends(get_uid_from_t
     hoje_s = hoje.isoformat()
     fim_30d = (hoje + _dt.timedelta(days=30)).isoformat()
     contas_30d = [c for c in contas if str(c.get("vencimento",""))[:10] <= fim_30d]
-    total_30d = sum(float(c.get("valor") or 0) for c in contas_30d)
+    total_30d = sum(_saldo(c) for c in contas_30d)
     necessidade_30d = total_30d / 30 if total_30d > 0 else 0
     
     # Necessidade imediata (pelos próximos 7 dias)
     fim_7d = (hoje + _dt.timedelta(days=7)).isoformat()
     contas_7d = [c for c in contas if str(c.get("vencimento",""))[:10] <= fim_7d]
-    total_7d = sum(float(c.get("valor") or 0) for c in contas_7d)
+    total_7d = sum(_saldo(c) for c in contas_7d)
     necessidade_7d = total_7d / 7 if total_7d > 0 else 0
     
     # Capacidade até o fim do mês: quantos dias úteis restam × média
