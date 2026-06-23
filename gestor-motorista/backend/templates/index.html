@@ -814,6 +814,18 @@ const _supa = supabase.createClient(
 
   </div>
 
+  <!-- GRÁFICO: EVOLUÇÃO DO LUCRO NO MÊS -->
+  <div style="background:rgba(255,255,255,.03);border:1px solid rgba(0,216,151,.18);border-radius:16px;padding:16px;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--tx)">📈 Evolução do lucro no mês</div>
+        <div style="font-size:11px;color:var(--mt);margin-top:2px">ganhos − despesas, acumulando dia a dia</div>
+      </div>
+      <div id="lucro-mes-valor" style="font-size:18px;font-weight:800;color:#00D897"></div>
+    </div>
+    <div style="position:relative;height:170px"><canvas id="chart-lucro-mes"></canvas></div>
+  </div>
+
 
 
   <!-- CARD PREVISÃO DO TEMPO — só aparece quando há chuva relevante nas próximas 36h -->
@@ -2511,6 +2523,43 @@ async function atualizarMeta(novaMeta){
   return true;
 }
 
+function renderGraficoLucroMes(lancs){
+  try{
+    const canvas = document.getElementById('chart-lucro-mes');
+    if(!canvas || typeof Chart === 'undefined') return;
+    const ag = new Date(Date.now()-3*60*60*1000);
+    const ano = ag.getUTCFullYear(), mes = ag.getUTCMonth(), diaHoje = ag.getUTCDate();
+    const labels = [], dataAcum = [];
+    let acum = 0;
+    for(let dia=1; dia<=diaHoje; dia++){
+      const ymd = ano+'-'+String(mes+1).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
+      let g=0, dsp=0;
+      (lancs||[]).forEach(l=>{ if(l.data===ymd){ if(l.tipo==='ganho') g+=parseFloat(l.valor||0); else if(l.tipo==='despesa') dsp+=parseFloat(l.valor||0); } });
+      acum += (g - dsp);
+      labels.push(String(dia).padStart(2,'0'));
+      dataAcum.push(Math.round(acum*100)/100);
+    }
+    if(window._gLucroMes){ try{ window._gLucroMes.destroy(); }catch(e){} }
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0,0,0,170);
+    grad.addColorStop(0,'rgba(0,216,151,.35)');
+    grad.addColorStop(1,'rgba(0,216,151,0)');
+    window._gLucroMes = new Chart(ctx, {
+      type:'line',
+      data:{ labels, datasets:[{ data:dataAcum, borderColor:'#00D897', backgroundColor:grad, fill:true, tension:.4, borderWidth:2.5, pointRadius:0, pointHoverRadius:4 }] },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, datalabels:{display:false},
+          tooltip:{ callbacks:{ label:c=>'Lucro acumulado: R$ '+Number(c.raw).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) } } },
+        scales:{
+          x:{ grid:{display:false}, ticks:{ color:'#666', font:{size:10}, maxTicksLimit:8 } },
+          y:{ grid:{color:'rgba(255,255,255,.05)'}, ticks:{ color:'#666', font:{size:10}, callback:v=>'R$'+v } }
+        }
+      }
+    });
+  }catch(e){ console.warn('graf lucro mes:', e); }
+}
+
 async function loadDash(){
   try { _atualizarBotaoNotif(); } catch(e) {}
   if(!MID && window.MID) MID = window.MID;
@@ -2563,6 +2612,7 @@ async function loadDash(){
     document.getElementById('c-ganhos').textContent=fmt(d.ganhos);
     document.getElementById('c-despesas').textContent=fmt(d.despesas);
     document.getElementById('c-lucro').textContent=fmt(d.lucro);
+    try{ renderGraficoLucroMes(d.lancamentos); const _lv=document.getElementById('lucro-mes-valor'); if(_lv) _lv.textContent=fmt(d.lucro); }catch(e){}
     const heroLucro=document.getElementById('hero-lucro');
     if(heroLucro){
       heroLucro.textContent=fmt(d.lucro);
