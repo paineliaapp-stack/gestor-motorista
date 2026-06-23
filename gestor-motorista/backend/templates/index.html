@@ -826,6 +826,81 @@ const _supa = supabase.createClient(
     <div style="position:relative;height:170px"><canvas id="chart-lucro-mes"></canvas></div>
   </div>
 
+  <!-- VELOCÍMETRO DA META DE HOJE -->
+  <div style="background:linear-gradient(160deg,rgba(255,255,255,.045),rgba(255,255,255,.012));border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px 16px 12px;margin-bottom:14px;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div style="font-size:13px;font-weight:700;color:var(--tx)">🏁 Meta de hoje</div>
+      <div id="velo-status" style="font-size:11px;font-weight:700;color:var(--mt)"></div>
+    </div>
+    <div style="width:100%;max-width:300px;margin:0 auto">
+      <svg viewBox="0 0 280 165" style="width:100%;display:block">
+        <defs>
+          <linearGradient id="veloGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#FF4D6A"/><stop offset="0.55" stop-color="#F5A623"/><stop offset="1" stop-color="#00D897"/>
+          </linearGradient>
+          <filter id="veloGlow" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <path d="M 30 145 A 110 110 0 0 1 250 145" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="15" stroke-linecap="round"/>
+        <path id="velo-arc" d="M 30 145 A 110 110 0 0 1 250 145" fill="none" stroke="url(#veloGrad)" stroke-width="15" stroke-linecap="round" stroke-dasharray="345.6" stroke-dashoffset="345.6"/>
+        <g id="velo-ticks" stroke="rgba(255,255,255,.22)" stroke-width="2"></g>
+        <g id="velo-needle" transform="rotate(-90 140 145)">
+          <polygon points="140,50 133,146 147,146" fill="#fff" filter="url(#veloGlow)"/>
+        </g>
+        <circle cx="140" cy="145" r="11" fill="#0a0d12" stroke="rgba(255,255,255,.3)" stroke-width="2"/>
+        <circle cx="140" cy="145" r="4" fill="#fff"/>
+      </svg>
+      <div style="text-align:center;margin-top:-6px">
+        <div id="velo-val" style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;line-height:1;color:#fff">R$ 0</div>
+        <div id="velo-sub" style="font-size:11px;color:var(--mt);margin-top:3px">de R$ 0 da meta de hoje</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COFRINHO DO MÊS -->
+  <div style="background:linear-gradient(160deg,rgba(0,216,151,.06),rgba(0,216,151,.012));border:1px solid rgba(0,216,151,.18);border-radius:18px;padding:16px;margin-bottom:14px;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-size:13px;font-weight:700;color:var(--tx)">🐷 Cofrinho do mês</div>
+      <div id="cofre-pct" style="font-size:11px;font-weight:700;color:#00D897"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="flex-shrink:0;width:135px">
+        <svg viewBox="0 0 200 170" style="width:100%;display:block;overflow:visible">
+          <defs>
+            <linearGradient id="cofreFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#22F5B0"/><stop offset="1" stop-color="#00A86B"/>
+            </linearGradient>
+            <clipPath id="cofreClip"><ellipse cx="88" cy="92" rx="72" ry="52"/></clipPath>
+          </defs>
+          <ellipse cx="92" cy="156" rx="58" ry="7" fill="rgba(0,0,0,.25)"/>
+          <ellipse cx="88" cy="92" rx="72" ry="52" fill="rgba(255,255,255,.04)"/>
+          <g clip-path="url(#cofreClip)">
+            <rect id="cofre-liquid" x="14" y="144" width="150" height="0" fill="url(#cofreFill)"/>
+          </g>
+          <rect x="48" y="132" width="16" height="22" rx="6" fill="#caa23a"/>
+          <rect x="108" y="132" width="16" height="22" rx="6" fill="#caa23a"/>
+          <ellipse cx="88" cy="92" rx="72" ry="52" fill="none" stroke="#E7C24B" stroke-width="3"/>
+          <path d="M 58 46 L 80 30 L 84 56 Z" fill="#E7C24B"/>
+          <ellipse cx="156" cy="96" rx="20" ry="24" fill="#1a1f2a" stroke="#E7C24B" stroke-width="3"/>
+          <ellipse cx="150" cy="96" rx="3.5" ry="5" fill="#E7C24B"/>
+          <ellipse cx="162" cy="96" rx="3.5" ry="5" fill="#E7C24B"/>
+          <circle cx="118" cy="74" r="5.5" fill="#0a0d12"/>
+          <circle cx="120" cy="72" r="1.6" fill="#fff"/>
+          <rect x="66" y="44" width="44" height="8" rx="4" fill="#0a0d12" stroke="#E7C24B" stroke-width="1.5"/>
+          <path d="M 16 96 q -10 -6 -2 -14 q 8 -6 0 -14" fill="none" stroke="#E7C24B" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="88" cy="30" r="9" fill="#FFD166" stroke="#caa23a" stroke-width="2"/>
+          <text x="88" y="34" text-anchor="middle" font-size="11" font-weight="800" fill="#caa23a" font-family="sans-serif">$</text>
+        </svg>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;color:var(--mt);margin-bottom:2px">Você já juntou</div>
+        <div id="cofre-val" style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:#00D897;line-height:1">R$ 0</div>
+        <div id="cofre-sub" style="font-size:11px;color:var(--mt);margin-top:7px;line-height:1.4">defina sua meta mensal pra ver seu alvo de sobra</div>
+      </div>
+    </div>
+  </div>
+
 
 
   <!-- CARD PREVISÃO DO TEMPO — só aparece quando há chuva relevante nas próximas 36h -->
@@ -1493,6 +1568,7 @@ function renderMetaMensal(){
   // também saíram do faturamento do mês. Descontar só as pendentes inflava a sobra (esquecia as já pagas).
   const totalContasMesMM = window._contas ? window._contas.filter(c=>_contaNoMes(c,_ymAtualMM)).reduce((s,c)=>s+(parseFloat(c.valor)||0),0) : 0;
   const liquidoReal = META_MENSAL - combEstMM - totalContasMesMM;
+  window._sobraAlvo = liquidoReal; try{ if(typeof renderCofre==='function') renderCofre(); }catch(e){}
   // Alvos quando a meta não cobre as contas: quanto faturar (bruto) pra empatar e pra sobrar algo no bolso.
   const _taxaCombMM = pctCombMM/100;
   const brutoZeroMM = (1 - _taxaCombMM) > 0 ? totalContasMesMM / (1 - _taxaCombMM) : 0;
@@ -2590,6 +2666,88 @@ function renderGraficoLucroMes(lancs){
   }catch(e){ console.warn('graf lucro mes:', e); }
 }
 
+function _tweenW(from, to, dur, cb){
+  try{
+    var t0 = (window.performance && performance.now) ? performance.now() : Date.now();
+    function step(t){
+      var now = t || ((window.performance && performance.now) ? performance.now() : Date.now());
+      var k = Math.min(1, (now - t0) / dur);
+      var e = 1 - Math.pow(1 - k, 3); // easeOutCubic
+      cb(from + (to - from) * e);
+      if(k < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }catch(e){ cb(to); }
+}
+
+function renderVelocimetro(){
+  try{
+    var meta = (window.META_DIARIA || META_DIARIA || 150);
+    var ganho = window._ganhoHoje || 0;
+    var pctReal = meta > 0 ? (ganho / meta * 100) : 0;
+    var pct = Math.max(0, Math.min(100, pctReal));
+    var tk = document.getElementById('velo-ticks');
+    if(tk && !tk.getAttribute('data-done')){
+      var cx=140, cy=145, ro=99, ri=90, s='';
+      for(var i=0;i<=10;i++){
+        var th=(180 - i*18)*Math.PI/180;
+        s+='<line x1="'+(cx+ro*Math.cos(th)).toFixed(1)+'" y1="'+(cy-ro*Math.sin(th)).toFixed(1)+'" x2="'+(cx+ri*Math.cos(th)).toFixed(1)+'" y2="'+(cy-ri*Math.sin(th)).toFixed(1)+'"/>';
+      }
+      tk.innerHTML=s; tk.setAttribute('data-done','1');
+    }
+    var arc=document.getElementById('velo-arc');
+    var needle=document.getElementById('velo-needle');
+    var ARC=345.6;
+    var from=(typeof window._veloPct==='number')?window._veloPct:0;
+    window._veloPct=pct;
+    _tweenW(from, pct, 1400, function(p){
+      if(arc) arc.setAttribute('stroke-dashoffset', (ARC*(1-p/100)).toFixed(1));
+      if(needle) needle.setAttribute('transform','rotate('+(-90 + p/100*180).toFixed(2)+' 140 145)');
+    });
+    var val=document.getElementById('velo-val'); if(val) val.textContent='R$ '+Math.round(ganho).toLocaleString('pt-BR');
+    var sub=document.getElementById('velo-sub'); if(sub) sub.textContent='de R$ '+Math.round(meta).toLocaleString('pt-BR')+' da meta de hoje';
+    var st=document.getElementById('velo-status');
+    var poly=needle?needle.querySelector('polygon'):null;
+    if(st){
+      if(pctReal>=100){ st.textContent='META BATIDA 🎉'; st.style.color='#FFD166'; if(poly) poly.setAttribute('fill','#FFD166'); }
+      else { st.textContent=Math.round(pctReal)+'% da meta'; st.style.color='var(--mt)'; if(poly) poly.setAttribute('fill','#fff'); }
+    }
+  }catch(e){ console.warn('velo:',e); }
+}
+
+function renderCofre(){
+  try{
+    var lucro = window._lucroMes || 0;
+    var alvo = window._sobraAlvo;
+    var liquid=document.getElementById('cofre-liquid');
+    var val=document.getElementById('cofre-val');
+    var sub=document.getElementById('cofre-sub');
+    var pctEl=document.getElementById('cofre-pct');
+    var temAlvo = (typeof alvo==='number' && alvo>0);
+    var ratio=0, pct=0;
+    if(temAlvo){ ratio=Math.max(0,Math.min(1, lucro/alvo)); pct=Math.round(ratio*100); }
+    else if(lucro>0){ ratio=0.12; }
+    var from=(typeof window._cofreRatio==='number')?window._cofreRatio:0;
+    window._cofreRatio=ratio;
+    if(liquid){
+      _tweenW(from, ratio, 1300, function(r){
+        var bottom=144, topMax=40;
+        var rr=Math.max(0,Math.min(1,r));
+        var topY = rr<=0.004 ? 144 : (bottom - rr*(bottom-topMax));
+        liquid.setAttribute('y', topY.toFixed(1));
+        liquid.setAttribute('height', (170-topY).toFixed(1));
+      });
+    }
+    if(val){ val.textContent='R$ '+Math.round(lucro).toLocaleString('pt-BR'); val.style.color = lucro>=0 ? '#00D897' : 'var(--rd)'; }
+    if(pctEl) pctEl.textContent = temAlvo ? (pct+'% da meta') : '';
+    if(sub){
+      if(lucro<0) sub.textContent='mês no vermelho — bora virar 💪';
+      else if(temAlvo) sub.textContent='de R$ '+Math.round(alvo).toLocaleString('pt-BR')+' de sobra-alvo do mês';
+      else sub.textContent='defina sua meta mensal pra ver seu alvo de sobra';
+    }
+  }catch(e){ console.warn('cofre:',e); }
+}
+
 async function loadDash(){
   try { _atualizarBotaoNotif(); } catch(e) {}
   if(!MID && window.MID) MID = window.MID;
@@ -2659,6 +2817,8 @@ async function loadDash(){
     const pct=Math.min(100,Math.round(ganhoHoje/META_DIARIA*100));
     document.getElementById('meta-fill').style.width=pct+'%';
     document.getElementById('meta-pct').textContent=pct+'%';
+    window._ganhoHoje = ganhoHoje; window._lucroMes = d.lucro;
+    try{ renderVelocimetro(); renderCofre(); }catch(e){}
     if(pct>=100) celebrarMeta(ganhoHoje);
     const dashSub=document.getElementById('dash-sub'); if(dashSub) dashSub.textContent='Hoje: '+fmt(ganhoHoje)+' de '+fmt(META_DIARIA)+' de meta';
     // Resultado do dia
