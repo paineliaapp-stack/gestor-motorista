@@ -88,7 +88,7 @@
   .chatlog{max-height:200px;overflow:auto}.msg{padding:10px 13px;border-radius:11px;margin-bottom:8px;font-size:13.5px;white-space:pre-wrap}.msg.u{background:var(--raised)}.msg.a{background:rgba(111,169,218,.07);border:1px solid rgba(111,169,218,.2)}.msg.a small{display:block;color:var(--info);font-size:10.5px;margin-bottom:4px;font-family:"Space Grotesk";font-weight:600}
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--raised);border:1px solid var(--accent);padding:11px 18px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:80;box-shadow:var(--shadow)}.toast.show{opacity:1}
   .modal{position:fixed;inset:0;background:rgba(4,5,10,.72);display:none;place-items:center;z-index:60;padding:18px}.modal.show{display:grid}
-  .modal .box{background:var(--surface);border:1px solid var(--hair2);border-radius:16px;padding:22px;width:420px;max-width:100%;box-shadow:var(--shadow);max-height:90vh;overflow:auto}.modal h3{font-size:18px;margin-bottom:14px}
+  .modal .box{background:var(--surface);border:1px solid var(--hair2);border-radius:16px;padding:20px;width:min(420px, calc(100vw - 32px));box-shadow:var(--shadow);max-height:90vh;overflow:auto}.modal h3{font-size:18px;margin-bottom:14px}
   .editrow{display:flex;align-items:center;gap:8px;margin:8px 0}.editrow label{flex:1;color:var(--muted);font-size:12.5px}.editrow input{width:110px;text-align:right}
   /* gate de duas senhas */
   #ngate{position:fixed;inset:0;background:#0a0c13;display:grid;place-items:center;z-index:200;padding:20px}
@@ -195,7 +195,7 @@
   ];
   var CHN=[["ytPt","YouTube PT"],["ytEn","YouTube EN"],["ttPt","TikTok PT"],["ttEn","TikTok EN"],["igPt","Instagram PT"],["igEn","Instagram EN"]];
 
-  var DIARIO={},ROADMAP=[],PROMPTS=[],COLECAO=[],BACKLOG=[],CAP={},CRIA={},CHAT=[],lastAsk={sys:"",q:""};
+  var DIARIO={},ROADMAP=[],PROMPTS=[],COLECAO=[],BACKLOG=[],CAP={},CRIA={},CHAT=[],CMETAS="",CCANAIS={},CIDEIAS=[],lastAsk={sys:"",q:""};
 
   function weekStart(){var d=new Date();var off=(d.getDay()+6)%7;d.setDate(d.getDate()-off);return dkey(d);}
   function today(){var k=dkey();if(!DIARIO[k])DIARIO[k]={conteudo:{tarefa:"",canais:{}},roffil:{tarefa:"",done:false},painel:{tarefa:"",done:false}};return DIARIO[k];}
@@ -341,12 +341,23 @@
       return '<div class="chk" style="cursor:default"><span style="flex:1">'+esc(e.conteudo.tarefa)+'</span><span class="pill" style="'+(n===6?"color:var(--green);border-color:#2c4a3a":"")+'">'+n+'/6</span><span class="small" style="width:64px;text-align:right">'+k.slice(5)+'</span></div>'}).join("")||'<div class="empty">nenhum vídeo registrado ainda</div>';
     el("v-conteudo").innerHTML=
       '<div class="head"><h1 style="display:flex;align-items:center;gap:11px"><i style="width:14px;height:14px;border-radius:50%;background:#9b8cff"></i>Conteúdo</h1><div class="sub">o esforço está na produção, não na plataforma</div></div>'+
+      '<div class="card" style="margin-bottom:var(--sp)"><div class="cardhead"><span class="ttl">🎯 Metas de conteúdo</span></div>'+
+        '<textarea id="cMetas" rows="3" placeholder="ex: 30 vídeos no mês · crescer 1k seguidores · 2 virais" style="text-align:left">'+esc(CMETAS)+'</textarea></div>'+
+      '<div class="card" style="margin-bottom:var(--sp)"><div class="cardhead"><span class="ttl">Por canal · o que fazer</span></div>'+
+        CHN.map(function(c){return '<div style="margin-bottom:10px"><div class="small" style="margin-bottom:4px;color:var(--text)">'+c[1]+'</div><input data-canal="'+c[0]+'" value="'+esc(CCANAIS[c[0]]||"")+'" placeholder="o que fazer nesse canal" style="text-align:left"></div>'}).join("")+'</div>'+
+      '<div class="card" style="margin-bottom:var(--sp)"><div class="cardhead"><span class="ttl">💡 Ideias & projetos da semana</span><button class="btn sm" id="addIdeia">+ ideia</button></div>'+
+        (CIDEIAS.length?CIDEIAS.map(function(it,i){return '<label class="item '+(it.done?"done":"")+'"><input type="checkbox" data-ideia="'+i+'" '+(it.done?"checked":"")+'><span style="flex:1">'+esc(it.t)+'</span><button class="btn tiny ghost" data-delideia="'+i+'">remover</button></label>'}).join(""):'<div class="empty">nenhuma ideia ainda — toque em "+ ideia" pra anotar o que surgir na semana</div>')+'</div>'+
       '<div class="card" style="margin-bottom:var(--sp)"><div class="cardhead"><span class="ttl">O sistema 1 → 6</span></div>'+
         '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><div style="font-family:\'Space Grotesk\';font-weight:700;font-size:34px;color:var(--violet)">1</div>'+
         '<div style="font-size:13px;color:var(--muted)">vídeo por dia</div><div style="font-size:22px;color:var(--faint)">→</div>'+
         '<div style="display:flex;gap:6px;flex-wrap:wrap">'+CHN.map(function(c){return '<span class="pill">'+c[1]+'</span>'}).join("")+'</div></div>'+
         '<div class="small" style="margin-top:12px">Você produz no bloco de 1h na aba <b>Hoje</b> e marca cada canal conforme posta. Quando os 6 acendem, conta como 1 vídeo da semana.</div></div>'+
       '<div class="card"><div class="cardhead"><span class="ttl">Histórico de vídeos</span></div>'+rows+'</div>';
+    el("cMetas").addEventListener("change",function(){CMETAS=this.value;save("nucleo6:cmetas",CMETAS)});
+    el("v-conteudo").querySelectorAll("[data-canal]").forEach(function(inp){inp.addEventListener("change",function(){CCANAIS[inp.getAttribute("data-canal")]=inp.value;save("nucleo6:ccanais",CCANAIS)})});
+    el("v-conteudo").querySelectorAll("[data-ideia]").forEach(function(cb){cb.addEventListener("change",function(){CIDEIAS[+cb.getAttribute("data-ideia")].done=cb.checked;save("nucleo6:cideias",CIDEIAS);renderConteudo()})});
+    el("v-conteudo").querySelectorAll("[data-delideia]").forEach(function(b){b.addEventListener("click",function(){CIDEIAS.splice(+b.getAttribute("data-delideia"),1);save("nucleo6:cideias",CIDEIAS);renderConteudo()})});
+    el("addIdeia").addEventListener("click",function(){el("modalBox").innerHTML='<h3>Nova ideia / projeto</h3><input id="idT" placeholder="ex: serie de bastidores, reels de dica..." style="text-align:left"><div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn" id="idS">Adicionar</button><button class="btn ghost" id="idC">Cancelar</button></div>';openModal();el("idC").onclick=closeModal;el("idS").onclick=function(){var t=el("idT").value.trim();if(!t)return;CIDEIAS.push({t:t,done:false});save("nucleo6:cideias",CIDEIAS);closeModal();renderConteudo()};});
   }
 
   function renderPausados(){el("v-pausados").innerHTML=
@@ -418,9 +429,9 @@
     if(d.diario){DIARIO=d.diario;save("nucleo6:diario",DIARIO)}if(d.roadmap){ROADMAP=d.roadmap;save("nucleo6:roadmap",ROADMAP)}if(d.prompts){PROMPTS=d.prompts;save("nucleo6:prompts",PROMPTS)}if(d.colecao){COLECAO=d.colecao;save("nucleo6:colecao",COLECAO)}if(d.backlog){BACKLOG=d.backlog;save("nucleo6:backlog",BACKLOG)}if(d.cap){CAP=d.cap;save("nucleo6:cap",CAP)}if(d.cria){CRIA=d.cria;save("nucleo6:cria",CRIA)}if(d.imgs)Object.keys(d.imgs).forEach(function(k){save(k,d.imgs[k])});
     closeModal();renderHoje();toast("Backup restaurado");}catch(e){toast("Arquivo inválido")}};fr.readAsText(file);}
 
-  function boot(){Promise.all([load("nucleo6:diario",null),load("nucleo6:roadmap",null),load("nucleo6:prompts",null),load("nucleo6:colecao",null),load("nucleo6:backlog",null),load("nucleo6:cap",null),load("nucleo6:cria",null)]).then(function(r){
+  function boot(){Promise.all([load("nucleo6:diario",null),load("nucleo6:roadmap",null),load("nucleo6:prompts",null),load("nucleo6:colecao",null),load("nucleo6:backlog",null),load("nucleo6:cap",null),load("nucleo6:cria",null),load("nucleo6:cmetas",null),load("nucleo6:ccanais",null),load("nucleo6:cideias",null)]).then(function(r){
     DIARIO=r[0]||{};ROADMAP=r[1]||JSON.parse(JSON.stringify(ROADMAP_SEED));PROMPTS=r[2]||[{titulo:"Estilo oficial — vintage athletic back print",texto:ART_SEED}];
-    COLECAO=r[3]||[{nome:""},{nome:""},{nome:""},{nome:""},{nome:""},{nome:""},{nome:""},{nome:""}];BACKLOG=r[4]||[];CAP=r[5]||{roffil:{fat:0,inv:0},painel:{fat:0,inv:0}};CRIA=r[6]||{roffil:[],painel:[]};
+    COLECAO=r[3]||[{nome:""},{nome:""},{nome:""},{nome:""},{nome:""},{nome:""},{nome:""},{nome:""}];BACKLOG=r[4]||[];CAP=r[5]||{roffil:{fat:0,inv:0},painel:{fat:0,inv:0}};CRIA=r[6]||{roffil:[],painel:[]};CMETAS=r[7]||"";CCANAIS=r[8]||{};CIDEIAS=r[9]||[];
     if(!r[1])save("nucleo6:roadmap",ROADMAP);if(!r[2])save("nucleo6:prompts",PROMPTS);if(!r[3])save("nucleo6:colecao",COLECAO);
     renderHoje();});}
   boot();
