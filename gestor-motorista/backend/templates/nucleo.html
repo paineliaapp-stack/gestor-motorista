@@ -220,9 +220,9 @@
       '<div class="head"><h1>'+(h<12?"Bom dia":h<18?"Boa tarde":"Boa noite")+', CEO</h1>'+
       '<div class="sub">'+sem[d.getDay()]+", "+d.getDate()+"/"+(d.getMonth()+1)+' · fase de construção — meça <b style="color:var(--text)">peças avançadas</b>, não dinheiro</div></div>'+
       '<div class="week" style="margin-bottom:var(--sp)">'+
-        '<div class="wk c1"><div class="n">'+wc.v+'<s>/7</s></div><div class="l">vídeos publicados esta semana</div></div>'+
-        '<div class="wk c2"><div class="n">'+rmDone+'<s>/'+rmTot+'</s></div><div class="l">tarefas da Roffil concluídas</div></div>'+
-        '<div class="wk c3"><div class="n">'+blDone+'<s>/'+blTot+'</s></div><div class="l">tarefas do painel concluídas</div></div>'+
+        '<div class="wk c1"><div class="n">'+wc.v+'<s>/7</s></div><div class="l">vídeos publicados esta semana</div><div class="prog"><span style="width:'+Math.round(wc.v/7*100)+'%"></span></div></div>'+
+        '<div class="wk c2"><div class="n">'+rmDone+'<s>/'+rmTot+'</s></div><div class="l">tarefas da Roffil concluídas</div><div class="prog"><span style="width:'+(rmTot?Math.round(rmDone/rmTot*100):0)+'%"></span></div></div>'+
+        '<div class="wk c3"><div class="n">'+blDone+'<s>/'+blTot+'</s></div><div class="l">tarefas do painel concluídas</div><div class="prog"><span style="width:'+(blTot?Math.round(blDone/blTot*100):0)+'%"></span></div></div>'+
       '</div>'+
       '<div class="grid g3" style="margin-bottom:var(--sp)">'+
         '<div class="track t-cont"><h3>🎬 Conteúdo<span class="time">1h</span></h3><div class="focus">1 vídeo → <b>6 canais</b></div>'+
@@ -271,7 +271,7 @@
     el("v-roffil").querySelectorAll("[data-rm]").forEach(function(cb){cb.addEventListener("change",function(){var wn=+cb.getAttribute("data-rm");var w=ROADMAP.filter(function(x){return x.wn===wn})[0];w.itens[+cb.getAttribute("data-i")].done=cb.checked;save("nucleo6:roadmap",ROADMAP);renderRoffil()})});
     el("v-roffil").querySelectorAll("[data-copyp]").forEach(function(b){b.addEventListener("click",function(){copy(PROMPTS[+b.getAttribute("data-copyp")].texto)})});
     el("v-roffil").querySelectorAll("[data-pname]").forEach(function(inp){inp.addEventListener("change",function(){var i=+inp.getAttribute("data-pname");COLECAO[i]=COLECAO[i]||{nome:""};COLECAO[i].nome=inp.value;save("nucleo6:colecao",COLECAO)})});
-    el("v-roffil").querySelectorAll("[data-pimg]").forEach(function(b){b.addEventListener("click",function(){addProductImg(+b.getAttribute("data-pimg"),b.getAttribute("data-slot"))})});
+    el("v-roffil").querySelectorAll("[data-pimg]").forEach(function(b){b.addEventListener("click",function(){var idx=+b.getAttribute("data-pimg"),slot=b.getAttribute("data-slot");if(b.classList.contains("pslot-img")){viewProductImg(idx,slot)}else{addProductImg(idx,slot)}})});
     COLECAO.forEach(function(c,i){["arte","mockup"].forEach(function(slot){var ref=c&&c[slot];if(!ref)return;var cell=el("pimg-"+i+"-"+slot);if(!cell)return;if(ref.url)cell.style.backgroundImage="url("+ref.url+")";else if(ref.hasImg)load("nucleo6:img:"+ref.id,null).then(function(dt){if(dt&&cell)cell.style.backgroundImage="url("+dt+")"})})});
     el("addPrompt").addEventListener("click",addPrompt);
     el("capRof").addEventListener("click",function(){editCap("roffil")});
@@ -325,7 +325,7 @@
   function renderArts(which){var box=el("arts-"+which);if(!box)return;var arr=CRIA[which]||[];
     if(!arr.length){box.innerHTML='<div class="empty">nenhuma arte ainda — toque em “+ arte” pra subir do aparelho</div>';return;}
     box.innerHTML=arr.map(function(a){return '<div class="art" id="art-'+which+'-'+a.id+'" title="'+esc(a.nota||"")+'">'+((a.url||a.hasImg)?'':esc(a.nota||"arte"))+'<span class="d">'+esc(a.data)+'</span></div>'}).join("");
-    arr.forEach(function(a){var cell=el("art-"+which+"-"+a.id);if(!cell)return;if(a.url){cell.style.backgroundImage="url("+a.url+")"}else if(a.hasImg){load("nucleo6:img:"+a.id,null).then(function(dt){if(dt&&cell)cell.style.backgroundImage="url("+dt+")"})}});}
+    arr.forEach(function(a){var cell=el("art-"+which+"-"+a.id);if(!cell)return;cell.style.cursor="pointer";cell.addEventListener("click",function(){viewArt(which,a)});if(a.url){cell.style.backgroundImage="url("+a.url+")"}else if(a.hasImg){load("nucleo6:img:"+a.id,null).then(function(dt){if(dt&&cell)cell.style.backgroundImage="url("+dt+")"})}});}
   function fileToDataUrl(file,cb){var fr=new FileReader();fr.onload=function(){var img=new Image();img.onload=function(){var max=1000,w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max}else if(h>=w&&h>max){w=Math.round(w*max/h);h=max}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);try{cb(c.toDataURL("image/jpeg",0.82))}catch(e){cb(null)}};img.onerror=function(){cb(null)};img.src=fr.result;};fr.onerror=function(){cb(null)};fr.readAsDataURL(file);}
   function openImagePicker(opts,cb){var pending=null;
     el("modalBox").innerHTML='<h3>'+esc(opts.title||"Adicionar imagem")+'</h3>'+
@@ -348,6 +348,14 @@
       closeModal();};}
   function addArt(which){CRIA[which]=CRIA[which]||[];openImagePicker({title:"Adicionar arte",urlField:true,notaField:true},function(res){CRIA[which].unshift(res);save("nucleo6:cria",CRIA);render(which);toast("Arte salva");});}
   function addProductImg(idx,slot){openImagePicker({title:(slot==="arte"?"Arte do produto":"Mockup do produto"),urlField:true,notaField:false},function(res){COLECAO[idx]=COLECAO[idx]||{nome:""};COLECAO[idx][slot]=res;save("nucleo6:colecao",COLECAO);renderRoffil();toast("Salvo");});}
+  function viewProductImg(idx,slot){var ref=(COLECAO[idx]||{})[slot];if(!ref){addProductImg(idx,slot);return;}
+    el("modalBox").innerHTML='<h3>'+(slot==="arte"?"Arte":"Mockup")+' do produto</h3><div id="vImg" style="width:100%;height:300px;border-radius:12px;background:#0d1019 center/contain no-repeat;border:1px solid var(--hair2)"></div>'+(ref.nota?'<div class="small" style="margin-top:10px">'+esc(ref.nota)+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" id="vTrocar">Trocar</button><button class="btn ghost" id="vRemover">Remover</button><button class="btn" id="vFechar" style="margin-left:auto">Fechar</button></div>';
+    openModal();el("vFechar").onclick=closeModal;el("vTrocar").onclick=function(){addProductImg(idx,slot)};el("vRemover").onclick=function(){if(COLECAO[idx])delete COLECAO[idx][slot];save("nucleo6:colecao",COLECAO);closeModal();renderRoffil();toast("Removido")};
+    var box=el("vImg");if(ref.url){box.style.backgroundImage="url("+ref.url+")"}else if(ref.hasImg){load("nucleo6:img:"+ref.id,null).then(function(dt){if(dt&&el("vImg"))el("vImg").style.backgroundImage="url("+dt+")"})}}
+  function viewArt(which,a){
+    el("modalBox").innerHTML='<h3>Arte</h3><div id="vImg" style="width:100%;height:300px;border-radius:12px;background:#0d1019 center/contain no-repeat;border:1px solid var(--hair2)"></div>'+(a.nota?'<div class="small" style="margin-top:10px">'+esc(a.nota)+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" id="vRemover">Remover</button><button class="btn" id="vFechar" style="margin-left:auto">Fechar</button></div>';
+    openModal();el("vFechar").onclick=closeModal;el("vRemover").onclick=function(){CRIA[which]=(CRIA[which]||[]).filter(function(x){return x.id!==a.id});save("nucleo6:cria",CRIA);closeModal();render(which);toast("Removido")};
+    var box=el("vImg");if(a.url){box.style.backgroundImage="url("+a.url+")"}else if(a.hasImg){load("nucleo6:img:"+a.id,null).then(function(dt){if(dt&&el("vImg"))el("vImg").style.backgroundImage="url("+dt+")"})}else{box.style.display="none"}}
   function productCard(c,i){c=c||{nome:""};
     function slot(which,label){var ref=c[which];
       var inner=ref?'<div class="pslot-img" data-pimg="'+i+'" data-slot="'+which+'" id="pimg-'+i+'-'+which+'" title="tocar pra trocar"></div>':'<button type="button" class="pslot-add" data-pimg="'+i+'" data-slot="'+which+'">+ '+label.toLowerCase()+'</button>';
