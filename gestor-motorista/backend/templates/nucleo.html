@@ -211,6 +211,8 @@
   function render(v){if(v==="hoje")renderHoje();else if(v==="roffil")renderRoffil();else if(v==="painel")renderPainel();else if(v==="conteudo")renderConteudo();else if(v==="pausados")renderPausados();}
 
   function renderHoje(){var e=today();var wc=weekCounts();var aw=activeWeek();var d=new Date();
+    var rmDone=0,rmTot=0;ROADMAP.forEach(function(w){w.itens.forEach(function(it){rmTot++;if(it.done)rmDone++;})});
+    var blDone=BACKLOG.filter(function(b){return b.done}).length,blTot=BACKLOG.length;
     var sem=["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];var h=d.getHours();
     var chHtml=CHN.map(function(c){var on=!!(e.conteudo.canais&&e.conteudo.canais[c[0]]);return '<label class="chk '+(on?"done":"")+'"><input type="checkbox" data-ch="'+c[0]+'" '+(on?"checked":"")+'><span>'+c[1]+'</span></label>'}).join("");
     var pub=videoPublished(e);
@@ -219,8 +221,8 @@
       '<div class="sub">'+sem[d.getDay()]+", "+d.getDate()+"/"+(d.getMonth()+1)+' · fase de construção — meça <b style="color:var(--text)">peças avançadas</b>, não dinheiro</div></div>'+
       '<div class="week" style="margin-bottom:var(--sp)">'+
         '<div class="wk c1"><div class="n">'+wc.v+'<s>/7</s></div><div class="l">vídeos publicados esta semana</div></div>'+
-        '<div class="wk c2"><div class="n">'+wc.r+'<s>/7</s></div><div class="l">avanços na Roffil</div></div>'+
-        '<div class="wk c3"><div class="n">'+wc.p+'<s>/7</s></div><div class="l">avanços no painel.ia</div></div>'+
+        '<div class="wk c2"><div class="n">'+rmDone+'<s>/'+rmTot+'</s></div><div class="l">tarefas da Roffil concluídas</div></div>'+
+        '<div class="wk c3"><div class="n">'+blDone+'<s>/'+blTot+'</s></div><div class="l">tarefas do painel concluídas</div></div>'+
       '</div>'+
       '<div class="grid g3" style="margin-bottom:var(--sp)">'+
         '<div class="track t-cont"><h3>🎬 Conteúdo<span class="time">1h</span></h3><div class="focus">1 vídeo → <b>6 canais</b></div>'+
