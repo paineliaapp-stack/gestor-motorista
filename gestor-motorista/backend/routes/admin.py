@@ -19,6 +19,12 @@ def _check(token: str):
         raise HTTPException(status_code=401, detail="Não autorizado")
 
 
+def _check_nucleo(token: str):
+    esperado = os.getenv("NUCLEO_TOKEN", "")
+    if not esperado or token != esperado:
+        raise HTTPException(status_code=403, detail="NÚCLEO bloqueado")
+
+
 async def _auth_users(page=1, per_page=1000):
     async with _httpx.AsyncClient(timeout=15) as c:
         r = await c.get(
@@ -979,3 +985,37 @@ async def atualizar_parceria(parceria_id: str, dados: dict = Body(...), x_admin_
     except Exception as e:
         log_erro("atualizar_parceria_erro", erro=str(e))
         return {"ok": False}
+
+
+# ===== NÚCLEO (central de comando do fundador) — persistência key/value =====
+@router.get("/admin/nucleo-get")
+async def nucleo_get(k: str = Query(...), x_admin_token: str = Header(default=""), x_nucleo_token: str = Header(default="")):
+    _check(x_admin_token)
+    _check_nucleo(x_nucleo_token)
+    if k == "__ping__":
+        return {"key": k, "value": None, "ok": True}
+    try:
+        r = supabase.table("nucleo_kv").select("v").eq("k", k).limit(1).execute()
+        rows = r.data or []
+        return {"key": k, "value": (rows[0]["v"] if rows else None)}
+    except Exception as e:
+        log_erro("nucleo_get_erro", erro=str(e)[:200])
+        raise HTTPException(status_code=500, detail="erro ao ler")
+
+
+@router.post("/admin/nucleo-set")
+async def nucleo_set(payload: dict = Body(...), x_admin_token: str = Header(default=""), x_nucleo_token: str = Header(default="")):
+    _check(x_admin_token)
+    _check_nucleo(x_nucleo_token)
+    k = payload.get("k")
+    v = payload.get("v")
+    if not k:
+        raise HTTPException(status_code=400, detail="k obrigatório")
+    try:
+        supabase.table("nucleo_kv").upsert(
+            {"k": k, "v": v, "updated_at": _dt.datetime.utcnow().isoformat()}
+        ).execute()
+        return {"ok": True, "key": k}
+    except Exception as e:
+        log_erro("nucleo_set_erro", erro=str(e)[:200])
+        raise HTTPException(status_code=500, detail="erro ao gravar")

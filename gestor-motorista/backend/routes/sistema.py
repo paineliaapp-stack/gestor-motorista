@@ -86,11 +86,24 @@ def admin_page(request: Request):
     )
 
 
+@router.get("/admin/nucleo", response_class=HTMLResponse)
+def nucleo_page(request: Request):
+    with open("templates/nucleo.html", encoding="utf-8") as f:
+        content = f.read()
+    from fastapi.responses import Response
+    return Response(
+        content=content,
+        media_type="text/html",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+        },
+    )
+
+
 @router.get("/favicon.ico", include_in_schema=False)
 def favicon():
-    return FileResponse("static/favicon.png")
-
-@router.get("/diagnostico/{mid}")
+    return FileResponse("static/favicon.png")@router.get("/diagnostico/{mid}")
 def diagnostico(mid: str):
     return {"erro": "Endpoint desativado"}
 async def _diagnostico_impl(mid: str):
