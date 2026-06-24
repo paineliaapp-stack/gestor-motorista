@@ -210,6 +210,41 @@
     render(v);window.scrollTo(0,0);})});
   function render(v){if(v==="hoje")renderHoje();else if(v==="roffil")renderRoffil();else if(v==="painel")renderPainel();else if(v==="conteudo")renderConteudo();else if(v==="pausados")renderPausados();}
 
+  function diaProgresso(k){var e=DIARIO[k];if(!e)return{done:0,total:3,video:false,roffil:false,painel:false,vazio:true};
+    var v=videoPublished(e),r=!!(e.roffil&&e.roffil.done),p=!!(e.painel&&e.painel.done);
+    var vazio=!(v||r||p||(e.conteudo&&e.conteudo.tarefa)||(e.roffil&&e.roffil.tarefa)||(e.painel&&e.painel.tarefa));
+    return{done:(v?1:0)+(r?1:0)+(p?1:0),total:3,video:v,roffil:r,painel:p,vazio:vazio};}
+  function calHTML(){var d=new Date(),ano=d.getFullYear(),mes=d.getMonth();
+    var primeiro=new Date(ano,mes,1).getDay(),dias=new Date(ano,mes+1,0).getDate(),hojeK=dkey();
+    var nomes=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+    var h='<div class="cardhead"><span class="ttl">📅 Calendário · '+nomes[mes]+' '+ano+'</span></div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center">';
+    ["D","S","T","Q","Q","S","S"].forEach(function(w){h+='<div style="font-size:10px;color:var(--faint);padding-bottom:2px">'+w+'</div>';});
+    var i;for(i=0;i<primeiro;i++){h+='<div></div>';}
+    for(var dia=1;dia<=dias;dia++){
+      var k=ano+"-"+String(mes+1).padStart(2,"0")+"-"+String(dia).padStart(2,"0");
+      var pg=diaProgresso(k),futuro=k>hojeK,hoje=k===hojeK;
+      var bg='transparent',bd='1px solid var(--hair2)',col='var(--muted)';
+      if(!futuro&&!pg.vazio){
+        if(pg.done>=3){bg='rgba(98,192,140,.85)';col='#06210f';bd='none';}
+        else if(pg.done>0){bg='rgba(231,169,72,.22)';col='var(--text)';bd='1px solid rgba(231,169,72,.5)';}
+        else{bg='rgba(227,111,128,.16)';col='var(--muted)';bd='1px solid rgba(227,111,128,.3)';}
+      }
+      h+='<div data-cal="'+k+'" style="aspect-ratio:1;border-radius:9px;display:grid;place-items:center;cursor:pointer;font-size:13px;font-weight:600;background:'+bg+';border:'+bd+';color:'+col+(hoje?';box-shadow:0 0 0 2px var(--accent)':'')+'">'+dia+'</div>';
+    }
+    h+='</div>';
+    h+='<div style="display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;font-size:11px;color:var(--muted)"><span><i style="display:inline-block;width:11px;height:11px;border-radius:3px;background:rgba(98,192,140,.85);vertical-align:-1px"></i> tudo</span><span><i style="display:inline-block;width:11px;height:11px;border-radius:3px;background:rgba(231,169,72,.4);vertical-align:-1px"></i> parcial</span><span><i style="display:inline-block;width:11px;height:11px;border-radius:3px;background:rgba(227,111,128,.3);vertical-align:-1px"></i> nada</span></div>';
+    return h;}
+  function openDiaModal(k){var e=DIARIO[k]||{conteudo:{},roffil:{},painel:{}};var pg=diaProgresso(k);var dd=k.slice(8,10)+"/"+k.slice(5,7);
+    function lin(ok,txt){return '<div style="display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--hair);font-size:13.5px"><span>'+(ok?"✅":"⬜")+'</span><span>'+txt+'</span></div>';}
+    var msg=pg.vazio?'<div class="small" style="margin:6px 0 2px">Nenhum registro nesse dia.</div>':'';
+    el("modalBox").innerHTML='<h3>'+dd+' · '+pg.done+'/3 concluído</h3><div class="prog" style="margin-bottom:10px"><span style="width:'+Math.round(pg.done/3*100)+'%"></span></div>'+msg+
+      lin(pg.video,"Vídeo publicado nos 6 canais")+
+      lin(pg.roffil,"Avanço na Roffil"+(e.roffil&&e.roffil.tarefa?(" — "+esc(e.roffil.tarefa)):""))+
+      lin(pg.painel,"Tarefa do painel.ia"+(e.painel&&e.painel.tarefa?(" — "+esc(e.painel.tarefa)):""))+
+      '<div style="margin-top:14px;text-align:right"><button class="btn" id="diaFechar">Fechar</button></div>';
+    openModal();el("diaFechar").onclick=closeModal;}
+
   function renderHoje(){var e=today();var wc=weekCounts();var aw=activeWeek();var d=new Date();
     var rmDone=0,rmTot=0;ROADMAP.forEach(function(w){w.itens.forEach(function(it){rmTot++;if(it.done)rmDone++;})});
     var blDone=BACKLOG.filter(function(b){return b.done}).length,blTot=BACKLOG.length;
@@ -237,6 +272,7 @@
           '<div class="taskin"><input id="panTask" value="'+esc(e.painel.tarefa)+'" placeholder="a ÚNICA tarefa de hoje" style="text-align:left"></div>'+
           '<label class="bigdone '+(e.painel.done?"on":"")+'"><input type="checkbox" id="panDone" '+(e.painel.done?"checked":"")+'><span>terminei e parei</span></label></div>'+
       '</div>'+
+      '<div class="card" style="margin-bottom:var(--sp)" id="cal-host">'+calHTML()+'</div>'+
       '<div class="card" style="margin-bottom:var(--sp)"><div class="cardhead"><span class="ttl">Quem faz o quê</span></div><div class="roles">'+
         '<div class="rcell"><b>Claude</b><div class="x">arquitetura · código · banco · fluxos · sistema</div></div>'+
         '<div class="rcell"><b>Você</b><div class="x">estratégia · marca · produto · coleção · conteúdo · monetização</div></div>'+
@@ -249,10 +285,12 @@
     el("rofDone").addEventListener("change",function(){e.roffil.done=this.checked;saveDiario();renderHoje()});
     el("panDone").addEventListener("change",function(){e.painel.done=this.checked;saveDiario();renderHoje()});
     el("goRof").addEventListener("click",function(){document.querySelector('.navi[data-v="roffil"]').click()});
+    el("v-hoje").querySelectorAll("[data-cal]").forEach(function(c){c.addEventListener("click",function(){openDiaModal(c.getAttribute("data-cal"))})});
     mountBrain();
   }
 
   function renderRoffil(){var aw=activeWeek();
+    var rmDone=0,rmTot=0;ROADMAP.forEach(function(w){w.itens.forEach(function(it){rmTot++;if(it.done)rmDone++;})});var rmPct=rmTot?Math.round(rmDone/rmTot*100):0;
     var rm=ROADMAP.map(function(w){var done=w.itens.filter(function(x){return x.done}).length;var pc=Math.round(done/w.itens.length*100);
       var items=w.itens.map(function(it,i){return '<label class="item '+(it.done?"done":"")+'"><input type="checkbox" data-rm="'+w.wn+'" data-i="'+i+'" '+(it.done?"checked":"")+'><span>'+esc(it.t)+'</span></label>'}).join("");
       return '<div class="rmweek '+(w===aw?"active":"")+'"><div class="hd"><span class="wn">S'+w.wn+'</span><h4>'+esc(w.titulo)+'</h4><span class="pc">'+pc+'%'+(w===aw?' · foco atual':'')+'</span></div>'+items+'</div>';}).join("");
@@ -261,6 +299,7 @@
     var cap=CAP.roffil||{fat:0,inv:0};
     el("v-roffil").innerHTML=
       '<div class="head"><h1 style="display:flex;align-items:center;gap:11px"><i style="width:14px;height:14px;border-radius:50%;background:#e36f80"></i>Roffil</h1><div class="sub">transformar em marca — não criar arte aleatória</div></div>'+
+      '<div class="card" style="margin-bottom:var(--sp);display:flex;align-items:center;gap:14px"><div style="font-family:\'Space Grotesk\';font-weight:700;font-size:24px;color:var(--red);min-width:52px">'+rmPct+'%</div><div style="flex:1"><div class="small" style="margin-bottom:3px">Progresso do roadmap · '+rmDone+'/'+rmTot+' tarefas</div><div class="prog"><span style="width:'+rmPct+'%"></span></div></div></div>'+
       '<div class="card" style="margin-bottom:var(--sp)"><div class="cardhead"><span class="ttl">Roadmap até o fim do mês</span></div>'+rm+'</div>'+
       '<div class="card" style="margin-bottom:var(--sp)"><div class="cardhead"><span class="ttl">Prompts de arte (estilo) — use no ChatGPT</span><button class="btn sm" id="addPrompt">+ prompt</button></div>'+prompts+
         '<div class="small" style="margin-top:6px">Esse é o estilo oficial das artes da Roffil. Copie, troque só o tema/tipografia, mantenha o resto.</div></div>'+
@@ -349,11 +388,11 @@
   function addArt(which){CRIA[which]=CRIA[which]||[];openImagePicker({title:"Adicionar arte",urlField:true,notaField:true},function(res){CRIA[which].unshift(res);save("nucleo6:cria",CRIA);render(which);toast("Arte salva");});}
   function addProductImg(idx,slot){openImagePicker({title:(slot==="arte"?"Arte do produto":"Mockup do produto"),urlField:true,notaField:false},function(res){COLECAO[idx]=COLECAO[idx]||{nome:""};COLECAO[idx][slot]=res;save("nucleo6:colecao",COLECAO);renderRoffil();toast("Salvo");});}
   function viewProductImg(idx,slot){var ref=(COLECAO[idx]||{})[slot];if(!ref){addProductImg(idx,slot);return;}
-    el("modalBox").innerHTML='<h3>'+(slot==="arte"?"Arte":"Mockup")+' do produto</h3><div id="vImg" style="width:100%;height:300px;border-radius:12px;background:#0d1019 center/contain no-repeat;border:1px solid var(--hair2)"></div>'+(ref.nota?'<div class="small" style="margin-top:10px">'+esc(ref.nota)+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" id="vTrocar">Trocar</button><button class="btn ghost" id="vRemover">Remover</button><button class="btn" id="vFechar" style="margin-left:auto">Fechar</button></div>';
+    el("modalBox").innerHTML='<h3>'+(slot==="arte"?"Arte":"Mockup")+' do produto</h3><div id="vImg" style="width:100%;height:300px;border-radius:12px;background:#0d1019 center/contain no-repeat;border:1px solid var(--hair2)"></div>'+(ref.nota?'<div class="small" style="margin-top:10px">'+esc(ref.nota)+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn ghost sm" id="vTrocar">Trocar</button><button class="btn ghost sm" id="vRemover">Remover</button><button class="btn sm" id="vFechar">Fechar</button></div>';
     openModal();el("vFechar").onclick=closeModal;el("vTrocar").onclick=function(){addProductImg(idx,slot)};el("vRemover").onclick=function(){if(COLECAO[idx])delete COLECAO[idx][slot];save("nucleo6:colecao",COLECAO);closeModal();renderRoffil();toast("Removido")};
     var box=el("vImg");if(ref.url){box.style.backgroundImage="url("+ref.url+")"}else if(ref.hasImg){load("nucleo6:img:"+ref.id,null).then(function(dt){if(dt&&el("vImg"))el("vImg").style.backgroundImage="url("+dt+")"})}}
   function viewArt(which,a){
-    el("modalBox").innerHTML='<h3>Arte</h3><div id="vImg" style="width:100%;height:300px;border-radius:12px;background:#0d1019 center/contain no-repeat;border:1px solid var(--hair2)"></div>'+(a.nota?'<div class="small" style="margin-top:10px">'+esc(a.nota)+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" id="vRemover">Remover</button><button class="btn" id="vFechar" style="margin-left:auto">Fechar</button></div>';
+    el("modalBox").innerHTML='<h3>Arte</h3><div id="vImg" style="width:100%;height:300px;border-radius:12px;background:#0d1019 center/contain no-repeat;border:1px solid var(--hair2)"></div>'+(a.nota?'<div class="small" style="margin-top:10px">'+esc(a.nota)+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn ghost sm" id="vRemover">Remover</button><button class="btn sm" id="vFechar">Fechar</button></div>';
     openModal();el("vFechar").onclick=closeModal;el("vRemover").onclick=function(){CRIA[which]=(CRIA[which]||[]).filter(function(x){return x.id!==a.id});save("nucleo6:cria",CRIA);closeModal();render(which);toast("Removido")};
     var box=el("vImg");if(a.url){box.style.backgroundImage="url("+a.url+")"}else if(a.hasImg){load("nucleo6:img:"+a.id,null).then(function(dt){if(dt&&el("vImg"))el("vImg").style.backgroundImage="url("+dt+")"})}else{box.style.display="none"}}
   function productCard(c,i){c=c||{nome:""};
