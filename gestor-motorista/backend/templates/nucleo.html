@@ -324,16 +324,11 @@
     var bl=BACKLOG.map(function(b,i){return '<label class="item '+(b.done?"done":"")+'"><input type="checkbox" data-bl="'+i+'" '+(b.done?"checked":"")+'><span>'+esc(b.t)+'</span></label>'}).join("")||'<div class="empty">backlog vazio — adicione as próximas tarefas, uma por dia</div>';
     el("v-painel").innerHTML=
       '<div class="head"><h1 style="display:flex;align-items:center;gap:11px"><i style="width:14px;height:14px;border-radius:50%;background:#6fa9da"></i>painel.ia</h1><div class="sub">já roda com poucos usuários · 30 min/dia · 1 tarefa e acabou</div></div>'+
-      '<div class="track t-pan" style="margin-bottom:var(--sp)"><h3>Tarefa de hoje<span class="time">30 min</span></h3>'+
-        '<div class="taskin"><input id="panTask2" value="'+esc(e.painel.tarefa)+'" placeholder="a única tarefa de hoje" style="text-align:left"></div>'+
-        '<label class="bigdone '+(e.painel.done?"on":"")+'"><input type="checkbox" id="panDone2" '+(e.painel.done?"checked":"")+'><span>terminei e parei</span></label></div>'+
       '<div class="card" style="margin-bottom:var(--sp)"><div class="cardhead"><span class="ttl">Backlog · próximas tarefas (uma por dia)</span><button class="btn sm" id="addBl">+ tarefa</button></div>'+bl+
         '<div class="small" style="margin-top:8px">Disciplina: pega uma, termina, marca. Sem "já que estou aqui…".</div></div>'+
       '<div class="card"><div class="cardhead"><span class="ttl">Capital do painel.ia</span><button class="btn sm" id="capPan">editar</button></div>'+
         '<div style="display:flex;gap:24px"><div class="kpi"><div class="k">Faturado</div><div class="v" style="color:var(--green)">'+brl(cap.fat)+'</div></div><div class="kpi"><div class="k">Investido</div><div class="v" style="color:var(--red)">'+brl(cap.inv)+'</div></div></div>'+
         '<div class="small" style="margin-top:10px"><a href="https://gestor-motorista-production.up.railway.app/landing" target="_blank" rel="noopener">↗ abrir o sistema</a></div></div>';
-    el("panTask2").addEventListener("change",function(){e.painel.tarefa=this.value;saveDiario()});
-    el("panDone2").addEventListener("change",function(){e.painel.done=this.checked;saveDiario();renderPainel()});
     el("v-painel").querySelectorAll("[data-bl]").forEach(function(cb){cb.addEventListener("change",function(){BACKLOG[+cb.getAttribute("data-bl")].done=cb.checked;save("nucleo6:backlog",BACKLOG)})});
     el("addBl").addEventListener("click",function(){el("modalBox").innerHTML='<h3>Nova tarefa do painel</h3><input id="blT" placeholder="ex: corrigir login" style="text-align:left"><div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="blS">Adicionar</button><button class="btn ghost" id="blC">Cancelar</button></div>';openModal();el("blC").onclick=closeModal;el("blS").onclick=function(){var t=el("blT").value.trim();if(!t)return;BACKLOG.push({t:t,done:false});save("nucleo6:backlog",BACKLOG);closeModal();renderPainel()};});
     el("capPan").addEventListener("click",function(){editCap("painel")});
