@@ -3927,12 +3927,14 @@ function renderResumoContas(){
 async function _renderResumoContasAsync(el, calc){
   const linhas = document.getElementById('calc-linhas');
   if(!window._contas) return;
-  const pendentes = window._contas.filter(c=>!c.pago);
-  const pagas = window._contas.filter(c=>c.pago);
+  const _ymA = _ymMesAtual(), _ymS = _ymMesSeguinte();
+  // Virada de mês: contas JÁ PAGAS de meses ANTERIORES viram histórico e saem do resumo (o "já pago" zera no mês novo). As não pagas continuam (atrasadas do mês passado).
+  const _contasVivas = window._contas.filter(c=> !(c.pago && c.vencimento && String(c.vencimento).slice(0,7) < _ymA) );
+  const pendentes = _contasVivas.filter(c=>!c.pago);
+  const pagas = _contasVivas.filter(c=>c.pago);
   const totalPend = pendentes.reduce((s,c)=>s+(parseFloat(c.valor)-parseFloat(c.valor_pago||0)),0);
   const totalPago = pagas.reduce((s,c)=>s+parseFloat(c.valor),0);
   // Vencimentos por mês (só pendentes)
-  const _ymA = _ymMesAtual(), _ymS = _ymMesSeguinte();
   const _mn = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
   const _nomeA = _mn[parseInt(_ymA.slice(5,7))-1], _nomeS = _mn[parseInt(_ymS.slice(5,7))-1];
   const venceMes = pendentes.filter(c=>_contaNoMes(c,_ymA)).reduce((s,c)=>s+Math.max(0,parseFloat(c.valor)-parseFloat(c.valor_pago||0)),0);
