@@ -3745,7 +3745,9 @@ const _gruposExpandidos = new Set();
 function renderContas(){
   const el = document.getElementById('lista-contas');
   if(!window._contas) return;
-  let lista = window._contas;
+  // Virada de mês: contas JÁ PAGAS de meses anteriores saem da lista (viram histórico; senão a lista só cresce). Não pagas atrasadas continuam.
+  const _ymAtualC = _ymMesAtual();
+  let lista = window._contas.filter(c=> !(c.pago && c.vencimento && String(c.vencimento).slice(0,7) < _ymAtualC) );
   if(contasFiltro==='pendente') lista = lista.filter(c=>!c.pago);
   if(contasFiltro==='pago') lista = lista.filter(c=>c.pago);
   if(!lista.length){ el.innerHTML='<p style="color:var(--mt);text-align:center;padding:20px">Nenhuma conta aqui.</p>'; return; }
