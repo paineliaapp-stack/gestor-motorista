@@ -858,15 +858,23 @@ const _supa = supabase.createClient(
     </div>
   </div>
 
-  <!-- QUANTO FALTA PRA META DE HOJE -->
+  <!-- QUANTO FALTA PRA META DE HOJE (meta do dia definida pelo usuario no chat) -->
   <div style="background:linear-gradient(160deg,rgba(0,216,151,.06),rgba(0,216,151,.012));border:1px solid rgba(0,216,151,.18);border-radius:18px;padding:16px;margin-bottom:14px;overflow:hidden">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
       <div style="font-size:13px;font-weight:700;color:var(--tx)">🎯 Quanto falta pra meta de hoje</div>
       <div id="falta-pct" style="font-size:13px;font-weight:800;color:#00D897"></div>
     </div>
+    <div style="font-size:10px;color:var(--mt);margin-bottom:10px">🗣️ a meta que <b style="color:var(--tx)">você definiu pra hoje</b> (pelo chat)</div>
     <div id="falta-val" style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:800;color:#00D897;line-height:1">R$ 0</div>
     <div id="falta-sub" style="font-size:12px;color:var(--mt);margin-top:6px">pra bater a meta de hoje</div>
     <div style="height:8px;border-radius:6px;background:rgba(255,255,255,.08);margin-top:12px;overflow:hidden"><div id="falta-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#F5A623,#00D897);border-radius:6px;transition:width .8s ease"></div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07)">
+      <div style="font-size:11px;color:var(--mt)">trabalhando até
+        <select id="falta-fim" onchange="localStorage.setItem('pia_fim_dia',this.value);try{renderVelocimetro()}catch(e){}try{_renderMetaHora()}catch(e){}" style="background:rgba(0,216,151,.12);border:1px solid rgba(0,216,151,.3);border-radius:6px;color:var(--tx);font-size:11px;font-weight:700;padding:2px 4px;outline:none;cursor:pointer"></select>
+      </div>
+      <div style="text-align:right"><div id="falta-hora" style="font-size:22px;font-weight:800;color:#00D897;font-family:'Barlow Condensed',sans-serif">—</div><div style="font-size:9px;color:var(--mt)">por hora pra bater</div></div>
+    </div>
+    <div style="font-size:10px;color:var(--mt);margin-top:10px;line-height:1.45">Não definiu sua meta? Fale no chat do Gestor: <b style="color:var(--tx)">"minha meta de hoje é R$500"</b>.</div>
   </div>
 
 
@@ -1584,9 +1592,9 @@ function renderMetaMensal(){
     <div id="card-meta-hora" style="background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.25);border-radius:10px;padding:10px 14px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
-          <div style="font-size:10px;color:rgba(140,140,255,.9);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px">⚡ Ritmo de hoje</div>
+          <div style="font-size:10px;color:rgba(140,140,255,.9);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px">⚡ Ritmo pra fechar o MÊS</div>
           <div style="font-size:10px;color:var(--mt)">falta <b id="mh-falta">—</b> hoje · trabalhando até
-            <select id="mh-fim" onchange="localStorage.setItem('pia_fim_dia',this.value);_renderMetaHora()" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.35);border-radius:6px;color:var(--tx);font-size:11px;font-weight:700;padding:2px 4px;outline:none;cursor:pointer"></select>
+            <select id="mh-fim" onchange="localStorage.setItem('pia_fim_dia',this.value);_renderMetaHora();try{renderVelocimetro()}catch(e){}" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.35);border-radius:6px;color:var(--tx);font-size:11px;font-weight:700;padding:2px 4px;outline:none;cursor:pointer"></select>
           </div>
         </div>
         <div style="text-align:right">
@@ -2687,6 +2695,16 @@ function renderVelocimetro(){
       if(fp) fp.textContent=Math.round(100-_pctFeito)+'% restante';
       if(fs) fs.textContent='pra bater os R$ '+Math.round(meta).toLocaleString('pt-BR')+' de hoje';
       if(fb) fb.style.width=Math.round(_pctFeito)+'%';
+    }
+    var fsel=document.getElementById('falta-fim');
+    if(fsel){
+      if(!fsel.options.length){ [['14','14h'],['15','15h'],['16','16h'],['17','17h'],['18','18h'],['19','19h'],['20','20h'],['21','21h'],['22','22h'],['23','23h'],['24','meia-noite']].forEach(function(o){var op=document.createElement('option');op.value=o[0];op.textContent=o[1];fsel.appendChild(op);}); }
+      fsel.value=localStorage.getItem('pia_fim_dia')||'24';
+    }
+    var fh=document.getElementById('falta-hora');
+    if(fh){
+      if(pctReal>=100){ fh.textContent='✅'; }
+      else { var _fimH=parseInt(localStorage.getItem('pia_fim_dia')||'24',10); var _ag=new Date(), _fimD=new Date(_ag); _fimD.setHours(_fimH===24?23:_fimH,_fimH===24?59:0,0,0); var _hr=Math.max(0.25,(_fimD-_ag)/3600000); fh.textContent='R$ '+Math.round(_falta/_hr).toLocaleString('pt-BR'); }
     }
     var st=document.getElementById('velo-status');
     var poly=needle?needle.querySelector('polygon'):null;
@@ -6521,6 +6539,7 @@ function _renderMetaHora(){
         const o=document.createElement('option');o.value=v;o.textContent=l;if(v===salvo)o.selected=true;sel.appendChild(o);
       });
     }
+    if(sel) sel.value=localStorage.getItem('pia_fim_dia')||'24';
     // Meta do dia = necessário/dia do card acima (recalcula igual)
     const meta=window._necessarioPorDiaHoje||0;
     const ganhoHoje=window._ganhosHojeApp||0;
