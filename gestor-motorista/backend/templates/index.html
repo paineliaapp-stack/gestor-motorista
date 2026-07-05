@@ -3304,8 +3304,9 @@ async function loadHist(tipo){
       const _ts = l.created_at || l.criado_em || l.inserted_at;
       if(_ts){
         try{
-          let dt=new Date(_ts);
-          if(isNaN(dt.getTime()) && typeof _ts==='string') dt=new Date(_ts.replace(' ','T')+(_ts.includes('Z')||_ts.includes('+')?'':'Z'));
+          let dt;
+          if(typeof _ts==='string'){ const _hasTz=/Z$|[+-]\d\d:?\d\d$/.test(_ts.trim()); dt=new Date(_ts.trim().replace(' ','T')+(_hasTz?'':'Z')); }
+          else { dt=new Date(_ts); }
           if(!isNaN(dt.getTime())){
             const hm = dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'});
             hora=' · '+hm.replace(':','h');
