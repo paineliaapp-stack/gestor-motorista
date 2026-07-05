@@ -42,6 +42,7 @@ def _ganhos_por_dia(mid: str, dias: int = 35) -> dict:
 
 @router.get("/competicao/{mid}")
 async def competicao(mid: str, uid: str = Depends(get_uid_from_token)):
+    mid = uid  # SEGURANÇA: sempre o usuário autenticado; ignora o id da URL (evita ver meta/nome de outro)
     try:
         # Meta do motorista
         m = supabase.table("motoristas").select("meta_diaria,nome").eq("id", mid).execute()

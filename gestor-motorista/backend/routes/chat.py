@@ -19,7 +19,7 @@ async def chat_setup(dados: dict = Body(...), uid: str = Depends(get_uid_from_to
     dados["mid"] = uid
     """Chat do onboarding guiado — Gestor coleta dados do novo usuário."""
     import httpx, json as _json
-    uid = dados.get("id") or dados.get("motorista_id")
+    uid = dados["motorista_id"]  # SEMPRE do token (linha acima); nunca do "id" do body — evita agir como outro usuário
     mensagem = str(dados.get("mensagem", ""))[:1000]  # limite 1000 chars
     historico = dados.get("historico", [])
     # Pré-normaliza valores monetários com vírgula: "156,28" não vire "156" e "28"
