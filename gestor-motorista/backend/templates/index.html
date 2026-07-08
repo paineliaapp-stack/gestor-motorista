@@ -1633,17 +1633,22 @@ function renderMetaMensal(){
         <span style="color:var(--mt)">💳 Contas a pagar</span>
         <span style="font-weight:600;color:var(--rd)">- ${fmt(totalContas)}</span>
       </div>` : ''}
-      ${liquidoReal > 0 ? `
+      ${liquidoReal >= 1 ? `
       <div style="margin-top:8px;background:linear-gradient(135deg,rgba(0,216,151,.13),rgba(0,216,151,.05));border:1.5px solid rgba(0,216,151,.4);border-radius:12px;padding:12px 14px;text-align:center">
         <div style="font-size:10px;color:rgba(0,216,151,.8);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">🏆 Se bater ${metaFmtCurto} este mês</div>
         <div style="font-size:32px;font-weight:900;color:#00D897;line-height:1;font-family:'Barlow Condensed',sans-serif">${fmt(liquidoReal)}</div>
         <div style="font-size:11px;color:rgba(0,216,151,.7);margin-top:3px">ficam no seu bolso 💰</div>
+      </div>` : (liquidoReal > -1 ? `
+      <div style="margin-top:8px;background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.35);border-radius:12px;padding:12px 14px;text-align:center">
+        <div style="font-size:11px;color:var(--am);font-weight:700;margin-bottom:7px">⚖️ Sua meta de ${metaFmtCurto} fecha o mês exatamente no ZERO</div>
+        <div style="font-size:12px;color:var(--tx);line-height:1.7">Ela cobre contas + combustível, mas não sobra nada.<br>Pra sobrar <b>R$ 1.000</b> no bolso: <b style="color:#00D897">${fmt(brutoMilMM)}</b></div>
+        <div style="font-size:10px;color:var(--mt);margin-top:6px">faturamento bruto no mês · já contando ${pctCombMM}% de combustível</div>
       </div>` : `
       <div style="margin-top:8px;background:rgba(255,69,96,.07);border:1px solid rgba(255,69,96,.3);border-radius:12px;padding:12px 14px;text-align:center">
         <div style="font-size:11px;color:#ff6b6b;font-weight:700;margin-bottom:7px">⚠️ A meta de ${metaFmtCurto} não cobre suas contas + combustível</div>
         <div style="font-size:12px;color:var(--tx);line-height:1.7">🎯 Pra fechar o mês no zero: <b style="color:var(--am)">${fmt(brutoZeroMM)}</b><br>Pra sobrar <b>R$ 1.000</b> no bolso: <b style="color:#00D897">${fmt(brutoMilMM)}</b></div>
-        <div style="font-size:10px;color:var(--mt);margin-top:6px">faturamento bruto no mês · já contando ${pctCombMM}% de combustível</div>
-      </div>`}
+        <div style="font-size:10px;color:var(--mt);margin-top:6px">faturamento bruto no mês · já contando ${pctCombMM}% de combustível · contas do mês incluem as já pagas</div>
+      </div>`)}
     </div>
   `;
 }
